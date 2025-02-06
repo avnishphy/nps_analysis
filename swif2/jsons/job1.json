@@ -1,0 +1,28 @@
+{
+  "jobs": [
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/yaopeng/ifarm9/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_reference_times_nps_hms.C 6810 -1"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999960196,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/yaopeng/ifarm9/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_6810.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_6810.dat.0"
+        }
+      ],
+      "name": "RefTime_6810",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/yaopeng/RefTime_stderr/test_6810.err",
+      "stdout": "/farm_out/yaopeng/RefTime_stdout/test_6810.out"
+    }
+  ],
+  "name": "Yaopeng_RefTime_1"
+}

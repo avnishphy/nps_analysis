@@ -1,0 +1,994 @@
+{
+  "jobs": [
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 3013 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999998476,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_3013.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3013.dat.0"
+        }
+      ],
+      "name": "no_time_window_3013",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_3013.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_3013.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 3017 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999958144,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_3017.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3017.dat.0"
+        }
+      ],
+      "name": "no_time_window_3017",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_3017.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_3017.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 2023 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999972040,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_2023.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_2023.dat.0"
+        }
+      ],
+      "name": "no_time_window_2023",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_2023.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_2023.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 2057 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999774568,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_2057.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_2057.dat.0"
+        }
+      ],
+      "name": "no_time_window_2057",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_2057.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_2057.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 6991 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999946792,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_6991.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_6991.dat.0"
+        }
+      ],
+      "name": "no_time_window_6991",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_6991.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_6991.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 2189 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999900688,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_2189.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_2189.dat.0"
+        }
+      ],
+      "name": "no_time_window_2189",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_2189.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_2189.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 2195 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999975268,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_2195.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_2195.dat.0"
+        }
+      ],
+      "name": "no_time_window_2195",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_2195.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_2195.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 6932 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999988972,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_6932.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_6932.dat.0"
+        }
+      ],
+      "name": "no_time_window_6932",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_6932.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_6932.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 3991 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999918904,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_3991.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3991.dat.0"
+        }
+      ],
+      "name": "no_time_window_3991",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_3991.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_3991.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 4015 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999973912,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_4015.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_4015.dat.0"
+        }
+      ],
+      "name": "no_time_window_4015",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_4015.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_4015.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 4668 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999788164,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_4668.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_4668.dat.0"
+        }
+      ],
+      "name": "no_time_window_4668",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_4668.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_4668.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 4845 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999769192,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_4845.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_4845.dat.0"
+        }
+      ],
+      "name": "no_time_window_4845",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_4845.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_4845.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 5992 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999749128,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_5992.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_5992.dat.0"
+        }
+      ],
+      "name": "no_time_window_5992",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_5992.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_5992.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 6794 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999892108,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_6794.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_6794.dat.0"
+        }
+      ],
+      "name": "no_time_window_6794",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_6794.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_6794.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 6428 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999979816,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_6428.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_6428.dat.0"
+        }
+      ],
+      "name": "no_time_window_6428",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_6428.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_6428.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 6475 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999784180,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_6475.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_6475.dat.0"
+        }
+      ],
+      "name": "no_time_window_6475",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_6475.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_6475.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 2976 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999953116,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_2976.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_2976.dat.0"
+        }
+      ],
+      "name": "no_time_window_2976",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_2976.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_2976.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 2990 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999961000,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_2990.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_2990.dat.0"
+        }
+      ],
+      "name": "no_time_window_2990",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_2990.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_2990.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 3010 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999919120,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_3010.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3010.dat.0"
+        }
+      ],
+      "name": "no_time_window_3010",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_3010.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_3010.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 3063 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999878812,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_3063.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3063.dat.0"
+        }
+      ],
+      "name": "no_time_window_3063",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_3063.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_3063.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 3098 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999966736,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_3098.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3098.dat.0"
+        }
+      ],
+      "name": "no_time_window_3098",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_3098.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_3098.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 1598 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999881752,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_1598.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_1598.dat.0"
+        }
+      ],
+      "name": "no_time_window_1598",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_1598.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_1598.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 1593 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999932116,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_1593.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_1593.dat.0"
+        }
+      ],
+      "name": "no_time_window_1593",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_1593.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_1593.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 1692 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999944896,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_1692.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_1692.dat.0"
+        }
+      ],
+      "name": "no_time_window_1692",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_1692.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_1692.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 6965 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999879208,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_6965.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_6965.dat.0"
+        }
+      ],
+      "name": "no_time_window_6965",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_6965.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_6965.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 3796 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999943480,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_3796.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3796.dat.0"
+        }
+      ],
+      "name": "no_time_window_3796",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_3796.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_3796.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 3804 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999995764,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_3804.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3804.dat.0"
+        }
+      ],
+      "name": "no_time_window_3804",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_3804.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_3804.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 3823 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999927580,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_3823.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3823.dat.0"
+        }
+      ],
+      "name": "no_time_window_3823",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_3823.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_3823.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 3828 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999929632,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_3828.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3828.dat.0"
+        }
+      ],
+      "name": "no_time_window_3828",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_3828.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_3828.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 5428 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999881872,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_5428.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_5428.dat.0"
+        }
+      ],
+      "name": "no_time_window_5428",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_5428.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_5428.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 6861 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999845620,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_6861.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_6861.dat.0"
+        }
+      ],
+      "name": "no_time_window_6861",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_6861.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_6861.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 5244 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999853060,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_5244.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_5244.dat.0"
+        }
+      ],
+      "name": "no_time_window_5244",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_5244.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_5244.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 5255 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999939028,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_5255.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_5255.dat.0"
+        }
+      ],
+      "name": "no_time_window_5255",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_5255.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_5255.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 5413 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999924808,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_5413.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_5413.dat.0"
+        }
+      ],
+      "name": "no_time_window_5413",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_5413.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_5413.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 5286 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999968368,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_5286.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_5286.dat.0"
+        }
+      ],
+      "name": "no_time_window_5286",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_5286.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_5286.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 2340 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999908380,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_2340.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_2340.dat.0"
+        }
+      ],
+      "name": "no_time_window_2340",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_2340.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_2340.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 2411 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999808960,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_2411.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_2411.dat.0"
+        }
+      ],
+      "name": "no_time_window_2411",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_2411.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_2411.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 6921 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999916828,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_6921.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_6921.dat.0"
+        }
+      ],
+      "name": "no_time_window_6921",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_6921.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_6921.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 3913 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999900712,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_3913.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3913.dat.0"
+        }
+      ],
+      "name": "no_time_window_3913",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_3913.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_3913.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 3942 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999943072,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_3942.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3942.dat.0"
+        }
+      ],
+      "name": "no_time_window_3942",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_3942.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_3942.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 3162 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999925972,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_3162.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3162.dat.0"
+        }
+      ],
+      "name": "no_time_window_3162",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_3162.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_3162.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 3302 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999990544,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_3302.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3302.dat.0"
+        }
+      ],
+      "name": "no_time_window_3302",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_3302.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_3302.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/no_timing_windows_nps_hms_coin.C 6873 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999929944,
+      "inputs": [
+        {
+          "local": "nps_replay.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay.tar.gz"
+        },
+        {
+          "local": "nps_coin_6873.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_6873.dat.0"
+        }
+      ],
+      "name": "no_time_window_6873",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/no_time_window_stderr/test_6873.err",
+      "stdout": "/farm_out/singhav/no_time_window_stdout/test_6873.out"
+    }
+  ],
+  "name": "singhav_no_time_window_50"
+}

@@ -1,0 +1,28 @@
+{
+  "jobs": [
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 6810 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999960196,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_6810.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_6810.dat.0"
+        }
+      ],
+      "name": "hodo_calib_6810",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodo_calib_stderr/test_6810.err",
+      "stdout": "/farm_out/singhav/hodo_calib_stdout/test_6810.out"
+    }
+  ],
+  "name": "singhav_hodo_calib_6810"
+}

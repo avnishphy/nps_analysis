@@ -1,0 +1,626 @@
+{
+  "jobs": [
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 1753 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999991456,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_1753.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_1753.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_1753",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_1753.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_1753.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 1823 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999925024,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_1823.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_1823.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_1823",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_1823.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_1823.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 2770 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999954016,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_2770.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_2770.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_2770",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_2770.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_2770.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 2776 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999915460,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_2776.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_2776.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_2776",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_2776.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_2776.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 2834 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999916864,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_2834.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_2834.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_2834",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_2834.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_2834.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 4064 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999977368,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_4064.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_4064.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_4064",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_4064.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_4064.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 4122 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999963040,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_4122.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_4122.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_4122",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_4122.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_4122.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 4088 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999837304,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_4088.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_4088.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_4088",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_4088.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_4088.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 4180 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999970960,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_4180.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_4180.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_4180",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_4180.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_4180.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 4226 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999935116,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_4226.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_4226.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_4226",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_4226.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_4226.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 4458 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999915532,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_4458.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_4458.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_4458",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_4458.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_4458.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 4254 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999963916,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_4254.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_4254.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_4254",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_4254.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_4254.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 4551 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999889984,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_4551.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_4551.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_4551",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_4551.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_4551.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 4972 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999923680,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_4972.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_4972.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_4972",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_4972.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_4972.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 5098 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999960172,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_5098.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_5098.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_5098",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_5098.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_5098.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 5540 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999531604,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_5540.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_5540.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_5540",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_5540.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_5540.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 5894 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999493168,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_5894.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_5894.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_5894",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_5894.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_5894.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 5904 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999798484,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_5904.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_5904.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_5904",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_5904.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_5904.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 5974 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999831016,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_5974.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_5974.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_5974",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_5974.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_5974.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 6190 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999752152,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_6190.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_6190.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_6190",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_6190.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_6190.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 6402 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999725524,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_6402.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_6402.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_6402",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_6402.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_6402.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 6571 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999913024,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_6571.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_6571.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_6571",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_6571.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_6571.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 6687 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999777088,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_6687.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_6687.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_6687",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_6687.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_6687.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 3389 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999934480,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_3389.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3389.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_3389",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_3389.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_3389.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 3635 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999978796,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_3635.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3635.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_3635",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_3635.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_3635.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 3430 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999979948,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_3430.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3430.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_3430",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_3430.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_3430.out"
+    },
+    {
+      "account": "hallc",
+      "command": [
+        "/u/group/nps/singhav/nps_analysis/swif2/run_myscript.sh SCRIPTS/NPS/TIMING/replay_production_coin_NPS_HMS.C 3654 1000000"
+      ],
+      "cpu_cores": 1,
+      "disk_bytes": 59999872548,
+      "inputs": [
+        {
+          "local": "nps_replay_updatedTW.tar.gz",
+          "remote": "/group/nps/singhav/nps_replay_updatedTW.tar.gz"
+        },
+        {
+          "local": "nps_coin_3654.dat.0",
+          "remote": "/mss/hallc/c-nps/raw/nps_coin_3654.dat.0"
+        }
+      ],
+      "name": "hodoscope_calib_3654",
+      "partition": "production",
+      "ram_bytes": 2500000000,
+      "stderr": "/farm_out/singhav/hodoscope_calib_stderr/test_3654.err",
+      "stdout": "/farm_out/singhav/hodoscope_calib_stdout/test_3654.out"
+    }
+  ],
+  "name": "singhav_hodoscope_calib_2"
+}

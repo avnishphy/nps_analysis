@@ -7,9 +7,9 @@
 
 void plot_W_distribution() {
     // Load Data and SIMC Files
-    TFile *data_file = new TFile("/lustre24/expphy/cache/hallc/c-nps/analysis/pass1/replays/production/elastics/nps_hms_coin_6706_0_1_-1.root", "READ");
-    TFile *simc_file = new TFile("/u/group/nps/singhav/simc_gfortran/worksim/eep_hydrogen_6828_6841.root", "READ");
-    TFile *dummy_file = new TFile("/lustre24/expphy/cache/hallc/c-nps/analysis/pass1/replays/production/elastics/nps_hms_coin_6705_0_1_-1.root", "READ");
+    TFile *data_file = new TFile("/lustre24/expphy/volatile/hallc/nps/singhav/ROOTfiles/nps_hms_coin_6834_0_1_-1.root", "READ");
+    TFile *simc_file = new TFile("/u/group/nps/singhav/simc_gfortran/worksim/eep_hydrogen_6828_6841_HMS4042.root", "READ");
+    TFile *dummy_file = new TFile("/lustre24/expphy/volatile/hallc/nps/singhav/ROOTfiles/nps_hms_coin_6705_0_1_-1.root", "READ");
 
     if (!data_file || data_file->IsZombie() || !simc_file || simc_file->IsZombie()) {
         std::cerr << "Error: Unable to open files!" << std::endl;
@@ -90,11 +90,14 @@ void plot_W_distribution() {
     simc_tree->SetBranchAddress("W", &W);
     simc_tree->SetBranchAddress("Weight", &Weight);
 
-    float_t fhsdelta, fhsyptar, fhsxptar; 
+    float_t fhsdelta, fhsyptar, fhsxptar, fQ2, fnu; 
 
     simc_tree->SetBranchAddress("hsdelta", &fhsdelta);
     simc_tree->SetBranchAddress("hsyptar", &fhsyptar);
     simc_tree->SetBranchAddress("hsxptar", &fhsxptar);
+    simc_tree->SetBranchAddress("Q2", &fQ2);
+    simc_tree->SetBranchAddress("nu", &fnu);
+
 
     // Fill SIMC Histogram (Unweighted)
     Long64_t nentries_simc = simc_tree->GetEntries();
@@ -111,18 +114,22 @@ void plot_W_distribution() {
     // double_t normfac = 0.685014E+07; //HMS 3910 20% extra e arm limits
     // double_t normfac = 0.677792E+07; //HMS 4042 10% extra e arm limits
     // double_t normfac =  0.670731E+07; //HMS 4042 20% extra e arm limits
-    double_t normfac = 0.670773E+07; // HMS 4042 run 6706
+    // double_t normfac = 0.670773E+07; // HMS 4042 run 6706
+    double_t normfac = 0.671016E+07; // HMS 4042 run 6834 Ebeam 6.3967
     double_t nevents = 100000;
     double_t weight_factor = normfac / nevents;
     double_t full_weight;
     double_t effective_charge_data;
     double_t effective_charge_dummy;
-    double_t scale_factor_dummy = 0.864; 
+    double_t scale_factor_dummy = 0.864;
+    double_t mass_p = 0.938272; //mass of proton in GeV
+    double_t f_xbj; 
 
     for (Long64_t i = 0; i < nentries_simc; i++) {
         simc_tree->GetEntry(i);
         full_weight = Weight*weight_factor;
-        if (fhsdelta < 8.5 && fhsdelta > -8.5 && fhsxptar > -0.09 && fhsxptar < 0.09 && fhsyptar > -0.055 && fhsyptar < 0.055) {
+        f_xbj = (fQ2)/(2*mass_p*fnu);
+        if (f_xbj > 0.96 && f_xbj < 1.04 && fhsdelta < 8.5 && fhsdelta > -8.5 && fhsxptar > -0.09 && fhsxptar < 0.09 && fhsyptar > -0.055 && fhsyptar < 0.055) {
             hist_simc_weighted->Fill(W, full_weight);
         }
         
@@ -180,19 +187,17 @@ void plot_W_distribution() {
     hist_exp->Draw("hist same");
     hist_dummy->Draw("hist same");
 
-    // Create Legend with Mean and StdDev
-    // TLegend *legend = new TLegend(0.65, 0.65, 0.9, 0.9);
-    // legend->AddEntry(hist_data, Form("Data (Mean: %.3f, #sigma: %.3f)", mean_data, stddev_data), "l");
-    // legend->AddEntry(hist_simc_weighted, Form("SIMC (Mean: %.3f, #sigma: %.3f)", mean_simc, stddev_simc), "l");
-    // legend->AddEntry(hist_exp, Form("Exp (Mean: %.3f, #sigma: %.3f)", mean_exp, stddev_exp), "l");
-    // legend->AddEntry(hist_dummy, "Dummy", "l");
-    // legend->Draw();
-
+    double_t yield_exp = hist_exp->Integral();
+    double_t yield_simc_weighted = hist_simc_weighted->Integral();
+    double_t yield_ratio = (yield_simc_weighted != 0) ? (yield_exp / yield_simc_weighted) : 0.0; // Prevent division by zero
+    
     TLegend *leg = new TLegend(0.6, 0.6, 0.9, 0.9);
-    leg->AddEntry(hist_data, Form("Data: Mean = %.3f, #sigma = %.3f", mean_data, sigma_data), "l");
-    leg->AddEntry(hist_simc_weighted, Form("SIMC: Mean = %.3f, #sigma = %.3f", mean_simc, sigma_simc), "l");
-    leg->AddEntry(hist_exp, Form("Exp: Mean = %.3f, #sigma = %.3f", mean_exp, sigma_exp), "l");
+    leg->AddEntry(hist_data, Form("Data: Mean = %.5f, #sigma = %.5f", mean_data, sigma_data), "l");
+    leg->AddEntry(hist_simc_weighted, Form("SIMC: Mean = %.5f, #sigma = %.5f", mean_simc, sigma_simc), "l");
+    leg->AddEntry(hist_exp, Form("Exp: Mean = %.5f, #sigma = %.5f", mean_exp, sigma_exp), "l");
+    leg->AddEntry((TObject*)0, Form("Yield Ratio = Yield_exp/Yield_simc: %.5f", yield_ratio), ""); // Display yield ratio safely
     leg->Draw();
+    
 
     // Show plot interactively
     canvas->Update();

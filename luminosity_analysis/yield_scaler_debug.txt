@@ -1,0 +1,129 @@
+Run: 1514
+Beam Current: 4.911 uA
+Charge: 2860.06 uC
+hTRIG4: 1.24168e+06
+EDTM Triggers: 63424
+Number Scaler: 1.17825e+06
+Yield Scaler: 411.967
+
+Run: 1515
+Beam Current: 9.627 uA
+Charge: 6889.45 uC
+hTRIG4: 2.97918e+06
+EDTM Triggers: 73526
+Number Scaler: 2.90565e+06
+Yield Scaler: 421.753
+
+Run: 1516
+Beam Current: 14.111 uA
+Charge: 9173.11 uC
+hTRIG4: 3.93362e+06
+EDTM Triggers: 70562
+Number Scaler: 3.86306e+06
+Yield Scaler: 421.128
+
+Run: 1517
+Beam Current: 22.427 uA
+Charge: 17944.9 uC
+hTRIG4: 7.66492e+06
+EDTM Triggers: 96144
+Number Scaler: 7.56877e+06
+Yield Scaler: 421.779
+
+Run: 1518
+Beam Current: 37.955 uA
+Charge: 33104.9 uC
+hTRIG4: 3.41984e+07
+EDTM Triggers: 87162
+Number Scaler: 3.41112e+07
+Yield Scaler: 1030.4
+
+Run: 1519
+Beam Current: 23.983 uA
+Charge: 15806.7 uC
+hTRIG4: 1.63314e+07
+EDTM Triggers: 65864
+Number Scaler: 1.62656e+07
+Yield Scaler: 1029.03
+
+Run: 1520
+Beam Current: 17.328 uA
+Charge: 12316.4 uC
+hTRIG4: 1.2769e+07
+EDTM Triggers: 72649
+Number Scaler: 1.26963e+07
+Yield Scaler: 1030.85
+
+Run: 1521
+Beam Current: 9.641 uA
+Charge: 5559.55 uC
+hTRIG4: 5.74644e+06
+EDTM Triggers: 59870
+Number Scaler: 5.68657e+06
+Yield Scaler: 1022.85
+
+Run: 1522
+Beam Current: 4.933 uA
+Charge: 3038.9 uC
+hTRIG4: 3.11903e+06
+EDTM Triggers: 63833
+Number Scaler: 3.0552e+06
+Yield Scaler: 1005.36
+
+Run: 1523
+Beam Current: 33.537 uA
+Charge: 15752.3 uC
+hTRIG4: 1.63604e+06
+EDTM Triggers: 48889
+Number Scaler: 1.58715e+06
+Yield Scaler: 100.757
+
+Run: 1524
+Beam Current: 31.479 uA
+Charge: 7165.33 uC
+hTRIG4: 745565
+EDTM Triggers: 66553
+Number Scaler: 679012
+Yield Scaler: 94.7635
+
+Run: 1525
+Beam Current: 36.993 uA
+Charge: 23963.8 uC
+hTRIG4: 2.48359e+06
+EDTM Triggers: 68958
+Number Scaler: 2.41463e+06
+Yield Scaler: 100.762
+
+Run: 1526
+Beam Current: 23.524 uA
+Charge: 16229.5 uC
+hTRIG4: 1.70423e+06
+EDTM Triggers: 70159
+Number Scaler: 1.63407e+06
+Yield Scaler: 100.685
+
+WARNING: File not found: /w/hallc-scshelf2102/nps/nps-ana/REPORT_OUTPUT_pass1/COIN/SKIM/skim_NPS_HMS_report_1527_-1.report
+Run: 1528
+Beam Current: 12.685 uA
+Charge: 8487.73 uC
+hTRIG4: 911992
+EDTM Triggers: 74702
+Number Scaler: 837290
+Yield Scaler: 98.6472
+
+Run: 1529
+Beam Current: 4.898 uA
+Charge: 44.22 uC
+hTRIG4: 5150
+EDTM Triggers: 903
+Number Scaler: 4247
+Yield Scaler: 96.0425
+
+Run: 1530
+Beam Current: 4.8 uA
+Charge: 3950.15 uC
+hTRIG4: 467247
+EDTM Triggers: 92747
+Number Scaler: 374500
+Yield Scaler: 94.8066
+

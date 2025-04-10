@@ -1,6 +1,6 @@
 void extract_yield_scaler(Int_t run_start = 1524, Int_t run_end = 1528) {
   std::string base_dir = "/w/hallc-scshelf2102/nps/nps-ana/REPORT_OUTPUT_pass1/COIN/SKIM/";
-  std::vector<Double_t> yield_scalers, beam_currents;
+  std::vector<Double_t> yield_scalers, beam_currents, beam_charges;
   std::vector<Int_t> runs;
   std::vector<double> relative_yield_scalers;
 
@@ -33,8 +33,16 @@ void extract_yield_scaler(Int_t run_start = 1524, Int_t run_end = 1528) {
           if (line_number == 40 && line.find("BCM4A Beam Cut Current") != std::string::npos)
               sscanf(line.c_str(), "BCM4A Beam Cut Current: %lf uA", &bcm_current);
 
+
           if (line_number == 47 && line.find("BCM4A Beam Cut Charge") != std::string::npos)
               sscanf(line.c_str(), "BCM4A Beam Cut Charge: %lf uC", &bcm_charge);
+
+        //   if (line_number == 39 && line.find("BCM2 Beam Cut Current") != std::string::npos)
+        //       sscanf(line.c_str(), "BCM2 Beam Cut Current: %lf uA", &bcm_current);
+
+
+        //   if (line_number == 46 && line.find("BCM2 Beam Cut Charge") != std::string::npos)
+        //       sscanf(line.c_str(), "BCM2 Beam Cut Charge: %lf uC", &bcm_charge);
 
           if (line_number >= 52 && line_number <= 61) {
               for (int i = 1; i <= 6; ++i) {
@@ -90,6 +98,7 @@ void extract_yield_scaler(Int_t run_start = 1524, Int_t run_end = 1528) {
 
       runs.push_back(run);
       beam_currents.push_back(bcm_current);
+      beam_charges.push_back(bcm_charge);
       yield_scalers.push_back(yield);
   }
 

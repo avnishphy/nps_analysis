@@ -58,14 +58,14 @@ double plot_yield_scaler(int run, double current, double correction) {
 
         double delta_time = H_1MHz_scalerTime - prev_time;
 
-        if (fabs(H_BCM4A_scalerCurrent - current) < 2.5) {
+        if ((H_BCM4A_scalerCurrent - current) < 1.5 && (H_BCM4A_scalerCurrent - current) > -1.5) {
             double corr_factor = (H_BCM4A_scalerCurrent + correction) / H_BCM4A_scalerCurrent;
-            double corrected_current = current * corr_factor;
+            double corrected_current = H_BCM4A_scalerCurrent * corr_factor;
             accumulated_charge += corrected_current * delta_time;
+            accumulated_edtm += (H_EDTM_scaler - prev_EDTM);
+            accumulated_hTRIG4 += (H_hTRIG4_scaler - prev_hTRIG4);
+            // cout << "accumulated charge: " << accumulated_charge << endl;
         }
-
-        accumulated_edtm += (H_EDTM_scaler - prev_EDTM);
-        accumulated_hTRIG4 += (H_hTRIG4_scaler - prev_hTRIG4);
 
         prev_time = H_1MHz_scalerTime;
         prev_EDTM = H_EDTM_scaler;
@@ -86,13 +86,43 @@ double plot_yield_scaler(int run, double current, double correction) {
 
 void analyze_run_range() {
     // Example input: run numbers and corresponding currents
-    std::vector<int> runs = {1523, 1524, 1525};
-    std::vector<double> currents = {60.0, 65.0, 60.0}; // You may prompt or input manually
-    double correction = 0.0; // Or any value you'd like
+    std::vector<int> runs = {1523, 1524, 1525, 1526, 1528, 1530}; //carbon 1
+    std::vector<double> currents = {33.5, 33.5, 38.5, 24, 14, 4.8}; // carbon 1
+
+    // std::vector<int> runs = {6845, 6846, 6847, 6848, 6849}; //carbon 2
+    // std::vector<double> currents = {5, 20, 15, 10, 3}; // carbon 2
+
+    // std::vector<int> runs = {7003, 7004, 7005, 7006, 7007}; //carbon 3
+    // std::vector<double> currents = {40, 30, 20, 10, 5}; // carbon 3
+    
+    double correction = -0.1;
+
+    std::vector<double_t> yield(runs.size(), 0.0);
 
     for (size_t i = 0; i < runs.size(); ++i) {
-        double yield = plot_yield_scaler(runs[i], currents[i], correction);
-        if (yield > 0)
-            std::cout << "Run " << runs[i] << ": Yield/Charge = " << yield << std::endl;
+        yield[i] = plot_yield_scaler(runs[i], currents[i], correction);
+        if (yield[i] > 0)
+            std::cout << "Run " << runs[i] << ": Yield/Charge = " << yield[i] << std::endl;
     }
+
+    double_t min_element = *std::min_element(yield.begin(), yield.end());
+    for (auto &y : yield) {
+        y /= min_element;
+    }
+    
+
+    // Plot yield vs current
+    TCanvas *c1 = new TCanvas("c1", "Yield vs Current", 800, 600);
+    TGraph *g = new TGraph(runs.size(), &currents[0], &yield[0]);
+    g->SetTitle("Yield vs Current");
+    g->GetXaxis()->SetTitle("Current [uA]");
+    g->GetYaxis()->SetTitle("Yield / Charge");
+    g->SetMarkerStyle(20);
+    g->SetMarkerColor(kRed+1);
+    g->SetLineColor(kRed+1);
+    g->Draw("AP");
+
+    // c1->SaveAs("yield_vs_current_custom_runs.png");
 }
+
+

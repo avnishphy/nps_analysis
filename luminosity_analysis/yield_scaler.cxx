@@ -94,9 +94,13 @@ void analyze_run_range() {
 
     // std::vector<int> runs = {7003, 7004, 7005, 7006, 7007}; //carbon 3
     // std::vector<double> currents = {40, 30, 20, 10, 5}; // carbon 3
-    
-    double correction = -0.1;
 
+    // std::vector<int> runs = {1523, 1524, 1525, 1526, 1528, 1530, 6845, 6846, 6847, 6848, 6849, 7003, 7004, 7005, 7006, 7007}; // carbon all
+    // std::vector<double> currents = {33.5, 33.5, 38.5, 24, 14, 4.8, 5, 20, 15, 10, 3, 40, 30, 20, 10, 5}; //carbon all
+    
+    double correction = -0.05;
+
+    // if using a single setting of runs, use this snippet
     std::vector<double_t> yield(runs.size(), 0.0);
 
     for (size_t i = 0; i < runs.size(); ++i) {
@@ -109,6 +113,17 @@ void analyze_run_range() {
     for (auto &y : yield) {
         y /= min_element;
     }
+
+    // // if using all the runs, use this snippet
+    // std::vector<double_t> yield(runs.size(), 0.0);
+
+    // for (size_t i = 0; i < runs.size(); ++i) {
+    //     yield[i] = plot_yield_scaler(runs[i], currents[i], correction);
+    //     if (yield[i] > 0)
+    //         std::cout << "Run " << runs[i] << ": Yield/Charge = " << yield[i] << std::endl;
+    // }
+
+
     
 
     // Plot yield vs current

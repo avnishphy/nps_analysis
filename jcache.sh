@@ -38,7 +38,7 @@
 #     echo "Executing command: ${jcacheCMD}" 
 #     eval ${jcacheCMD}    
 
-for run in {6845..6849}   ; do
+for run in {6850..6854}   ; do
     # for file in /mss/hallc/c-nps/raw/nps_coin_${run}.dat.* ; do
     for file in /mss/hallc/c-nps/analysis/pass1/replays/skim/nps_hms_skim_${run}_1_-1.root; do
         if [ -e "$file" ]; then

@@ -21,23 +21,7 @@ void extractValue(const std::string &line, double &value) {
 
 
 int main() {
-    // vector<int> run;
-
-    // std::cout << "Enter run number:  ";
-    // std::cin >> run;
-
-    // vector<int> runs = run; // Hardcoded run numbers
-
-    vector<int> runs;
-    cout << "Enter run numbers (space-separated): ";
-    string input;
-    getline(cin >> ws, input);  // ws to consume any leading whitespace
-    istringstream iss(input);
-    int r;
-    while (iss >> r) {
-        runs.push_back(r);
-    }
-
+    vector<int> runs = {6828, 6829, 6830, 6831, 6832, 6833, 6834, 6835, 6836, 6837, 6838, 6839, 6840}; // Hardcoded run numbers
     // string base_path = "/w/hallc-scshelf2102/nps/nps-ana/REPORT_OUTPUT_pass1/COIN/";
     string base_path = "/lustre24/expphy/volatile/hallc/nps/singhav/REPORT_OUTPUT/COIN/";
     double total_effective_charge = 0.0;

@@ -7,27 +7,27 @@
 
 void plot_W_distribution() {
     // Load Data and SIMC File
-    int run = 1250;
-    std::string filename = Form("/lustre24/expphy/volatile/hallc/nps/singhav/ROOTfiles/hms_elastics/nps_hms_elastics_%d_0_1_-1.root", run);
-    TFile *data_file = new TFile(filename.c_str(), "READ");
+    int run = 68000;
+    // std::string filename = Form("/lustre24/expphy/volatile/hallc/nps/singhav/ROOTfiles/hms_elastics/nps_hms_elastics_%d_0_1_-1.root", run);
+    // TFile *data_file = new TFile(filename.c_str(), "READ");
     // TFile *data_file = new TFile("/lustre24/expphy/cache/hallc/c-nps/analysis/pass1/replays/production/elastics/nps_hms_coin_0_1_-1.root", "READ");
-    TFile *simc_file = new TFile("/u/group/nps/singhav/simc_gfortran/worksim/eep_hydrogen_1250.root", "READ");
+    TFile *simc_file = new TFile("/u/group/nps/singhav/simc_gfortran/worksim/eep_hydrogen_6828_6841.root", "READ");
     // std::string filename_simc = Form("/u/group/nps/singhav/simc_gfortran/worksim/eep_hydrogen_%d.root", run);
     // TFile *simc_file = new TFile(filename_simc.c_str(), "READ");
     TFile *dummy_file = new TFile("/lustre24/expphy/volatile/hallc/nps/singhav/ROOTfiles/hms_elastics/nps_hms_elastics_6705_0_1_-1.root", "READ");
 
-    // TChain *data_tree = new TChain("T");
-    // // // Loop over the range 6828 to 6840 (inclusive)
-    // for (int i = 6828; i <= 6840; i++) {
-    //     data_tree->Add(Form("/lustre24/expphy/volatile/hallc/nps/singhav/ROOTfiles/nps_hms_coin_%d_0_1_-1.root", i));
-    // }
+    TChain *data_tree = new TChain("T");
+    // // Loop over the range 6828 to 6840 (inclusive)
+    for (int i = 6828; i <= 6840; i++) {
+        data_tree->Add(Form("/lustre24/expphy/volatile/hallc/nps/singhav/ROOTfiles/hms_elastics/nps_hms_elastics_%d_0_1_-1.root", i));
+    }
 
     // if (!data_file || data_file->IsZombie() || !simc_file || simc_file->IsZombie()) {
     //     std::cerr << "Error: Unable to open files!" << std::endl;
     //     return;
     // }
 
-    TTree *data_tree = (TTree*) data_file->Get("T");
+    // TTree *data_tree = (TTree*) data_file->Get("T");
     TTree *simc_tree = (TTree*) simc_file->Get("h10");
     TTree *dummy_tree = (TTree*) dummy_file->Get("T");
 
@@ -226,8 +226,17 @@ void plot_W_distribution() {
 
     // Apply Weight and Normalize SIMC Histogram
 
-    // double_t normfac = 0.671016E+07; // HMS 4042 run 6834 Ebeam 6.3967
-    double_t normfac = 0.166473E+08;
+    double_t normfac = 0.672355E+07s; //6828-6840
+    // double_t normfac = 0.166473E+08; //1250
+    // double_t normfac = 0.164131E+08; //1251-1252
+    // double_t normfac = //1253
+    // double_t normfac = //1534
+    // double_t normfac = //1535
+    // double_t normfac = //1536
+    // double_t normfac = // 
+    // double_t normfac = //1714
+    // double_t normfac = 0.163935E+08; //1715 and 1716
+
     double_t nevents = 100000;
     double_t weight_factor = normfac / nevents;
     double_t full_weight;
@@ -272,7 +281,7 @@ void plot_W_distribution() {
     hod_effic = 0.999618;
     
     // effective_charge_data = 46266.080/(1000*hms_tracking_effic*hgc_cerenkov_effic*hod_effic); 
-    // effective_charge_data = 456.999; //"combined data" file using effective_charge.cxx script
+    effective_charge_data = 456.999; //"combined data" file using effective_charge.cxx script
     // effective_charge_data = 34.4342; //6828
     // effective_charge_data = 37.3549; //6829
     // effective_charge_data = 38.8534; //6830
@@ -286,7 +295,7 @@ void plot_W_distribution() {
     // effective_charge_data = 40.4742; //6838
     // effective_charge_data = 35.1548; //6839
     // effective_charge_data = 35.5669; //6840
-    effective_charge_data = 39.5321; //1250
+    // effective_charge_data = 39.5321; //1250
     // effective_charge_data = 35.1559; //1251
     // effective_charge_data = 23.715; //1252
     // effective_charge_data = 53.3532; //1253

@@ -43,7 +43,7 @@ int main() {
     double total_effective_charge = 0.0;
 
     for (int run : runs) {
-        string filename = base_path + "coin_NPS_HMS_report_" + to_string(run) + "_0_1_-1.report";
+        string filename = base_path + "coin_NPS_HMS_report_" + to_string(run) + "_8_1_-1.report";
         ifstream file(filename);
         if (!file) {
             cerr << "Error opening file: " << filename << endl;

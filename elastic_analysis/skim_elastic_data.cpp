@@ -1,4 +1,4 @@
-// compilation tcsh: g++ skim_pi0_data.cpp `root-config --cflags --libs` -o skim_pi0_data    
+// compilation tcsh: g++ skim_elastic_data.cpp `root-config --cflags --libs` -o skim_elastic_data    
 // usage single segment: ./skim_pi0_data 1234 1 false
 // usage all segment: ./skim_pi0_data 1234
 
@@ -12,9 +12,9 @@
 #include <vector>
 #include <filesystem>
 
-void skim_pi0_data(int run, int maxSegment = 100, bool mergeAllSegments = true) {
-    TString inputDir = "/lustre24/expphy/cache/hallc/c-nps/analysis/pass2/replays/updated/";
-    TString outputDir = "/lustre24/expphy/volatile/hallc/nps/singhav/ROOTfiles/pi0_skimmed/";
+void skim_elastic_data(int run, int maxSegment = 18, bool mergeAllSegments = true) {
+    TString inputDir = "/lustre24/expphy/volatile/hallc/nps/singhav/ROOTfiles/hms_elastics/";
+    TString outputDir = "/lustre24/expphy/volatile/hallc/nps/singhav/ROOTfiles/hms_elastics_skimmed/";
     TString outputFileName = Form("nps_hms_coin_skimmed_%d.root", run);
     TString fullOutputPath = outputDir + outputFileName;
 
@@ -22,10 +22,10 @@ void skim_pi0_data(int run, int maxSegment = 100, bool mergeAllSegments = true) 
 
     int filesAdded = 0;
     for (int seg = 0; seg < maxSegment; ++seg) {
-        TString fileName = Form("nps_hms_coin_%d_%d_1_-1.root", run, seg);
+        TString fileName = Form("nps_hms_elastics_%d_%d_1_-1.root", run, seg);
         TString fullPath = inputDir + fileName;
 
-        if (!std::filesystem::exists(fullPath.Data())) break;  // No more segments
+        if (!std::filesystem::exists(fullPath.Data())) continue;  // No more segments
         chain.Add(fullPath);
         ++filesAdded;
 
@@ -41,31 +41,22 @@ void skim_pi0_data(int run, int maxSegment = 100, bool mergeAllSegments = true) 
     chain.SetBranchStatus("*", 0);
 
     // Enable only needed branches
-    chain.SetBranchStatus("T.hms.hEDTM_tdcTimeRaw", 1);
-    chain.SetBranchStatus("T.hms.hTRIG1_tdcTimeRaw", 1);
-    chain.SetBranchStatus("T.hms.hTRIG2_tdcTimeRaw", 1);
-    chain.SetBranchStatus("T.hms.hTRIG3_tdcTimeRaw", 1);
-    chain.SetBranchStatus("T.hms.hTRIG4_tdcTimeRaw", 1);
-    chain.SetBranchStatus("T.hms.hTRIG5_tdcTimeRaw", 1);
-    chain.SetBranchStatus("T.hms.hTRIG6_tdcTimeRaw", 1);
-    chain.SetBranchStatus("H.cal.etot", 1);
-    chain.SetBranchStatus("H.cal.etotnorm", 1);
+    chain.SetBranchStatus("H.kin.W", 1);
+    chain.SetBranchStatus("H.kin.x_bj", 1);
+    chain.SetBranchStatus("H.cal.etottracknorm", 1);
+    chain.SetBranchStatus("H.hod.goodscinhit", 1);
     chain.SetBranchStatus("H.cer.npeSum", 1);
     chain.SetBranchStatus("H.gtr.dp", 1);
     chain.SetBranchStatus("H.gtr.th", 1);
     chain.SetBranchStatus("H.gtr.ph", 1);
-    chain.SetBranchStatus("H.gtr.p", 1);
-    chain.SetBranchStatus("H.gtr.px", 1);
-    chain.SetBranchStatus("H.gtr.py", 1);
-    chain.SetBranchStatus("H.gtr.pz", 1);
-    chain.SetBranchStatus("H.gtr.x", 1);
     chain.SetBranchStatus("H.gtr.y", 1);
-    chain.SetBranchStatus("NPS.cal.nclust", 1);
-    chain.SetBranchStatus("NPS.cal.clusE", 1);
-    chain.SetBranchStatus("NPS.cal.clusX", 1);
-    chain.SetBranchStatus("NPS.cal.clusY", 1);
-    chain.SetBranchStatus("NPS.cal.clusT", 1);
-   
+    chain.SetBranchStatus("H.react.z", 1);
+    chain.SetBranchStatus("H.kin.scat_ang_deg", 1);
+    chain.SetBranchStatus("H.kin.Q2", 1);
+    chain.SetBranchStatus("H.dc.x_fp", 1);
+    chain.SetBranchStatus("H.dc.y_fp", 1);
+    chain.SetBranchStatus("H.dc.xp_fp", 1);
+    chain.SetBranchStatus("H.dc.yp_fp", 1);
 
     // Create skimmed output file
     TFile *fout = TFile::Open(fullOutputPath, "RECREATE");
@@ -101,7 +92,6 @@ int main(int argc, char* argv[]) {
     int maxSeg = (argc >= 3) ? std::stoi(argv[2]) : 100;
     bool mergeAll = (argc >= 4) ? std::stoi(argv[3]) != 0 : true;
 
-    skim_pi0_data(run, maxSeg, mergeAll);
+    skim_elastic_data(run, maxSeg, mergeAll);
     return 0;
 }
-

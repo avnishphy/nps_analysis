@@ -1,7 +1,7 @@
 void merge_chains_by_setting() {
-  const std::string baseDir = "./data/hms_elastics_skimmed/";
+  const std::string baseDir = "./data/hms_elastics_w_offsets_skimmed/";
   const std::string treeName = "T";
-  const std::string outputDir = "./data/merged_elastics/";
+  const std::string outputDir = "./data/merged_elastics_w_offsets/";
 
   gSystem->mkdir(outputDir.c_str(), true);  // create output dir if it doesn't exist
 

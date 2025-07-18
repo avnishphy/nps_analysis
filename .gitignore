@@ -2,4 +2,7 @@ elastic_analysis/elastic_plots/
 pi0_analysis/data/
 elastic_analysis/data/
 elastic_analysis/diagnostic_plots/
-pi0_analysis.tar.gz
+elastic_analysis/diagnostic_plots_offsets/
+elastic_analysis/diagnostic_plots_w_offsets/
+elastic_analysis/settings_with_kinematics_w_offsets.csv
+elastic_analysis/settings_with_kinematics.csv

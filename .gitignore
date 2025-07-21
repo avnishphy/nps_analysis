@@ -6,3 +6,6 @@ elastic_analysis/diagnostic_plots_offsets/
 elastic_analysis/diagnostic_plots_w_offsets/
 elastic_analysis/settings_with_kinematics_w_offsets.csv
 elastic_analysis/settings_with_kinematics.csv
+pi0_analysis/*.png
+pi0_analysis/*.csv
+

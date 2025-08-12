@@ -7,4 +7,5 @@ elastic_analysis/diagnostic_plots_w_offsets/
 elastic_analysis/*.csv
 pi0_analysis/*.png
 pi0_analysis/*.csv
+pi0_analysis/plots_miss_mass/
 simc_data_analysis/

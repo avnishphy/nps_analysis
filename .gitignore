@@ -1,36 +1,50 @@
+# -------------------------------
+# Project-specific outputs/data
+# -------------------------------
+
+# Elastic analysis
 elastic_analysis/elastic_plots/
-pi0_analysis/data/
-elastic_analysis/data/
 elastic_analysis/diagnostic_plots/
 elastic_analysis/diagnostic_plots_offsets/
 elastic_analysis/diagnostic_plots_w_offsets/
 elastic_analysis/*.csv
+elastic_analysis/data/
+
+# Pi0 analysis
+pi0_analysis/data/
 pi0_analysis/*.png
 pi0_analysis/*.csv
-pi0_analysis/plots_miss_mass/
-simc_data_analysis/
-
-# Ignore Python cache files
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Ignore Jupyter checkpoints
-.ipynb_checkpoints/
-
-# Ignore temporary/notebook outputs you don't want to track
 pi0_analysis/*.npz
 pi0_analysis/pi0_masses_*.txt
 pi0_analysis/csv_files/
 pi0_analysis/timing_results/
+pi0_analysis/plots_miss_mass/
 
-# Ignore local environment folders
+# SIMC / other large data
+simc_data_analysis/
+
+# -------------------------------
+# Python / Jupyter temporary files
+# -------------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+
+# -------------------------------
+# Local environment
+# -------------------------------
 pi0_analysis/root_analysis_env/output/
 
+# -------------------------------
+# Clustering code folder
+# -------------------------------
 clustering_techs/
 
-# OS files
+# -------------------------------
+# OS / editor junk
+# -------------------------------
 .DS_Store
 *.swp
 *.swo

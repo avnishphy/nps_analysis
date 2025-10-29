@@ -1,0 +1,7 @@
+# One run number or run:specificSegments per line
+# Example:
+4380
+4437
+#12346:0-3
+# Or full path(s) if you prefer
+# /path/to/nps_12345_0.root

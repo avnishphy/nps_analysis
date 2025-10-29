@@ -1,0 +1,43 @@
+# List of branches to enable (one per line) for skim stage and other modules.
+# Lines starting with # are comments and ignored.
+
+
+# Example calorimeter clusters (NPS)
+NPS.cal.nclust
+NPS.cal.clusE
+NPS.cal.clusX
+NPS.cal.clusY
+NPS.cal.clusT
+
+
+# HMS electron branches
+
+H.hod.goodscinhit
+H.hod.betanotrack
+H.dc.ntrack
+H.cal.etot
+H.cal.etotnorm
+H.cal.etottracknorm 
+H.cal.etrack 
+H.cal.etracknorm
+H.cer.npeSum
+H.gtr.dp
+H.gtr.th
+H.gtr.ph
+H.gtr.y
+H.gtr.p 
+H.gtr.px 
+H.gtr.py 
+H.gtr.pz
+H.gtr.x
+H.gtr.y
+H.react.z
+
+
+# Event metadata
+#run
+#event
+#segment
+
+
+# Add anything else you need for a given analysis module

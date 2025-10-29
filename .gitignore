@@ -9,3 +9,28 @@ pi0_analysis/*.png
 pi0_analysis/*.csv
 pi0_analysis/plots_miss_mass/
 simc_data_analysis/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Ignore temporary/notebook outputs you don't want to track
+pi0_analysis/*.npz
+pi0_analysis/pi0_masses_*.txt
+pi0_analysis/csv_files/
+pi0_analysis/timing_results/
+
+# Ignore local environment folders
+pi0_analysis/root_analysis_env/output/
+
+clustering_techs/
+
+# OS files
+.DS_Store
+*.swp
+*.swo

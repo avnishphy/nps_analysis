@@ -2,7 +2,7 @@
 # Lines starting with # are comments and ignored.
 
 
-# Example calorimeter clusters (NPS)
+# NPS Calorimeter branches 
 NPS.cal.nclust
 NPS.cal.clusE
 NPS.cal.clusX
@@ -33,6 +33,64 @@ H.gtr.x
 H.gtr.y
 H.react.z
 
+# Scalers
+
+H.BCM4A.scaler
+H.BCM4A.scalerCharge
+H.BCM4A.scalerChargeCut
+H.BCM4A.scalerCurrent
+H.BCM4A.scalerCut
+
+H.BCM2.scaler
+H.BCM2.scalerCharge
+H.BCM2.scalerChargeCut
+H.BCM2.scalerCurrent
+H.BCM2.scalerCut
+
+H.hTRIG4.scaler
+H.hTRIG4.scalerCut
+H.hTRIG4.scalerRate
+T.hms.hTRIG4_tdcTimeRaw
+T.hms.hTRIG4_tdcMultiplicity
+
+H.hTRIG3.scaler
+H.hTRIG3.scalerCut
+H.hTRIG3.scalerRate
+T.hms.hTRIG3_tdcTimeRaw
+T.hms.hTRIG3_tdcMultiplicity
+
+H.EDTM.scaler
+
+H.hL1ACCP.scaler
+H.hEL_REAL.scaler
+H.1MHz.scalerTime
+
+H.S1X.scaler
+H.S1X.scalerCut
+H.S1X.scalerRate
+
+H.S1Y.scaler
+H.S1Y.scalerCut
+H.S1Y.scalerRate
+
+H.S1XS1Y.scaler
+H.S1XS1Y.scalerCut
+H.S1XS1Y.scalerRate
+
+H.S2X.scaler
+H.S2X.scalerCut
+H.S2X.scalerRate
+
+H.S2Y.scaler
+H.S2Y.scalerCut
+H.S2Y.scalerRate
+
+H.S2XS2Y.scaler
+H.S2XS2Y.scalerCut
+H.S2XS2Y.scalerRate
+
+T.hms.hEDTM_tdcTimeRaw
+T.hms.hTRIG4_tdcTimeRaw
 
 # Event metadata
 #run

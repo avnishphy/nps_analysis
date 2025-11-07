@@ -220,7 +220,7 @@ inline CoincidenceBGResult estimate_coincidence_background_default(TH2D *h2,
     // errors add in quadrature with scaling factors:
     R.n_accidentals_err = std::sqrt( nps::sqr(err_diag) + nps::sqr(0.5*err_ver) + nps::sqr(0.5*err_hor) + nps::sqr(0.5*err_full1) + nps::sqr(0.5*err_full2) );
 
-    // 8) Print a verbose summary to stdout (also available via R.summary())
+    // // 8) Print a verbose summary to stdout (also available via R.summary())
     std::cout << "[nps::estimate_coincidence_background_default] Summary:\n";
     std::cout << " Coincidence box: [" << coin_x_lo << "," << coin_x_hi << "] x [" << coin_y_lo << "," << coin_y_hi << "]\n";
     std::cout << "  raw coin counts = " << R.n_coin_raw << "   area (ns^2) = " << R.area_coin << "\n";

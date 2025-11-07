@@ -51,29 +51,87 @@ vector<int> readRunList(const string &fname) {
 // ============================================================
 // Helper: choose best pair from indices that produce invariant mass closest to pi0 mass
 // returns pair indices (i,j) relative to good_idx vector; -1,-1 if not found
+// pair<int,int> choose_best_pair_closest_pi0(const vector<int> &good_idx,
+//                                            double *clusE, double *clusX, double *clusY,
+//                                            double z_nps, double target = nps::kPi0Mass_GeV)
+// {
+//     int best_i=-1, best_j=-1;
+//     double best_diff = 1e9;
+//     const int n = (int)good_idx.size();
+//     for (int a = 0; a < n; ++a) {
+//         for (int b = a+1; b < n; ++b) {
+//             int ia = good_idx[a], ib = good_idx[b];
+//             double m = nps::invariant_mass_pi0(clusE[ia], clusE[ib],
+//                                               clusX[ia], clusX[ib],
+//                                               clusY[ia], clusY[ib],
+//                                               z_nps);
+//             double d = std::fabs(m - target);
+//             if (d < best_diff) {
+//                 best_diff = d;
+//                 best_i = ia; best_j = ib;
+//             }
+//         }
+//     }
+//     return {best_i, best_j};
+// }
+
+// Choose the best photon pair (indices into clus arrays) whose invariant mass is
+// closest to the target π0 mass AND whose cluster times differ by <= time_thresh_ns.
+// - good_idx: vector of candidate cluster indices (indices into clusE/clusX/clusY/clusT)
+// - clusE, clusX, clusY, clusT: arrays of cluster properties
+// - z_nps: distance to NPS (cm), used by invariant_mass_pi0
+// - target: target invariant mass (GeV), default = nps::kPi0Mass_GeV
+// - time_thresh_ns: maximum allowed |t_i - t_j| in ns (default 2.0)
+// Returns pair<int,int> = {index_i, index_j} (indices into the clus arrays), or {-1,-1}
 pair<int,int> choose_best_pair_closest_pi0(const vector<int> &good_idx,
-                                           double *clusE, double *clusX, double *clusY,
-                                           double z_nps, double target = nps::kPi0Mass_GeV)
+                                           double *clusE, double *clusX, double *clusY, double *clusT,
+                                           double z_nps,
+                                           double target = nps::kPi0Mass_GeV,
+                                           double time_thresh_ns = 2.0)
 {
-    int best_i=-1, best_j=-1;
+    int best_i = -1, best_j = -1;
     double best_diff = 1e9;
-    const int n = (int)good_idx.size();
+    double best_totalE = -1.0; // tie-breaker: prefer pair with larger total energy
+    const int n = static_cast<int>(good_idx.size());
+    if (n < 2) return { -1, -1 };
+
     for (int a = 0; a < n; ++a) {
-        for (int b = a+1; b < n; ++b) {
-            int ia = good_idx[a], ib = good_idx[b];
-            double m = nps::invariant_mass_pi0(clusE[ia], clusE[ib],
-                                              clusX[ia], clusX[ib],
-                                              clusY[ia], clusY[ib],
-                                              z_nps);
-            double d = std::fabs(m - target);
+        for (int b = a + 1; b < n; ++b) {
+            const int ia = good_idx[a];
+            const int ib = good_idx[b];
+
+            // time difference requirement: enforce clusters be within time_thresh_ns
+            const double dt = std::fabs(clusT[ia] - clusT[ib]);
+            if (dt > time_thresh_ns) continue; // skip pairs not within timing window
+
+            // compute invariant mass for this pair
+            const double m = nps::invariant_mass_pi0(clusE[ia], clusE[ib],
+                                                    clusX[ia], clusX[ib],
+                                                    clusY[ia], clusY[ib],
+                                                    z_nps);
+            const double d = std::fabs(m - target);
+
             if (d < best_diff) {
                 best_diff = d;
-                best_i = ia; best_j = ib;
+                best_i = ia;
+                best_j = ib;
+                best_totalE = clusE[ia] + clusE[ib];
+            } else if (std::fabs(d - best_diff) < 1e-12) {
+                // tie-breaker: choose the pair with larger summed energy
+                double totalE = clusE[ia] + clusE[ib];
+                if (totalE > best_totalE) {
+                    best_i = ia;
+                    best_j = ib;
+                    best_totalE = totalE;
+                }
             }
         }
     }
-    return {best_i, best_j};
+
+    // If no pair passed the timing requirement, best_i/j remain -1
+    return { best_i, best_j };
 }
+
 
 // ============================================================
 // Main analysis macro
@@ -173,6 +231,8 @@ void nps_analysis1(const TString &skimDir_in="output/skimmed/",
         // DVCS histos
         TH1D *h_mmiss_dvcs = new TH1D("h_mmiss_dvcs", "Missing mass (DVCS-like single photon);M_{miss} [GeV];Events", 200, 0.0, 2.0);
         TH1D *h_mpi0_all = new TH1D("h_mpi0_all", "Invariant mass (all selected best-pairs);M_{#gamma#gamma} [GeV];Events", 200, 0.0, 0.4);
+        TH1D *h_m_pi0_coin = new TH1D("h_m_pi0_coin", "Invariant Mass #pi^{0} (Coincidence Window);M_{#gamma#gamma} [GeV];Counts", 200, 0.0, 0.4);
+        TH1D *h_m_pi0_acc = new TH1D("h_m_pi0_acc", "Invariant Mass #pi^{0} (Outside Coincidence Window);M_{#gamma#gamma} [GeV];Counts", 200, 0.0, 0.4);
 
         // choose binning & range to cover sidebands and coincidence window; tune as needed
         const double t_min = 140.0; // ns
@@ -184,6 +244,8 @@ void nps_analysis1(const TString &skimDir_in="output/skimmed/",
         // Optionally make 1D projections (filled later), create them now:
         TH1D *h_t1_proj = new TH1D("h_t1_proj", "t1 projection; t1 [ns];Entries", nbins_t, t_min, t_max);
         TH1D *h_t2_proj = new TH1D("h_t2_proj", "t2 projection; t2 [ns];Entries", nbins_t, t_min, t_max);
+
+
 
 
         // counters & multiplicity bookkeeping
@@ -275,7 +337,7 @@ void nps_analysis1(const TString &skimDir_in="output/skimmed/",
             if (good_idx.size() == 2) {
                 sel_i = good_idx[0]; sel_j = good_idx[1];
             } else {
-                auto pr = choose_best_pair_closest_pi0(good_idx, clusE, clusX, clusY, DNPS_CM, nps::kPi0Mass_GeV);
+                auto pr = choose_best_pair_closest_pi0(good_idx, clusE, clusX, clusY, clusT, DNPS_CM, nps::kPi0Mass_GeV);
                 sel_i = pr.first; sel_j = pr.second;
                 if (sel_i < 0 || sel_j < 0) continue; // safety
             }
@@ -316,6 +378,27 @@ void nps_analysis1(const TString &skimDir_in="output/skimmed/",
             else if (good_idx.size() == 4) h_mmiss_4->Fill(mm_p);
 
             ++n_selected_for_analysis;
+
+            //---------------------------------------------
+            // Define coincidence window for NPS cluster timing
+            //---------------------------------------------
+            const double coin_lo = 149.0;
+            const double coin_hi = 151.0;
+
+            // Use the average of the two selected NPS cluster times as the coincidence time
+            const double coin_time = 0.5 * (clusT[sel_i] + clusT[sel_j]);
+
+            //---------------------------------------------
+            // Fill invariant-mass histograms for timing comparison
+            //---------------------------------------------
+            if (coin_time > coin_lo && coin_time < coin_hi) {
+                // Inside coincidence window
+                h_m_pi0_coin->Fill(m_pi0_sel);
+            } else {
+                // Outside coincidence window (accidentals)
+                h_m_pi0_acc->Fill(m_pi0_sel);
+            }
+
         } // end event loop
 
         cout << endl;
@@ -352,11 +435,15 @@ void nps_analysis1(const TString &skimDir_in="output/skimmed/",
 
         nps_bg::CoincidenceBGResult bg = nps_bg::estimate_coincidence_background_default(h_t1_t2);
         // Print a concise summary to both cout and logmsg
-        std::cout << "========== Coincidence timing BG estimate (run " << run << ") =============\n";
-        std::cout << bg.summary() << std::endl;
+        // std::cout << "========== Coincidence timing BG estimate (run " << run << ") =============\n";
+        // std::cout << bg.summary() << std::endl;
 
         logmsg(INFO, Form("Run %d: coin_raw=%.1f estimated_accidentals=%.3f +- %.3f",
             run, bg.n_coin_raw, bg.n_accidentals, bg.n_accidentals_err));
+
+        // Fit and print result; draw and save PNG in outPlotDir. Provide run number for naming.
+        nps::FitResult fitres = nps::fit_pi0_peak(h_mpi0_all, 0.02, 0.30, true, outPlotDir, run);
+
 
         // Optionally draw rectangles on the 2D hist to visualize the boxes (one-time canvas)
         // Save a canvas PNG of the 2D plot with coin box overlay:
@@ -508,6 +595,85 @@ void nps_analysis1(const TString &skimDir_in="output/skimmed/",
 
         // Save canvas (PNG and also write canvas into output ROOT file)
         c_t12->SaveAs(Form("%s/t1t2_run%d.png", outPlotDir.Data(), run));
+        
+        //---------------------------------------------
+        // Save and visualize all π0 invariant mass distributions
+        //---------------------------------------------
+        TCanvas *c_pi0_coin = new TCanvas("c_pi0_coin", "Pi0 Invariant Mass Distributions", 800, 600);
+
+        // Style settings
+        h_mpi0_all->SetLineColor(kBlack);
+        h_mpi0_all->SetLineWidth(2);
+        h_mpi0_all->SetTitle(";Invariant Mass M_{#gamma#gamma} [GeV];Counts");
+
+        h_m_pi0_coin->SetLineColor(kBlue);
+        h_m_pi0_coin->SetLineWidth(2);
+
+        h_m_pi0_acc->SetLineColor(kRed);
+        h_m_pi0_acc->SetLineStyle(2);
+        h_m_pi0_acc->SetLineWidth(2);
+
+        // Draw histograms
+        h_mpi0_all->Draw("HIST");              // draw all first for axis scaling
+        h_m_pi0_coin->Draw("HIST SAME");
+        h_m_pi0_acc->Draw("HIST SAME");
+
+        // Legend
+        TLegend *leg_pi0 = new TLegend(0.55, 0.68, 0.88, 0.88);
+        leg_pi0->AddEntry(h_mpi0_all,  "All selected #pi^{0} candidates", "l");
+        leg_pi0->AddEntry(h_m_pi0_coin, "Coincidence Window [149,151] ns", "l");
+        leg_pi0->AddEntry(h_m_pi0_acc,  "Outside Coincidence Window (Accidentals)", "l");
+        leg_pi0->Draw();
+
+        // Save plots
+        c_pi0_coin->SaveAs(Form("output/plots/pi0_invmass_all_coin_acc_run%d_10ns.png", run));
+
+
+        // //---------------------------------------------
+        // // Compute and print integral of accidental π0 histogram in ROI [0.12, 0.14] GeV
+        // //---------------------------------------------
+        // const double roi_low = 0.12;
+        // const double roi_high = 0.14;
+
+        // // Find the corresponding bin indices
+        // int bin_lo = h_m_pi0_acc->FindBin(roi_low);
+        // int bin_hi = h_m_pi0_acc->FindBin(roi_high);
+
+        // // Compute integral and error
+        // double acc_int_err = 0.0;
+        // double acc_int = h_m_pi0_acc->IntegralAndError(bin_lo, bin_hi, acc_int_err);
+
+        // std::cout << Form("[INFO] Accidental π0 integral (%.3f–%.3f GeV) = %.3f ± %.3f",
+        //                 roi_low, roi_high, acc_int, acc_int_err) << std::endl;
+
+        //---------------------------------------------
+        // Compute and print integrals for all π0 histograms in [0.12, 0.14] GeV
+        //---------------------------------------------
+        const double roi_low = 0.12;
+        const double roi_high = 0.14;
+
+        auto get_integral = [&](TH1 *hist, const char *label, int color, double ypos) {
+            int bin_lo = hist->FindBin(roi_low);
+            int bin_hi = hist->FindBin(roi_high);
+            double err = 0.0;
+            double val = hist->IntegralAndError(bin_lo, bin_hi, err);
+            std::cout << Form("[INFO] %s π0 integral (%.3f–%.3f GeV) = %.3f ± %.3f",
+                            label, roi_low, roi_high, val, err)
+                    << std::endl;
+
+            // Draw annotation on plot (optional)
+            TLatex latex;
+            latex.SetNDC();
+            latex.SetTextColor(color);
+            latex.SetTextSize(0.03);
+            latex.DrawLatex(0.18, ypos,
+                            Form("%s: %.0f ± %.1f", label, val, err));
+        };
+
+        get_integral(h_mpi0_all, "All", kBlack, 0.88);
+        get_integral(h_m_pi0_coin, "Coinc", kBlue + 1, 0.83);
+        get_integral(h_m_pi0_acc, "Accid", kRed + 1, 0.78);
+
 
         // -------------------------
         // Save histograms to root file
@@ -524,6 +690,8 @@ void nps_analysis1(const TString &skimDir_in="output/skimmed/",
             h_mmiss_3->Write();
             h_mmiss_4->Write();
             h_mmiss_dvcs->Write();
+            h_m_pi0_coin->Write();
+            h_m_pi0_acc->Write();
 
             h_t1_t2->Write("h_t1_t2", TObject::kOverwrite);
             h_t1_proj->Write("h_t1_proj", TObject::kOverwrite);
@@ -539,6 +707,37 @@ void nps_analysis1(const TString &skimDir_in="output/skimmed/",
             p_coin_raw.Write();
             p_acc_est.Write();
             p_acc_err.Write();
+
+            
+            // Write fit scalars
+            TParameter<double> p_mean("pi0_mean_GeV", fitres.mean);
+            TParameter<double> p_mean_err("pi0_mean_err_GeV", fitres.mean_err);
+            TParameter<double> p_sigma("pi0_sigma_GeV", fitres.sigma);
+            TParameter<double> p_sigma_err("pi0_sigma_err_GeV", fitres.sigma_err);
+            TParameter<double> p_signal("pi0_signal", fitres.gauss_integral);
+            TParameter<double> p_signal_err("pi0_signal_err", fitres.gauss_integral_err);
+            TParameter<double> p_bg("pi0_bg", fitres.bg_integral);
+            TParameter<double> p_bg_err("pi0_bg_err", fitres.bg_integral_err);
+            TParameter<double> p_chi2("pi0_chi2", fitres.chi2);
+            TParameter<int> p_ndf("pi0_ndf", fitres.ndf);
+            p_mean.Write("", TObject::kOverwrite);
+            p_mean_err.Write("", TObject::kOverwrite);
+            p_sigma.Write("", TObject::kOverwrite);
+            p_sigma_err.Write("", TObject::kOverwrite);
+            p_signal.Write("", TObject::kOverwrite);
+            p_signal_err.Write("", TObject::kOverwrite);
+            p_bg.Write("", TObject::kOverwrite);
+            p_bg_err.Write("", TObject::kOverwrite);
+            p_chi2.Write("", TObject::kOverwrite);
+            p_ndf.Write("", TObject::kOverwrite);
+
+            // If fit drew a canvas we named it c_pi0_fit_run<run>; write it to the file
+            if (!fitres.canvas_name.empty()) {
+                TCanvas *c = (TCanvas*)gROOT->FindObject(fitres.canvas_name.c_str());
+                if (c) c->Write(fitres.canvas_name.c_str(), TObject::kOverwrite);
+            }
+
+
             fout->Close();
             logmsg(INFO, Form("Wrote diagnostics to %s", outf.Data()));
         } else {

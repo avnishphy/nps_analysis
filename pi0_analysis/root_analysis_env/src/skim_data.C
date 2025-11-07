@@ -54,8 +54,8 @@ void AddFilesWithWildcard(TChain* chain, const TString& pattern) {
 // Main skim function
 // ----------------------------------------------------------------------
 void skim_data(
-               const TString &inputDir="/mnt/d/avnish/nps_data_rootfiles_pass2_updated/LD2",
-            //    const TString &inputDir="/mnt/c/Users/as8oc/OneDrive/Documents/data_files_ifarm/LD2",
+               const TString &inputDir="/mnt/d/avnish/nps_data_rootfiles_pass2_updated/LH2",
+            //    const TString &inputDir="/mnt/c/Users/as8oc/OneDrive/Documents/data_files_ifarm/LH2",
                const TString &runlistPath="config/runlist_x60_4b.txt",
                const TString &outDir="output/skimmed/") {
 

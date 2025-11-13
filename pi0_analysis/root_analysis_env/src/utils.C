@@ -102,3 +102,23 @@ std::string trim(const std::string &s) {
     auto b = s.find_last_not_of(" \t\r\n");
     return s.substr(a, b-a+1);
 }
+
+// ------------------------------------------------------------------
+// Read run list (supports comments beginning '#')
+// ------------------------------------------------------------------
+vector<int> readRunList(const string &fname) {
+    vector<int> runs;
+    ifstream in(fname);
+    if (!in.is_open()) {
+        logmsg(WARN, "Cannot open runlist: " + fname);
+        return runs;
+    }
+    string line;
+    while (getline(in, line)) {
+        line = trim(line);
+        if (line.empty() || line[0] == '#') continue;
+        try { runs.push_back(stoi(line)); }
+        catch (...) { logmsg(WARN, "Skipping invalid runlist line: " + line); }
+    }
+    return runs;
+}

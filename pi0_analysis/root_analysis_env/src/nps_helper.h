@@ -158,6 +158,36 @@ inline double invariant_mass_pi0(double e1, double e2,
     return safe_sqrt(m2);
 }
 
+// --------------------------------------------------------------------
+// Opening angle between two photon clusters (radians)
+// Input order matches call site: (E1, E2, x1, x2, y1, y2, z_nps)
+// Energies are accepted but not used for the geometric angle (kept for symmetry).
+// Returns angle in radians; returns 0.0 on degenerate input.
+// --------------------------------------------------------------------
+inline double opening_angle_photons(double E1, double E2,
+                                    double x1, double x2,
+                                    double y1, double y2,
+                                    double z_nps = kDefaultZ_NPS_cm) noexcept
+{
+    // position vectors from target (0,0,0) to cluster centers (units: cm)
+    const Vec3 v1 = { x1, y1, z_nps };
+    const Vec3 v2 = { x2, y2, z_nps };
+
+    const double n1 = std::sqrt(dot3(v1, v1));
+    const double n2 = std::sqrt(dot3(v2, v2));
+
+    if (n1 <= 0.0 || n2 <= 0.0) return 0.0;
+
+    double cos_theta = dot3(v1, v2) / (n1 * n2);
+
+    // clamp numerical noise
+    if (cos_theta > 1.0) cos_theta = 1.0;
+    if (cos_theta < -1.0) cos_theta = -1.0;
+
+    return std::acos(cos_theta);
+}
+
+
 // --------------------
 // Missing mass for ep -> e' + pi0 + X (proton missing mass) using:
 // p_in = e_beam + proton_at_rest
@@ -281,7 +311,6 @@ struct FitResult {
 
     std::string canvas_name;          // name of the created canvas (if draw==true)
 };
-
 
 // Fit pi0 peak using: narrow gaussian (signal) + broad gaussian (low-mass background) + pedestal.
 // IMPORTANT: fit is performed in [fit_lo, fit_hi] (user-specified), but ALL integrals & returned yields
@@ -575,6 +604,305 @@ inline FitResult fit_pi0_peak(TH1D *h,
     return R;
 }
 
+// Put this in the same spot / header where your other helpers live.
+// Usage (example): TH1D* h_bgsub = nps::subtract_accidentals(h_m_pi0_coin, bg.n_accidentals, 0.02, 0.30, true, outPlotDir, run);
+// Caller should delete the returned histogram when finished.
+
+inline TH1D* subtract_accidentals(TH1D *h_coin,
+                                  double bg_n_accidentals,
+                                  double fit_lo = 0.02, double fit_hi = 0.30,
+                                  bool draw = true, const TString &outPlotDir = "", int run = -1,
+                                  // the fixed segmentation you requested:
+                                  double lin1_lo = 0.01, double lin1_hi = 0.115,
+                                  double gaus_lo = 0.115, double gaus_hi = 0.14,
+                                  double lin2_lo = 0.14, double lin2_hi = 0.25,
+                                  // gaussian shape defaults (you can change these when calling)
+                                  double gaus_mu = kPi0Mass_GeV, double gaus_sigma = 0.008)
+{
+    if (!h_coin) {
+        std::cerr << "[nps::subtract_accidentals] ERROR: null histogram\n";
+        return nullptr;
+    }
+    // Ensure Sumw2 is present
+    h_coin->Sumw2();
+
+    // Defensive sanity: clamp segments inside fit window
+    lin1_lo = std::max(lin1_lo, fit_lo);
+    lin2_hi = std::min(lin2_hi, fit_hi);
+    gaus_lo  = std::max(gaus_lo, fit_lo);
+    gaus_hi  = std::min(gaus_hi, fit_hi);
+
+    if (!(lin1_lo < lin1_hi && gaus_lo < gaus_hi && lin2_lo < lin2_hi)) {
+        std::cerr << "[nps::subtract_accidentals] ERROR: invalid segmentation ranges\n";
+        return nullptr;
+    }
+
+    // Naming helpers
+    TString base = (run >= 0) ? TString::Format("%s_run%d", h_coin->GetName(), run) : TString(h_coin->GetName());
+    TString cname = (run >= 0) ? TString::Format("c_bgsub_run%d", run) : TString("c_bgsub");
+
+    // convenience lambda: per-bin TF1->counts conversion across [a,b]
+    auto tf1_counts_in_range = [&](TF1 *f, TH1D *h, double a, double b)->double {
+        if (!f) return 0.0;
+        int bin_a = h->FindBin(a);
+        int bin_b = h->FindBin(b);
+        bin_a = std::max(1, bin_a);
+        bin_b = std::min(h->GetNbinsX(), bin_b);
+        double total = 0.0;
+        for (int ib = bin_a; ib <= bin_b; ++ib) {
+            double xlow = h->GetXaxis()->GetBinLowEdge(ib);
+            double xhigh = h->GetXaxis()->GetBinUpEdge(ib);
+            double lo = std::max(xlow, a);
+            double hi = std::min(xhigh, b);
+            if (hi <= lo) continue;
+            double cont = f->Integral(lo, hi); // continuous integral
+            double binw = (xhigh - xlow);
+            if (binw <= 0) continue;
+            double counts = cont / binw;
+            total += counts;
+        }
+        return total;
+    };
+
+    // ---- Fit left linear on [lin1_lo, lin1_hi] ----
+    TF1 *f_lin1 = new TF1(base + "_lin1", "[0] + [1]*x", fit_lo, fit_hi);
+    // init guesses from edge bins
+    int b_lo1 = h_coin->FindBin(lin1_lo), b_hi1 = h_coin->FindBin(lin1_hi);
+    b_lo1 = std::max(1, b_lo1); b_hi1 = std::min(h_coin->GetNbinsX(), b_hi1);
+    double v_lo1 = h_coin->GetBinContent(b_lo1), v_hi1 = h_coin->GetBinContent(b_hi1);
+    double p0_1 = std::max(0.0, v_lo1);
+    double p1_1 = (fabs(lin1_hi - lin1_lo) > 1e-12) ? ((v_hi1 - v_lo1) / (lin1_hi - lin1_lo)) : 0.0;
+    f_lin1->SetParameters(p0_1, p1_1);
+    f_lin1->SetParNames("lin1_p0", "lin1_p1");
+    // Fit only in left region
+    h_coin->Fit(f_lin1, Form("RQ0"), "", lin1_lo, lin1_hi);
+
+    // ---- Fit right linear on [lin2_lo, lin2_hi] ----
+    TF1 *f_lin2 = new TF1(base + "_lin2", "[0] + [1]*x", fit_lo, fit_hi);
+    int b_lo2 = h_coin->FindBin(lin2_lo), b_hi2 = h_coin->FindBin(lin2_hi);
+    b_lo2 = std::max(1, b_lo2); b_hi2 = std::min(h_coin->GetNbinsX(), b_hi2);
+    double v_lo2 = h_coin->GetBinContent(b_lo2), v_hi2 = h_coin->GetBinContent(b_hi2);
+    double p0_2 = std::max(0.0, v_lo2);
+    double p1_2 = (fabs(lin2_hi - lin2_lo) > 1e-12) ? ((v_hi2 - v_lo2) / (lin2_hi - lin2_lo)) : 0.0;
+    f_lin2->SetParameters(p0_2, p1_2);
+    f_lin2->SetParNames("lin2_p0", "lin2_p1");
+    h_coin->Fit(f_lin2, Form("RQ0"), "", lin2_lo, lin2_hi);
+
+    // compute integrated counts of both linears in their segments
+    double lin1_counts = tf1_counts_in_range(f_lin1, h_coin, lin1_lo, lin1_hi);
+    double lin2_counts = tf1_counts_in_range(f_lin2, h_coin, lin2_lo, lin2_hi);
+
+    // ---- Prepare Gaussian (we do NOT fit it to hist; amplitude determined by constraint) ----
+    TF1 *f_gaus = new TF1(base + "_gaus", "[0]*exp(-0.5*((x-[1])/[2])^2)", gaus_lo, gaus_hi);
+    // set mu and sigma from arguments (or sensible defaults)
+    f_gaus->SetParameters(1.0, gaus_mu, gaus_sigma); // amp=1 for now, we'll scale
+    f_gaus->SetParNames("G_amp", "G_mu", "G_sigma");
+    // keep mean/sigma fixed (not fit)
+    f_gaus->FixParameter(1, gaus_mu);
+    f_gaus->FixParameter(2, gaus_sigma);
+
+    // counts for gaussian with amp=1.0 across gaus segment
+    double gaus_counts_per_unit_amp = tf1_counts_in_range(f_gaus, h_coin, gaus_lo, gaus_hi);
+
+    // ---- Determine amplitude/scale such that total background integral equals bg_n_accidentals ----
+    double desired_gaus_counts = bg_n_accidentals - (lin1_counts + lin2_counts);
+
+    double final_lin1_p0 = f_lin1->GetParameter(0);
+    double final_lin1_p1 = f_lin1->GetParameter(1);
+    double final_lin2_p0 = f_lin2->GetParameter(0);
+    double final_lin2_p1 = f_lin2->GetParameter(1);
+    double final_gaus_amp = 0.0;
+
+    if (desired_gaus_counts <= 0.0) {
+        // left+right linear already >= requested — scale the linears down (or up) proportionally
+        double lin_total = lin1_counts + lin2_counts;
+        if (lin_total <= 0.0) {
+            // degenerate: no linear content; set all to zero
+            final_lin1_p0 = final_lin1_p1 = 0.0;
+            final_lin2_p0 = final_lin2_p1 = 0.0;
+            final_gaus_amp = 0.0;
+        } else {
+            double scale_lin = (bg_n_accidentals > 0.0) ? (bg_n_accidentals / lin_total) : 0.0;
+            final_lin1_p0 *= scale_lin; final_lin1_p1 *= scale_lin;
+            final_lin2_p0 *= scale_lin; final_lin2_p1 *= scale_lin;
+            final_gaus_amp = 0.0;
+        }
+    } else {
+        // we need a positive gaussian contribution
+        if (gaus_counts_per_unit_amp <= 0.0) {
+            // fallback: estimate amplitude via approximate continuous gaussian area conversion:
+            // area_cont = amp * sigma * sqrt(2*pi) * (erf fraction) ; but easier: place amplitude = desired_gaus_counts
+            final_gaus_amp = desired_gaus_counts;
+        } else {
+            final_gaus_amp = desired_gaus_counts / gaus_counts_per_unit_amp;
+        }
+    }
+
+    // create final TF1 copies for display (these use final params and can be written to file)
+    TF1 *f_lin1_final = new TF1(base + "_lin1_final", "[0] + [1]*x", fit_lo, fit_hi);
+    f_lin1_final->SetParameters(final_lin1_p0, final_lin1_p1);
+    TF1 *f_lin2_final = new TF1(base + "_lin2_final", "[0] + [1]*x", fit_lo, fit_hi);
+    f_lin2_final->SetParameters(final_lin2_p0, final_lin2_p1);
+    TF1 *f_gaus_final = new TF1(base + "_gaus_final", "[0]*exp(-0.5*((x-[1])/[2])^2)", fit_lo, fit_hi);
+    f_gaus_final->SetParameters(final_gaus_amp, gaus_mu, gaus_sigma);
+
+    // Compute the final integrals for reporting (over their segments)
+    double lin1_counts_final = tf1_counts_in_range(f_lin1_final, h_coin, lin1_lo, lin1_hi);
+    double lin2_counts_final = tf1_counts_in_range(f_lin2_final, h_coin, lin2_lo, lin2_hi);
+    double gaus_counts_final = tf1_counts_in_range(f_gaus_final, h_coin, gaus_lo, gaus_hi);
+    double total_bg_final = lin1_counts_final + gaus_counts_final + lin2_counts_final;
+
+    // --- Build bg-subtracted histogram by subtracting component counts per bin ---
+    TH1D *h_coin_bgsub = (TH1D*)h_coin->Clone(base + "_bgsub");
+    h_coin_bgsub->SetTitle(TString(h_coin->GetTitle()) + " (coin - bg)");
+    h_coin_bgsub->Sumw2();
+
+    for (int b = 1; b <= h_coin_bgsub->GetNbinsX(); ++b) {
+        double xlow = h_coin_bgsub->GetXaxis()->GetBinLowEdge(b);
+        double xhigh = h_coin_bgsub->GetXaxis()->GetBinUpEdge(b);
+        double binw = xhigh - xlow;
+
+        // integrate each component over the portion of this bin that lies in its segment
+        double cont_lin1 = 0.0, cont_gaus = 0.0, cont_lin2 = 0.0;
+        double lo = xlow, hi = xhigh;
+        // intersection helper
+        auto intersect = [](double a1,double a2,double b1,double b2)->pair<double,double>{
+            double lo = std::max(a1,b1), hi = std::min(a2,b2); return {lo,hi};
+        };
+
+        auto in1 = intersect(lo,hi, lin1_lo, lin1_hi);
+        if (in1.second > in1.first) cont_lin1 = f_lin1_final->Integral(in1.first, in1.second);
+        auto ig = intersect(lo,hi, gaus_lo, gaus_hi);
+        if (ig.second > ig.first) cont_gaus = f_gaus_final->Integral(ig.first, ig.second);
+        auto in2 = intersect(lo,hi, lin2_lo, lin2_hi);
+        if (in2.second > in2.first) cont_lin2 = f_lin2_final->Integral(in2.first, in2.second);
+
+        // convert continuous integral to counts in the bin
+        double c_lin1 = (binw>0.0) ? (cont_lin1 / binw) : 0.0;
+        double c_gaus = (binw>0.0) ? (cont_gaus / binw) : 0.0;
+        double c_lin2 = (binw>0.0) ? (cont_lin2 / binw) : 0.0;
+        double bg_counts_bin = c_lin1 + c_gaus + c_lin2;
+
+        double orig = h_coin->GetBinContent(b);
+        double newc = orig - bg_counts_bin;
+        if (newc < 0.0) newc = 0.0;
+        h_coin_bgsub->SetBinContent(b, newc);
+
+        // set errors conservatively: sqrt(orig_err^2 + bg_counts_bin) (poisson-like bg uncertainty)
+        double orig_err = h_coin->GetBinError(b);
+        double bg_err = (bg_counts_bin > 0.0) ? sqrt(bg_counts_bin) : 0.0;
+        double newerr = sqrt(orig_err*orig_err + bg_err*bg_err);
+        h_coin_bgsub->SetBinError(b, newerr);
+    }
+
+    // Diagnostic prints
+    std::cout << Form("[nps::subtract_accidentals] Run %d: requested bg_n_accidentals=%.3f  => final( lin1=%.3f  gaus=%.3f  lin2=%.3f ) total=%.3f\n",
+                      run, bg_n_accidentals, lin1_counts_final, gaus_counts_final, lin2_counts_final, total_bg_final);
+
+    // Optionally draw
+    if (draw) {
+        TCanvas *c = new TCanvas(cname, "Pi0 accidental subtraction (segmented)", 1000,700);
+        gPad->SetRightMargin(0.05);
+        h_coin->SetLineColor(kBlack); h_coin->SetLineWidth(1);
+        h_coin->Draw("E");
+
+        // draw left linear (only visually show on its domain)
+        TF1 *f_lin1_disp = (TF1*)f_lin1_final->Clone(f_lin1_final->GetName() + TString("_disp"));
+        f_lin1_disp->SetRange(lin1_lo, lin1_hi);
+        f_lin1_disp->SetLineColor(kGreen+2); f_lin1_disp->SetLineStyle(2); f_lin1_disp->SetLineWidth(2);
+        f_lin1_disp->Draw("SAME");
+
+        // gaussian display
+        TF1 *f_gaus_disp = (TF1*)f_gaus_final->Clone(f_gaus_final->GetName() + TString("_disp"));
+        f_gaus_disp->SetRange(gaus_lo, gaus_hi);
+        f_gaus_disp->SetLineColor(kRed); f_gaus_disp->SetLineStyle(3); f_gaus_disp->SetLineWidth(2);
+        f_gaus_disp->Draw("SAME");
+
+        // right linear display
+        TF1 *f_lin2_disp = (TF1*)f_lin2_final->Clone(f_lin2_final->GetName() + TString("_disp"));
+        f_lin2_disp->SetRange(lin2_lo, lin2_hi);
+        f_lin2_disp->SetLineColor(kBlue); f_lin2_disp->SetLineStyle(2); f_lin2_disp->SetLineWidth(2);
+        f_lin2_disp->Draw("SAME");
+
+        // draw bg-subtracted
+        h_coin_bgsub->SetLineColor(kViolet); h_coin_bgsub->SetLineWidth(2);
+        h_coin_bgsub->Draw("HIST SAME");
+
+        // ROI lines for convenience
+        TLine *Llo = new TLine(0.120, gPad->GetUymin(), 0.120, gPad->GetUymax());
+        TLine *Lhi = new TLine(0.140, gPad->GetUymin(), 0.140, gPad->GetUymax());
+        Llo->SetLineStyle(2); Lhi->SetLineStyle(2);
+        Llo->Draw("SAME"); Lhi->Draw("SAME");
+
+        // Legend and text
+        TLegend *leg = new TLegend(0.62, 0.60, 0.92, 0.88); leg->SetBorderSize(0); leg->SetFillColor(0);
+        leg->AddEntry(h_coin, "Coincidence (raw)", "lep");
+        leg->AddEntry(f_lin1_disp, Form("Left linear [%g,%g]", lin1_lo, lin1_hi), "l");
+        leg->AddEntry(f_gaus_disp, Form("Gaussian placed [%g,%g]", gaus_lo, gaus_hi), "l");
+        leg->AddEntry(f_lin2_disp, Form("Right linear [%g,%g]", lin2_lo, lin2_hi), "l");
+        leg->AddEntry(h_coin_bgsub, "Coincidence - background", "l");
+        leg->Draw();
+
+        TLatex tx; tx.SetNDC(); tx.SetTextSize(0.03);
+        tx.DrawLatex(0.12, 0.92, Form("Run %d", run));
+        tx.DrawLatex(0.12, 0.88, Form("Requested accidental count = %.3f", bg_n_accidentals));
+        tx.DrawLatex(0.12, 0.84, Form("Final components: left=%.3f gaus=%.3f right=%.3f  total=%.3f",
+                                     lin1_counts_final, gaus_counts_final, lin2_counts_final, total_bg_final));
+
+        if (outPlotDir != "") {
+            gSystem->mkdir(outPlotDir, true);
+            TString png = TString::Format("%s/pi0_acc_sub_segmented_run%d.png", outPlotDir.Data(), run);
+            c->SaveAs(png);
+        }
+        // keep TF1s and canvas in memory so caller can Write() them to ROOT file
+    }
+
+    // Return the bg-subtracted histogram (caller should delete)
+    return h_coin_bgsub;
+} // end inline
+
+// ------------------------------------------------------------------
+// Choose best pi0 pair: closest to pi0 mass AND within time threshold.
+// Returns indices into clus arrays (ia, ib) or (-1,-1).
+// ------------------------------------------------------------------
+pair<int,int> choose_best_pair_closest_pi0(const vector<int> &good_idx,
+                                           double *clusE, double *clusX, double *clusY, double *clusT,
+                                           double z_nps,
+                                           double target = nps::kPi0Mass_GeV,
+                                           double time_thresh_ns = 10)
+{
+    int best_i = -1, best_j = -1;
+    double best_diff = 1e9;
+    double best_totalE = -1.0;
+    const int n = static_cast<int>(good_idx.size());
+    if (n < 2) return { -1, -1 };
+
+    for (int a = 0; a < n; ++a) {
+        for (int b = a + 1; b < n; ++b) {
+            const int ia = good_idx[a];
+            const int ib = good_idx[b];
+            if (ia < 0 || ib < 0) continue;
+            const double dt = fabs(clusT[ia] - clusT[ib]);
+            if (dt > time_thresh_ns) continue;
+            const double m = nps::invariant_mass_pi0(clusE[ia], clusE[ib],
+                                                    clusX[ia], clusX[ib],
+                                                    clusY[ia], clusY[ib],
+                                                    z_nps);
+            const double d = fabs(m - target);
+            if (d < best_diff - 1e-12) {
+                best_diff = d;
+                best_i = ia; best_j = ib;
+                best_totalE = clusE[ia] + clusE[ib];
+            } else if (fabs(d - best_diff) < 1e-12) {
+                double tot = clusE[ia] + clusE[ib];
+                if (tot > best_totalE) {
+                    best_i = ia; best_j = ib; best_totalE = tot;
+                }
+            }
+        }
+    }
+    return {best_i, best_j};
+}
 
 
 } // namespace nps

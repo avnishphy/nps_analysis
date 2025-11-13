@@ -39,4 +39,9 @@ std::string makeOutputFilename(const std::string& outdir, const std::string& tag
 // Simple string trim helpers
 std::string trim(const std::string &s);
 
+// ------------------------------------------------------------------
+// Read run list (supports comments beginning '#')
+// ------------------------------------------------------------------
+vector<int> readRunList(const string &fname);
+
 #endif

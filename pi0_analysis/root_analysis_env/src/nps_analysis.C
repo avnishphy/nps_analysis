@@ -60,7 +60,7 @@ constexpr int NPRINT_PROGRESS = 16384;
 // ------------------------------------------------------------------
 void write_global_csv_header(const TString &path) {
     ofstream f(path.Data(), ios::out);
-    f << "run,charge_estimate_uA_counts,current_mean_uA,total_entries,pass_hms,pass_hms_nps,estimated_accidentals,chi2_ndf_comb_bg,pi0_mu_MeV,pi0_sigma_MeV,pi0_signal_counts,mmiss_p_mean_GeV,mmiss_p_sigma_GeV,run_current_mode_uA\n";
+    f << "run,accumulated_charge(mC),current_mean_uA,total_entries,pass_hms,pass_hms_nps,estimated_accidentals,chi2_ndf_comb_bg,pi0_mu_MeV,pi0_sigma_MeV,pi0_signal_counts,mmiss_p_mean_GeV,mmiss_p_sigma_GeV,run_current_mode_uA\n";
     f.close();
 }
 
@@ -114,7 +114,7 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
         Double_t edtmtdc=0;
         static Double_t clusE[MAX_CLUS], clusX[MAX_CLUS], clusY[MAX_CLUS], clusT[MAX_CLUS];
         Double_t nclust_dbl = 0;
-        Double_t BCM2_scalerCurrent = 0;
+        Double_t BCM2_scalerCurrent = 0, BCM2_scalerCharge = 0, H_1MHz_scalerTime = 0;
 
         // set branch status / addresses (enable only needed branches)
         T->SetBranchStatus("*", 0);
@@ -133,6 +133,8 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
         enable("H.cal.etotnorm", &hcaletotnorm);
         enable("T.hms.hEDTM_tdcTimeRaw", &edtmtdc);
         enable("H.BCM2.scalerCurrent", &BCM2_scalerCurrent);
+        enable("H.BCM2.scalerCharge", &BCM2_scalerCharge);
+        enable("H.1MHz.scalerTime", &H_1MHz_scalerTime);
         enable("NPS.cal.nclust", &nclust_dbl);
         enable("NPS.cal.clusE", &clusE);
         enable("NPS.cal.clusX", &clusX);
@@ -169,6 +171,16 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
                 charge_estimate_uA_counts = 0.0;
             }
         }
+
+        // double accumulated_charge_mC = nps::get_accumulated_charge(
+        //     T,
+        //     nentries,
+        //     &H_BCM4A_scalerCurrent,
+        //     &H_1MHz_scalerTime,
+        //     /*min_current=*/ 2.0,  // µA
+        //     run,
+        //     true
+        // );
 
         // -------------------------
         // Histograms (unique names per run)
@@ -508,20 +520,32 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
         TCanvas *c_pi0 = new TCanvas(name("c_pi0"), "Pi0 inv mass coin vs acc", 900,600);
         h_mpi0_all->SetLineColor(kBlack); h_mpi0_all->SetLineWidth(1);
         h_m_pi0_coin->SetLineColor(kBlue); h_m_pi0_coin->SetLineWidth(2);
-        h_m_pi0_acc->SetLineColor(kRed); h_m_pi0_acc->SetLineWidth(2); h_m_pi0_acc->SetLineStyle(2);
+        // h_m_pi0_acc->SetLineColor(kRed); h_m_pi0_acc->SetLineWidth(2); h_m_pi0_acc->SetLineStyle(2);
         h_mpi0_all->Draw("HIST");
         h_m_pi0_coin->Draw("HIST SAME");
-        h_m_pi0_acc->Draw("HIST SAME");
+        // h_m_pi0_acc->Draw("HIST SAME");
         if (h_coin_bgsub) { h_coin_bgsub->SetLineColor(kGreen+2); h_coin_bgsub->SetLineWidth(2); h_coin_bgsub->Draw("HIST SAME"); }
         if (h_final)      { h_final->SetLineColor(kMagenta+1); h_final->SetLineWidth(2); h_final->Draw("HIST SAME"); }
 
-        TLegend *l2 = new TLegend(0.55,0.60,0.88,0.88); l2->SetBorderSize(0); l2->SetFillColor(0);
-        l2->AddEntry(h_mpi0_all,"All selected #pi^{0} candidates","l");
-        l2->AddEntry(h_m_pi0_coin,"t1 & t2 within coincidence window","l");
-        l2->AddEntry(h_m_pi0_acc,"t1 & t2 outside coincidence window","l");
-        if (h_coin_bgsub) l2->AddEntry(h_coin_bgsub,"Coincidence - accidental (bg-sub)","l");
-        if (h_final)      l2->AddEntry(h_final,"Final background-subtracted (fit-sub)","l");
+        TLegend *l2 = new TLegend(0.45,0.60,0.78,0.88); l2->SetBorderSize(0); l2->SetFillColor(0);
+        // l2->AddEntry(h_mpi0_all,"All selected #pi^{0} candidates","l");
+        // l2->AddEntry(h_m_pi0_coin,"t1 & t2 within coincidence window","l");
+        // // l2->AddEntry(h_m_pi0_acc,"t1 & t2 outside coincidence window","l");
+        // if (h_coin_bgsub) l2->AddEntry(h_coin_bgsub,"Coincidence - accidental (bg-sub)","l");
+        // if (h_final)      l2->AddEntry(h_final,"Final background-subtracted (fit-sub)","l");
+        // l2->Draw();
+        // Legend shows analysis flow top→bottom
+        l2->SetHeader("Analysis flow");
+        l2->SetTextSize(0.030);
+
+        l2->AddEntry(h_mpi0_all,   "1) All #pi^{0} candidates",                     "l");
+        l2->AddEntry(h_m_pi0_coin, "2) Within coincidence window (t1 & t2)",      "l");
+        // l2->AddEntry(h_m_pi0_acc, "Outside coincidence window (accidentals)",   "l");
+        if (h_coin_bgsub) l2->AddEntry(h_coin_bgsub, "3) After timing (accidental) subtraction", "l");
+        if (h_final)      l2->AddEntry(h_final,      "4) Final after combinatorial (fit) subtraction", "l");
+
         l2->Draw();
+
 
         c_pi0->SaveAs(Form("%s/pi0_mgg_inside_outside_coin_compare_run%d.png", outPlotDir.Data(), run));
 
@@ -615,7 +639,7 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
             ofstream fg(global_csv.Data(), ios::app);
             if (fg.is_open()) {
                 fg << run << ","                             // run
-                   << std::setprecision(6) << charge_estimate_uA_counts << ","   // charge-like diagnostic (uA * counts)
+                //    << std::setprecision(6) << accumulated_charge_mC << ","   // accumulated charge
                    << std::setprecision(6) << run_current_mean << ","           // mean current uA
                    << n_total << ","                                           // total entries
                    << n_pass_hms << ","                                        // pass hms

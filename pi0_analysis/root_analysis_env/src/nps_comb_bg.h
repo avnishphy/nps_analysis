@@ -278,7 +278,7 @@ inline BGSubtractionResult FitCombinatorialBGAndSubtract(TH1D *h_coin_bgsub,
         h_coin_bgsub->SetLineWidth(1);
         h_coin_bgsub->SetMarkerStyle(20);
         h_coin_bgsub->SetMarkerSize(0.9);
-        h_coin_bgsub->Draw("E"); // draw data with errors
+        h_coin_bgsub->Draw("HIST"); // draw data with errors
 
         // fitted background (f_bg is TF1*)
         f_bg->SetLineColor(kOrange+1);
@@ -333,8 +333,8 @@ inline BGSubtractionResult FitCombinatorialBGAndSubtract(TH1D *h_coin_bgsub,
         // Add legend: clear, only show before/after
         TLegend leg2(0.55, 0.72, 0.92, 0.88);
         leg2.SetBorderSize(0); leg2.SetFillColor(0);
-        leg2.AddEntry(h_before, "Before (data)", "l");
-        leg2.AddEntry(h_final, "After (data - fitted bg)", "l");
+        leg2.AddEntry(h_before, "Before (including combinatorial bg)", "l");
+        leg2.AddEntry(h_final, "After (combinatorial bg subtracted)", "l");
         leg2.Draw();
 
         // -------------------------
@@ -345,9 +345,12 @@ inline BGSubtractionResult FitCombinatorialBGAndSubtract(TH1D *h_coin_bgsub,
         gPad->SetBottomMargin(0.12);
 
         // set fixed x-range in GeV
-        const double zoom_xlo = 0.08;
-        const double zoom_xhi = 0.17;
-        h_final->GetXaxis()->SetRangeUser(zoom_xlo, zoom_xhi);
+        // const double zoom_xlo = 0.08;
+        // const double zoom_xhi = 0.17;
+        // h_final->GetXaxis()->SetRangeUser(zoom_xlo, zoom_xhi);
+        const double zoom_ylo = 0.0;
+        const double zoom_yhi = 1600;
+        h_final->GetYaxis()->SetRangeUser(zoom_ylo, zoom_yhi);
 
         // improve axis label / tick sizes for readability
         h_final->GetXaxis()->SetTitleSize(0.045);
@@ -368,7 +371,7 @@ inline BGSubtractionResult FitCombinatorialBGAndSubtract(TH1D *h_coin_bgsub,
         f_sig.Draw("Same");
 
         // Legend: keep it inside the pad, increase text size and remove amplitude/purity
-        TLegend leg3(0.60, 0.66, 0.88, 0.86);
+        TLegend leg3(0.50, 0.66, 0.78, 0.86);
         leg3.SetBorderSize(0);
         leg3.SetFillColor(0);
         leg3.SetTextSize(0.040);
@@ -380,20 +383,45 @@ inline BGSubtractionResult FitCombinatorialBGAndSubtract(TH1D *h_coin_bgsub,
         const double muErr_MeV = sig_mu_err * 1000.0;
         const double sigma_MeV = sig_sigma * 1000.0;
         const double sigmaErr_MeV = sig_sigma_err * 1000.0;
-        TString gaussInfo = TString::Format("μ = %4.1f ± %4.1f MeV; σ = %4.1f ± %4.1f MeV",
-                                            mu_MeV, muErr_MeV, sigma_MeV, sigmaErr_MeV);
+//        TString gaussInfo = TString::Format("#mu = %4.1f #pm %4.1f MeV \n #sigma = %4.1f #pm %4.1f MeV",
+//                                     mu_MeV, muErr_MeV, sigma_MeV, sigmaErr_MeV);
+// // 
+//         // leg3.AddEntry(h_final, "Final (bg-subtracted)", "l");
+//         leg3.AddEntry(&f_sig, gaussInfo.Data(), "l");
+//         leg3.Draw("same");
 
-        leg3.AddEntry(h_final, "Final (bg-subtracted)", "l");
-        leg3.AddEntry(&f_sig, gaussInfo.Data(), "l");
-        leg3.Draw("same");
+//         // Counts text: print the discrete counts and the exact signal window range used (signal_lo/signal_hi are in GeV)
+//         TLatex tx3;
+//         tx3.SetNDC();
+//         tx3.SetTextSize(0.038);
+//         tx3.SetTextFont(42);
+//         tx3.DrawLatex(0.12, 0.92, Form("Run %d", run));
+//         tx3.DrawLatex(0.12, 0.88, Form("Counts in [%.3f, %.3f] GeV = %.1f", signal_lo, signal_hi, final_counts_win));
+        // --- Top-right box coordinates (normalized to canvas)
+        Double_t x1 = 0.50, y1 = 0.65, x2 = 0.90, y2 = 0.90;
+        TPaveText *pt = new TPaveText(x1, y1, x2, y2, "NDC");
 
-        // Counts text: print the discrete counts and the exact signal window range used (signal_lo/signal_hi are in GeV)
-        TLatex tx3;
-        tx3.SetNDC();
-        tx3.SetTextSize(0.038);
-        tx3.SetTextFont(42);
-        tx3.DrawLatex(0.12, 0.92, Form("Run %d", run));
-        tx3.DrawLatex(0.12, 0.88, Form("Counts in [%.3f, %.3f] GeV = %.1f", signal_lo, signal_hi, final_counts_win));
+        // Box style
+        pt->SetFillColor(kWhite);
+        pt->SetFillStyle(1001); // solid background
+        pt->SetBorderSize(1);
+        pt->SetTextAlign(12);   // left-top alignment
+        pt->SetTextFont(42);
+        pt->SetTextSize(0.038);
+
+        // Add all lines: run number, Gaussian parameters, counts
+        pt->AddText(Form("Run %d", run));
+        pt->AddText(TString::Format("#mu = %4.1f #pm %4.1f MeV", mu_MeV, muErr_MeV));
+        pt->AddText(TString::Format("#sigma = %4.1f #pm %4.1f MeV", sigma_MeV, sigmaErr_MeV));
+        pt->AddText(TString::Format("Fitted Signal Counts = %.1f", final_counts_win));
+
+        // Draw the box on the same canvas
+        pt->Draw("same");
+
+        // Optional: legend (if needed)
+        // leg3.AddEntry(&f_sig, "Final (bg-subtracted)", "l");
+        // leg3.Draw("same");
+
 
         // -------------------------
         // (4) Bottom-right: simplified residual/pull plot (easier to follow)

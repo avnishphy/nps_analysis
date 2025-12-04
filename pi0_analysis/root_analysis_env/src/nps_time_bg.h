@@ -273,6 +273,237 @@ inline CoincidenceBGResult estimate_coincidence_background_default(TH2D *h2,
     return R;
 }
 
+// inline TH1D* make_and_subtract_accidentals_data_driven(
+//                 TH1D *h_m_pi0_coin,
+//                 const nps::CoincidenceBGResult &bg,
+//                 TH1D *h_mgg_full1, TH1D *h_mgg_full2,
+//                 const std::vector<TH1D*> &h_mgg_hor,
+//                 const std::vector<TH1D*> &h_mgg_ver,
+//                 const std::vector<TH1D*> &h_mgg_diag,
+//                 TH1D *h_m_pi0_acc, // fallback optional
+//                 TH2D *h_t1_t2,
+//                 const std::vector<std::pair<double,double>> &diag_windows,
+//                 const std::vector<std::pair<double,double>> &side_windows,
+//                 const TString &outPlotDir = "", int run = -1)
+//         {
+//             if (!h_m_pi0_coin) { std::cerr << "[make_and_subtract_accidentals_data_driven] null h_m_pi0_coin\n"; return nullptr; }
+//             h_m_pi0_coin->Sumw2();
+
+//             // 1) Collect scaled templates from available sideband mgg histograms
+//             std::vector<TH1D*> scaled_templates;
+//             std::vector<TString> template_labels;
+
+//             auto safe_clone = [&](TH1D *h, const char *newname){
+//                 if (!h) return (TH1D*)nullptr;
+//                 TH1D *c = (TH1D*)h->Clone(newname);
+//                 c->SetDirectory(nullptr);
+//                 c->SetTitle(TString::Format("%s (scaled template)", h->GetTitle()).Data());
+//                 return c;
+//             };
+
+//             // Helper to compute area of a box using integral_and_area_TH2
+//             auto area_of_box = [&](double xlo, double xhi, double ylo, double yhi)->double {
+//                 if (!h_t1_t2) return 0.0;
+//                 auto pr = nps::integral_and_area_TH2(h_t1_t2, xlo, xhi, ylo, yhi);
+//                 return pr.second;
+//             };
+
+//             const double coin_area = bg.area_coin;
+
+//             // Full boxes
+//             // full1: we assume full1_t2 X full1_t1 (as you defined earlier); here we rely on bg.area_full1/area_full2
+//             if (h_mgg_full1 && bg.area_full1 > 0.0) {
+//                 TH1D *c = safe_clone(h_mgg_full1, TString::Format("%s_full1_scaled_run%d", h_mgg_full1->GetName(), run).Data());
+//                 double scale = coin_area / bg.area_full1;
+//                 c->Scale(scale);
+//                 scaled_templates.push_back(c);
+//                 template_labels.push_back("full1");
+//             }
+//             if (h_mgg_full2 && bg.area_full2 > 0.0) {
+//                 TH1D *c = safe_clone(h_mgg_full2, TString::Format("%s_full2_scaled_run%d", h_mgg_full2->GetName(), run).Data());
+//                 double scale = coin_area / bg.area_full2;
+//                 c->Scale(scale);
+//                 scaled_templates.push_back(c);
+//                 template_labels.push_back("full2");
+//             }
+
+//             // Horizontal and vertical sidebands
+//             for (size_t i=0; i<h_mgg_hor.size() && i<side_windows.size(); ++i) {
+//                 double xlo = side_windows[i].first, xhi = side_windows[i].second;
+//                 double ylo = nps::default_coin_window().first, yhi = nps::default_coin_window().second;
+//                 double area_h = area_of_box(xlo, xhi, ylo, yhi);
+//                 if (area_h > 0.0 && h_mgg_hor[i]) {
+//                     TH1D *c = safe_clone(h_mgg_hor[i], TString::Format("%s_hor%d_scaled_run%d", h_mgg_hor[i]->GetName(), (int)i, run).Data());
+//                     double scale = coin_area / area_h;
+//                     c->Scale(scale);
+//                     scaled_templates.push_back(c);
+//                     template_labels.push_back(TString::Format("hor%d", (int)i));
+//                 }
+//             }
+//             for (size_t i=0; i<h_mgg_ver.size() && i<side_windows.size(); ++i) {
+//                 double xlo = nps::default_coin_window().first, xhi = nps::default_coin_window().second;
+//                 double ylo = side_windows[i].first, yhi = side_windows[i].second;
+//                 double area_v = area_of_box(xlo, xhi, ylo, yhi);
+//                 if (area_v > 0.0 && h_mgg_ver[i]) {
+//                     TH1D *c = safe_clone(h_mgg_ver[i], TString::Format("%s_ver%d_scaled_run%d", h_mgg_ver[i]->GetName(), (int)i, run).Data());
+//                     double scale = coin_area / area_v;
+//                     c->Scale(scale);
+//                     scaled_templates.push_back(c);
+//                     template_labels.push_back(TString::Format("ver%d", (int)i));
+//                 }
+//             }
+
+//             // Diagonal sidebands
+//             for (size_t i=0; i<h_mgg_diag.size() && i<diag_windows.size(); ++i) {
+//                 double xlo = diag_windows[i].first, xhi = diag_windows[i].second;
+//                 double ylo = diag_windows[i].first, yhi = diag_windows[i].second;
+//                 double area_d = area_of_box(xlo, xhi, ylo, yhi);
+//                 if (area_d > 0.0 && h_mgg_diag[i]) {
+//                     TH1D *c = safe_clone(h_mgg_diag[i], TString::Format("%s_diag%d_scaled_run%d", h_mgg_diag[i]->GetName(), (int)i, run).Data());
+//                     double scale = coin_area / area_d;
+//                     c->Scale(scale);
+//                     scaled_templates.push_back(c);
+//                     template_labels.push_back(TString::Format("diag%d", (int)i));
+//                 }
+//             }
+
+//             // If no sideband-derived templates available, fallback to h_m_pi0_acc scaled by ratio of bg.n_accidentals / integral(h_m_pi0_acc)
+//             TH1D *h_template = nullptr;
+//             if (!scaled_templates.empty()) {
+//                 // Prefer full-box templates if present
+//                 bool have_full = false;
+//                 for (auto &lbl : template_labels) if (lbl.BeginsWith("full")) have_full = true;
+
+//                 // select which templates to average
+//                 std::vector<TH1D*> use_templates;
+//                 if (have_full) {
+//                     for (size_t i=0;i<scaled_templates.size();++i) if (template_labels[i].BeginsWith("full")) use_templates.push_back(scaled_templates[i]);
+//                 } else {
+//                     // otherwise use *all* scaled templates (hor/ver/diag) to reduce noise
+//                     use_templates = scaled_templates;
+//                 }
+
+//                 // create combined template as average of selected scaled templates
+//                 h_template = safe_clone(use_templates[0], TString::Format("h_template_run%d", run).Data());
+//                 h_template->Reset();
+//                 for (auto *ht : use_templates) {
+//                     h_template->Add(ht);
+//                 }
+//                 // divide by number of templates to produce average shape (you could choose sum instead; we average)
+//                 h_template->Scale(1.0 / double(use_templates.size()));
+//             } else if (h_m_pi0_acc && h_m_pi0_acc->Integral() > 0.0) {
+//                 // fallback: use outside-coin mgg distribution scaled to bg.n_accidentals
+//                 h_template = safe_clone(h_m_pi0_acc, TString::Format("%s_acc_scaled_fallback_run%d", h_m_pi0_acc->GetName(), run).Data());
+//                 double int_acc = h_template->Integral();
+//                 if (int_acc > 0.0) {
+//                     double scale = 1.0; // we will scale to bg.n_accidentals later; keep for clarity
+//                     h_template->Scale(scale);
+//                 }
+//             } else {
+//                 std::cerr << "[make_and_subtract_accidentals_data_driven] ERROR: no templates available and fallback not possible.\n";
+//                 // cleanup any partial clones
+//                 for (auto *p : scaled_templates) delete p;
+//                 return nullptr;
+//             }
+
+//             // compute template integral (over full axis)
+//             double templ_int_err = 0.0;
+//             int ib_lo = 1;
+//             int ib_hi = h_template->GetNbinsX();
+//             double templ_integral = h_template->IntegralAndError(ib_lo, ib_hi, templ_int_err);
+
+//             // If templ_integral is zero (rare), avoid dividing by zero
+//             if (templ_integral <= 0.0) {
+//                 std::cerr << "[make_and_subtract_accidentals_data_driven] WARNING: template integral <=0. Using simple scale of h_m_pi0_acc if available.\n";
+//                 if (h_m_pi0_acc && h_m_pi0_acc->Integral() > 0.0) {
+//                     delete h_template;
+//                     h_template = safe_clone(h_m_pi0_acc, TString::Format("%s_acc_scaled_fallback2_run%d", h_m_pi0_acc->GetName(), run).Data());
+//                     templ_integral = h_template->IntegralAndError(ib_lo, ib_hi, templ_int_err);
+//                     if (templ_integral <= 0) {
+//                         std::cerr << "[make_and_subtract_accidentals_data_driven] FATAL: cannot form a template with non-zero integral.\n";
+//                         for (auto *p : scaled_templates) delete p;
+//                         delete h_template;
+//                         return nullptr;
+//                     }
+//                 } else {
+//                     for (auto *p : scaled_templates) delete p;
+//                     delete h_template;
+//                     return nullptr;
+//                 }
+//             }
+
+//             // Scale final template so its integral equals bg.n_accidentals (timing-plane estimate)
+//             double required = bg.n_accidentals;
+//             double final_scale = (templ_integral > 0.0) ? (required / templ_integral) : 0.0;
+//             h_template->Scale(final_scale);
+
+//             double templ_int_after = h_template->Integral();
+//             // compute template error after scaling (approx): templ_int_err * final_scale
+//             double templ_err_after = templ_int_err * fabs(final_scale);
+
+//             // 2) Subtract template from h_m_pi0_coin (bin-by-bin)
+//             TH1D *h_coin_bgsub = (TH1D*)h_m_pi0_coin->Clone(TString::Format("%s_bgsub_run%d", h_m_pi0_coin->GetName(), run).Data());
+//             h_coin_bgsub->SetDirectory(nullptr);
+//             h_coin_bgsub->SetTitle(TString::Format("%s (acc-subtracted)", h_m_pi0_coin->GetTitle()).Data());
+
+//             for (int b = 1; b <= h_m_pi0_coin->GetNbinsX(); ++b) {
+//                 double x = h_m_pi0_coin->GetXaxis()->GetBinCenter(b);
+//                 double orig = h_m_pi0_coin->GetBinContent(b);
+//                 double orig_err = h_m_pi0_coin->GetBinError(b);
+//                 double sub = h_template->GetBinContent(b);
+//                 double newc = orig - sub;
+//                 if (newc < 0) newc = 0.0;
+//                 // Conservative new error: sqrt(orig_err^2 + sub)  (treating sub as a contribution with Poisson-like variance)
+//                 double newerr = std::sqrt(orig_err*orig_err + fabs(sub));
+//                 h_coin_bgsub->SetBinContent(b, newc);
+//                 h_coin_bgsub->SetBinError(b, newerr);
+//             }
+
+//             // 3) Diagnostics: print numbers, draw overlay, save PNG
+//             std::cout << Form("[make_and_subtract_accidentals] bg.n_accidentals = %.3f  template_int(before scaling)=%.3f +/- %.3f  template_int(after)=%.3f +/- %.3f\n",
+//                             bg.n_accidentals, templ_integral, templ_int_err, templ_int_after, templ_err_after);
+
+//             // Draw overlay
+//             TString cname = (run >= 0) ? TString::Format("c_acc_sub_run%d", run) : TString("c_acc_sub");
+//             TCanvas *c = new TCanvas(cname, "Accidental subtraction (data-driven)", 1000,700);
+//             gPad->SetLeftMargin(0.12);
+//             h_m_pi0_coin->SetLineColor(kBlack); h_m_pi0_coin->SetLineWidth(2);
+//             h_m_pi0_coin->Draw("E");
+
+//             h_template->SetLineColor(kRed); h_template->SetLineWidth(2); h_template->SetLineStyle(2);
+//             h_template->Draw("HIST SAME");
+
+//             h_coin_bgsub->SetLineColor(kBlue+2); h_coin_bgsub->SetLineWidth(2);
+//             h_coin_bgsub->Draw("HIST SAME");
+
+//             TLegend *leg = new TLegend(0.62, 0.62, 0.92, 0.88);
+//             leg->SetBorderSize(0); leg->SetFillColor(0);
+//             leg->AddEntry(h_m_pi0_coin, "Coincidence (raw)", "lep");
+//             leg->AddEntry(h_template, Form("Data-driven template (scaled -> %.3f)", bg.n_accidentals), "l");
+//             leg->AddEntry(h_coin_bgsub, "Coin - template", "l");
+//             leg->Draw("same");
+
+//             TLatex tx; tx.SetNDC(); tx.SetTextSize(0.03);
+//             tx.DrawLatex(0.12, 0.92, Form("Run: %d", run));
+//             tx.DrawLatex(0.12, 0.88, Form("coin integral = %.2f", h_m_pi0_coin->Integral()));
+//             tx.DrawLatex(0.12, 0.84, Form("template integral (after scaling) = %.3f ± %.3f", templ_int_after, templ_err_after));
+//             tx.DrawLatex(0.12, 0.80, Form("coin - template integral = %.3f", h_coin_bgsub->Integral()));
+
+//             if (outPlotDir != "") {
+//                 TString png = TString::Format("%s/pi0_acc_template_sub_run%d.png", outPlotDir.Data(), run);
+//                 c->SaveAs(png);
+//             }
+
+//             // Keep template and bgsub in memory (caller will write them to file). Clean temporary scaled_templates.
+//             for (auto *p : scaled_templates) {
+//                 // if the template chosen equals this pointer's clone, we still keep both; safe to delete clones we don't need
+//                 delete p;
+//             }
+
+//             // Return pointer to background-subtracted histogram (caller should write it to file if desired)
+//             return h_coin_bgsub;
+//         }
+
 inline TH1D* make_and_subtract_accidentals_data_driven(
                 TH1D *h_m_pi0_coin,
                 const nps::CoincidenceBGResult &bg,
@@ -285,224 +516,285 @@ inline TH1D* make_and_subtract_accidentals_data_driven(
                 const std::vector<std::pair<double,double>> &diag_windows,
                 const std::vector<std::pair<double,double>> &side_windows,
                 const TString &outPlotDir = "", int run = -1)
-        {
-            if (!h_m_pi0_coin) { std::cerr << "[make_and_subtract_accidentals_data_driven] null h_m_pi0_coin\n"; return nullptr; }
-            h_m_pi0_coin->Sumw2();
+{
+    if (!h_m_pi0_coin) { std::cerr << "[make_and_subtract_accidentals_data_driven] null h_m_pi0_coin\n"; return nullptr; }
+    h_m_pi0_coin->Sumw2();
 
-            // 1) Collect scaled templates from available sideband mgg histograms
-            std::vector<TH1D*> scaled_templates;
-            std::vector<TString> template_labels;
+    // Helper: safe clone with Sumw2 and detached directory
+    auto safe_clone = [&](TH1D *h, const char *newname)->TH1D* {
+        if (!h) return (TH1D*)nullptr;
+        TH1D *c = (TH1D*)h->Clone(newname);
+        c->SetDirectory(nullptr);
+        c->Sumw2();
+        c->SetTitle(TString::Format("%s (scaled template)", h->GetTitle()).Data());
+        return c;
+    };
 
-            auto safe_clone = [&](TH1D *h, const char *newname){
-                if (!h) return (TH1D*)nullptr;
-                TH1D *c = (TH1D*)h->Clone(newname);
-                c->SetDirectory(nullptr);
-                c->SetTitle(TString::Format("%s (scaled template)", h->GetTitle()).Data());
-                return c;
-            };
+    // Helper to compute area of a box using integral_and_area_TH2
+    auto area_of_box = [&](double xlo, double xhi, double ylo, double yhi)->double {
+        if (!h_t1_t2) return 0.0;
+        auto pr = nps::integral_and_area_TH2(h_t1_t2, xlo, xhi, ylo, yhi);
+        return pr.second;
+    };
 
-            // Helper to compute area of a box using integral_and_area_TH2
-            auto area_of_box = [&](double xlo, double xhi, double ylo, double yhi)->double {
-                if (!h_t1_t2) return 0.0;
-                auto pr = nps::integral_and_area_TH2(h_t1_t2, xlo, xhi, ylo, yhi);
-                return pr.second;
-            };
+    const double coin_area = bg.area_coin;
+    const double norm_unc_frac = (bg.n_accidentals > 0.0) ? (bg.n_accidentals_err / bg.n_accidentals) : 0.0;
+    std::vector<TH1D*> tmp_clones; tmp_clones.reserve(16);
 
-            const double coin_area = bg.area_coin;
+    // Create empty template that will hold the algebraic combination:
+    // h_template = diag_sum * 1.0 + 0.5*(hor_sum + ver_sum) - 0.5*(full1 + full2)
+    TH1D *h_template = (TH1D*)h_m_pi0_coin->Clone(TString::Format("h_template_run%d", run).Data());
+    h_template->Reset();
+    h_template->Sumw2();
 
-            // Full boxes
-            // full1: we assume full1_t2 X full1_t1 (as you defined earlier); here we rely on bg.area_full1/area_full2
-            if (h_mgg_full1 && bg.area_full1 > 0.0) {
-                TH1D *c = safe_clone(h_mgg_full1, TString::Format("%s_full1_scaled_run%d", h_mgg_full1->GetName(), run).Data());
-                double scale = coin_area / bg.area_full1;
-                c->Scale(scale);
-                scaled_templates.push_back(c);
-                template_labels.push_back("full1");
-            }
-            if (h_mgg_full2 && bg.area_full2 > 0.0) {
-                TH1D *c = safe_clone(h_mgg_full2, TString::Format("%s_full2_scaled_run%d", h_mgg_full2->GetName(), run).Data());
-                double scale = coin_area / bg.area_full2;
-                c->Scale(scale);
-                scaled_templates.push_back(c);
-                template_labels.push_back("full2");
-            }
+    // 1) diagonal boxes (weight 1)
+    for (size_t i=0; i<h_mgg_diag.size() && i<diag_windows.size(); ++i) {
+        if (!h_mgg_diag[i]) continue;
+        double xlo = diag_windows[i].first, xhi = diag_windows[i].second;
+        double area_d = area_of_box(xlo, xhi, xlo, xhi);
+        if (area_d <= 0.0) continue;
+        TH1D *tmp = safe_clone(h_mgg_diag[i], TString::Format("%s_diag_tmp_run%d_%zu", h_mgg_diag[i]->GetName(), run, i).Data());
+        tmp_clones.push_back(tmp);
+        tmp->Scale( (area_d>0.0) ? (coin_area / area_d) : 0.0 ); // normalize to coin area
+        h_template->Add(tmp, 1.0);
+    }
 
-            // Horizontal and vertical sidebands
-            for (size_t i=0; i<h_mgg_hor.size() && i<side_windows.size(); ++i) {
-                double xlo = side_windows[i].first, xhi = side_windows[i].second;
-                double ylo = nps::default_coin_window().first, yhi = nps::default_coin_window().second;
-                double area_h = area_of_box(xlo, xhi, ylo, yhi);
-                if (area_h > 0.0 && h_mgg_hor[i]) {
-                    TH1D *c = safe_clone(h_mgg_hor[i], TString::Format("%s_hor%d_scaled_run%d", h_mgg_hor[i]->GetName(), (int)i, run).Data());
-                    double scale = coin_area / area_h;
-                    c->Scale(scale);
-                    scaled_templates.push_back(c);
-                    template_labels.push_back(TString::Format("hor%d", (int)i));
-                }
-            }
-            for (size_t i=0; i<h_mgg_ver.size() && i<side_windows.size(); ++i) {
-                double xlo = nps::default_coin_window().first, xhi = nps::default_coin_window().second;
-                double ylo = side_windows[i].first, yhi = side_windows[i].second;
-                double area_v = area_of_box(xlo, xhi, ylo, yhi);
-                if (area_v > 0.0 && h_mgg_ver[i]) {
-                    TH1D *c = safe_clone(h_mgg_ver[i], TString::Format("%s_ver%d_scaled_run%d", h_mgg_ver[i]->GetName(), (int)i, run).Data());
-                    double scale = coin_area / area_v;
-                    c->Scale(scale);
-                    scaled_templates.push_back(c);
-                    template_labels.push_back(TString::Format("ver%d", (int)i));
-                }
-            }
+    // 2) horizontal sidebands (weight 0.5)
+    for (size_t i=0; i<h_mgg_hor.size() && i<side_windows.size(); ++i) {
+        if (!h_mgg_hor[i]) continue;
+        double xlo = side_windows[i].first, xhi = side_windows[i].second;
+        double ylo = nps::default_coin_window().first, yhi = nps::default_coin_window().second;
+        double area_h = area_of_box(xlo, xhi, ylo, yhi);
+        if (area_h <= 0.0) continue;
+        TH1D *tmp = safe_clone(h_mgg_hor[i], TString::Format("%s_hor_tmp_run%d_%zu", h_mgg_hor[i]->GetName(), run, i).Data());
+        tmp_clones.push_back(tmp);
+        tmp->Scale( (area_h>0.0) ? (coin_area / area_h) : 0.0 );
+        h_template->Add(tmp, 0.5);
+    }
 
-            // Diagonal sidebands
-            for (size_t i=0; i<h_mgg_diag.size() && i<diag_windows.size(); ++i) {
-                double xlo = diag_windows[i].first, xhi = diag_windows[i].second;
-                double ylo = diag_windows[i].first, yhi = diag_windows[i].second;
-                double area_d = area_of_box(xlo, xhi, ylo, yhi);
-                if (area_d > 0.0 && h_mgg_diag[i]) {
-                    TH1D *c = safe_clone(h_mgg_diag[i], TString::Format("%s_diag%d_scaled_run%d", h_mgg_diag[i]->GetName(), (int)i, run).Data());
-                    double scale = coin_area / area_d;
-                    c->Scale(scale);
-                    scaled_templates.push_back(c);
-                    template_labels.push_back(TString::Format("diag%d", (int)i));
-                }
-            }
+    // 3) vertical sidebands (weight 0.5)
+    for (size_t i=0; i<h_mgg_ver.size() && i<side_windows.size(); ++i) {
+        if (!h_mgg_ver[i]) continue;
+        double xlo = nps::default_coin_window().first, xhi = nps::default_coin_window().second;
+        double ylo = side_windows[i].first, yhi = side_windows[i].second;
+        double area_v = area_of_box(xlo, xhi, ylo, yhi);
+        if (area_v <= 0.0) continue;
+        TH1D *tmp = safe_clone(h_mgg_ver[i], TString::Format("%s_ver_tmp_run%d_%zu", h_mgg_ver[i]->GetName(), run, i).Data());
+        tmp_clones.push_back(tmp);
+        tmp->Scale( (area_v>0.0) ? (coin_area / area_v) : 0.0 );
+        h_template->Add(tmp, 0.5);
+    }
 
-            // If no sideband-derived templates available, fallback to h_m_pi0_acc scaled by ratio of bg.n_accidentals / integral(h_m_pi0_acc)
-            TH1D *h_template = nullptr;
-            if (!scaled_templates.empty()) {
-                // Prefer full-box templates if present
-                bool have_full = false;
-                for (auto &lbl : template_labels) if (lbl.BeginsWith("full")) have_full = true;
+    // 4) subtract 0.5 * full1 and 0.5 * full2
+    if (h_mgg_full1 && bg.area_full1 > 0.0) {
+        TH1D *tmp = safe_clone(h_mgg_full1, TString::Format("%s_full1_tmp_run%d", h_mgg_full1->GetName(), run).Data());
+        tmp_clones.push_back(tmp);
+        tmp->Scale( coin_area / bg.area_full1 );
+        h_template->Add(tmp, -0.5);
+    }
+    if (h_mgg_full2 && bg.area_full2 > 0.0) {
+        TH1D *tmp = safe_clone(h_mgg_full2, TString::Format("%s_full2_tmp_run%d", h_mgg_full2->GetName(), run).Data());
+        tmp_clones.push_back(tmp);
+        tmp->Scale( coin_area / bg.area_full2 );
+        h_template->Add(tmp, -0.5);
+    }
 
-                // select which templates to average
-                std::vector<TH1D*> use_templates;
-                if (have_full) {
-                    for (size_t i=0;i<scaled_templates.size();++i) if (template_labels[i].BeginsWith("full")) use_templates.push_back(scaled_templates[i]);
-                } else {
-                    // otherwise use *all* scaled templates (hor/ver/diag) to reduce noise
-                    use_templates = scaled_templates;
-                }
-
-                // create combined template as average of selected scaled templates
-                h_template = safe_clone(use_templates[0], TString::Format("h_template_run%d", run).Data());
-                h_template->Reset();
-                for (auto *ht : use_templates) {
-                    h_template->Add(ht);
-                }
-                // divide by number of templates to produce average shape (you could choose sum instead; we average)
-                h_template->Scale(1.0 / double(use_templates.size()));
-            } else if (h_m_pi0_acc && h_m_pi0_acc->Integral() > 0.0) {
-                // fallback: use outside-coin mgg distribution scaled to bg.n_accidentals
-                h_template = safe_clone(h_m_pi0_acc, TString::Format("%s_acc_scaled_fallback_run%d", h_m_pi0_acc->GetName(), run).Data());
-                double int_acc = h_template->Integral();
-                if (int_acc > 0.0) {
-                    double scale = 1.0; // we will scale to bg.n_accidentals later; keep for clarity
-                    h_template->Scale(scale);
-                }
-            } else {
-                std::cerr << "[make_and_subtract_accidentals_data_driven] ERROR: no templates available and fallback not possible.\n";
-                // cleanup any partial clones
-                for (auto *p : scaled_templates) delete p;
-                return nullptr;
-            }
-
-            // compute template integral (over full axis)
-            double templ_int_err = 0.0;
-            int ib_lo = 1;
-            int ib_hi = h_template->GetNbinsX();
-            double templ_integral = h_template->IntegralAndError(ib_lo, ib_hi, templ_int_err);
-
-            // If templ_integral is zero (rare), avoid dividing by zero
-            if (templ_integral <= 0.0) {
-                std::cerr << "[make_and_subtract_accidentals_data_driven] WARNING: template integral <=0. Using simple scale of h_m_pi0_acc if available.\n";
-                if (h_m_pi0_acc && h_m_pi0_acc->Integral() > 0.0) {
-                    delete h_template;
-                    h_template = safe_clone(h_m_pi0_acc, TString::Format("%s_acc_scaled_fallback2_run%d", h_m_pi0_acc->GetName(), run).Data());
-                    templ_integral = h_template->IntegralAndError(ib_lo, ib_hi, templ_int_err);
-                    if (templ_integral <= 0) {
-                        std::cerr << "[make_and_subtract_accidentals_data_driven] FATAL: cannot form a template with non-zero integral.\n";
-                        for (auto *p : scaled_templates) delete p;
-                        delete h_template;
-                        return nullptr;
-                    }
-                } else {
-                    for (auto *p : scaled_templates) delete p;
-                    delete h_template;
-                    return nullptr;
-                }
-            }
-
-            // Scale final template so its integral equals bg.n_accidentals (timing-plane estimate)
-            double required = bg.n_accidentals;
-            double final_scale = (templ_integral > 0.0) ? (required / templ_integral) : 0.0;
-            h_template->Scale(final_scale);
-
-            double templ_int_after = h_template->Integral();
-            // compute template error after scaling (approx): templ_int_err * final_scale
-            double templ_err_after = templ_int_err * fabs(final_scale);
-
-            // 2) Subtract template from h_m_pi0_coin (bin-by-bin)
-            TH1D *h_coin_bgsub = (TH1D*)h_m_pi0_coin->Clone(TString::Format("%s_bgsub_run%d", h_m_pi0_coin->GetName(), run).Data());
-            h_coin_bgsub->SetDirectory(nullptr);
-            h_coin_bgsub->SetTitle(TString::Format("%s (acc-subtracted)", h_m_pi0_coin->GetTitle()).Data());
-
-            for (int b = 1; b <= h_m_pi0_coin->GetNbinsX(); ++b) {
-                double x = h_m_pi0_coin->GetXaxis()->GetBinCenter(b);
-                double orig = h_m_pi0_coin->GetBinContent(b);
-                double orig_err = h_m_pi0_coin->GetBinError(b);
-                double sub = h_template->GetBinContent(b);
-                double newc = orig - sub;
-                if (newc < 0) newc = 0.0;
-                // Conservative new error: sqrt(orig_err^2 + sub)  (treating sub as a contribution with Poisson-like variance)
-                double newerr = std::sqrt(orig_err*orig_err + fabs(sub));
-                h_coin_bgsub->SetBinContent(b, newc);
-                h_coin_bgsub->SetBinError(b, newerr);
-            }
-
-            // 3) Diagnostics: print numbers, draw overlay, save PNG
-            std::cout << Form("[make_and_subtract_accidentals] bg.n_accidentals = %.3f  template_int(before scaling)=%.3f +/- %.3f  template_int(after)=%.3f +/- %.3f\n",
-                            bg.n_accidentals, templ_integral, templ_int_err, templ_int_after, templ_err_after);
-
-            // Draw overlay
-            TString cname = (run >= 0) ? TString::Format("c_acc_sub_run%d", run) : TString("c_acc_sub");
-            TCanvas *c = new TCanvas(cname, "Accidental subtraction (data-driven)", 1000,700);
-            gPad->SetLeftMargin(0.12);
-            h_m_pi0_coin->SetLineColor(kBlack); h_m_pi0_coin->SetLineWidth(2);
-            h_m_pi0_coin->Draw("E");
-
-            h_template->SetLineColor(kRed); h_template->SetLineWidth(2); h_template->SetLineStyle(2);
-            h_template->Draw("HIST SAME");
-
-            h_coin_bgsub->SetLineColor(kBlue+2); h_coin_bgsub->SetLineWidth(2);
-            h_coin_bgsub->Draw("HIST SAME");
-
-            TLegend *leg = new TLegend(0.62, 0.62, 0.92, 0.88);
-            leg->SetBorderSize(0); leg->SetFillColor(0);
-            leg->AddEntry(h_m_pi0_coin, "Coincidence (raw)", "lep");
-            leg->AddEntry(h_template, Form("Data-driven template (scaled -> %.3f)", bg.n_accidentals), "l");
-            leg->AddEntry(h_coin_bgsub, "Coin - template", "l");
-            leg->Draw("same");
-
-            TLatex tx; tx.SetNDC(); tx.SetTextSize(0.03);
-            tx.DrawLatex(0.12, 0.92, Form("Run: %d", run));
-            tx.DrawLatex(0.12, 0.88, Form("coin integral = %.2f", h_m_pi0_coin->Integral()));
-            tx.DrawLatex(0.12, 0.84, Form("template integral (after scaling) = %.3f ± %.3f", templ_int_after, templ_err_after));
-            tx.DrawLatex(0.12, 0.80, Form("coin - template integral = %.3f", h_coin_bgsub->Integral()));
-
-            if (outPlotDir != "") {
-                TString png = TString::Format("%s/pi0_acc_template_sub_run%d.png", outPlotDir.Data(), run);
-                c->SaveAs(png);
-            }
-
-            // Keep template and bgsub in memory (caller will write them to file). Clean temporary scaled_templates.
-            for (auto *p : scaled_templates) {
-                // if the template chosen equals this pointer's clone, we still keep both; safe to delete clones we don't need
-                delete p;
-            }
-
-            // Return pointer to background-subtracted histogram (caller should write it to file if desired)
-            return h_coin_bgsub;
+    // If we added nothing (no sidebands/full), fallback to h_m_pi0_acc scaled to bg.n_accidentals (if available)
+    bool have_template_content = false;
+    for (int b=1; b<=h_template->GetNbinsX(); ++b) {
+        if (h_template->GetBinContent(b) != 0.0) { have_template_content = true; break; }
+    }
+    if (!have_template_content) {
+        if (h_m_pi0_acc && h_m_pi0_acc->Integral() > 0.0) {
+            delete h_template;
+            h_template = safe_clone(h_m_pi0_acc, TString::Format("%s_acc_fallback_run%d", h_m_pi0_acc->GetName(), run).Data());
+            // normalize to coin area per-bin? We'll just scale to bg.n_accidentals below.
+        } else {
+            std::cerr << "[make_and_subtract_accidentals_data_driven] ERROR: no templates available and fallback not possible.\n";
+            for (auto *p : tmp_clones) delete p;
+            return nullptr;
         }
+    }
+
+    // Compute template integral & error (before scaling to bg.n_accidentals)
+    double templ_int_err = 0.0;
+    int ib_lo = 1;
+    int ib_hi = h_template->GetNbinsX();
+    double templ_integral = h_template->IntegralAndError(ib_lo, ib_hi, templ_int_err);
+
+    // If zero integral and fallback exists, try fallback logic already handled above; if still zero, abort.
+    if (templ_integral <= 0.0) {
+        std::cerr << "[make_and_subtract_accidentals_data_driven] WARNING: template integral <= 0. Cannot scale to bg.n_accidentals.\n";
+        for (auto *p : tmp_clones) delete p;
+        delete h_template;
+        return nullptr;
+    }
+
+    // Scale final template so its integral equals bg.n_accidentals (timing-plane estimate)
+    double required = bg.n_accidentals;
+    double final_scale = (templ_integral > 0.0) ? (required / templ_integral) : 0.0;
+    h_template->Scale(final_scale);
+    templ_int_err *= fabs(final_scale);
+    double templ_int_after = h_template->Integral();
+
+    // 2) Subtract template from h_m_pi0_coin (bin-by-bin) with improved error propagation
+    TH1D *h_coin_bgsub = (TH1D*)h_m_pi0_coin->Clone(TString::Format("%s_bgsub_run%d", h_m_pi0_coin->GetName(), run).Data());
+    h_coin_bgsub->SetDirectory(nullptr);
+    h_coin_bgsub->SetTitle(TString::Format("%s (acc-subtracted)", h_m_pi0_coin->GetTitle()).Data());
+    h_coin_bgsub->Sumw2();
+
+    for (int b = 1; b <= h_m_pi0_coin->GetNbinsX(); ++b) {
+        double orig = h_m_pi0_coin->GetBinContent(b);
+        double orig_err = h_m_pi0_coin->GetBinError(b);
+        double sub = h_template->GetBinContent(b);
+        double sub_err_stat = h_template->GetBinError(b);                    // template statistical/bin error
+        double sub_err_norm = fabs(sub) * norm_unc_frac;                    // normalization uncertainty propagated to bin
+        double total_sub_err = std::sqrt(sub_err_stat*sub_err_stat + sub_err_norm*sub_err_norm);
+
+        double newc = orig - sub;
+        if (newc < 0.0) newc = 0.0;
+
+        double newerr = std::sqrt(orig_err*orig_err + total_sub_err*total_sub_err);
+        h_coin_bgsub->SetBinContent(b, newc);
+        h_coin_bgsub->SetBinError(b, newerr);
+    }
+
+    // // 3) Diagnostics: print numbers, draw overlay, save PNG
+    // std::cout << Form("[make_and_subtract_accidentals] bg.n_accidentals = %.3f +/- %.3f   template_int(before scaling)=%.3f  template_int(after)=%.3f +/- %.3f\n",
+    //                   bg.n_accidentals, bg.n_accidentals_err, templ_integral/ ( (final_scale!=0.0) ? (1.0/final_scale) : 1.0 ), templ_int_after, templ_int_err);
+
+    // TString cname = (run >= 0) ? TString::Format("c_acc_sub_run%d", run) : TString("c_acc_sub");
+    // TCanvas *c = new TCanvas(cname, "Accidental subtraction (data-driven)", 1000,700);
+    // gPad->SetLeftMargin(0.12);
+    // h_m_pi0_coin->SetLineColor(kBlack); h_m_pi0_coin->SetLineWidth(2);
+    // h_m_pi0_coin->Draw("E");
+
+    // h_template->SetLineColor(kRed); h_template->SetLineWidth(2); h_template->SetLineStyle(2);
+    // h_template->Draw("HIST SAME");
+
+    // h_coin_bgsub->SetLineColor(kBlue+2); h_coin_bgsub->SetLineWidth(2);
+    // h_coin_bgsub->Draw("HIST SAME");
+
+    // TLegend *leg = new TLegend(0.62, 0.62, 0.92, 0.88);
+    // leg->SetBorderSize(0); leg->SetFillColor(0);
+    // leg->AddEntry(h_m_pi0_coin, "Coincidence (raw)", "lep");
+    // leg->AddEntry(h_template, Form("Template (scaled -> %.3f)", bg.n_accidentals), "l");
+    // leg->AddEntry(h_coin_bgsub, "Coin - template", "l");
+    // leg->Draw("same");
+
+    // TLatex tx; tx.SetNDC(); tx.SetTextSize(0.03);
+    // tx.DrawLatex(0.12, 0.92, Form("Run: %d", run));
+    // tx.DrawLatex(0.12, 0.88, Form("coin integral = %.2f", h_m_pi0_coin->Integral()));
+    // tx.DrawLatex(0.12, 0.84, Form("template integral (after scaling) = %.3f ± %.3f", templ_int_after, templ_int_err));
+    // tx.DrawLatex(0.12, 0.80, Form("coin - template integral = %.3f", h_coin_bgsub->Integral()));
+
+    // if (outPlotDir != "") {
+    //     TString png = TString::Format("%s/pi0_acc_template_sub_run%d.png", outPlotDir.Data(), run);
+    //     c->SaveAs(png);
+    // }
+
+// ------------------------
+// Single-plot: before, template (scaled), after; no statbox; legend+info top-right
+// ------------------------
+{
+    // disable default statbox
+    gStyle->SetOptStat(0);
+
+    // clones for drawing (keep originals intact)
+    TH1D *h_before = h_m_pi0_coin;
+    TH1D *h_tpl    = (TH1D*)h_template->Clone(TString::Format("%s_draw_clone_run%d", h_template->GetName(), run).Data());
+    h_tpl->SetDirectory(nullptr);
+    TH1D *h_after  = h_coin_bgsub;
+
+    // style lines (clear and distinct)
+    h_before->SetLineColor(kBlack);
+    h_before->SetLineWidth(2);
+    h_before->SetLineStyle(1);
+    h_before->SetMarkerStyle(0);
+
+    h_tpl->SetLineColor(kRed);
+    h_tpl->SetLineWidth(2);
+    h_tpl->SetLineStyle(7); // dashed
+    h_tpl->SetMarkerStyle(0);
+
+    h_after->SetLineColor(kBlue+2);
+    h_after->SetLineWidth(2);
+    h_after->SetLineStyle(1);
+    h_after->SetMarkerStyle(0);
+
+    // compute y-range to show all three comfortably
+    double max_before = (h_before->GetEntries()>0) ? h_before->GetMaximum() : 0.0;
+    double max_tpl    = (h_tpl   ->GetEntries()>0) ? h_tpl   ->GetMaximum() : 0.0;
+    double max_after  = (h_after ->GetEntries()>0) ? h_after ->GetMaximum() : 0.0;
+    double ymax = std::max({max_before, max_tpl, max_after});
+    if (ymax <= 0) ymax = 1.0;
+    h_before->SetMaximum(ymax * 1.20); // small headroom
+
+    // canvas
+    TString cname = (run >= 0) ? TString::Format("c_pi0_acc_sub_run%d_oneplot", run) : TString("c_pi0_acc_sub_oneplot");
+    TCanvas *c = new TCanvas(cname, "Pi0 accidental subtraction", 1000, 700);
+    c->SetLeftMargin(0.12);
+    c->SetRightMargin(0.12);
+    c->cd();
+
+    // draw: base histogram defines axes
+    h_before->Draw("HIST");          // before (raw) drawn first so axis fits
+    h_tpl->Draw("HIST SAME");        // template (already scaled to bg.n_accidentals)
+    h_after->Draw("HIST SAME");      // after subtraction
+
+    // Legend and info box on top-right, arranged to not overlap
+   // === Info box (tight, top-right) ===
+    TPaveText *info = new TPaveText(0.53, 0.56, 0.87, 0.77, "NDC");
+    info->SetFillColor(0);
+    info->SetBorderSize(0);
+    info->SetTextFont(42);
+    info->SetTextSize(0.030);
+    info->AddText(Form("Run: %d", run));
+    info->AddText(Form("Coin integral: %.2f", h_before->Integral()));
+    info->AddText(Form("Timing accidental model: %.3f",
+                       templ_int_after));
+    info->AddText(Form("Final (coin - model): %.3f", h_after->Integral()));
+    info->Draw("same");
+
+    // === Legend (directly below info box, fully separated) ===
+    TLegend *leg = new TLegend(0.53, 0.32, 0.87, 0.46, "", "NDC");
+    leg->SetBorderSize(0);
+    leg->SetFillColor(0);
+    leg->SetTextFont(42);
+    leg->SetTextSize(0.030);
+
+    leg->AddEntry(h_before, "All coincidence window", "l");
+    leg->AddEntry(h_tpl,    "Timing accidental model", "l");
+    leg->AddEntry(h_after,  "Coin - model (final)", "l");
+
+    leg->Draw("same");
+
+    gPad->Modified();
+    gPad->Update();
+
+    // optional: draw a vertical line or shaded region around pi0 peak if you want focus (commented)
+    // TLine *peakL = new TLine(m_peak - width, 0, m_peak - width, ymax*1.2); peakL->SetLineStyle(2); peakL->Draw("same");
+
+    // Save if requested
+    if (outPlotDir != "") {
+        TString png = TString::Format("%s/pi0_acc_template_sub_run%d_oneplot.png", outPlotDir.Data(), run);
+        c->SaveAs(png);
+    }
+
+    // cleanup
+    delete h_tpl; // safe: it was cloned and detached
+    // keep c/h_before/h_after for caller if they want; clones removed
+}
+
+
+
+
+    // cleanup temporary clones
+    for (auto *p : tmp_clones) { if (p) { delete p; } }
+    // keep h_template and h_coin_bgsub in memory for caller to use/write
+    return h_coin_bgsub;
+}
+
 
 } // namespace nps
 

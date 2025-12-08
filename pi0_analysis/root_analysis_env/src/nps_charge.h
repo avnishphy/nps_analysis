@@ -1,77 +1,97 @@
-#ifndef NPS_CHARGE
-#define NPS_CHARGE
+#ifndef NPS_CHARGE_H
+#define NPS_CHARGE_H
 
 #include <iostream>
+#include <cmath>
 #include "TTree.h"
 
 namespace nps {
 
-    /**
-     * @brief Calculate accumulated charge from scaler variables already connected to a TTree.
-     * 
-     * @param nentries Number of entries in the TTree.
-     * @param BCM2_scalerCharge Pointer to the current BCM2 scaler charge variable.
-     * @param BCM2_scalerCurrent Pointer to the current BCM2 scaler current variable.
-     * @param H_1MHz_scalerTime Pointer to the 1MHz scaler time variable.
-     * @param run Optional run number for printing messages.
-     * @param verbose If true, prints accumulated charge info.
-     * @return Accumulated charge in mC, or -1 on error.
-     */
-    inline double get_accumulated_charge(
-        Long64_t nentries,
-        double* BCM2_scalerCharge,
-        double* BCM2_scalerCurrent,
-        double* H_1MHz_scalerTime,
-        int run = 0,
-        bool verbose = true
-    ) {
-
-        if (!BCM2_scalerCharge || !BCM2_scalerCurrent || !H_1MHz_scalerTime) {
-            std::cerr << "Error: One or more scaler pointers are null." << std::endl;
-            return -1;
-        }
-
-        if (nentries < 2) {
-            std::cerr << "Error: Not enough scaler entries in run " << run << std::endl;
-            return -1;
-        }
-
-        double accumulated_charge = 0.0;
-        double prev_charge = 0.0;
-        double prev_time = 0.0;
-        bool first_entry = true;
-
-        for (Long64_t i = 0; i < nentries; ++i) {
-            // The values are assumed to already be updated by the tree->GetEntry(i) in main
-            if (first_entry) {
-                prev_charge = *BCM2_scalerCharge;
-                prev_time = *H_1MHz_scalerTime;
-                first_entry = false;
-                continue;
-            }
-
-            double delta_charge = *BCM2_scalerCharge - prev_charge;
-            double delta_time = *H_1MHz_scalerTime - prev_time;
-
-            if (delta_charge > 0 && delta_time > 0) {
-                accumulated_charge += delta_charge;
-            }
-
-            prev_charge = *BCM2_scalerCharge;
-            prev_time = *H_1MHz_scalerTime;
-        }
-
-        // Convert from µC to mC
-        double accumulated_charge_mC = accumulated_charge / 1000.0;
-
-        if (verbose) {
-            std::cout << "Run " << run << " accumulated charge: "
-                      << accumulated_charge_mC << " mC" << std::endl;
-        }
-
-        return accumulated_charge_mC;
+/**
+ * @brief Compute accumulated charge from a scaler TTree.
+ *
+ * The function expects the caller to have enabled/connected the tree branches
+ * so the provided pointers are updated when scaler_tree->GetEntry(i) is called.
+ *
+ * Units:
+ *  - scalerCurrent: microamps (µA)
+ *  - scalerTime: seconds (s)
+ *  - returned value: mC (milliCoulombs) because µA * s = µC and we divide by 1000.
+ *
+ * @param scaler_tree Pointer to the scaler TTree.
+ * @param nentries Number of entries in the tree (pass 0 to auto-query from the tree).
+ * @param scalerCurrent Pointer to the scaler current variable (e.g. &H_BCM4A_scalerCurrent).
+ * @param scalerTime Pointer to the scaler time variable (e.g. &H_1MHz_scalerTime).
+ * @param min_current Minimum current (µA) required to include the interval in the sum (default 2.0 µA).
+ * @param run Optional run number for verbose output.
+ * @param verbose If true prints summary and warnings.
+ * @return accumulated charge in mC, or -1 on error / if accumulated charge <= 0.
+ */
+inline double get_accumulated_charge(
+    TTree* scaler_tree,
+    Long64_t nentries,
+    double* scalerCurrent,
+    double* scalerTime,
+    double min_current = 2.0,
+    int run = 0,
+    bool verbose = true
+) {
+    if (!scaler_tree) {
+        std::cerr << "nps::get_accumulated_charge: scaler_tree is null\n";
+        return -1;
     }
+    if (!scalerCurrent || !scalerTime) {
+        std::cerr << "nps::get_accumulated_charge: one or more scaler pointers are null\n";
+        return -1;
+    }
+
+    if (nentries <= 0) nentries = scaler_tree->GetEntries();
+    if (nentries < 2) {
+        if (verbose) std::cerr << "nps::get_accumulated_charge: not enough entries in run " << run << "\n";
+        return -1;
+    }
+
+    double accumulated_charge_uC = 0.0; // µC
+    double prev_time = 0.0;
+    bool first = true;
+
+    for (Long64_t i = 0; i < nentries; ++i) {
+        scaler_tree->GetEntry(i);
+
+        if (first) {
+            prev_time = *scalerTime;
+            first = false;
+            continue;
+        }
+
+        double delta_time = (*scalerTime) - prev_time;
+
+        // require positive time increment and current above floor
+        if (delta_time > 0.0 && (*scalerCurrent) > min_current) {
+            // current in µA * time in s -> µC
+            accumulated_charge_uC += (*scalerCurrent) * delta_time;
+        }
+
+        prev_time = *scalerTime;
+    }
+
+    if (accumulated_charge_uC <= 0.0) {
+        if (verbose) std::cerr << "nps::get_accumulated_charge: accumulated_charge <= 0 for run "
+                               << run << "\n";
+        return -1;
+    }
+
+    double accumulated_charge_mC = accumulated_charge_uC / 1000.0; // µC -> mC
+
+    if (verbose) {
+        std::cout << "nps::get_accumulated_charge: run " << run
+                  << " accumulated charge = " << accumulated_charge_mC << " mC"
+                  << " (min_current=" << min_current << " µA)\n";
+    }
+
+    return accumulated_charge_mC;
+}
 
 } // namespace nps
 
-#endif // NPS_CHARGE
+#endif // NPS_CHARGE_H

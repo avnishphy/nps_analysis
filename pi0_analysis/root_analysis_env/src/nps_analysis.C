@@ -9,6 +9,10 @@
 #include "nps_helper.h"
 #include "nps_time_bg.h"
 #include "nps_comb_bg.h"
+#include "nps_mmiss_cor.h"
+#include "nps_physics_var.h"
+#include "nps_charge.h"
+
 
 #include <TFile.h>
 #include <TTree.h>
@@ -58,6 +62,7 @@ constexpr int NPRINT_PROGRESS = 16384;
 // pass_hms_nps, estimated_accidentals, chi2_ndf_comb_bg,
 // pi0_mu_MeV, pi0_sigma_MeV, pi0_signal_counts, mmiss_p_mean_GeV, mmiss_p_sigma_GeV
 // ------------------------------------------------------------------
+
 void write_global_csv_header(const TString &path) {
     ofstream f(path.Data(), ios::out);
     f << "run,accumulated_charge(mC),current_mean_uA,total_entries,pass_hms,pass_hms_nps,estimated_accidentals,chi2_ndf_comb_bg,pi0_mu_MeV,pi0_sigma_MeV,pi0_signal_counts,mmiss_p_mean_GeV,mmiss_p_sigma_GeV,run_current_mode_uA\n";
@@ -171,16 +176,16 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
                 charge_estimate_uA_counts = 0.0;
             }
         }
-
-        // double accumulated_charge_mC = nps::get_accumulated_charge(
-        //     T,
-        //     nentries,
-        //     &H_BCM4A_scalerCurrent,
-        //     &H_1MHz_scalerTime,
-        //     /*min_current=*/ 2.0,  // µA
-        //     run,
-        //     true
-        // );
+        
+        double accumulated_charge_mC = nps::get_accumulated_charge(
+            T,
+            nentries,
+            &BCM2_scalerCurrent,
+            &H_1MHz_scalerTime,
+            /*min_current=*/ 2.0,  // µA
+            run,
+            true
+        );
 
         // -------------------------
         // Histograms (unique names per run)
@@ -206,6 +211,9 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
         TH1D *h_mmiss_4 = new TH1D(name("h_mmiss_4"), "Missing mass (4-cluster);M_{miss} [GeV];Events", 200, 0.0, 2.0);
         TH1D *h_mmiss_dvcs = new TH1D(name("h_mmiss_dvcs"), "Missing mass (DVCS-like single photon);M_{miss} [GeV];Events", 200, 0.0, 2.0);
 
+        TH1D *h_mmiss_all= new TH1D(name("h_mmiss_all"), "Missing mass;M_{miss} [GeV];Events", 200, 0.0, 2.0);
+        TH1D *h_mmiss_all_corr = new TH1D(name("h_mmiss_all_corr"), "Missing mass;M_{miss} [GeV];Events", 200, 0.0, 2.0);
+
         const double t_min = 140.0, t_max = 160.0;
         const int nbins_t = 200;
         TH2D *h_t1_t2 = new TH2D(name("h_t1_t2"), "t1 (y) vs t2 (x);t2 [ns];t1 [ns]", nbins_t, t_min, t_max, nbins_t, t_min, t_max);
@@ -216,6 +224,29 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
         TH1D *h_m_pi0_coin = new TH1D(name("h_m_pi0_coin"), "Pi0 mass (Coincidence);M [GeV];Counts", 200, 0.0, 0.4);
         TH1D *h_m_pi0_acc  = new TH1D(name("h_m_pi0_acc"),  "Pi0 mass (Accidentals - outside coin);M [GeV];Counts", 200, 0.0, 0.4);
         TH1D *h_coin_bgsub = nullptr;
+
+        // ----------------------------
+        // Physics variable histograms
+        // ----------------------------
+
+        // Q2 (GeV^2)
+        TH1D *h_Q2 = new TH1D("h_Q2", "Q^{2};Q^{2}  [GeV^{2}];Counts", 200, 0, 10);
+
+        // W (GeV)
+        TH1D *h_W = new TH1D("h_W", "W;W  [GeV];Counts", 200, 0.5, 4.5);
+
+        // Mandelstam t (GeV^2), usually negative
+        TH1D *h_t = new TH1D("h_t", "t;t  [GeV^{2}];Counts", 200, -5.0, 0.5);
+
+        // Transverse momentum pt (GeV)
+        TH1D *h_pt = new TH1D("h_pt", "p_{T};p_{T}  [GeV];Counts", 200, 0.0, 1.0);
+
+        // Theta (radians)
+        TH1D *h_theta = new TH1D("h_theta", "#theta;#theta  [rad];Counts", 180, 0.0, 0.5);
+
+        // Phi (radians)
+        TH1D *h_phi = new TH1D("h_phi", "#phi;#phi  [rad];Counts", 180, -3.2, 3.2);
+
 
         // Per-window mgg histograms (diag/side/full)
         vector<pair<double,double>> diag_windows = nps::default_diag_windows();
@@ -244,8 +275,11 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
         TH1D *h_mgg_full2 = new TH1D(name("h_mgg_full2"), "m_{#gamma#gamma} fullbox2;M [GeV];Counts", 200,0.0,0.4);
 
         // mm vs mgg scatter
-        TH2D *h_mmiss_vs_mgg = new TH2D(name("h_mmiss_vs_mgg"), "M_{miss} vs M_{#gamma#gamma};M_{#gamma#gamma} [GeV];M_{miss} [GeV]",
-                                       200,0.0,0.4,200,0.0,2.0);
+        TH2D *h_mmiss_vs_mgg = new TH2D(name("h_mmiss_vs_mgg"), "M_{miss} vs M_{#gamma#gamma};M_{miss} [GeV];M_{#gamma#gamma} [GeV]",
+                                       200,0.7,1.8,200,0.10,0.16);
+
+        TH2D *h_mmiss_vs_mgg_corr = new TH2D(name("h_mmiss_vs_mgg_corr"), "M_{miss} vs M_{#gamma#gamma};M_{miss} [GeV];M_{#gamma#gamma} [GeV]",
+                                200,0.7,1.8,200,0.10,0.16);                               
 
         // mm vs t1/t2
         TH2D *h_mmiss_vs_t1 = new TH2D(name("h_mmiss_vs_t1"), "M_{miss} vs t1; t1 [ns]; M_{miss} [GeV]", nbins_t, t_min, t_max, 200, 0.0, 2.0);
@@ -371,11 +405,22 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
                                                             clusX[sel_i], clusY[sel_i],
                                                             clusX[sel_j], clusY[sel_j],
                                                             nps::kDefaultZ_NPS_cm, -17.51);
+
+            const double mm_p_corr = nps::invariant_missing_mass_corrected_avnish_from_detector(mm_p, Ee, px_e, py_e, pz_e,
+                                                            clusE[sel_i], clusE[sel_j],
+                                                            clusX[sel_i], clusY[sel_i],
+                                                            clusX[sel_j], clusY[sel_j],
+                                                            nps::kDefaultZ_NPS_cm, -17.51);
+
             if (good_idx.size()==2) h_mmiss_2->Fill(mm_p);
             else if (good_idx.size()==3) h_mmiss_3->Fill(mm_p);
             else if (good_idx.size()==4) h_mmiss_4->Fill(mm_p);
 
-            h_mmiss_vs_mgg->Fill(mgg, mm_p);
+            h_mmiss_vs_mgg->Fill(mm_p, mgg);
+            h_mmiss_vs_mgg_corr->Fill(mm_p_corr, mgg);
+            h_mmiss_all->Fill(mm_p);
+            h_mmiss_all_corr->Fill(mm_p_corr);
+
             h_mmiss_vs_t1->Fill(clusT[sel_i], mm_p);
             h_mmiss_vs_t2->Fill(clusT[sel_j], mm_p);
             ++n_selected_for_analysis;
@@ -400,6 +445,22 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
             }
             if ( (t1 > full1_t1.first && t1 < full1_t1.second && t2 > full1_t2.first && t2 < full1_t2.second) ) h_mgg_full1->Fill(mgg);
             if ( (t1 > full2_t1.first && t1 < full2_t1.second && t2 > full2_t2.first && t2 < full2_t2.second) ) h_mgg_full2->Fill(mgg);
+
+
+            auto phys = nps::compute_physics_vars_from_detector(
+            Ebeam, Ee, px_e, py_e, pz_e,
+            clusE[sel_i], clusX[sel_i], clusY[sel_i],
+            clusE[sel_j], clusX[sel_j], clusY[sel_j],
+            nps::kDefaultZ_NPS_cm, -17.51, false);
+
+            // fill histograms you create beforehand:
+            h_t->Fill(phys.t);
+            h_pt->Fill(phys.pt);
+            h_Q2->Fill(phys.Q2);
+            h_W->Fill(phys.W);
+            h_theta->Fill(phys.theta);
+            h_phi->Fill(phys.phi);
+
         } // end event loop
 
         cout << endl;
@@ -446,6 +507,37 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
         }
 
         // -------------------------
+        // Create overlay canvas for missing mass
+        // -------------------------
+        TCanvas *c_mmiss_overlay = new TCanvas("c_mmiss_overlay", "Missing Mass Overlay", 800, 600);
+
+        // Set line colors and widths
+        h_mmiss_all->SetLineColor(kBlack);
+        h_mmiss_all->SetLineWidth(2);
+
+        h_mmiss_all_corr->SetLineColor(kBlue);
+        h_mmiss_all_corr->SetLineWidth(2);
+
+        // Draw histograms
+        h_mmiss_all->Draw("HIST");
+        h_mmiss_all_corr->Draw("HIST SAME");
+
+        // Add legend
+        TLegend *leg_mmiss = new TLegend(0.65, 0.7, 0.88, 0.88);
+        leg_mmiss->SetBorderSize(0);
+        leg_mmiss->SetFillColor(0);
+        leg_mmiss->AddEntry(h_mmiss_all, "Original Mx", "l");
+        leg_mmiss->AddEntry(h_mmiss_all_corr, "Corrected Mx", "l");
+        leg_mmiss->Draw();
+
+        // Write canvas to the same ROOT file
+        // c_mmiss_overlay->Write("c_mmiss_overlay");
+
+        // Optional: keep canvas in memory for inspection, or delete if you prefer
+        // delete c_mmiss_overlay;
+
+
+        // -------------------------
         // Open per-run ROOT file (and ensure we write everything there)
         // -------------------------
         TString outf = Form("%s/diagnostics_run%d.root", outPlotDir.Data(), run);
@@ -461,6 +553,7 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
             h_clustXY->Write(); h_clustE_sum->Write(); h_opening_angle->Write(); h_photon_Eratio->Write();
             h_mpi0_all->Write(); h_mpi0_2->Write(); h_mpi0_3->Write(); h_mpi0_4->Write();
             h_mmiss_2->Write(); h_mmiss_3->Write(); h_mmiss_4->Write(); h_mmiss_dvcs->Write();
+            h_mmiss_all->Write(); h_mmiss_all_corr->Write();c_mmiss_overlay->Write("c_mmiss_overlay");
             h_t1_t2->Write("h_t1_t2", TObject::kOverwrite); h_t1_proj->Write(); h_t2_proj->Write();
             h_m_pi0_coin->Write(); h_m_pi0_acc->Write();
             if (h_coin_bgsub) h_coin_bgsub->Write("h_pi0_coin_bgsub", TObject::kOverwrite);
@@ -471,7 +564,15 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
             for (auto *h: h_mgg_ver) if (h) h->Write();
             h_mgg_full1->Write(); h_mgg_full2->Write();
             h_mmiss_vs_mgg->Write();
+            h_mmiss_vs_mgg_corr->Write();
             h_mmiss_vs_t1->Write(); h_mmiss_vs_t2->Write();
+
+            h_t->Write();
+            h_pt->Write();
+            h_Q2->Write();
+            h_W->Write();
+            h_theta->Write();
+            h_phi->Write();
 
             // write background and fit scalars (TParameter)
             TParameter<double>("coin_raw", bg.n_coin_raw).Write();
@@ -528,12 +629,7 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
         if (h_final)      { h_final->SetLineColor(kMagenta+1); h_final->SetLineWidth(2); h_final->Draw("HIST SAME"); }
 
         TLegend *l2 = new TLegend(0.45,0.60,0.78,0.88); l2->SetBorderSize(0); l2->SetFillColor(0);
-        // l2->AddEntry(h_mpi0_all,"All selected #pi^{0} candidates","l");
-        // l2->AddEntry(h_m_pi0_coin,"t1 & t2 within coincidence window","l");
-        // // l2->AddEntry(h_m_pi0_acc,"t1 & t2 outside coincidence window","l");
-        // if (h_coin_bgsub) l2->AddEntry(h_coin_bgsub,"Coincidence - accidental (bg-sub)","l");
-        // if (h_final)      l2->AddEntry(h_final,"Final background-subtracted (fit-sub)","l");
-        // l2->Draw();
+
         // Legend shows analysis flow top→bottom
         l2->SetHeader("Analysis flow");
         l2->SetTextSize(0.030);
@@ -639,7 +735,7 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
             ofstream fg(global_csv.Data(), ios::app);
             if (fg.is_open()) {
                 fg << run << ","                             // run
-                //    << std::setprecision(6) << accumulated_charge_mC << ","   // accumulated charge
+                   << std::setprecision(6) << accumulated_charge_mC << ","   // accumulated charge
                    << std::setprecision(6) << run_current_mean << ","           // mean current uA
                    << n_total << ","                                           // total entries
                    << n_pass_hms << ","                                        // pass hms
@@ -673,8 +769,9 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
         for (auto *h: h_mgg_hor) delete h;
         for (auto *h: h_mgg_ver) delete h;
         delete h_mgg_full1; delete h_mgg_full2;
-        delete h_mmiss_vs_mgg;
+        delete h_mmiss_vs_mgg; delete h_mmiss_vs_mgg_corr;
         delete h_mmiss_vs_t1; delete h_mmiss_vs_t2;
+        delete h_t; delete h_pt; delete h_Q2; delete h_W; delete h_theta; delete h_phi;
 
         // delete canvases & legend / boxes
         delete c_t12; delete c_pi0; delete c_mmiss_mgg; delete c_cluster;

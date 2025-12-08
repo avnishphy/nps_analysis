@@ -476,7 +476,7 @@ inline TH1D* make_and_subtract_accidentals_data_driven(
 
     // If zero integral and fallback exists, try fallback logic already handled above; if still zero, abort.
     if (templ_integral <= 0.0) {
-        std::cerr << "[make_and_subtract_accidentals_data_driven] WARNING: template integral <= 0. Cannot scale to bg.n_accidentals.\n";
+        std::cerr << "[make_and_subtract_accidentals_data_driven] WARNING: template integral <= 0.\n";
         for (auto *p : tmp_clones) delete p;
         delete h_template;
         return nullptr;

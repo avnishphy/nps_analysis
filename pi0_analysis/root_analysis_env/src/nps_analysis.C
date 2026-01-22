@@ -11,7 +11,10 @@
 #include "nps_comb_bg.h"
 #include "nps_mmiss_cor.h"
 #include "nps_physics_var.h"
-#include "nps_charge.h"
+// #include "nps_charge.h" ; update the code to read correct values!
+#include "nps_hms_track_eff.h"
+// #include "nps_livetimes.h" ; update the code to read correct values!
+#include "nps_yao_database_reader.h"
 
 
 #include <TFile.h>
@@ -65,7 +68,7 @@ constexpr int NPRINT_PROGRESS = 16384;
 
 void write_global_csv_header(const TString &path) {
     ofstream f(path.Data(), ios::out);
-    f << "run,accumulated_charge(mC),current_mean_uA,total_entries,pass_hms,pass_hms_nps,estimated_accidentals,chi2_ndf_comb_bg,pi0_mu_MeV,pi0_sigma_MeV,pi0_signal_counts,mmiss_p_mean_GeV,mmiss_p_sigma_GeV,run_current_mode_uA\n";
+    f << "run,accumulated_charge(mC),current_mean_uA,CPUT_LT,Beam_Time(s),total_entries,pass_hms,pass_hms_nps,total_coin_entries,estimated_time_accidentals,chi2_ndf_comb_bg,pi0_mu_MeV,pi0_sigma_MeV,pi0_signal_counts,mmiss_p_mean_GeV,mmiss_p_sigma_GeV,current_mode_uA\n";
     f.close();
 }
 
@@ -120,6 +123,8 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
         static Double_t clusE[MAX_CLUS], clusX[MAX_CLUS], clusY[MAX_CLUS], clusT[MAX_CLUS];
         Double_t nclust_dbl = 0;
         Double_t BCM2_scalerCurrent = 0, BCM2_scalerCharge = 0, H_1MHz_scalerTime = 0;
+        Double_t h_hodbetanotrack = 0, h_hodgoodscinhit = 0, hdcntrack = 0;
+        Double_t s1x_rate = 0, s1y_rate = 0, s2x_rate = 0, s2y_rate = 0;
 
         // set branch status / addresses (enable only needed branches)
         T->SetBranchStatus("*", 0);
@@ -145,13 +150,23 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
         enable("NPS.cal.clusX", &clusX);
         enable("NPS.cal.clusY", &clusY);
         enable("NPS.cal.clusT", &clusT);
+        
+        // HMS efficiencies
+        enable("H.hod.betanotrack", &h_hodbetanotrack);
+        enable("H.hod.goodscinhit", &h_hodgoodscinhit);
+        enable("H.dc.ntrack", &hdcntrack);
+        enable("H.S1X.scalerRate", &s1x_rate);
+        enable("H.S1Y.scalerRate", &s1y_rate);
+        enable("H.S2X.scalerRate", &s2x_rate);
+        enable("H.S2Y.scalerRate", &s2y_rate);
+
 
         Long64_t nentries = T->GetEntries();
         cout << "Run " << run << " entries: " << nentries << endl;
 
         // quick-run current estimate (mode & mean) and charge-like diagnostic
         double run_current_mode = 0.0;
-        double run_current_mean = 0.0;
+        double run_current_mean = nps::getAve_BeamCurr_or_nan(run);
         double charge_estimate_uA_counts = 0.0; // diagnostic sum of per-event current readings
         {
             if (T->GetBranch("H.BCM2.scalerCurrent")) {
@@ -168,7 +183,7 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
                 }
                 if (hCurrent->GetEntries() > 0) {
                     run_current_mode = hCurrent->GetXaxis()->GetBinCenter(hCurrent->GetMaximumBin());
-                    run_current_mean = (cnt>0) ? (sum / double(cnt)) : 0.0;
+                    // run_current_mean = (cnt>0) ? (sum / double(cnt)) : 0.0;
                 } else { run_current_mode = run_current_mean = 0.0; }
                 delete hCurrent;
             } else {
@@ -177,15 +192,49 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
             }
         }
         
-        double accumulated_charge_mC = nps::get_accumulated_charge(
-            T,
-            nentries,
-            &BCM2_scalerCurrent,
-            &H_1MHz_scalerTime,
-            /*min_current=*/ 2.0,  // µA
-            run,
-            true
-        );
+        // double accumulated_charge_mC = nps::get_accumulated_charge(
+        //     T,
+        //     nentries,
+        //     &BCM2_scalerCurrent,
+        //     &H_1MHz_scalerTime,
+        //     /*min_current=*/ 2.0,  // µA
+        //     run,
+        //     true
+        // );
+// ===================================================================================================
+        // Need to update the nps_charge.h and nps_livetimes.h to calculate the per-run quantities
+        double accumulated_charge_mC = nps::getChargeTot_or_nan(run);  // returns uC or NaN
+
+        if (!std::isfinite(accumulated_charge_mC)) {
+            std::cerr << "ERROR: Charge not found for run " << run << " in database\n";
+            return;   // or continue / throw
+        }
+
+        // convert uC → mC; Yaopeng stores the charge in uC
+        accumulated_charge_mC /= 1000.0;
+
+        if (accumulated_charge_mC <= 0) {
+            std::cerr << "ERROR: Non-positive charge for run " << run 
+                    << ": " << accumulated_charge_mC << " mC\n";
+            return;
+        }
+        std::cout << "Charge = " << accumulated_charge_mC << " mC\n";
+
+        double cpu_lt = nps::getCPU_LT_or_nan(run);
+        if (!std::isfinite(cpu_lt) || cpu_lt <= 0 || cpu_lt > 1.0) {
+            std::cerr << "ERROR: Bad CPU_LT for run " << run << "\n";
+            return;
+        }
+        std::cout << "CPU_LT = " << cpu_lt << "\n";
+
+        double beam_time = nps::getBeam_Time_or_nan(run);
+        if (!std::isfinite(beam_time) || beam_time <= 0) {
+            std::cerr << "ERROR: Bad Beam_Time for run " << run << "\n";
+            return;
+        }
+        std::cout << "Beam_Time = " << beam_time << " s\n";
+// ===================================================================================================
+
 
         // -------------------------
         // Histograms (unique names per run)
@@ -238,6 +287,9 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
         // Mandelstam t (GeV^2), usually negative
         TH1D *h_t = new TH1D("h_t", "t;t  [GeV^{2}];Counts", 200, -5.0, 0.5);
 
+        // t_min (GeV^2)
+        TH1D *h_tmin = new TH1D("h_tmin", "t_{min};t_{min}  [GeV^{2}];Counts", 200, -5.0, 0.0);
+
         // Transverse momentum pt (GeV)
         TH1D *h_pt = new TH1D("h_pt", "p_{T};p_{T}  [GeV];Counts", 200, 0.0, 1.0);
 
@@ -246,6 +298,16 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
 
         // Phi (radians)
         TH1D *h_phi = new TH1D("h_phi", "#phi;#phi  [rad];Counts", 180, -3.2, 3.2);
+
+        // Invariant s (GeV^2)
+        TH1D *h_s = new TH1D("h_s", "s;s  [GeV^{2}];Counts", 200, 5.0, 30.0);
+
+        // Bjorken x
+        TH1D *h_xB = new TH1D("h_xB", "x_{B};x_{B};Counts", 200, 0.0, 1.0);
+
+        // Energy fraction z = E_pi / nu
+        TH1D *h_z = new TH1D("h_z", "z;z;Counts", 200, 0.0, 1.2);
+
 
 
         // Per-window mgg histograms (diag/side/full)
@@ -291,6 +353,9 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
         Long64_t n_mult2_hms_nps = 0, n_mult3_hms_nps = 0, n_mult4_hms_nps = 0;
         Long64_t n_dvcs_flagged = 0, n_selected_for_analysis = 0;
 
+        // hms efficiency first call
+        nps::hms_track_eff::HMSTrackingEffCounter hmstrackEff(run);
+
         // -------------------------
         // Event loop
         // -------------------------
@@ -305,6 +370,19 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
             // HMS electron selection using your helper
             if (!nps::hms_electron_cuts(edtmtdc, hdelta, HgtrTh, HgtrPh, hcernpeSum, hcaletotnorm, hreactz)) continue;
             ++n_pass_hms;
+
+            // HMS efficiencies per run
+            hmstrackEff.processEvent(
+                h_hodbetanotrack,
+                hcaletotnorm,
+                hcernpeSum,            // your variable name from nps_analysis.C
+                h_hodgoodscinhit,
+                hdcntrack,
+                s1x_rate,
+                s1y_rate,
+                s2x_rate,
+                s2y_rate
+            );
 
             // safe cast of cluster count
             int nclust = static_cast<int>(lrint(nclust_dbl));
@@ -406,7 +484,7 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
                                                             clusX[sel_j], clusY[sel_j],
                                                             nps::kDefaultZ_NPS_cm, -17.51);
 
-            const double mm_p_corr = nps::invariant_missing_mass_corrected_avnish_from_detector(mm_p, Ee, px_e, py_e, pz_e,
+            const double mm_p_corr = nps::invariant_missing_mass_corrected_avnish_from_detector(mm_p*mm_p, Ebeam, Ee, px_e, py_e, pz_e,
                                                             clusE[sel_i], clusE[sel_j],
                                                             clusX[sel_i], clusY[sel_i],
                                                             clusX[sel_j], clusY[sel_j],
@@ -455,12 +533,15 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
 
             // fill histograms you create beforehand:
             h_t->Fill(phys.t);
+            h_tmin->Fill(phys.tmin);
             h_pt->Fill(phys.pt);
             h_Q2->Fill(phys.Q2);
             h_W->Fill(phys.W);
+            h_s->Fill(phys.s);
+            h_xB->Fill(phys.xB);
+            h_z->Fill(phys.z);
             h_theta->Fill(phys.theta);
             h_phi->Fill(phys.phi);
-
         } // end event loop
 
         cout << endl;
@@ -568,9 +649,13 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
             h_mmiss_vs_t1->Write(); h_mmiss_vs_t2->Write();
 
             h_t->Write();
+            h_tmin->Write();
             h_pt->Write();
             h_Q2->Write();
             h_W->Write();
+            h_s->Write();
+            h_xB->Write();
+            h_z->Write();
             h_theta->Write();
             h_phi->Write();
 
@@ -585,6 +670,9 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
             TParameter<double>("pi0_mu_MeV", res.mu_MeV).Write();
             TParameter<double>("pi0_sigma_MeV", res.sigma_MeV).Write();
             TParameter<double>("pi0_signal_counts", res.signal_counts).Write();
+
+            auto [hms_track_eff_val, hms_track_eff_unc] = hmstrackEff.finalizeAndWrite(fout, outPlotDir_in);
+            std::cout << Form("Run %d HMS tracking eff = %.4f ± %.4f\n", run, hms_track_eff_val, hms_track_eff_unc);
 
             fout->Write();
             fout->Close();
@@ -699,6 +787,7 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
         cout << " Proton missing mass mean (GeV): " << mmiss_p_mean << "  sigma: " << mmiss_p_sigma << "\n";
         cout << "=====================================\n";
 
+
         // -------------------------
         // Save TXT summary (per-run)
         // -------------------------
@@ -737,9 +826,12 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
                 fg << run << ","                             // run
                    << std::setprecision(6) << accumulated_charge_mC << ","   // accumulated charge
                    << std::setprecision(6) << run_current_mean << ","           // mean current uA
+                   << std::setprecision(6) << cpu_lt << ","                     // cpu livetime
+                   << std::setprecision(6) << beam_time << ","                  // beam time
                    << n_total << ","                                           // total entries
                    << n_pass_hms << ","                                        // pass hms
                    << n_selected_for_analysis << ","                          // pass hms + nps
+                   << std::setprecision(6) << bg.n_coin_raw << ","            // total events in the coin window
                    << std::setprecision(6) << bg.n_accidentals << ","         // estimated accidentals
                    << std::setprecision(6) << res.chi2_ndf << ","             // chi2/ndf (comb bg)
                    << std::setprecision(6) << res.mu_MeV << ","               // pi0 mu MeV
@@ -771,7 +863,7 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
         delete h_mgg_full1; delete h_mgg_full2;
         delete h_mmiss_vs_mgg; delete h_mmiss_vs_mgg_corr;
         delete h_mmiss_vs_t1; delete h_mmiss_vs_t2;
-        delete h_t; delete h_pt; delete h_Q2; delete h_W; delete h_theta; delete h_phi;
+        delete h_t; delete h_tmin; delete h_pt; delete h_Q2; delete h_W; delete h_s; delete h_xB; delete h_z; delete h_theta; delete h_phi;
 
         // delete canvases & legend / boxes
         delete c_t12; delete c_pi0; delete c_mmiss_mgg; delete c_cluster;
@@ -785,6 +877,9 @@ void nps_analysis(const TString &skimDir_in="output/skimmed/",
         sw_run.Stop();
         logmsg(INFO, Form("Run %d finished. Runtime: %f s (real)", run, sw_run.RealTime()));
     } // end runs
+
+    // HMS track efficiency
+    nps::hms_track_eff::HMSEffAggregator::Instance().WriteGlobalSummary(outPlotDir_in);
 
     sw_total.Stop();
     logmsg(INFO, Form("ALL RUNS finished. Total runtime: %f s (real)", sw_total.RealTime()));

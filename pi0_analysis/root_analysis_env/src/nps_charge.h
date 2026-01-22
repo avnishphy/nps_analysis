@@ -32,7 +32,7 @@ inline double get_accumulated_charge(
     Long64_t nentries,
     double* scalerCurrent,
     double* scalerTime,
-    double min_current = 2.0,
+    double min_current = 2.5,
     int run = 0,
     bool verbose = true
 ) {

@@ -1,6 +1,7 @@
 // ============================================================================
 // File: nps_physics_var.h
 // Purpose: compute physics variables (t, pt, Q2, W, nu, theta, phi) for events
+//          Extended: adds s, xB, tmin, z
 // Author: ChatGPT, adapted to user's codebase (uses nps_helper.h)
 // ============================================================================
 
@@ -13,18 +14,25 @@
 #include <cmath>
 #include <cstdio>
 #include <array>
+#include <algorithm>
 
 namespace nps {
 
 // return-type: commonly-used physics variables
 struct PhysicsVars {
-    double t    = 0.0;    // Mandelstam t (GeV^2) -- often negative
-    double pt   = 0.0;    // transverse momentum of pi0 relative to virtual photon (GeV/c)
-    double Q2   = 0.0;    // photon virtuality (GeV^2) = -q^2
-    double W    = 0.0;    // invariant mass of gamma* + proton (GeV)
-    double nu   = 0.0;    // energy transfer (GeV)
-    double theta= 0.0;    // polar angle between pi0 and virtual photon (radians)
-    double phi  = 0.0;    // azimuthal angle (radians), lepton-hadron plane angle
+    double t     = 0.0;    // Mandelstam t (GeV^2) -- often negative
+    double pt    = 0.0;    // transverse momentum of pi0 relative to virtual photon (GeV/c)
+    double Q2    = 0.0;    // photon virtuality (GeV^2) = -q^2
+    double W     = 0.0;    // invariant mass of gamma* + proton (GeV)
+    double nu    = 0.0;    // energy transfer (GeV)
+    double theta = 0.0;    // polar angle between pi0 and virtual photon (radians)
+    double phi   = 0.0;    // azimuthal angle (radians), lepton-hadron plane angle
+
+    // NEW variables
+    double s     = 0.0;    // invariant s = (k + p)^2 (GeV^2)
+    double xB    = 0.0;    // Bjorken x
+    double tmin  = 0.0;    // minimal kinematic t (GeV^2)
+    double z     = 0.0;    // z = E_pi / nu (target rest frame)
 };
 
 // small Vec3 utilities (useful local lambdas)
@@ -104,12 +112,17 @@ inline std::array<double,4> missing_p4_from_detector(
     return p4_miss;
 }
 
+// Helper: Kallen lambda: sqrt((a-(b+c))^2 - 4 b c)
+inline double kallen_lambda(double a, double b, double c) {
+    double arg = (a - (b + c))*(a - (b + c)) - 4.0*b*c;
+    return (arg > 0.0) ? std::sqrt(arg) : 0.0;
+}
+
 // ---------------------------------------------------------------------------
 // Compute physics variables from detector inputs.
 // Inputs are identical to missing_p4_from_detector (beam, scattered-e, two photons).
-// Returns PhysicsVars with t, pt, Q2, W, nu, theta, phi. If a quantity is not
-// computable (zero norms etc.) it will be returned as 0 and a debug print may
-// be produced if verbose==true.
+// Returns PhysicsVars with t, pt, Q2, W, nu, theta, phi, and new ones s, xB, tmin, z.
+// If a quantity is not computable (zero norms etc.) it will be returned as 0.
 // ---------------------------------------------------------------------------
 inline PhysicsVars compute_physics_vars_from_detector(
         double Ebeam,
@@ -128,6 +141,10 @@ inline PhysicsVars compute_physics_vars_from_detector(
     std::array<double,4> p4_eout = { Ee, px_e, py_e, pz_e };
     std::array<double,4> p4_pin = { kProtonMass_GeV, 0.0, 0.0, 0.0 };
 
+    // s = (k + p)^2 (invariant)
+    std::array<double,4> p4_initial_sum = add4(p4_ein, p4_pin);
+    out.s = mass2_4vec(p4_initial_sum); // GeV^2
+
     // virtual photon q = k - k'
     std::array<double,4> q4 = sub4(p4_ein, p4_eout);
     double q0 = q4[0];
@@ -142,6 +159,11 @@ inline PhysicsVars compute_physics_vars_from_detector(
     // nu = energy transfer
     out.nu = q0;
 
+    // xB = Q2 / (2 M_p nu)
+    double denom_xb = 2.0 * kProtonMass_GeV * out.nu;
+    if (denom_xb != 0.0) out.xB = out.Q2 / denom_xb;
+    else out.xB = 0.0;
+
     // W^2 = (p + q)^2 = M_p^2 + 2*M_p*nu - Q2
     double W2 = kProtonMass_GeV*kProtonMass_GeV + 2.0*kProtonMass_GeV * out.nu - out.Q2;
     out.W = (W2 > 0.0) ? std::sqrt(W2) : 0.0;
@@ -150,6 +172,10 @@ inline PhysicsVars compute_physics_vars_from_detector(
     std::array<double,4> p4_pi = build_pi0_4vec_from_detector(e1,x1,y1,e2,x2,y2,z_nps,theta_nps_deg);
     std::array<double,3> p3_pi = { p4_pi[1], p4_pi[2], p4_pi[3] };
     double p_pi_mag = norm3(p3_pi);
+
+    // z = E_pi_lab / nu (if target at rest, P·p_pi / P·q reduces to E_pi/nu)
+    if (out.nu != 0.0) out.z = p4_pi[0] / out.nu;
+    else out.z = 0.0;
 
     // missing proton 4-vector and recoil (p_recoil = p4_miss)
     std::array<double,4> p4_miss = missing_p4_from_detector(Ebeam, Ee, px_e, py_e, pz_e,
@@ -216,10 +242,28 @@ inline PhysicsVars compute_physics_vars_from_detector(
         if (verbose) std::printf("[compute_physics_vars] Warning: degenerate plane normals -> phi set to 0\n");
     }
 
+    // ---------- compute tmin for exclusive gamma* p -> p' pi0 ----------
+    // Use CM (gamma*-p) two-body kinematics:
+    //   p* = lambda(W^2, Mp^2, Mpi^2) / (2 W)
+    //   E_p' = (W^2 + Mp^2 - Mpi^2) / (2 W)
+    //   tmin = 2 * Mp * (Mp - E_p')   (<= 0)
+    if (out.W > 0.0) {
+        const double Wval = out.W;
+        const double Mp = kProtonMass_GeV;
+        const double Mpi = kPi0Mass_GeV;
+        double lambda = kallen_lambda(Wval*Wval, Mp*Mp, Mpi*Mpi);
+        // p_star not explicitly needed for tmin via E_p', but we keep lambda in case debug needed
+        double E_pprime = (Wval*Wval + Mp*Mp - Mpi*Mpi) / (2.0 * Wval);
+        out.tmin = 2.0 * Mp * (Mp - E_pprime);
+    } else {
+        out.tmin = 0.0;
+        if (verbose) std::printf("[compute_physics_vars] Warning: W <= 0 -> tmin set to 0\n");
+    }
+
     // debug print
     if (verbose) {
-        std::printf("[PhysicsVars DEBUG] Q2=%.6g nu=%.6g W=%.6g t=%.6g pt=%.6g theta(deg)=%.3g phi(deg)=%.3g\n",
-                    out.Q2, out.nu, out.W, out.t, out.pt, out.theta*180.0/M_PI, out.phi*180.0/M_PI);
+        std::printf("[PhysicsVars DEBUG] s=%.6g Q2=%.6g xB=%.6g nu=%.6g W=%.6g t=%.6g tmin=%.6g pt=%.6g z=%.6g theta(deg)=%.3g phi(deg)=%.3g\n",
+                    out.s, out.Q2, out.xB, out.nu, out.W, out.t, out.tmin, out.pt, out.z, out.theta*180.0/M_PI, out.phi*180.0/M_PI);
     }
 
     return out;

@@ -594,8 +594,15 @@ inline FitResult fit_pi0_peak(TH1D *h,
             c->SaveAs(png);
         }
 
-        // Keep canvas in memory so caller can write it to output TFile if desired.
-        // (Don't delete c/fdisplay/g1/g2/pf/Llo/Lhi/leg/tx here.)
+        // Cleanup all allocated objects
+        if (fdisplay) { delete fdisplay; fdisplay = nullptr; }
+        if (g1) { delete g1; g1 = nullptr; }
+        if (g2) { delete g2; g2 = nullptr; }
+        if (pf) { delete pf; pf = nullptr; }
+        if (Llo) { delete Llo; Llo = nullptr; }
+        if (Lhi) { delete Lhi; Lhi = nullptr; }
+        if (leg) { delete leg; leg = nullptr; }
+        if (c) { delete c; c = nullptr; }
     } // end draw
 
     // If we didn't draw, we can clean f to avoid leaks
@@ -854,8 +861,24 @@ inline TH1D* subtract_accidentals(TH1D *h_coin,
             TString png = TString::Format("%s/pi0_acc_sub_segmented_run%d.png", outPlotDir.Data(), run);
             c->SaveAs(png);
         }
-        // keep TF1s and canvas in memory so caller can Write() them to ROOT file
+        
+        // Cleanup display clones and canvas
+        if (f_lin1_disp) { delete f_lin1_disp; f_lin1_disp = nullptr; }
+        if (f_gaus_disp) { delete f_gaus_disp; f_gaus_disp = nullptr; }
+        if (f_lin2_disp) { delete f_lin2_disp; f_lin2_disp = nullptr; }
+        if (Llo) { delete Llo; Llo = nullptr; }
+        if (Lhi) { delete Lhi; Lhi = nullptr; }
+        if (leg) { delete leg; leg = nullptr; }
+        if (c) { delete c; c = nullptr; }
     }
+
+    // Cleanup TF1 objects (the final ones, not the display clones which are cleaned above)
+    if (f_lin1) { delete f_lin1; f_lin1 = nullptr; }
+    if (f_lin2) { delete f_lin2; f_lin2 = nullptr; }
+    if (f_gaus) { delete f_gaus; f_gaus = nullptr; }
+    if (f_lin1_final) { delete f_lin1_final; f_lin1_final = nullptr; }
+    if (f_lin2_final) { delete f_lin2_final; f_lin2_final = nullptr; }
+    if (f_gaus_final) { delete f_gaus_final; f_gaus_final = nullptr; }
 
     // Return the bg-subtracted histogram (caller should delete)
     return h_coin_bgsub;

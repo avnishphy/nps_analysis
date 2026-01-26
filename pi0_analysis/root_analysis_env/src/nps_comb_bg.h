@@ -144,7 +144,8 @@ inline BGSubtractionResult FitCombinatorialBGAndSubtract(TH1D *h_coin_bgsub,
     std::string formula = PolyFormula(poly_order);
     double x_min = h_coin_bgsub->GetXaxis()->GetXmin();
     double x_max = h_coin_bgsub->GetXaxis()->GetXmax();
-    TF1 *f_bg = new TF1("f_bg", formula.c_str(), x_min, x_max);
+    std::unique_ptr<TF1> f_bg_ptr(new TF1("f_bg", formula.c_str(), x_min, x_max));
+    TF1 *f_bg = f_bg_ptr.get();
     // init parameters: p0 = average sideband height
     double sumy = 0.0; int ny = 0;
     for (int i = 0; i < g_side->GetN(); ++i) {
@@ -503,12 +504,14 @@ inline BGSubtractionResult FitCombinatorialBGAndSubtract(TH1D *h_coin_bgsub,
         // cleanup clones / temporaries created in pads
         if (h_before) { delete h_before; h_before = nullptr; }
         if (h_pull)   { delete h_pull;   h_pull = nullptr; }
-        // delete original objects created earlier
+        if (pt)       { delete pt;       pt = nullptr; }
+        // delete canvas last
+        if (c)        { delete c;        c = nullptr; }
     } // end draw
 
     // clean up objects that were allocated at function start
     if (g_side) { delete g_side; g_side = nullptr; }
-    if (f_bg)   { delete f_bg;   f_bg = nullptr; }
+    // f_bg is owned by unique_ptr and will be cleaned up automatically
 
     // Return results in struct
     result.h_final = h_final;

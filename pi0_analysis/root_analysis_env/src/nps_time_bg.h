@@ -594,7 +594,10 @@ inline TH1D* make_and_subtract_accidentals_data_driven(
 
     // cleanup
     delete h_tpl; // safe: it was cloned and detached
-    // keep c/h_before/h_after for caller if they want; clones removed
+    if (info) { delete info; info = nullptr; }
+    if (leg)  { delete leg;  leg = nullptr; }
+    if (c)    { delete c;    c = nullptr; }
+    // keep h_before/h_after for caller if they want; clones removed
 }
 
 

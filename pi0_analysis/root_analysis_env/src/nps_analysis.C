@@ -77,39 +77,6 @@ constexpr Long64_t MIN_PRINT_EVERY = 1000;
 // Utility Functions
 // ============================================================================
 
-/// RAII wrapper for safe TFile management
-class FileHandle 
-{
-public:
-    explicit FileHandle(const TString &fname, const char *mode = "READ") 
-        : file_(TFile::Open(fname, mode)) 
-    {
-        if (!file_ || file_->IsZombie()) {
-            throw std::runtime_error(std::string("Failed to open file: ") + fname.Data());
-        }
-    }
-    
-    ~FileHandle() 
-    {
-        if (file_) {
-            file_->Close();
-            delete file_;
-        }
-    }
-    
-    TFile* get() { return file_; }
-    TFile* operator->() { return file_; }
-    
-    // Deleted copy/move
-    FileHandle(const FileHandle&) = delete;
-    FileHandle& operator=(const FileHandle&) = delete;
-    FileHandle(FileHandle&&) = delete;
-    FileHandle& operator=(FileHandle&&) = delete;
-
-private:
-    TFile *file_;
-};
-
 /// Template for safe deletion of pointers
 template <typename T>
 inline void safe_delete(T*& ptr)
@@ -180,19 +147,39 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
     TStopwatch sw_total; 
     sw_total.Start();
     logmsg(INFO, "=========== NPS π0 FULL diagnostic analysis ===========");
+    
+    // Optimization: Set ROOT to batch mode for faster canvas operations
+    gROOT->SetBatch(kTRUE);
+    gStyle->SetOptStat(0);
 
+    // Read parameters from environment variables if set (bypass shell quoting issues)
+    TString skimDir = skimDir_in;
+    TString outPlotDir = outPlotDir_in;
+    TString runlist = runlistFile;
+    double beam_energy = Ebeam;
+    
+    const char* env_skim = gSystem->Getenv("NPS_SKIM_DIR");
+    const char* env_output = gSystem->Getenv("NPS_OUTPUT_DIR");
+    const char* env_runlist = gSystem->Getenv("NPS_RUNLIST");
+    const char* env_ebeam = gSystem->Getenv("NPS_EBEAM");
+    
+    if (env_skim) skimDir = TString(env_skim);
+    if (env_output) outPlotDir = TString(env_output);
+    if (env_runlist) runlist = TString(env_runlist);
+    if (env_ebeam) beam_energy = atof(env_ebeam);
+    
     // Normalize directory paths
-    TString skimDir = skimDir_in.EndsWith("/") ? skimDir_in : skimDir_in + "/";
-    TString outPlotDir = outPlotDir_in.EndsWith("/") ? outPlotDir_in : outPlotDir_in + "/";
+    skimDir = skimDir.EndsWith("/") ? skimDir : skimDir + "/";
+    outPlotDir = outPlotDir.EndsWith("/") ? outPlotDir : outPlotDir + "/";
     
     // Create output directories
     gSystem->mkdir("output", true);
     gSystem->mkdir(outPlotDir, true);
 
     // Load run list
-    std::vector<int> runs = readRunList(runlistFile.Data());
+    std::vector<int> runs = readRunList(runlist.Data());
     if (runs.empty()) {
-        logmsg(ERROR, std::string("No runs found in: ") + runlistFile.Data());
+        logmsg(ERROR, std::string("No runs found in: ") + runlist.Data());
         return;
     }
     logmsg(INFO, Form("Processing %zu runs", runs.size()));
@@ -253,6 +240,9 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
             Double_t BCM2_scalerCurrent = 0, BCM2_scalerCharge = 0, H_1MHz_scalerTime = 0;
             Double_t h_hodbetanotrack = 0, h_hodgoodscinhit = 0, hdcntrack = 0;
             Double_t s1x_rate = 0, s1y_rate = 0, s2x_rate = 0, s2y_rate = 0;
+            
+            // HMS focal plane variables
+            Double_t hxfp=0, hyfp=0, hxpfp=0, hypfp=0;
 
             // local fixed arrays for convenience (fresh per run)
             Double_t clusE[MAX_CLUS] = {0}, clusX[MAX_CLUS] = {0}, clusY[MAX_CLUS] = {0}, clusT[MAX_CLUS] = {0};
@@ -298,6 +288,12 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
             enable_scalar("H.S1Y.scalerRate", &s1y_rate);
             enable_scalar("H.S2X.scalerRate", &s2x_rate);
             enable_scalar("H.S2Y.scalerRate", &s2y_rate);
+            
+            // HMS focal plane variables
+            enable_scalar("H.dc.x_fp", &hxfp);
+            enable_scalar("H.dc.y_fp", &hyfp);
+            enable_scalar("H.dc.xp_fp", &hxpfp);
+            enable_scalar("H.dc.yp_fp", &hypfp);
 
             // ----- clusters: try to bind to std::vector<double> if present; otherwise bind to arrays
             auto try_bind_cluster = [&](const char* bname, std::vector<double>** vecptr, Double_t arr[]) {
@@ -326,24 +322,21 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
             // Read charge & livetimes from DB. If missing or invalid, skip this run
         double accumulated_charge_uC = nps::getChargeTot_or_nan(run);  // expects uC
         if (!std::isfinite(accumulated_charge_uC) || accumulated_charge_uC <= 0.0) {
-        logmsg(WARN, Form("Charge not found or invalid for run %d in database - skipping run", run));
-        f->Close(); safe_delete(f);
-        continue;
+            logmsg(WARN, Form("Charge not found or invalid for run %d in database - skipping run", run));
+            continue;  // FileGuard handles cleanup automatically
         }
         double accumulated_charge_mC = accumulated_charge_uC / 1000.0;
 
         double cpu_lt = nps::getCPU_LT_or_nan(run);
         if (!std::isfinite(cpu_lt) || cpu_lt <= 0 || cpu_lt > 1.05) {
-        logmsg(WARN, Form("Bad CPU_LT for run %d: %.6g - skipping run", run, cpu_lt));
-        f->Close(); safe_delete(f);
-        continue;
+            logmsg(WARN, Form("Bad CPU_LT for run %d: %.6g - skipping run", run, cpu_lt));
+            continue;  // FileGuard handles cleanup automatically
         }
 
         double beam_time = nps::getBeam_Time_or_nan(run);
         if (!std::isfinite(beam_time) || beam_time <= 0) {
-        logmsg(WARN, Form("Bad Beam_Time for run %d: %.6g - skipping run", run, beam_time));
-        f->Close(); safe_delete(f);
-        continue;
+            logmsg(WARN, Form("Bad Beam_Time for run %d: %.6g - skipping run", run, beam_time));
+            continue;  // FileGuard handles cleanup automatically
         }
 
         cout << "Charge = " << accumulated_charge_mC << " mC\n";
@@ -411,6 +404,78 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         TH1D *h_xB = make1D("h_xB","x_{B};x_{B};Counts",200,0.0,1.0);
         TH1D *h_z = make1D("h_z","z;z;Counts",200,0.0,1.2);
 
+        // -----------------------------------------------
+        // π⁰ statistical background subtraction histograms
+        // -----------------------------------------------
+        // Store tree data in memory indexed by event_id
+        // Tree will be created and filled at the end during file write
+        // -----------------------------------------------
+        struct TreeEntry {
+            Double_t mpi0_all, mmiss_all, mmiss_all_corr, pi0_weight;
+            Int_t is_exclusive, is_weighted;
+            Double_t Q2, W, t, tmin, pt, theta, phi, s, xB, z;
+            Int_t nclust_selected, event_id;
+            Double_t cluster_x_1, cluster_y_1, cluster_e_1, cluster_x_2, cluster_y_2, cluster_e_2;
+            // HMS tracking variables
+            Double_t delta, xptar, yptar, xtar, ytar, xfp, yfp, xpfp, ypfp;
+        };
+        std::map<Long64_t, TreeEntry> treeData;  // Indexed by event_id
+
+        // -----------------------------------------------
+        // Bin-by-bin weight histogram (weight_i = N_final(i) / N_all(i))
+        // Used to statistically subtract π⁰ background on event-by-event basis
+        TH1D *h_pi0_weight = make1D("h_pi0_weight","π⁰ bin-by-bin weight;M_{γγ} [GeV];Weight",200,0.0,0.4);
+
+        // Weighted physics distributions (without exclusivity cut - for overlay comparison)
+        TH1D *h_Q2_weighted = make1D("h_Q2_weighted","Q^{2} (weighted);Q^{2} [GeV^{2}];Counts",200,0,10);
+        TH1D *h_W_weighted = make1D("h_W_weighted","W (weighted);W [GeV];Counts",200,0.5,4.5);
+        TH1D *h_t_weighted = make1D("h_t_weighted","t (weighted);t [GeV^{2}];Counts",200,-5.0,0.5);
+        TH1D *h_tmin_weighted = make1D("h_tmin_weighted","t_{min} (weighted);t_{min} [GeV^{2}];Counts",200,-5.0,0.0);
+        TH1D *h_pt_weighted = make1D("h_pt_weighted","p_{T} (weighted);p_{T} [GeV];Counts",200,0.0,1.0);
+        TH1D *h_theta_weighted = make1D("h_theta_weighted","θ (weighted);θ [rad];Counts",180,0.0,0.5);
+        TH1D *h_phi_weighted = make1D("h_phi_weighted","φ (weighted);φ [rad];Counts",180,-3.2,3.2);
+        TH1D *h_s_weighted = make1D("h_s_weighted","s (weighted);s [GeV^{2}];Counts",200,5.0,30.0);
+        TH1D *h_xB_weighted = make1D("h_xB_weighted","x_{B} (weighted);x_{B};Counts",200,0.0,1.0);
+        TH1D *h_z_weighted = make1D("h_z_weighted","z (weighted);z;Counts",200,0.0,1.2);
+
+        // Weighted+exclusive physics distributions (final signal sample)
+        TH1D *h_Q2_excl_weighted = make1D("h_Q2_excl_weighted","Q^{2} (exclusive, weighted);Q^{2} [GeV^{2}];Counts",200,0,10);
+        TH1D *h_W_excl_weighted = make1D("h_W_excl_weighted","W (exclusive, weighted);W [GeV];Counts",200,0.5,4.5);
+        TH1D *h_t_excl_weighted = make1D("h_t_excl_weighted","t (exclusive, weighted);t [GeV^{2}];Counts",200,-5.0,0.5);
+        TH1D *h_tmin_excl_weighted = make1D("h_tmin_excl_weighted","t_{min} (exclusive, weighted);t_{min} [GeV^{2}];Counts",200,-5.0,0.0);
+        TH1D *h_pt_excl_weighted = make1D("h_pt_excl_weighted","p_{T} (exclusive, weighted);p_{T} [GeV];Counts",200,0.0,1.0);
+        TH1D *h_theta_excl_weighted = make1D("h_theta_excl_weighted","θ (exclusive, weighted);θ [rad];Counts",180,0.0,0.5);
+        TH1D *h_phi_excl_weighted = make1D("h_phi_excl_weighted","φ (exclusive, weighted);φ [rad];Counts",180,-3.2,3.2);
+        TH1D *h_s_excl_weighted = make1D("h_s_excl_weighted","s (exclusive, weighted);s [GeV^{2}];Counts",200,5.0,30.0);
+        TH1D *h_xB_excl_weighted = make1D("h_xB_excl_weighted","x_{B} (exclusive, weighted);x_{B};Counts",200,0.0,1.0);
+        TH1D *h_z_excl_weighted = make1D("h_z_excl_weighted","z (exclusive, weighted);z;Counts",200,0.0,1.2);
+
+        // Missing mass histograms (for overlay comparison)
+        TH1D *h_mmiss_all_weighted = make1D("h_mmiss_all_weighted","Missing mass (weighted);M_{miss} [GeV];Counts",200,0.0,2.0);
+
+        // -----------------------------------------------
+        // 2D Physics variables on x-y cluster map (detector heatmaps)
+        // -----------------------------------------------
+        TH2D *h_xB_xy = make2D("h_xB_xy", "x_{B} distribution on detector; Cluster X [cm]; Cluster Y [cm]", 60, -30, 30, 72, -36, 36);
+        TH2D *h_nu_xy = make2D("h_nu_xy", "#nu (E_{beam} - E_{scatter}) on detector; Cluster X [cm]; Cluster Y [cm]", 60, -30, 30, 72, -36, 36);
+        TH2D *h_mx_xy = make2D("h_mx_xy", "Missing Mass on detector; Cluster X [cm]; Cluster Y [cm]", 60, -30, 30, 72, -36, 36);
+        TH2D *h_phi_xy = make2D("h_phi_xy", "#phi distribution on detector; Cluster X [cm]; Cluster Y [cm]", 60, -30, 30, 72, -36, 36);
+        TH2D *h_t_xy = make2D("h_t_xy", "-t distribution on detector; Cluster X [cm]; Cluster Y [cm]", 60, -30, 30, 72, -36, 36);
+
+        // -----------------------------------------------
+        // 2D correlations of final weighted+exclusive physics variables
+        // -----------------------------------------------
+        TH2D *h_Q2_vs_W = make2D("h_Q2_vs_W", "Q^{2} vs W (excl weighted); W [GeV]; Q^{2} [GeV^{2}]", 150, 0.5, 4.5, 150, 0, 10);
+        TH2D *h_Q2_vs_t = make2D("h_Q2_vs_t", "Q^{2} vs -t (excl weighted); -t [GeV^{2}]; Q^{2} [GeV^{2}]", 150, 0, 5, 150, 0, 10);
+        TH2D *h_Q2_vs_xB = make2D("h_Q2_vs_xB", "Q^{2} vs x_{B} (excl weighted); x_{B}; Q^{2} [GeV^{2}]", 150, 0, 1, 150, 0, 10);
+        TH2D *h_W_vs_t = make2D("h_W_vs_t", "W vs -t (excl weighted); -t [GeV^{2}]; W [GeV]", 150, 0, 5, 150, 0.5, 4.5);
+        TH2D *h_W_vs_xB = make2D("h_W_vs_xB", "W vs x_{B} (excl weighted); x_{B}; W [GeV]", 150, 0, 1, 150, 0.5, 4.5);
+        TH2D *h_t_vs_xB = make2D("h_t_vs_xB", "-t vs x_{B} (excl weighted); x_{B}; -t [GeV^{2}]", 150, 0, 1, 150, 0, 5);
+        TH2D *h_t_vs_phi = make2D("h_t_vs_phi", "-t vs #phi (excl weighted); #phi [rad]; -t [GeV^{2}]", 180, -3.2, 3.2, 150, 0, 5);
+        TH2D *h_xB_vs_nu = make2D("h_xB_vs_nu", "x_{B} vs #nu (excl weighted); #nu [GeV]; x_{B}", 200, 0, 12, 150, 0, 1);
+        TH2D *h_Q2_vs_nu = make2D("h_Q2_vs_nu", "Q^{2} vs #nu (excl weighted); #nu [GeV]; Q^{2} [GeV^{2}]", 200, 0, 12, 150, 0, 10);
+        TH2D *h_W_vs_nu = make2D("h_W_vs_nu", "W vs #nu (excl weighted); #nu [GeV]; W [GeV]", 200, 0, 12, 150, 0.5, 4.5);
+
         // Per-window mgg histograms (diag/side/full)
         vector<pair<double,double>> diag_windows = nps::default_diag_windows();
         vector<pair<double,double>> side_windows = nps::default_side_windows();
@@ -457,7 +522,7 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         // -------------------------
         // Event loop (exception-safe processing)
         // -------------------------
-        const Long64_t print_every = std::max(MIN_PRINT_EVERY, nentries/100);
+        const Long64_t print_every = std::max(MIN_PRINT_EVERY, nentries/10);  // Print 10 times instead of 100
         Long64_t n_event_errors = 0;
         
         try {
@@ -646,7 +711,7 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
                 if ( (t1 > full2_t1.first && t1 < full2_t1.second && t2 > full2_t2.first && t2 < full2_t2.second) ) h_mgg_full2->Fill(mgg);
 
                 auto phys = nps::compute_physics_vars_from_detector(
-                    Ebeam, Ee, px_e, py_e, pz_e,
+                    beam_energy, Ee, px_e, py_e, pz_e,
                     clusE[sel_i], clusX[sel_i], clusY[sel_i],
                     clusE[sel_j], clusX[sel_j], clusY[sel_j],
                     nps::kDefaultZ_NPS_cm, -17.51, false);
@@ -662,6 +727,45 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
                 if (std::isfinite(phys.z)) h_z->Fill(phys.z);
                 if (std::isfinite(phys.theta)) h_theta->Fill(phys.theta);
                 if (std::isfinite(phys.phi)) h_phi->Fill(phys.phi);
+                
+                // Store tree data in memory (will be updated in second pass with weights/exclusivity)
+                TreeEntry entry;
+                entry.mpi0_all = mgg;  // Invariant mass
+                entry.mmiss_all = mm_p;
+                entry.mmiss_all_corr = mm_p_corr;
+                entry.pi0_weight = 0.0;  // Will be filled in second pass
+                entry.is_exclusive = 0;  // Will be set in second pass
+                entry.is_weighted = 0;   // Will be set in second pass
+                entry.Q2 = phys.Q2;
+                entry.W = phys.W;
+                entry.t = phys.t;
+                entry.tmin = phys.tmin;
+                entry.pt = phys.pt;
+                entry.theta = phys.theta;
+                entry.phi = phys.phi;
+                entry.s = phys.s;
+                entry.xB = phys.xB;
+                entry.z = phys.z;
+                entry.nclust_selected = good_idx.size();
+                entry.cluster_x_1 = clusX[sel_i];
+                entry.cluster_y_1 = clusY[sel_i];
+                entry.cluster_e_1 = clusE[sel_i];
+                entry.cluster_x_2 = clusX[sel_j];
+                entry.cluster_y_2 = clusY[sel_j];
+                entry.cluster_e_2 = clusE[sel_j];
+                // HMS tracking variables
+                entry.delta = hdelta;
+                entry.xptar = HgtrTh;
+                entry.yptar = HgtrPh;
+                entry.ytar = HgtrY;
+                entry.xtar = HgtrX;
+                entry.xfp = hxfp;
+                entry.yfp = hyfp;
+                entry.xpfp = hxpfp;
+                entry.ypfp = hypfp;
+                entry.event_id = ev;
+                
+                treeData[ev] = entry;
             } catch (const std::exception& e) {
                 // Event-level error: skip this event and continue
                 if (n_event_errors == 0) {  // Log only once per run to avoid spam
@@ -723,22 +827,488 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         h_final = res.h_final; // assigned as in original; caller owns h_final
         }
 
-        // -------------------------
-        // Create overlay canvas for missing mass (unique name by run)
-        // -------------------------
+        // -----------------------------------------------
+        // Compute π⁰ bin-by-bin weights for statistical background subtraction
+        // -----------------------------------------------
+        // weight_i = N_final(i) / N_all(i)
+        // This accounts for π⁰ purity in each invariant mass bin
+        bool weights_computed = false;
+        if (h_mpi0_all && h_final) {
+            int nbins = h_mpi0_all->GetNbinsX();
+            for (int bin = 1; bin <= nbins; ++bin) {
+                double n_all = h_mpi0_all->GetBinContent(bin);
+                double n_final = h_final->GetBinContent(bin);
+                double weight = (n_all > 0.0) ? (n_final / n_all) : 0.0;
+                h_pi0_weight->SetBinContent(bin, weight);
+            }
+            weights_computed = true;
+            logmsg(INFO, Form("Run %d: π⁰ weights computed (weight = signal/all)", run));
+        } else {
+            logmsg(WARN, Form("Run %d: Could not compute π⁰ weights (h_mpi0_all=%p, h_final=%p)", 
+                              run, (void*)h_mpi0_all, (void*)h_final));
+        }
+
+        // -----------------------------------------------
+        // SECOND PASS: Weighted physics distributions and correlations
+        // -----------------------------------------------
+        if (weights_computed) {
+            logmsg(INFO, Form("Run %d: Starting weighted physics distribution pass", run));
+            Long64_t n_weighted_events = 0;
+            
+            try {
+                for (Long64_t ev = 0; ev < nentries; ++ev) {
+                    if ((ev % print_every) == 0) {
+                        cout << " run " << run << " weighted pass " << ev << " / " << nentries << "\r" << flush;
+                    }
+
+                    T->GetEntry(ev);
+
+                    // Use cluster count from nclust_dbl (same as first pass)
+                    int nclust = static_cast<int>(lrint(nclust_dbl));
+                    if (nclust < 0) nclust = 0;
+                    if (nclust > MAX_CLUS) nclust = MAX_CLUS;
+
+                    if (nclust < 2) continue;
+                    if (!nps::hms_electron_cuts(edtmtdc, hdelta, HgtrTh, HgtrPh, hcernpeSum, hcaletotnorm, hreactz)) continue;
+
+                    const int n_after = nps::packClusters(clusE, clusX, clusY, clusT, nclust);
+                    vector<int> good_idx; good_idx.reserve(8);
+                    for (int i = 0; i < n_after; ++i) {
+                        if (nps::nps_spatial_energy_cuts(clusE[i], clusX[i], clusY[i], clusT[i], DEFAULT_TIME_WINDOW_WRT_150))
+                            good_idx.push_back(i);
+                    }
+
+                    if (good_idx.size() < 2) continue;
+                    if (good_idx.size() > 4) {
+                        sort(good_idx.begin(), good_idx.end(), [&](int a, int b){ return clusE[a] > clusE[b]; });
+                        good_idx.resize(4);
+                    }
+
+                    int sel_i = -1, sel_j = -1;
+                    if (good_idx.size() == 2) { 
+                        sel_i = good_idx[0]; sel_j = good_idx[1]; 
+                    } else {
+                        auto pr = nps::choose_best_pair_closest_pi0(good_idx, clusE, clusX, clusY, clusT, nps::kDefaultZ_NPS_cm, nps::kPi0Mass_GeV, DEFAULT_TIME_THRESH_NS);
+                        sel_i = pr.first; sel_j = pr.second;
+                        if (sel_i < 0 || sel_j < 0) continue;
+                    }
+
+                    const double px_e = HgtrPx, py_e = HgtrPy, pz_e = HgtrPz;
+                    const double p_e_mom = sqrt(max(0.0, px_e*px_e + py_e*py_e + pz_e*pz_e));
+                    const double Ee = sqrt(max(0.0, p_e_mom*p_e_mom + nps::kElectronMass_GeV*nps::kElectronMass_GeV));
+
+                    const double mgg = nps::invariant_mass_pi0(clusE[sel_i], clusE[sel_j], clusX[sel_i], clusX[sel_j], clusY[sel_i], clusY[sel_j], nps::kDefaultZ_NPS_cm);
+
+                    const double mm_p = nps::missing_mass_proton_pi0(beam_energy, Ee, px_e, py_e, pz_e, clusE[sel_i], clusE[sel_j], clusX[sel_i], clusY[sel_i], clusX[sel_j], clusY[sel_j], nps::kDefaultZ_NPS_cm, -17.51);
+
+                    const double mm_p_corr = nps::invariant_missing_mass_corrected_avnish_from_detector(mm_p*mm_p, beam_energy, Ee, px_e, py_e, pz_e, clusE[sel_i], clusE[sel_j], clusX[sel_i], clusY[sel_i], clusX[sel_j], clusY[sel_j], nps::kDefaultZ_NPS_cm, -17.51);
+
+                    bool isExclusive = (mm_p_corr >= 0.8 && mm_p_corr <= 1.1);
+                    int bin = h_pi0_weight->FindBin(mgg);
+                    double weight = h_pi0_weight->GetBinContent(bin);
+
+                    if (weight > 0.0 && std::isfinite(weight)) {
+                        h_mmiss_all_weighted->Fill(mm_p_corr, weight);
+                        
+                        // Update tree data with weight and exclusivity information
+                        if (treeData.find(ev) != treeData.end()) {
+                            treeData[ev].pi0_weight = weight;
+                            treeData[ev].is_exclusive = isExclusive ? 1 : 0;
+                            treeData[ev].is_weighted = 1;
+                        }
+                        
+                        // Compute physics variables once
+                        auto phys = nps::compute_physics_vars_from_detector(beam_energy, Ee, px_e, py_e, pz_e, clusE[sel_i], clusX[sel_i], clusY[sel_i], clusE[sel_j], clusX[sel_j], clusY[sel_j], nps::kDefaultZ_NPS_cm, -17.51, false);
+                        
+                        // Fill weighted distributions (all events, no exclusivity cut)
+                        if (std::isfinite(phys.t)) h_t_weighted->Fill(phys.t, weight);
+                        if (std::isfinite(phys.tmin)) h_tmin_weighted->Fill(phys.tmin, weight);
+                        if (std::isfinite(phys.pt)) h_pt_weighted->Fill(phys.pt, weight);
+                        if (std::isfinite(phys.Q2)) h_Q2_weighted->Fill(phys.Q2, weight);
+                        if (std::isfinite(phys.W)) h_W_weighted->Fill(phys.W, weight);
+                        if (std::isfinite(phys.s)) h_s_weighted->Fill(phys.s, weight);
+                        if (std::isfinite(phys.xB)) h_xB_weighted->Fill(phys.xB, weight);
+                        if (std::isfinite(phys.z)) h_z_weighted->Fill(phys.z, weight);
+                        if (std::isfinite(phys.theta)) h_theta_weighted->Fill(phys.theta, weight);
+                        if (std::isfinite(phys.phi)) h_phi_weighted->Fill(phys.phi, weight);
+                        
+                        // Fill 2D heatmaps on detector (weighted only)
+                        double nu = beam_energy - Ee;
+                        double t_value = -phys.t;
+                        double mx = mm_p_corr;
+                        double clustX = clusX[sel_i];
+                        double clustY = clusY[sel_i];
+                        
+                        if (std::isfinite(phys.xB) && std::isfinite(clustX) && std::isfinite(clustY)) {
+                            h_xB_xy->Fill(clustX, clustY, phys.xB * weight);
+                        }
+                        if (std::isfinite(nu) && std::isfinite(clustX) && std::isfinite(clustY)) {
+                            h_nu_xy->Fill(clustX, clustY, nu * weight);
+                        }
+                        if (std::isfinite(mx) && std::isfinite(clustX) && std::isfinite(clustY)) {
+                            h_mx_xy->Fill(clustX, clustY, mx * weight);
+                        }
+                        if (std::isfinite(phys.phi) && std::isfinite(clustX) && std::isfinite(clustY)) {
+                            h_phi_xy->Fill(clustX, clustY, phys.phi * weight);
+                        }
+                        if (std::isfinite(t_value) && std::isfinite(clustX) && std::isfinite(clustY)) {
+                            h_t_xy->Fill(clustX, clustY, t_value * weight);
+                        }
+                        
+                        // Fill exclusive+weighted distributions and correlations (signal sample only)
+                        if (isExclusive) {
+                            if (std::isfinite(phys.t)) h_t_excl_weighted->Fill(phys.t, weight);
+                            if (std::isfinite(phys.tmin)) h_tmin_excl_weighted->Fill(phys.tmin, weight);
+                            if (std::isfinite(phys.pt)) h_pt_excl_weighted->Fill(phys.pt, weight);
+                            if (std::isfinite(phys.Q2)) h_Q2_excl_weighted->Fill(phys.Q2, weight);
+                            if (std::isfinite(phys.W)) h_W_excl_weighted->Fill(phys.W, weight);
+                            if (std::isfinite(phys.s)) h_s_excl_weighted->Fill(phys.s, weight);
+                            if (std::isfinite(phys.xB)) h_xB_excl_weighted->Fill(phys.xB, weight);
+                            if (std::isfinite(phys.z)) h_z_excl_weighted->Fill(phys.z, weight);
+                            if (std::isfinite(phys.theta)) h_theta_excl_weighted->Fill(phys.theta, weight);
+                            if (std::isfinite(phys.phi)) h_phi_excl_weighted->Fill(phys.phi, weight);
+                            
+                            // Fill 2D correlations (weighted+exclusive only)
+                            if (std::isfinite(phys.Q2) && std::isfinite(phys.W)) {
+                                h_Q2_vs_W->Fill(phys.W, phys.Q2, weight);
+                            }
+                            if (std::isfinite(phys.Q2) && std::isfinite(t_value)) {
+                                h_Q2_vs_t->Fill(t_value, phys.Q2, weight);
+                            }
+                            if (std::isfinite(phys.Q2) && std::isfinite(phys.xB)) {
+                                h_Q2_vs_xB->Fill(phys.xB, phys.Q2, weight);
+                            }
+                            if (std::isfinite(phys.W) && std::isfinite(t_value)) {
+                                h_W_vs_t->Fill(t_value, phys.W, weight);
+                            }
+                            if (std::isfinite(phys.W) && std::isfinite(phys.xB)) {
+                                h_W_vs_xB->Fill(phys.xB, phys.W, weight);
+                            }
+                            if (std::isfinite(t_value) && std::isfinite(phys.xB)) {
+                                h_t_vs_xB->Fill(phys.xB, t_value, weight);
+                            }
+                            if (std::isfinite(t_value) && std::isfinite(phys.phi)) {
+                                h_t_vs_phi->Fill(phys.phi, t_value, weight);
+                            }
+                            if (std::isfinite(phys.xB) && std::isfinite(nu)) {
+                                h_xB_vs_nu->Fill(nu, phys.xB, weight);
+                            }
+                            if (std::isfinite(phys.Q2) && std::isfinite(nu)) {
+                                h_Q2_vs_nu->Fill(nu, phys.Q2, weight);
+                            }
+                            if (std::isfinite(phys.W) && std::isfinite(nu)) {
+                                h_W_vs_nu->Fill(nu, phys.W, weight);
+                            }
+                            ++n_weighted_events;
+                        }
+                    }
+                } // end weighted event loop
+            } catch (...) {
+                logmsg(WARN, Form("Error during weighted pass for run %d", run));
+            }
+            cout << endl;
+            logmsg(INFO, Form("Run %d: Weighted pass complete (%lld exclusive events)", run, n_weighted_events));
+        } else {
+            logmsg(WARN, Form("Run %d: Skipping weighted pass (weights not computed)", run));
+        }
+
+        // -----------------------------------------------
+        // Create overlay canvases for physics variables (all vs weighted vs exclusive)
+        // -----------------------------------------------
+        TCanvas *c_Q2_overlay = new TCanvas(Form("c_Q2_overlay_run%d", run), "Q^{2} Overlay", 800, 600);
+        h_Q2->SetLineColor(kBlack); h_Q2->SetLineWidth(2);
+        h_Q2_weighted->SetLineColor(kBlue); h_Q2_weighted->SetLineWidth(2);
+        h_Q2_excl_weighted->SetLineColor(kRed); h_Q2_excl_weighted->SetLineWidth(2);
+        h_Q2->Draw("HIST");
+        h_Q2_weighted->Draw("HIST SAME");
+        h_Q2_excl_weighted->Draw("HIST SAME");
+        TLegend *leg_Q2 = new TLegend(0.6, 0.6, 0.88, 0.88);
+        leg_Q2->SetBorderSize(0); leg_Q2->SetFillColor(0);
+        leg_Q2->AddEntry(h_Q2, "All", "l");
+        leg_Q2->AddEntry(h_Q2_weighted, "Weighted", "l");
+        leg_Q2->AddEntry(h_Q2_excl_weighted, "Weighted+Exclusive", "l");
+        leg_Q2->Draw();
+        c_Q2_overlay->SaveAs(Form("%s/Q2_overlay_run%d.png", outPlotDir.Data(), run));
+
+        TCanvas *c_W_overlay = new TCanvas(Form("c_W_overlay_run%d", run), "W Overlay", 800, 600);
+        h_W->SetLineColor(kBlack); h_W->SetLineWidth(2);
+        h_W_weighted->SetLineColor(kBlue); h_W_weighted->SetLineWidth(2);
+        h_W_excl_weighted->SetLineColor(kRed); h_W_excl_weighted->SetLineWidth(2);
+        h_W->Draw("HIST");
+        h_W_weighted->Draw("HIST SAME");
+        h_W_excl_weighted->Draw("HIST SAME");
+        TLegend *leg_W = new TLegend(0.6, 0.6, 0.88, 0.88);
+        leg_W->SetBorderSize(0); leg_W->SetFillColor(0);
+        leg_W->AddEntry(h_W, "All", "l");
+        leg_W->AddEntry(h_W_weighted, "Weighted", "l");
+        leg_W->AddEntry(h_W_excl_weighted, "Weighted+Exclusive", "l");
+        leg_W->Draw();
+        c_W_overlay->SaveAs(Form("%s/W_overlay_run%d.png", outPlotDir.Data(), run));
+
+        // Similar for other physics variables (t, tmin, pt, s, xB, z, theta, phi)
+        TCanvas *c_t_overlay = new TCanvas(Form("c_t_overlay_run%d", run), "t Overlay", 800, 600);
+        h_t->SetLineColor(kBlack); h_t->SetLineWidth(2);
+        h_t_weighted->SetLineColor(kBlue); h_t_weighted->SetLineWidth(2);
+        h_t_excl_weighted->SetLineColor(kRed); h_t_excl_weighted->SetLineWidth(2);
+        h_t->Draw("HIST");
+        h_t_weighted->Draw("HIST SAME");
+        h_t_excl_weighted->Draw("HIST SAME");
+        TLegend *leg_t = new TLegend(0.15, 0.6, 0.43, 0.88);
+        leg_t->SetBorderSize(0); leg_t->SetFillColor(0);
+        leg_t->AddEntry(h_t, "All", "l");
+        leg_t->AddEntry(h_t_weighted, "Weighted", "l");
+        leg_t->AddEntry(h_t_excl_weighted, "Weighted+Exclusive", "l");
+        leg_t->Draw();
+        c_t_overlay->SaveAs(Form("%s/t_overlay_run%d.png", outPlotDir.Data(), run));
+
+        TCanvas *c_tmin_overlay = new TCanvas(Form("c_tmin_overlay_run%d", run), "t_min Overlay", 800, 600);
+        h_tmin->SetLineColor(kBlack); h_tmin->SetLineWidth(2);
+        h_tmin_weighted->SetLineColor(kBlue); h_tmin_weighted->SetLineWidth(2);
+        h_tmin_excl_weighted->SetLineColor(kRed); h_tmin_excl_weighted->SetLineWidth(2);
+        h_tmin->Draw("HIST");
+        h_tmin_weighted->Draw("HIST SAME");
+        h_tmin_excl_weighted->Draw("HIST SAME");
+        TLegend *leg_tmin = new TLegend(0.6, 0.6, 0.88, 0.88);
+        leg_tmin->SetBorderSize(0); leg_tmin->SetFillColor(0);
+        leg_tmin->AddEntry(h_tmin, "All", "l");
+        leg_tmin->AddEntry(h_tmin_weighted, "Weighted", "l");
+        leg_tmin->AddEntry(h_tmin_excl_weighted, "Weighted+Exclusive", "l");
+        leg_tmin->Draw();
+        c_tmin_overlay->SaveAs(Form("%s/tmin_overlay_run%d.png", outPlotDir.Data(), run));
+
+        TCanvas *c_pt_overlay = new TCanvas(Form("c_pt_overlay_run%d", run), "p_T Overlay", 800, 600);
+        h_pt->SetLineColor(kBlack); h_pt->SetLineWidth(2);
+        h_pt_weighted->SetLineColor(kBlue); h_pt_weighted->SetLineWidth(2);
+        h_pt_excl_weighted->SetLineColor(kRed); h_pt_excl_weighted->SetLineWidth(2);
+        h_pt->Draw("HIST");
+        h_pt_weighted->Draw("HIST SAME");
+        h_pt_excl_weighted->Draw("HIST SAME");
+        TLegend *leg_pt = new TLegend(0.6, 0.6, 0.88, 0.88);
+        leg_pt->SetBorderSize(0); leg_pt->SetFillColor(0);
+        leg_pt->AddEntry(h_pt, "All", "l");
+        leg_pt->AddEntry(h_pt_weighted, "Weighted", "l");
+        leg_pt->AddEntry(h_pt_excl_weighted, "Weighted+Exclusive", "l");
+        leg_pt->Draw();
+        c_pt_overlay->SaveAs(Form("%s/pt_overlay_run%d.png", outPlotDir.Data(), run));
+
+        TCanvas *c_s_overlay = new TCanvas(Form("c_s_overlay_run%d", run), "s Overlay", 800, 600);
+        h_s->SetLineColor(kBlack); h_s->SetLineWidth(2);
+        h_s_weighted->SetLineColor(kBlue); h_s_weighted->SetLineWidth(2);
+        h_s_excl_weighted->SetLineColor(kRed); h_s_excl_weighted->SetLineWidth(2);
+        h_s->Draw("HIST");
+        h_s_weighted->Draw("HIST SAME");
+        h_s_excl_weighted->Draw("HIST SAME");
+        TLegend *leg_s = new TLegend(0.6, 0.6, 0.88, 0.88);
+        leg_s->SetBorderSize(0); leg_s->SetFillColor(0);
+        leg_s->AddEntry(h_s, "All", "l");
+        leg_s->AddEntry(h_s_weighted, "Weighted", "l");
+        leg_s->AddEntry(h_s_excl_weighted, "Weighted+Exclusive", "l");
+        leg_s->Draw();
+        c_s_overlay->SaveAs(Form("%s/s_overlay_run%d.png", outPlotDir.Data(), run));
+
+        TCanvas *c_xB_overlay = new TCanvas(Form("c_xB_overlay_run%d", run), "x_B Overlay", 800, 600);
+        h_xB->SetLineColor(kBlack); h_xB->SetLineWidth(2);
+        h_xB_weighted->SetLineColor(kBlue); h_xB_weighted->SetLineWidth(2);
+        h_xB_excl_weighted->SetLineColor(kRed); h_xB_excl_weighted->SetLineWidth(2);
+        h_xB->Draw("HIST");
+        h_xB_weighted->Draw("HIST SAME");
+        h_xB_excl_weighted->Draw("HIST SAME");
+        TLegend *leg_xB = new TLegend(0.6, 0.6, 0.88, 0.88);
+        leg_xB->SetBorderSize(0); leg_xB->SetFillColor(0);
+        leg_xB->AddEntry(h_xB, "All", "l");
+        leg_xB->AddEntry(h_xB_weighted, "Weighted", "l");
+        leg_xB->AddEntry(h_xB_excl_weighted, "Weighted+Exclusive", "l");
+        leg_xB->Draw();
+        c_xB_overlay->SaveAs(Form("%s/xB_overlay_run%d.png", outPlotDir.Data(), run));
+
+        TCanvas *c_z_overlay = new TCanvas(Form("c_z_overlay_run%d", run), "z Overlay", 800, 600);
+        h_z->SetLineColor(kBlack); h_z->SetLineWidth(2);
+        h_z_weighted->SetLineColor(kBlue); h_z_weighted->SetLineWidth(2);
+        h_z_excl_weighted->SetLineColor(kRed); h_z_excl_weighted->SetLineWidth(2);
+        h_z->Draw("HIST");
+        h_z_weighted->Draw("HIST SAME");
+        h_z_excl_weighted->Draw("HIST SAME");
+        TLegend *leg_z = new TLegend(0.6, 0.6, 0.88, 0.88);
+        leg_z->SetBorderSize(0); leg_z->SetFillColor(0);
+        leg_z->AddEntry(h_z, "All", "l");
+        leg_z->AddEntry(h_z_weighted, "Weighted", "l");
+        leg_z->AddEntry(h_z_excl_weighted, "Weighted+Exclusive", "l");
+        leg_z->Draw();
+        c_z_overlay->SaveAs(Form("%s/z_overlay_run%d.png", outPlotDir.Data(), run));
+
+        TCanvas *c_theta_overlay = new TCanvas(Form("c_theta_overlay_run%d", run), "#theta Overlay", 800, 600);
+        h_theta->SetLineColor(kBlack); h_theta->SetLineWidth(2);
+        h_theta_weighted->SetLineColor(kBlue); h_theta_weighted->SetLineWidth(2);
+        h_theta_excl_weighted->SetLineColor(kRed); h_theta_excl_weighted->SetLineWidth(2);
+        h_theta->Draw("HIST");
+        h_theta_weighted->Draw("HIST SAME");
+        h_theta_excl_weighted->Draw("HIST SAME");
+        TLegend *leg_theta = new TLegend(0.6, 0.6, 0.88, 0.88);
+        leg_theta->SetBorderSize(0); leg_theta->SetFillColor(0);
+        leg_theta->AddEntry(h_theta, "All", "l");
+        leg_theta->AddEntry(h_theta_weighted, "Weighted", "l");
+        leg_theta->AddEntry(h_theta_excl_weighted, "Weighted+Exclusive", "l");
+        leg_theta->Draw();
+        c_theta_overlay->SaveAs(Form("%s/theta_overlay_run%d.png", outPlotDir.Data(), run));
+
+        TCanvas *c_phi_overlay = new TCanvas(Form("c_phi_overlay_run%d", run), "#phi Overlay", 800, 600);
+        h_phi->SetLineColor(kBlack); h_phi->SetLineWidth(2);
+        h_phi_weighted->SetLineColor(kBlue); h_phi_weighted->SetLineWidth(2);
+        h_phi_excl_weighted->SetLineColor(kRed); h_phi_excl_weighted->SetLineWidth(2);
+        h_phi->Draw("HIST");
+        h_phi_weighted->Draw("HIST SAME");
+        h_phi_excl_weighted->Draw("HIST SAME");
+        TLegend *leg_phi = new TLegend(0.6, 0.6, 0.88, 0.88);
+        leg_phi->SetBorderSize(0); leg_phi->SetFillColor(0);
+        leg_phi->AddEntry(h_phi, "All", "l");
+        leg_phi->AddEntry(h_phi_weighted, "Weighted", "l");
+        leg_phi->AddEntry(h_phi_excl_weighted, "Weighted+Exclusive", "l");
+        leg_phi->Draw();
+        c_phi_overlay->SaveAs(Form("%s/phi_overlay_run%d.png", outPlotDir.Data(), run));
+
+        // Missing mass overlay with weighted (NO FITTING - just overlay display)
+        // IMPORTANT: Create this BEFORE fitting h_mmiss_all_weighted so fit curves don't appear
         TCanvas *c_mmiss_overlay = new TCanvas(Form("c_mmiss_overlay_run%d", run), "Missing Mass Overlay", 800, 600);
         c_mmiss_overlay->SetName(Form("c_mmiss_overlay_run%d", run));
         c_mmiss_overlay->SetTitle(Form("Missing Mass Overlay run %d", run));
         h_mmiss_all->SetLineColor(kBlack); h_mmiss_all->SetLineWidth(2);
         h_mmiss_all_corr->SetLineColor(kBlue); h_mmiss_all_corr->SetLineWidth(2);
+        h_mmiss_all_weighted->SetLineColor(kGreen+2); h_mmiss_all_weighted->SetLineWidth(2);
         h_mmiss_all->Draw("HIST");
         h_mmiss_all_corr->Draw("HIST SAME");
-        TLegend *leg_mmiss = new TLegend(0.65, 0.7, 0.88, 0.88);
+        h_mmiss_all_weighted->Draw("HISTNOFUNC SAME");  // HISTNOFUNC prevents fitted functions from drawing
+        TLegend *leg_mmiss = new TLegend(0.55, 0.6, 0.88, 0.88);
         leg_mmiss->SetBorderSize(0);
         leg_mmiss->SetFillColor(0);
-        leg_mmiss->AddEntry(h_mmiss_all, "Original Mx", "l");
+        leg_mmiss->AddEntry(h_mmiss_all, "All candidates", "l");
         leg_mmiss->AddEntry(h_mmiss_all_corr, "Corrected Mx", "l");
+        leg_mmiss->AddEntry(h_mmiss_all_weighted, "Weighted (all)", "l");
         leg_mmiss->Draw();
+        c_mmiss_overlay->Modified();
+        c_mmiss_overlay->Update();
+        c_mmiss_overlay->SaveAs(Form("%s/mmiss_overlay_run%d.png", outPlotDir.Data(), run));
+        // NOTE: Will redraw this canvas after fitting to ensure no fit functions appear in the ROOT file
+
+        // -------------------------
+        // Fit h_mmiss_all_weighted with combined two-Gaussian fit
+        // -------------------------
+        // Combined fit: fit the sum of two Gaussians in the full range
+        // This ensures physical consistency - fit1 and fit2 are components of the total
+        TF1 *fit_combined = new TF1(Form("fit_combined_run%d", run), 
+            "gaus(0) + gaus(3)", 0.5, 1.8);
+        
+        // Set initial parameters for the combined fit
+        // Component 1: peak around 0.938 GeV
+        fit_combined->SetParameter(0, h_mmiss_all_weighted->GetMaximum());     // amplitude
+        fit_combined->SetParameter(1, 0.938);                                  // mean
+        fit_combined->SetParameter(2, 0.05);                                   // sigma
+        
+        // Component 2: peak around 1.2 GeV
+        fit_combined->SetParameter(3, h_mmiss_all_weighted->GetMaximum()*0.5); // amplitude
+        fit_combined->SetParameter(4, 1.2);                                    // mean
+        fit_combined->SetParameter(5, 0.08);                                   // sigma
+        
+        // Fit the combined function
+        h_mmiss_all_weighted->Fit(fit_combined, "RQ", "", 0.85, 1.27);
+        fit_combined->SetLineColor(kGreen+2);
+        fit_combined->SetLineStyle(kSolid);
+        fit_combined->SetLineWidth(3);
+        
+        // Extract the individual components from the combined fit
+        // fit1: first Gaussian componentls
+        
+        TF1 *fit1 = new TF1(Form("fit1_run%d", run), "gaus", 0.5, 1.8);
+        fit1->SetParameters(
+            fit_combined->GetParameter(0),
+            fit_combined->GetParameter(1),
+            fit_combined->GetParameter(2)
+        );
+        fit1->SetLineColor(kBlue);
+        fit1->SetLineStyle(kDashed);
+        fit1->SetLineWidth(2.5);
+        
+        // fit2: second Gaussian component
+        TF1 *fit2 = new TF1(Form("fit2_run%d", run), "gaus", 0.5, 1.8);
+        fit2->SetParameters(
+            fit_combined->GetParameter(3),
+            fit_combined->GetParameter(4),
+            fit_combined->GetParameter(5)
+        );
+        fit2->SetLineColor(kMagenta);
+        fit2->SetLineStyle(kDashed);
+        fit2->SetLineWidth(2.5);
+
+        // Create canvas with all three fits
+        TCanvas *c_mmiss_fit = new TCanvas(Form("c_mmiss_fit_run%d", run), "Missing Mass Weighted Fit", 1000, 700);
+        c_mmiss_fit->SetName(Form("c_mmiss_fit_run%d", run));
+        c_mmiss_fit->SetTitle(Form("Missing Mass Weighted - Fits run %d", run));
+        c_mmiss_fit->SetLeftMargin(0.12);
+        c_mmiss_fit->SetRightMargin(0.05);
+        c_mmiss_fit->SetBottomMargin(0.12);
+        c_mmiss_fit->SetTopMargin(0.08);
+        
+        h_mmiss_all_weighted->SetLineColor(kBlack);
+        h_mmiss_all_weighted->SetLineWidth(2);
+        h_mmiss_all_weighted->GetXaxis()->SetLabelSize(0.045);
+        h_mmiss_all_weighted->GetYaxis()->SetLabelSize(0.045);
+        h_mmiss_all_weighted->GetXaxis()->SetTitleSize(0.050);
+        h_mmiss_all_weighted->GetYaxis()->SetTitleSize(0.050);
+        h_mmiss_all_weighted->GetXaxis()->SetTitle("Missing Mass (GeV)");
+        h_mmiss_all_weighted->GetYaxis()->SetTitle("Counts");
+        h_mmiss_all_weighted->Draw("HIST");
+        
+        fit_combined->Draw("SAME");
+        fit1->Draw("SAME");
+        fit2->Draw("SAME");
+        
+        TLegend *leg_fit = new TLegend(0.55, 0.55, 0.92, 0.88);
+        leg_fit->SetBorderSize(1);
+        leg_fit->SetFillColor(10);
+        leg_fit->SetFillStyle(1001);
+        leg_fit->SetTextFont(42);
+        leg_fit->SetTextSize(0.035);
+        leg_fit->AddEntry(h_mmiss_all_weighted, "Data", "l");
+        leg_fit->AddEntry(fit_combined, Form("Combined (chi2/ndf = %.2f)", fit_combined->GetChisquare()/fit_combined->GetNDF()), "l");
+        leg_fit->AddEntry(fit1, "Gaussian 1 [0.9-1.0]", "l");
+        leg_fit->AddEntry(fit2, "Gaussian 2 [1.1-1.3]", "l");
+        leg_fit->Draw();
+
+        TLatex *txt_fit = new TLatex();
+        txt_fit->SetNDC();
+        txt_fit->SetTextFont(42);
+        txt_fit->SetTextSize(0.032);
+        txt_fit->DrawLatex(0.15, 0.52, Form("Run %d", run));
+        txt_fit->DrawLatex(0.15, 0.47, Form("Entries: %.0f", h_mmiss_all_weighted->GetEntries()));
+        txt_fit->DrawLatex(0.15, 0.41, Form("G1: #mu=%.4f GeV, #sigma=%.4f GeV", fit1->GetParameter(1), fit1->GetParameter(2)));
+        txt_fit->DrawLatex(0.15, 0.35, Form("G2: #mu=%.4f GeV, #sigma=%.4f GeV", fit2->GetParameter(1), fit2->GetParameter(2)));
+        
+        c_mmiss_fit->Modified();
+        c_mmiss_fit->Update();
+        c_mmiss_fit->SaveAs(Form("%s/mmiss_weighted_fit_run%d.png", outPlotDir.Data(), run));
+
+        // Keep histogram black for fit canvas in ROOT file (don't change color)
+        // The fit canvas will be written to file with the histogram in black
+        
+        // Clear all fit functions from h_mmiss_all_weighted so they don't appear in overlay
+        h_mmiss_all_weighted->GetListOfFunctions()->Delete();
+        
+        // Restore histogram colors for overlay canvas
+        h_mmiss_all->SetLineColor(kBlack); h_mmiss_all->SetLineWidth(2);
+        h_mmiss_all_corr->SetLineColor(kBlue); h_mmiss_all_corr->SetLineWidth(2);
+        h_mmiss_all_weighted->SetLineColor(kGreen+2); h_mmiss_all_weighted->SetLineWidth(2);
+        
+        // Redraw the overlay canvas after fitting (so it has no fit curves in the ROOT file)
+        c_mmiss_overlay->Clear();
+        h_mmiss_all->Draw("HIST");
+        h_mmiss_all_corr->Draw("HIST SAME");
+        h_mmiss_all_weighted->Draw("HIST SAME");
+        TLegend *leg_mmiss_redraw = new TLegend(0.55, 0.6, 0.88, 0.88);
+        leg_mmiss_redraw->SetBorderSize(0);
+        leg_mmiss_redraw->SetFillColor(0);
+        leg_mmiss_redraw->AddEntry(h_mmiss_all, "All candidates", "l");
+        leg_mmiss_redraw->AddEntry(h_mmiss_all_corr, "Corrected Mx", "l");
+        leg_mmiss_redraw->AddEntry(h_mmiss_all_weighted, "Weighted (all)", "l");
+        leg_mmiss_redraw->Draw();
         c_mmiss_overlay->Modified();
         c_mmiss_overlay->Update();
 
@@ -752,6 +1322,111 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         } else {
         fout->cd();
 
+        // Create and fill event-level physics tree from treeData map
+        TTree *treeOut = new TTree("physics", "Event-level physics data with weights and exclusivity flags");
+        
+        // Declare branch variables fresh for this tree
+        Int_t event_id = 0;
+        Double_t mpi0_all = 0, mmiss_all = 0, mmiss_all_corr = 0, pi0_weight = 0;
+        Int_t is_exclusive = 0, is_weighted = 0;
+        Double_t Q2 = 0, W = 0, t = 0, tmin = 0, pt = 0;
+        Double_t theta = 0, phi = 0, s = 0, xB = 0, z = 0;
+        Int_t nclust_selected = 0;
+        Double_t cluster_x_1 = 0, cluster_y_1 = 0, cluster_e_1 = 0;
+        Double_t cluster_x_2 = 0, cluster_y_2 = 0, cluster_e_2 = 0;
+        // HMS tracking variables
+        Double_t delta = 0, xptar = 0, yptar = 0, xtar = 0, ytar = 0;
+        Double_t xfp = 0, yfp = 0, xpfp = 0, ypfp = 0;
+        // Seperating the exclusive peak
+        Double_t exclusive_sep=0;
+        
+        // Create branches
+        treeOut->Branch("event_id", &event_id, "event_id/I");
+        treeOut->Branch("mpi0_all", &mpi0_all, "mpi0_all/D");
+        treeOut->Branch("mmiss_all", &mmiss_all, "mmiss_all/D");
+        treeOut->Branch("mmiss_all_corr", &mmiss_all_corr, "mmiss_all_corr/D");
+        treeOut->Branch("pi0_weight", &pi0_weight, "pi0_weight/D");
+        treeOut->Branch("is_exclusive", &is_exclusive, "is_exclusive/I");
+        treeOut->Branch("is_weighted", &is_weighted, "is_weighted/I");
+        
+        treeOut->Branch("Q2", &Q2, "Q2/D");
+        treeOut->Branch("W", &W, "W/D");
+        treeOut->Branch("t", &t, "t/D");
+        treeOut->Branch("tmin", &tmin, "tmin/D");
+        treeOut->Branch("pt", &pt, "pt/D");
+        treeOut->Branch("theta", &theta, "theta/D");
+        treeOut->Branch("phi", &phi, "phi/D");
+        treeOut->Branch("s", &s, "s/D");
+        treeOut->Branch("xB", &xB, "xB/D");
+        treeOut->Branch("z", &z, "z/D");
+        
+        treeOut->Branch("nclust_selected", &nclust_selected, "nclust_selected/I");
+        treeOut->Branch("cluster_x_1", &cluster_x_1, "cluster_x_1/D");
+        treeOut->Branch("cluster_y_1", &cluster_y_1, "cluster_y_1/D");
+        treeOut->Branch("cluster_e_1", &cluster_e_1, "cluster_e_1/D");
+        treeOut->Branch("cluster_x_2", &cluster_x_2, "cluster_x_2/D");
+        treeOut->Branch("cluster_y_2", &cluster_y_2, "cluster_y_2/D");
+        treeOut->Branch("cluster_e_2", &cluster_e_2, "cluster_e_2/D");
+        
+        // HMS tracking branches
+        treeOut->Branch("delta", &delta, "delta/D");
+        treeOut->Branch("xptar", &xptar, "xptar/D");
+        treeOut->Branch("yptar", &yptar, "yptar/D");
+        treeOut->Branch("xtar", &xtar, "xtar/D");
+        treeOut->Branch("ytar", &ytar, "ytar/D");
+        treeOut->Branch("xfp", &xfp, "xfp/D");
+        treeOut->Branch("yfp", &yfp, "yfp/D");
+        treeOut->Branch("xpfp", &xpfp, "xpfp/D");
+        treeOut->Branch("ypfp", &ypfp, "ypfp/D");
+
+        treeOut->Branch("exclusive_sep", &exclusive_sep, "exclusive_sep/D");
+        
+        // Fill tree from treeData map
+        for (const auto& pair : treeData) {
+            event_id = pair.first;
+            const auto& entry = pair.second;
+            mpi0_all = entry.mpi0_all;
+            mmiss_all = entry.mmiss_all;
+            mmiss_all_corr = entry.mmiss_all_corr;
+            pi0_weight = entry.pi0_weight;
+            is_exclusive = entry.is_exclusive;
+            is_weighted = entry.is_weighted;
+            Q2 = entry.Q2;
+            W = entry.W;
+            t = entry.t;
+            tmin = entry.tmin;
+            pt = entry.pt;
+            theta = entry.theta;
+            phi = entry.phi;
+            s = entry.s;
+            xB = entry.xB;
+            z = entry.z;
+            nclust_selected = entry.nclust_selected;
+            cluster_x_1 = entry.cluster_x_1;
+            cluster_y_1 = entry.cluster_y_1;
+            cluster_e_1 = entry.cluster_e_1;
+            cluster_x_2 = entry.cluster_x_2;
+            cluster_y_2 = entry.cluster_y_2;
+            cluster_e_2 = entry.cluster_e_2;
+            // HMS tracking variables
+            delta = entry.delta;
+            xptar = entry.xptar;
+            yptar = entry.yptar;
+            xtar = entry.xtar;
+            ytar = entry.ytar;
+            xfp = entry.xfp;
+            yfp = entry.yfp;
+            xpfp = entry.xpfp;
+            ypfp = entry.ypfp;
+            exclusive_sep = 1.0 / ( pow(std::fabs(entry.mmiss_all_corr - 0.938), 0.5) + 0.01 );  // separation of event from exclusive peak in GeV (for potential future cuts)
+            treeOut->Fill();
+        }
+        
+        // Write and cleanup tree
+        treeOut->Write();
+        safe_delete(treeOut);
+        treeData.clear();
+
         // write histograms (explicit list)
         h_nclusters->Write();
         h_clustE->Write(); h_clustT->Write(); h_clustE_vs_T->Write();
@@ -761,6 +1436,9 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         h_mmiss_all->Write(); h_mmiss_all_corr->Write();
         // save the canvas under a unique name
         c_mmiss_overlay->Write(Form("c_mmiss_overlay_run%d", run));
+        // Set histogram to black before writing fit canvas to file
+        h_mmiss_all_weighted->SetLineColor(kBlack);
+        c_mmiss_fit->Write(Form("c_mmiss_fit_run%d", run));
         h_t1_t2->Write("h_t1_t2", TObject::kOverwrite); h_t1_proj->Write(); h_t2_proj->Write();
         h_m_pi0_coin->Write(); h_m_pi0_acc->Write();
         if (h_coin_bgsub) h_coin_bgsub->Write("h_pi0_coin_bgsub", TObject::kOverwrite);
@@ -784,6 +1462,36 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         h_z->Write();
         h_theta->Write();
         h_phi->Write();
+
+        // Write weighted and exclusive histograms
+        h_pi0_weight->Write();
+        h_Q2_weighted->Write(); h_W_weighted->Write(); h_t_weighted->Write();
+        h_tmin_weighted->Write(); h_pt_weighted->Write(); h_theta_weighted->Write();
+        h_phi_weighted->Write(); h_s_weighted->Write(); h_xB_weighted->Write(); h_z_weighted->Write();
+        h_Q2_excl_weighted->Write(); h_W_excl_weighted->Write(); h_t_excl_weighted->Write();
+        h_tmin_excl_weighted->Write(); h_pt_excl_weighted->Write(); h_theta_excl_weighted->Write();
+        h_phi_excl_weighted->Write(); h_s_excl_weighted->Write(); h_xB_excl_weighted->Write(); h_z_excl_weighted->Write();
+        h_mmiss_all_weighted->Write();
+
+        // Write 2D heatmaps (physics on detector)
+        h_xB_xy->Write(); h_nu_xy->Write(); h_mx_xy->Write(); h_phi_xy->Write(); h_t_xy->Write();
+
+        // Write 2D correlations
+        h_Q2_vs_W->Write(); h_Q2_vs_t->Write(); h_Q2_vs_xB->Write();
+        h_W_vs_t->Write(); h_W_vs_xB->Write(); h_t_vs_xB->Write();
+        h_t_vs_phi->Write(); h_xB_vs_nu->Write(); h_Q2_vs_nu->Write(); h_W_vs_nu->Write();
+
+        // Write overlay canvases
+        c_Q2_overlay->Write(Form("c_Q2_overlay_run%d", run));
+        c_W_overlay->Write(Form("c_W_overlay_run%d", run));
+        c_t_overlay->Write(Form("c_t_overlay_run%d", run));
+        c_tmin_overlay->Write(Form("c_tmin_overlay_run%d", run));
+        c_pt_overlay->Write(Form("c_pt_overlay_run%d", run));
+        c_s_overlay->Write(Form("c_s_overlay_run%d", run));
+        c_xB_overlay->Write(Form("c_xB_overlay_run%d", run));
+        c_z_overlay->Write(Form("c_z_overlay_run%d", run));
+        c_theta_overlay->Write(Form("c_theta_overlay_run%d", run));
+        c_phi_overlay->Write(Form("c_phi_overlay_run%d", run));
 
         // write background and fit scalars (TParameter)
         TParameter<double>("coin_raw", bg.n_coin_raw).Write();
@@ -1012,6 +1720,38 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         // -------------------------
         // Clean up per-run objects (delete created objects to avoid memory leaks)
         // -------------------------
+        
+        // Batch cleanup: new weighted/exclusive histograms (1D)
+        {
+        TH1* hist_weighted[] = {
+            h_pi0_weight, h_mmiss_all_weighted,
+            h_Q2_weighted, h_W_weighted, h_t_weighted, h_tmin_weighted,
+            h_pt_weighted, h_theta_weighted, h_phi_weighted, h_s_weighted,
+            h_xB_weighted, h_z_weighted,
+            h_Q2_excl_weighted, h_W_excl_weighted, h_t_excl_weighted, h_tmin_excl_weighted,
+            h_pt_excl_weighted, h_theta_excl_weighted, h_phi_excl_weighted, h_s_excl_weighted,
+            h_xB_excl_weighted, h_z_excl_weighted
+        };
+        for (int i = 0; i < 22; ++i) if (hist_weighted[i]) safe_delete(hist_weighted[i]);
+        }
+
+        // Batch cleanup: detector heatmap 2D histograms
+        {
+        TH1* hist_heatmap[] = {
+            h_xB_xy, h_nu_xy, h_mx_xy, h_phi_xy, h_t_xy
+        };
+        for (int i = 0; i < 5; ++i) if (hist_heatmap[i]) safe_delete(hist_heatmap[i]);
+        }
+
+        // Batch cleanup: correlation 2D histograms
+        {
+        TH1* hist_corr[] = {
+            h_Q2_vs_W, h_Q2_vs_t, h_Q2_vs_xB, h_W_vs_t, h_W_vs_xB,
+            h_t_vs_xB, h_t_vs_phi, h_xB_vs_nu, h_Q2_vs_nu, h_W_vs_nu
+        };
+        for (int i = 0; i < 10; ++i) if (hist_corr[i]) safe_delete(hist_corr[i]);
+        }
+
         // Batch cleanup: cluster histograms (mixed TH1D and TH2D)
         {
         TH1* hist_cluster[] = {
@@ -1030,9 +1770,9 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         // Batch cleanup: missing mass histograms
         {
         TH1* hist_mmiss[] = {
-            h_mmiss_2, h_mmiss_3, h_mmiss_4, h_mmiss_dvcs
+            h_mmiss_2, h_mmiss_3, h_mmiss_4, h_mmiss_dvcs, h_mmiss_all, h_mmiss_all_corr
         };
-        for (int i = 0; i < 4; ++i) if (hist_mmiss[i]) safe_delete(hist_mmiss[i]);
+        for (int i = 0; i < 6; ++i) if (hist_mmiss[i]) safe_delete(hist_mmiss[i]);
         }
 
         // Batch cleanup: timing & coincidence histograms (mixed TH1D and TH2D)
@@ -1067,11 +1807,20 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         for (int i = 0; i < 10; ++i) if (hist_physics[i]) safe_delete(hist_physics[i]);
         }
 
-        // Clean up canvases
+        // Clean up canvases (including new overlay canvases)
         {
-        TCanvas* canvases[] = {c_t12, c_pi0, c_mmiss_mgg, c_cluster, c_mmiss_overlay};
-        for (int i = 0; i < 5; ++i) if (canvases[i]) safe_delete(canvases[i]);
+        TCanvas* canvases[] = {
+            c_t12, c_pi0, c_mmiss_mgg, c_cluster, c_mmiss_overlay, c_mmiss_fit,
+            c_Q2_overlay, c_W_overlay, c_t_overlay, c_tmin_overlay, c_pt_overlay,
+            c_theta_overlay, c_phi_overlay, c_s_overlay, c_xB_overlay, c_z_overlay
+        };
+        for (int i = 0; i < 16; ++i) if (canvases[i]) safe_delete(canvases[i]);
         }
+
+        // Clean up fit functions
+        if (fit1) safe_delete(fit1);
+        if (fit2) safe_delete(fit2);
+        if (fit_combined) safe_delete(fit_combined);
 
         // Clean up annotations & boxes
         safe_delete(l2);
@@ -1082,7 +1831,20 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         for (auto *b: hor_boxes) if (b) safe_delete(b);
         for (auto *b: ver_boxes) if (b) safe_delete(b);
         safe_delete(txt);
+        safe_delete(txt_fit);
         safe_delete(leg_mmiss);
+        safe_delete(leg_mmiss_redraw);
+        safe_delete(leg_fit);
+        safe_delete(leg_Q2);
+        safe_delete(leg_W);
+        safe_delete(leg_t);
+        safe_delete(leg_tmin);
+        safe_delete(leg_pt);
+        safe_delete(leg_s);
+        safe_delete(leg_xB);
+        safe_delete(leg_z);
+        safe_delete(leg_theta);
+        safe_delete(leg_phi);
 
         // File is automatically closed by file_guard destructor
         sw_run.Stop();
@@ -1111,4 +1873,7 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
     // Safely construct the CSV path message
     TString csv_path = outPlotDir + "summary_all_runs.csv";
     logmsg(INFO, Form("Wrote global summary CSV to %s", csv_path.Data()));
+    
+    // Exit cleanly to avoid ROOT cleanup segfaults
+    gApplication->Terminate(0);
 }

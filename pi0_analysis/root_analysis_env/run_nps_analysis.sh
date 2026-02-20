@@ -13,7 +13,7 @@ find . -maxdepth 1 -type f \( -size -1k -o -size +100k \) ! -name "*.sh" ! -name
 done
 
 RUNLIST="${1:-config/runlist_x60_4b.txt}"
-SKIM_DIR="${2:-/lustre24/expphy/volatile/hallc/nps/singhav/ROOTfiles/root_analysis_env_skim/x60_4b/}"
+SKIM_DIR="${2:-/lustre24/expphy/volatile/hallc/nps/singhav/ROOTfiles/root_analysis_env_skim/x60_4b}"
 OUTPUT_DIR="${3:-output/plots/x60_4b}"
 BEAM_ENERGY="${4:-10.538}"
 
@@ -77,7 +77,12 @@ while IFS= read -r RUN; do
     TEMP_OUT="/tmp/nps_output_${RUN}_$$.txt"
     
     # Run nps_analysis.C - show all output (diagnostics + progress)
-    timeout 900 root -l -b -q "src/nps_analysis.C(\"$SKIM_DIR\", \"$OUTPUT_DIR\", \"$TEMP_LIST\", $BEAM_ENERGY)" > "$TEMP_OUT" 2>&1
+    # Pass arguments via environment variables to avoid shell quoting issues
+    export NPS_SKIM_DIR="$SKIM_DIR"
+    export NPS_OUTPUT_DIR="$OUTPUT_DIR"
+    export NPS_RUNLIST="$TEMP_LIST"
+    export NPS_EBEAM="$BEAM_ENERGY"
+    timeout 900 root -l -b -q 'src/nps_analysis.C()' > "$TEMP_OUT" 2>&1
     ROOT_EXIT_CODE=$?  # Capture exit code to detect crashes
     
     # Display the output to the user (shows progress bars and diagnostics)

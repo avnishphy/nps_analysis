@@ -44,10 +44,10 @@ if run_status_filter or target_filter:
         filters_str.append(f"target={target_filter}")
     print(f"[INFO] Filters applied: {', '.join(filters_str)}")
 
-
 # ===== Configuration =====
-SUMMARY_CSV = "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/scripts/efficiencies/livetime_results_parallel_updatedtrig.csv"
-OUTPUT_DIR = "output/plots/efficiency_plots"
+SUMMARY_CSV = "output/plots/x60_4b/summary_all_runs.csv"
+CONFIG_CSV = "config/nps_dvcs_all_kins_main.csv"
+OUTPUT_DIR = "output/plots/x60_4b/publication_plots"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Publication-quality plot settings
@@ -65,8 +65,40 @@ EDGE_WIDTH = 0.5
 MARKER_SIZE = 70
 ALPHA_SCATTER = 0.75
 
-
 # ===== Helper Functions =====
+def extract_prescale_r(token: str) -> Optional[int]:
+    """
+    Parse prescale token and return integer r.
+    Accept tokens like: 'ps4=3', 'PS4=2', ' ps4 = 3 ', etc.
+    Returns None on parse failure.
+    """
+    if not isinstance(token, str):
+        return None
+    token = token.strip()
+    m = re.search(r'ps\d*\s*=\s*(\d+)', token, flags=re.IGNORECASE)
+    if m:
+        return int(m.group(1))
+    if '=' in token:
+        try:
+            rhs = token.split('=')[-1].strip()
+            return int(rhs)
+        except Exception:
+            return None
+    return None
+
+
+def prescale_from_token(token: str) -> int:
+    """
+    Convert token like 'ps4=3' -> prescale_value using rule:
+      if r <= 0 or parse fails -> 1
+      else prescale_value = 2**(r-1) + 1
+    """
+    r = extract_prescale_r(token)
+    if r is None:
+        return 1
+    if r <= 0:
+        return 1
+    return 2 ** (r - 1) + 1
 
 
 def safe_int(x):
@@ -196,81 +228,111 @@ def comparison_line_plot(df, x_col, y_cols_dict, xlabel, ylabel, title, filename
     print(f"[SAVE] {filename}")
 
 
-
-
-
-# ===== Data Loading and Filtering =====
-print("[INFO] Loading livetime and pi0 summary CSV files...")
+# ===== Data Loading =====
+print("[INFO] Loading CSV files...")
 if not os.path.exists(SUMMARY_CSV):
     print(f"[ERROR] Summary CSV not found: {SUMMARY_CSV}", file=sys.stderr)
     sys.exit(1)
-LIVETIME_DF = pd.read_csv(SUMMARY_CSV)
-LIVETIME_DF.columns = [c.strip() for c in LIVETIME_DF.columns]
-print(f"[INFO] Loaded {len(LIVETIME_DF)} rows from livetime CSV")
-
-PI0_SUMMARY_CSV = "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/output/plots/x60_4b/production_wfpi0/summary_all_runs.csv"
-if not os.path.exists(PI0_SUMMARY_CSV):
-    print(f"[ERROR] Pi0 summary CSV not found: {PI0_SUMMARY_CSV}", file=sys.stderr)
-    sys.exit(1)
-PI0_DF = pd.read_csv(PI0_SUMMARY_CSV)
-PI0_DF.columns = [c.strip() for c in PI0_DF.columns]
-print(f"[INFO] Loaded {len(PI0_DF)} rows from pi0 summary CSV")
-
-# Load config CSV for run filtering and target info
-CONFIG_CSV = "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/config/nps_dvcs_all_kins_main.csv"
 if not os.path.exists(CONFIG_CSV):
     print(f"[ERROR] Config CSV not found: {CONFIG_CSV}", file=sys.stderr)
     sys.exit(1)
-config_df = pd.read_csv(CONFIG_CSV)
-config_df.columns = config_df.columns.str.strip()
 
-# Filter config: production, not junk, LH2, valid run_number
-config_df = config_df[config_df["Type"].str.lower() != "junk"]
-config_df = config_df[config_df["Type"] == "production"]
-config_df = config_df[config_df["target"] == "LH2"]
-config_df = config_df.copy()
-config_df["run_number"] = pd.to_numeric(config_df["run_number"], errors="coerce")
-config_df = config_df.dropna(subset=["run_number"])
-config_df["run_number"] = config_df["run_number"].astype(int)
+df = pd.read_csv(SUMMARY_CSV)
+df_cfg = pd.read_csv(CONFIG_CSV)
 
-# Ensure run columns are int
-LIVETIME_DF = LIVETIME_DF.copy()
-LIVETIME_DF["run"] = pd.to_numeric(LIVETIME_DF["run"], errors="coerce")
-LIVETIME_DF = LIVETIME_DF.dropna(subset=["run"])
-LIVETIME_DF["run"] = LIVETIME_DF["run"].astype(int)
-PI0_DF = PI0_DF.copy()
-PI0_DF["run"] = pd.to_numeric(PI0_DF["run"], errors="coerce")
-PI0_DF = PI0_DF.dropna(subset=["run"])
-PI0_DF["run"] = PI0_DF["run"].astype(int)
+# Normalize column names
+df.columns = [c.strip() for c in df.columns]
+df_cfg.columns = [c.strip() for c in df_cfg.columns]
 
-# Merge livetime and pi0 summary on run
-merged = pd.merge(LIVETIME_DF, PI0_DF, on="run", suffixes=("_lt", "_pi0"), how="inner")
-print(f"[INFO] {len(merged)} runs present in both livetime and pi0 summary CSVs")
+print(f"[INFO] Loaded {len(df)} runs from summary CSV")
+print(f"[INFO] Loaded {len(df_cfg)} config entries from config CSV")
 
-# Merge with config for LH2 production filtering
-merged = pd.merge(merged, config_df[["run_number", "target"]], left_on="run", right_on="run_number", how="inner")
-print(f"[INFO] {len(merged)} runs present in all three CSVs after filtering for LH2 production runs")
+# Preliminary NPS efficiency for pi0 detection
+# calculated from MC simulations as ("nClusters","phot1_hit==1 && phot2_hit==1 && nClusters==2", "")/Total generated
+NPS_EFFICIENCY_PI0 = 0.40494
 
-# Remove suspicious runs: negative livetime or scaler/trigger > 10,000,000
-suspicious_runs = set()
-if "clta_livetime_tsh" in merged.columns:
-    suspicious_runs.update(merged[merged["clta_livetime_tsh"] < 0]["run"].unique())
-for col in merged.columns:
-    if (col.startswith("scaler_") or col.startswith("trig_")) and pd.api.types.is_numeric_dtype(merged[col]):
-        suspicious_runs.update(merged[merged[col] > 10_000_000]["run"].unique())
+# ===== Prescale Lookup =====
+ps_cols = [c for c in df_cfg.columns if 'prescale' in c.lower()]
+if not ps_cols:
+    raise ValueError(f"Config CSV must contain a column with 'prescale' in its header.")
+ps_col = ps_cols[0]
+print(f"[INFO] Using prescale column '{ps_col}' from config CSV")
 
-filtered = merged[~merged["run"].isin(suspicious_runs)].copy()
-print(f"[INFO] {len(filtered)} LH2 runs remain after removing suspicious runs")
+run_cols_candidates = ['run', 'run_number', 'runNumber', 'Run', 'Run_Number']
+cfg_run_col = None
+for c in run_cols_candidates:
+    if c in df_cfg.columns:
+        cfg_run_col = c
+        break
+if cfg_run_col is None:
+    for c in df_cfg.columns:
+        if 'run' in c.lower():
+            cfg_run_col = c
+            break
+if cfg_run_col is None:
+    raise ValueError(f"Could not find run number column in config CSV.")
+print(f"[INFO] Using run-number column '{cfg_run_col}' from config CSV")
 
+# Ensure 'run' column in summary
+if 'run' not in df.columns:
+    for c in df.columns:
+        if 'run' in c.lower():
+            df = df.rename(columns={c: 'run'})
+            print(f"[INFO] Renamed summary column '{c}' -> 'run'")
+            break
 
-# Ignore runs below 4300 and warn user
-if 'run' in filtered.columns:
-    below_4300 = filtered[filtered['run'] < 4300]
-    if not below_4300.empty:
-        print(f"[WARN] Ignoring {len(below_4300)} runs with run number below 4300. Please check the livetime plots for details.")
-    df = filtered[filtered['run'] >= 4300].copy()
+# Find target column in config
+target_col = None
+for c in df_cfg.columns:
+    if c.lower() == 'target':
+        target_col = c
+        break
+if target_col:
+    print(f"[INFO] Using target column '{target_col}' from config CSV")
 else:
-    df = filtered
+    print(f"[WARN] Target column not found in config CSV. Target filtering will be disabled.")
+
+# Build prescale and target lookup
+cfg_runs = df_cfg[cfg_run_col].apply(safe_int)
+df_cfg['_run_int'] = cfg_runs
+lookup = {}
+for idx, row in df_cfg.iterrows():
+    r = row['_run_int']
+    if r is None:
+        continue
+    token = str(row[ps_col]) if pd.notna(row[ps_col]) else ""
+    ps_val = prescale_from_token(token)
+    tgt = str(row[target_col]).strip() if target_col and pd.notna(row[target_col]) else ""
+    lookup[r] = (token, ps_val, tgt)
+
+# Map prescale and target into summary df
+prescale_tokens = []
+prescale_values = []
+targets = []
+for idx, row in df.iterrows():
+    run = safe_int(row['run'])
+    token, psval, tgt = ("", 1, "")
+    if run in lookup:
+        token, psval, tgt = lookup[run]
+    else:
+        matched = df_cfg[df_cfg[cfg_run_col].astype(str).str.strip() == str(row['run']).strip()]
+        if not matched.empty:
+            stoken = str(matched.iloc[0][ps_col]) if pd.notna(matched.iloc[0][ps_col]) else ""
+            token = stoken
+            psval = prescale_from_token(token)
+            stgt = str(matched.iloc[0][target_col]).strip() if target_col and pd.notna(matched.iloc[0][target_col]) else ""
+            tgt = stgt
+        else:
+            token = ""
+            psval = 1
+            tgt = ""
+    prescale_tokens.append(token)
+    prescale_values.append(psval)
+    targets.append(tgt)
+
+df['prescale_token'] = prescale_tokens
+df['prescale_value'] = prescale_values
+df['target'] = targets
 
 # ===== Apply Filters =====
 # Apply run_status filter if requested
@@ -290,74 +352,48 @@ if target_filter:
     filtered_count = len(df)
     print(f"[INFO] Filtered target={target_filter}: {initial_count} -> {filtered_count} runs")
 
-
 # ===== Data Conversion to Numeric =====
-
-# Use correct column names after merge (with suffixes)
 numeric_cols = [
-    'expected_current_uA', 'charge_uC', 'clta_livetime_tsh', 'ps_factor',
-    'hms_track_eff_lt', 'hms_track_eff_pi0',
+    'accumulated_charge(mC)', 'current_mean_uA', 'CPUT_LT', 'Beam_Time(s)',
     'total_entries', 'pass_hms', 'pass_hms_nps', 'total_coin_entries',
     'chi2_ndf_comb_bg', 'pi0_mu_MeV', 'pi0_sigma_MeV', 'pi0_signal_counts',
-    'mmiss_p_mean_GeV', 'mmiss_p_sigma_GeV'
+    'mmiss_p_mean_GeV', 'mmiss_p_sigma_GeV', 'hms_track_eff'
 ]
 for col in numeric_cols:
     if col in df.columns:
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
-
-
 # ===== Calculate Rates and Metrics =====
 print("[INFO] Calculating rates and metrics...")
 
+# Raw rate = total_coin_entries / beam_time
+df['raw_rate'] = df['total_coin_entries'] / df['Beam_Time(s)']
 
+# LCF corrected rate = total_coin_entries / (beam_time * cpu_lt)
+df['lcf_corrected_rate'] = df['total_coin_entries'] / (df['Beam_Time(s)'] * df['CPUT_LT'])
 
+# Current normalized rate = lcf_corrected_rate / current_mean_uA
+df['current_normalized_rate'] = df['lcf_corrected_rate'] / df['current_mean_uA']
 
-# Always use 'clta_livetime_tsh' from livetime_results_parallel_updatedtrig.csv for livetime
-charge_col = 'charge_uC_lt' if 'charge_uC_lt' in df.columns else 'charge_uC'
-livetime_col = 'clta_livetime_tsh'
-hms_eff_col = 'hms_track_eff_lt' if 'hms_track_eff_lt' in df.columns else 'hms_track_eff_pi0'
-
-
-# Convert charge from microcoulombs to millicoulombs for normalized_yield calculation
-charge_mC = df[charge_col] / 1000.0
-
-# Target boiling correction (Yaopeng's formula)
-# For now, use: tgt_boil_corr = 1 - ((10.2/100)*beam_current)/100
-# beam_current should be in μA (use df['current_mean_uA'] if available)
-if 'current_mean_uA' in df.columns:
-    tgt_boil_corr = 1 - ((10.2/100) * df['current_mean_uA']) / 100
-else:
-    tgt_boil_corr = 1.0  # fallback if current not available
-
-# Raw rate = total_coin_entries / beam_time (beam time not available, skip if not present)
-# LCF corrected rate = total_coin_entries / (beam_time * livetime)
-# Current normalized rate = lcf_corrected_rate / expected_current_uA
 # Scaled current normalized rate = current_normalized_rate * (pi0_signal_counts / total_coin_entries)
-# Normalized yield = (pi0_signal_counts / (charge_uC * clta_livetime_tsh * hms_track_eff)) * ps_factor
-
-if 'Beam_Time(s)' in df.columns:
-    df['raw_rate'] = df['total_coin_entries'] / df['Beam_Time(s)']
-    df['lcf_corrected_rate'] = df['total_coin_entries'] / (df['Beam_Time(s)'] * df['clta_livetime_tsh'])
-else:
-    df['raw_rate'] = np.nan
-    df['lcf_corrected_rate'] = np.nan
-
-df['current_normalized_rate'] = df['lcf_corrected_rate'] / df['expected_current_uA']
 df['scaled_current_normalized_rate'] = df['current_normalized_rate'] * (
     df['pi0_signal_counts'] / df['total_coin_entries']
 )
+
+# Normalized yield = (pi0_signal_counts / (accumulated_charge(mC) * cpu_lt * track_eff)) * prescale_value
+# Note: track_eff is hms_track_eff; handle zero/NaN values to avoid inf
 df['normalized_yield'] = np.where(
-    (charge_mC > 0) & (df[livetime_col] > 0) & (df[hms_eff_col] > 0) & (tgt_boil_corr > 0),
-    (df['pi0_signal_counts'] / (charge_mC * df[livetime_col] * df[hms_eff_col]) * tgt_boil_corr) * df['ps_factor'],
+    (df['accumulated_charge(mC)'] > 0) & (df['CPUT_LT'] > 0) & (df['hms_track_eff'] > 0),
+    (df['pi0_signal_counts'] / (df['accumulated_charge(mC)'] * df['CPUT_LT'] * df['hms_track_eff'])) * df['prescale_value'],
     np.nan
 )
+
+# Additional useful metrics
 df['signal_to_coin_ratio'] = df['pi0_signal_counts'] / df['total_coin_entries']
 df['detection_efficiency'] = df['pi0_signal_counts'] / df['total_entries']
 
 # Sort by run for consistent plotting
-if 'run' in df.columns:
-    df = df.sort_values("run")
+df = df.sort_values("run")
 
 print("[INFO] Calculated metrics:")
 print(f"  - raw_rate: min={df['raw_rate'].min():.2e}, max={df['raw_rate'].max():.2e}")
@@ -447,39 +483,33 @@ comparison_line_plot(df_norm_temp, 'run',
 # ===== Normalized Yield Plots =====
 print("[INFO] Creating normalized yield plots...")
 
-
-
 fig, ax = setup_publication_plot()
 scatter_plot(ax, df['run'].values, df['normalized_yield'].values,
             "Run Number", "Normalized Yield (Prescale Corrected)", "Normalized Yield vs Run",
-            "11_normalized_yield_vs_run.png", pdf=pdf, ylim=(45, 110))
-
-
+            "11_normalized_yield_vs_run.png", pdf=pdf, ylim=(30, 100))
 
 fig, ax = setup_publication_plot()
 scatter_plot(ax, df['current_mean_uA'].values, df['normalized_yield'].values,
             "Beam Current [μA]", "Normalized Yield (Prescale Corrected)", "Normalized Yield vs Beam Current",
-            "12_normalized_yield_vs_current.png", pdf=pdf, ylim=(45, 110))
+            "12_normalized_yield_vs_current.png", pdf=pdf, ylim=(30, 100))
 
 # ===== π⁰ Peak and Resolution Trends =====
 print("[INFO] Creating π⁰ peak and resolution trend plots...")
 
-
 fig, ax = setup_publication_plot()
 scatter_plot(ax, df['run'].values, df['pi0_mu_MeV'].values,
             "Run Number", "π⁰ Peak Position μ [MeV]", "π⁰ Peak Position vs Run",
-            "13_pi0_peak_position_vs_run.png", pdf=pdf, ylim=(130,135))
+            "13_pi0_peak_position_vs_run.png", pdf=pdf, ylim=(125,135))
 
 fig, ax = setup_publication_plot()
 scatter_plot(ax, df['run'].values, df['pi0_sigma_MeV'].values,
             "Run Number", "π⁰ Peak Width σ [MeV]", "π⁰ Peak Width vs Run",
             "14_pi0_peak_width_vs_run.png", pdf=pdf, ylim=(3.5,6.5))
 
-
 fig, ax = setup_publication_plot()
 scatter_plot(ax, df['current_mean_uA'].values, df['pi0_mu_MeV'].values,
             "Beam Current [μA]", "π⁰ Peak Position μ [MeV]", "π⁰ Peak Position vs Beam Current",
-            "15_pi0_peak_position_vs_current.png", pdf=pdf, ylim=(130,135))
+            "15_pi0_peak_position_vs_current.png", pdf=pdf, ylim=(125,135))
 
 fig, ax = setup_publication_plot()
 scatter_plot(ax, df['current_mean_uA'].values, df['pi0_sigma_MeV'].values,
@@ -548,11 +578,9 @@ scatter_plot(ax, df['run'].values, df['Beam_Time(s)'].values,
 # ===== LCF Factor =====
 print("[INFO] Creating LCF factor plot...")
 
-
-# Plot clta_livetime_tsh as the CPU Live Time Factor (use only clta_livetime_tsh for all livetime)
 fig, ax = setup_publication_plot()
-scatter_plot(ax, df['run'].values, df['clta_livetime_tsh'].values,
-            "Run Number", "CPU Live Time Factor (clta_livetime_tsh)", "CPU Live Time Factor vs Run",
+scatter_plot(ax, df['run'].values, df['CPUT_LT'].values,
+            "Run Number", "CPU Live Time Factor", "CPU Live Time Factor vs Run",
             "26_cpu_lt_factor_vs_run.png", pdf=pdf)
 
 # ===== Multi-panel Comparison Plots =====
@@ -579,22 +607,6 @@ pi0_data = {
 multi_scatter_plot(pi0_data, "Run Number", "Value",
                   "π⁰ Properties - Individual Panels",
                   "28_pi0_properties_multipanel.png", figsize=(14, 10), pdf=pdf)
-
-# ===== Target Boiling Correction Plot =====
-print("[INFO] Creating target boiling correction vs current plot...")
-
-fig, ax = setup_publication_plot()
-scatter_plot(
-    ax,
-    df['current_mean_uA'].values,
-    tgt_boil_corr.values if hasattr(tgt_boil_corr, 'values') else tgt_boil_corr,
-    "Beam Current [μA]",
-    "Target Boiling Correction",
-    "Target Boiling Correction vs Beam Current",
-    "target_boiling_correction_vs_current.png",
-    pdf=pdf,
-    ylim=(0.92, 1.0)
-)
 
 # ===== Save Augmented Data =====
 print("[INFO] Saving augmented data...")

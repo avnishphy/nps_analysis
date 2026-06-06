@@ -65,7 +65,7 @@ inline bool hms_electron_cuts(double edtm_tdc, double h_delta, double h_gtr_th,
 {
     // fast, ordered checks (fail-fast)
     if (edtm_tdc > 0.1) return false;
-    if (h_react_z < -4.0 || h_react_z > 4.0) return false;
+    if (h_react_z < -8.0 || h_react_z > 8.0) return false;
     if (h_delta < -15.0 || h_delta > 15.0) return false;
     if (h_gtr_th < -0.1 || h_gtr_th > 0.1) return false;
     if (h_gtr_ph < -0.04 || h_gtr_ph > 0.04) return false;

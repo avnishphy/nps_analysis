@@ -1,6 +1,6 @@
 // ============================================================================
-// File: nps_analysis.C
-// Purpose: Full diagnostic pipeline for NPS π0 analysis with robust outputs
+// File: nps_analysis_wfpi0.C
+// Purpose: Full diagnostic pipeline for NPS π0 analysis with robust outputs (Production/WF data)
 // Author: Avnish Singh (physics), ChatGPT (refactoring 2026)
 //
 // Design:
@@ -10,7 +10,7 @@
 //   - Seamless integration with header file utilities
 //   - Physics calculations preserved exactly (no algorithm changes)
 //
-// Build: root -l -b nps_analysis.C
+// Build: root -l -b nps_analysis_wfpi0.C
 // ============================================================================
 
 #include "utils.C"
@@ -61,6 +61,8 @@
 #include <numeric>
 #include <limits>
 #include <stdexcept>
+#include <cerrno>
+#include <ctime>
 
 using namespace std;
 
@@ -68,9 +70,10 @@ using namespace std;
 // Configuration Constants
 // ============================================================================
 constexpr int MAX_CLUS = 20;
-constexpr double DEFAULT_TIME_THRESH_NS = 10.0;
-constexpr double DEFAULT_TIME_WINDOW_WRT_150 = 10.0;
+constexpr double DEFAULT_TIME_THRESH_NS = 13.0;
+constexpr double DEFAULT_TIME_WINDOW_WRT_150 = 13.0;
 constexpr double EBEAM_DEFAULT = 10.538;
+constexpr double HMS_MOM_OFFSET_SCALE = 1.0;
 constexpr Long64_t MIN_PRINT_EVERY = 1000;
 
 // ============================================================================
@@ -113,13 +116,31 @@ public:
     FileGuard& operator=(const FileGuard&) = delete;
 };
 
-/// Write global CSV header (appended to by each run)
-inline void write_global_csv_header(const TString &path) 
+/// Print a progress bar with percentage
+inline void print_progress(int run, const char* label, Long64_t current, Long64_t total) 
 {
-    std::ofstream f(path.Data(), std::ios::out);
+    const int bar_width = 40;
+    double progress = (total > 0) ? (double)current / total : 0.0;
+    int pos = (int)(bar_width * progress);
+    
+    cout << " Run " << run << " " << label << " [";
+    for (int i = 0; i < bar_width; ++i) {
+        if (i < pos) cout << "=";
+        else if (i == pos) cout << ">";
+        else cout << " ";
+    }
+    cout << "] " << int(progress * 100.0) << "% (" << current << "/" << total << ")\r";
+    cout.flush();
+}
+
+/// Write global CSV header (appended to by each run)
+inline bool write_global_csv_header(const TString &path) 
+{
+    std::ofstream f(path.Data(), std::ios::out | std::ios::trunc);
     if (!f.is_open()) {
-        std::cerr << "[ERROR] Cannot open CSV for writing: " << path.Data() << "\n";
-        return;
+        std::cerr << "[ERROR] Cannot open CSV for writing: " << path.Data()
+                  << " (errno=" << errno << ", " << std::strerror(errno) << ")\n";
+        return false;
     }
     f << "run,accumulated_charge(mC),current_mean_uA,CPUT_LT,Beam_Time(s),"
       << "total_entries,pass_hms,pass_hms_nps,total_coin_entries,"
@@ -127,19 +148,20 @@ inline void write_global_csv_header(const TString &path)
       << "pi0_signal_counts,mmiss_p_mean_GeV,mmiss_p_sigma_GeV,"
       << "hms_track_eff,hms_track_eff_err,s1x_peak,s1x_err,s1y_peak,s1y_err,s2x_peak,s2x_err,s2y_peak,s2y_err,run_status\n";
     f.close();
+    return true;
 }
 
 // ============================================================================
 // Main Analysis Macro
 // ============================================================================
-/// Comprehensive NPS π0 analysis with per-run processing and global summary
+/// Comprehensive NPS π0 analysis with per-run processing and global summary (Production data)
 ///
-/// @param skimDir_in          Directory containing skimmed ROOT files
+/// @param skimDir_in          Directory containing production ROOT files
 /// @param outPlotDir_in       Output directory for plots and histograms  
 /// @param runlistFile         File listing runs to process (one per line)
 /// @param Ebeam              Beam energy in GeV
-void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/nps/singhav/ROOTfiles/root_analysis_env_skim/x60_4b",
-                   const TString &outPlotDir_in = "output/plots/x60_4b",
+void nps_analysis_wfpi0(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/nps/hhuang/farmFile/Production/DVCS",
+                   const TString &outPlotDir_in = "output/plots/x60_4b/production_wfpi0",
                    const TString &runlistFile = "config/runlist_x60_4b.txt",
                    const double Ebeam = EBEAM_DEFAULT)
 {
@@ -184,11 +206,16 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
     }
     logmsg(INFO, Form("Processing %zu runs", runs.size()));
 
-    TString global_csv = outPlotDir + "/summary_all_runs.csv";
-    
-    // Note: We don't write to global_csv directly.
-    // Instead, each run writes to a per-run temp CSV.
-    // Bash script reconstructs the global CSV from successful runs.
+    TString global_csv = outPlotDir + "summary_all_runs.csv";
+    if (!write_global_csv_header(global_csv)) {
+        TString fallback_csv = Form("/tmp/summary_all_runs_%d.csv", (int)time(nullptr));
+        logmsg(WARN, Form("Falling back global CSV path to %s", fallback_csv.Data()));
+        if (!write_global_csv_header(fallback_csv)) {
+            logmsg(ERROR, "Failed to create global summary CSV in both output directory and /tmp");
+            return;
+        }
+        global_csv = fallback_csv;
+    }
 
     // ========================================================================
     // Per-run loop (process each run independently with memory cleanup)
@@ -197,12 +224,29 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         TStopwatch sw_run;
         sw_run.Start();
 
-        // Construct input filename
-        TString infile = skimDir + Form("skim_run%d.root", run);
+        // Construct input filename pattern (production files are split into multiple files per run)
+        TString infile_pattern = skimDir + Form("nps_production_%d_*_wf_calib.root", run);
 
-        // Validate file existence
-        if (gSystem->AccessPathName(infile)) {
-            logmsg(WARN, Form("Skipping run %d: file not found", run));
+        // Validate at least one file exists for this run
+        void* dirp = gSystem->OpenDirectory(skimDir);
+        if (!dirp) {
+            logmsg(WARN, Form("Cannot open directory %s", skimDir.Data()));
+            continue;
+        }
+        
+        bool found_file = false;
+        const char* entry;
+        while ((entry = gSystem->GetDirEntry(dirp))) {
+            TString fname(entry);
+            if (fname.Contains(Form("nps_production_%d_", run)) && fname.EndsWith("_wf_calib.root")) {
+                found_file = true;
+                break;
+            }
+        }
+        gSystem->FreeDirectory(dirp);
+        
+        if (!found_file) {
+            logmsg(WARN, Form("Skipping run %d: no files found matching pattern", run));
             continue;
         }
 
@@ -212,19 +256,24 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         // ====================================================================
         std::string run_status = "OK";  // Track whether run completes without errors
         try {
-            // Open file with automatic cleanup via FileGuard
-            TFile* f = TFile::Open(infile, "READ");
-            if (!f || f->IsZombie()) {
-                logmsg(ERROR, Form("Failed to open file for run %d", run));
-                if (f) delete f;
+            // Open files with TChain to handle split files (automatic cleanup via unique_ptr)
+            std::unique_ptr<TChain> chain(new TChain("t_prod"));
+            
+            // Add all split files for this run to the chain
+            TString file_pattern = skimDir + Form("nps_production_%d_*_wf_calib.root", run);
+            Int_t nfiles_added = chain->Add(file_pattern);
+            
+            if (nfiles_added == 0) {
+                logmsg(ERROR, Form("Failed to add files to chain for run %d", run));
                 continue;
             }
-            FileGuard file_guard(f);  // Automatic cleanup on scope exit!
-
-            TTree *T = dynamic_cast<TTree*>(f->Get("T"));
+            
+            logmsg(INFO, Form("Run %d: Added %d files to chain", run, nfiles_added));
+            
+            TTree *T = chain.get();  // Use the chain as a TTree
             if (!T) {
-                logmsg(ERROR, Form("Tree 'T' not found in run %d", run));
-                continue;  // file_guard cleans up automatically
+                logmsg(ERROR, Form("Chain is null for run %d", run));
+                continue;
             }
 
             Long64_t nentries = T->GetEntries();
@@ -236,8 +285,8 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
             Double_t HgtrX=0, HgtrY=0, HgtrTh=0, HgtrPh=0, hdelta=0, HgtrP=0, hreactz=0, hcernpeSum=0, hcaletotnorm=0;
             Double_t HgtrPx=0, HgtrPy=0, HgtrPz=0;
             Double_t edtmtdc=0;
-            Double_t nclust_dbl = 0;
-            Double_t BCM2_scalerCurrent = 0, BCM2_scalerCharge = 0, H_1MHz_scalerTime = 0;
+            Int_t nclust_dbl = 0;
+            Double_t BCM4A_scalerCurrent = 0, BCM4A_scalerCharge = 0, H_1MHz_scaler = 0;
             Double_t h_hodbetanotrack = 0, h_hodgoodscinhit = 0, hdcntrack = 0;
             Double_t s1x_rate = 0, s1y_rate = 0, s2x_rate = 0, s2y_rate = 0;
             
@@ -275,10 +324,10 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
             enable_scalar("H.cer.npeSum", &hcernpeSum);
             enable_scalar("H.cal.etotnorm", &hcaletotnorm);
             enable_scalar("T.hms.hEDTM_tdcTimeRaw", &edtmtdc);
-            enable_scalar("H.BCM2.scalerCurrent", &BCM2_scalerCurrent);
-            enable_scalar("H.BCM2.scalerCharge", &BCM2_scalerCharge);
-            enable_scalar("H.1MHz.scalerTime", &H_1MHz_scalerTime);
-            enable_scalar("NPS.cal.nclust", &nclust_dbl);
+            enable_scalar("H.BCM4A.scalerCurrent", &BCM4A_scalerCurrent);
+            enable_scalar("H.BCM4A.scalerCharge", &BCM4A_scalerCharge);
+            enable_scalar("H.1MHz.scaler", &H_1MHz_scaler);
+            enable_scalar("NPS.prod.nclust", &nclust_dbl);
 
             // HMS efficiencies
             enable_scalar("H.hod.betanotrack", &h_hodbetanotrack);
@@ -309,10 +358,10 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
                 }
             };
 
-            try_bind_cluster("NPS.cal.clusE", &clusE_vec, clusE);
-            try_bind_cluster("NPS.cal.clusX", &clusX_vec, clusX);
-            try_bind_cluster("NPS.cal.clusY", &clusY_vec, clusY);
-            try_bind_cluster("NPS.cal.clusT", &clusT_vec, clusT);
+            try_bind_cluster("NPS.prod.clusE", &clusE_vec, clusE);
+            try_bind_cluster("NPS.prod.clusXcorr", &clusX_vec, clusX);
+            try_bind_cluster("NPS.prod.clusYcorr", &clusY_vec, clusY);
+            try_bind_cluster("NPS.prod.clusT", &clusT_vec, clusT);
 
             cout << "Run " << run << " entries: " << nentries << endl;
 
@@ -411,13 +460,13 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         // Tree will be created and filled at the end during file write
         // -----------------------------------------------
         struct TreeEntry {
-            Double_t mpi0_all, mmiss_all, mmiss_all_corr, pi0_weight;
+            Double_t mpi0_all, mmiss_all, mmiss_all_corr, mmiss_all_no_mom_offset, mmiss_all_corr_no_mom_offset, pi0_weight;
             Int_t is_exclusive, is_weighted;
             Double_t Q2, W, t, tmin, pt, theta, phi, s, xB, z;
             Int_t nclust_selected, event_id;
             Double_t cluster_x_1, cluster_y_1, cluster_e_1, cluster_x_2, cluster_y_2, cluster_e_2;
             // HMS tracking variables
-            Double_t delta, xptar, yptar, xtar, ytar, xfp, yfp, xpfp, ypfp, reactz;
+            Double_t delta, xptar, yptar, xtar, ytar, xfp, yfp, xpfp, ypfp;
         };
         std::map<Long64_t, TreeEntry> treeData;  // Indexed by event_id
 
@@ -477,13 +526,17 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         TH2D *h_W_vs_nu = make2D("h_W_vs_nu", "W vs #nu (excl weighted); #nu [GeV]; W [GeV]", 200, 0, 12, 150, 0.5, 4.5);
 
         // Per-window mgg histograms (diag/side/full)
-        vector<pair<double,double>> diag_windows = nps::default_diag_windows();
-        vector<pair<double,double>> side_windows = nps::default_side_windows();
-        auto coin_win = nps::default_coin_window();
-        auto full1_t1 = nps::default_full_acc1_t1();
-        auto full1_t2 = nps::default_full_acc1_t2();
-        auto full2_t1 = nps::default_full_acc2_t1();
-        auto full2_t2 = nps::default_full_acc2_t2();
+        // Adjusted timing windows for production data (lower windows -2ns, upper windows +2ns)
+        vector<pair<double,double>> diag_windows = {
+            {139.0, 141.0}, {141.0, 143.0}, {143.0, 145.0},
+            {155.0, 157.0}, {157.0, 159.0}, {159.0, 161.0}
+        };
+        vector<pair<double,double>> side_windows = diag_windows;  // same as diag
+        auto coin_win = nps::default_coin_window();  // Keep unchanged: {149.0, 151.0}
+        auto full1_t1 = std::make_pair(155.0, 161.0);  // +2ns from default {153.0, 159.0}
+        auto full1_t2 = std::make_pair(139.0, 145.0);  // -2ns from default {141.0, 147.0}
+        auto full2_t1 = std::make_pair(139.0, 145.0);  // -2ns from default {141.0, 147.0}
+        auto full2_t2 = std::make_pair(155.0, 161.0);  // +2ns from default {153.0, 159.0}
 
         vector<TH1D*> h_mgg_diag;
         for (size_t i=0;i<diag_windows.size();++i) {
@@ -529,26 +582,46 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         for (Long64_t ev=0; ev<nentries; ++ev) {
             try {
                 if ((ev % print_every) == 0) {
-                    cout << " run " << run << " event " << ev << " / " << nentries << "\r" << flush;
+                    print_progress(run, "Processing", ev, nentries);
                 }
 
                 // read entry
                 T->GetEntry(ev);
                 ++n_total;
 
+                // DEBUG: Print cluster info for first few events
+                static int debug_count = 0;
+                bool do_debug = (debug_count < 10);
+
                 // If vectors were used for clusters, copy into arrays (safe)
                 int nclust = 0;
                 if (clusE_vec && clusX_vec && clusY_vec && clusT_vec) {
                     nclust = (int) std::min<size_t>(clusE_vec->size(), MAX_CLUS);
+                    if (do_debug && nclust > 0) {
+                        cout << "\n[DEBUG] Event " << ev << ": Vector mode, nclust=" << nclust 
+                             << " (vec sizes: E=" << clusE_vec->size() 
+                             << " X=" << clusX_vec->size() 
+                             << " Y=" << clusY_vec->size() 
+                             << " T=" << clusT_vec->size() << ")\n";
+                        debug_count++;
+                    }
                     for (int i=0;i<nclust;++i) {
                         clusE[i] = (*clusE_vec)[i];
                         clusX[i] = (*clusX_vec)[i];
                         clusY[i] = (*clusY_vec)[i];
-                        clusT[i] = (*clusT_vec)[i];
+                        clusT[i] = (*clusT_vec)[i] + 150.0;  // Add 150 ns offset for production data (reference time is 0, not 150)
                     }
                 } else {
                     // fallback: use nclust_dbl + arrays (if the tree stored arrays)
-                    nclust = static_cast<int>(lrint(nclust_dbl));
+                    nclust = nclust_dbl;
+                    if (do_debug && ev < 100) {
+                        cout << "\n[DEBUG] Event " << ev << ": Array mode, nclust_dbl=" << nclust_dbl 
+                             << " (vec pointers: E=" << (void*)clusE_vec 
+                             << " X=" << (void*)clusX_vec 
+                             << " Y=" << (void*)clusY_vec 
+                             << " T=" << (void*)clusT_vec << ")\n";
+                        debug_count++;
+                    }
                     if (nclust < 0) nclust = 0;
                     if (nclust > MAX_CLUS) nclust = MAX_CLUS;
                 }
@@ -604,6 +677,29 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
                 for (int i=0;i<n_after;++i) {
                     if (nps::nps_spatial_energy_cuts(clusE[i], clusX[i], clusY[i], clusT[i], DEFAULT_TIME_WINDOW_WRT_150))
                         good_idx.push_back(i);
+                }
+
+                // DEBUG: Show why clusters are failing cuts
+                static int debug_cuts = 0;
+                static int debug_timing = 0;
+                if (debug_timing < 10 && n_after >= 2) {
+                    cout << "\n[DEBUG TIMING] Event " << ev << ": n_after=" << n_after << "\n";
+                    for (int i=0; i<n_after; ++i) {
+                        bool passes = nps::nps_spatial_energy_cuts(clusE[i], clusX[i], clusY[i], clusT[i], DEFAULT_TIME_WINDOW_WRT_150);
+                        cout << "  Cluster " << i << ": E=" << clusE[i] << " GeV, X=" << clusX[i] 
+                             << " cm, Y=" << clusY[i] << " cm, T=" << clusT[i] << " ns"
+                             << " [" << (passes ? "PASS" : "FAIL") << "]\n";
+                    }
+                    debug_timing++;
+                }
+                if (debug_cuts < 5 && n_after >= 2 && good_idx.size() < 2) {
+                    cout << "\n[DEBUG CUT FAILURE] Event " << ev << ": n_after=" << n_after 
+                         << " but good_idx.size()=" << good_idx.size() << "\n";
+                    for (int i=0; i<n_after; ++i) {
+                        cout << "  Cluster " << i << ": E=" << clusE[i] << " GeV, X=" << clusX[i] 
+                             << " cm, Y=" << clusY[i] << " cm, T=" << clusT[i] << " ns\n";
+                    }
+                    debug_cuts++;
                 }
 
                 if (good_idx.size() < 2) continue;
@@ -664,13 +760,31 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
                 h_photon_Eratio->Fill(eratio);
 
                 // missing mass (proton)
-                const double mm_p = nps::missing_mass_proton_pi0(Ebeam, Ee, px_e, py_e, pz_e,
+                const double px_e_scaled = px_e * HMS_MOM_OFFSET_SCALE;
+                const double py_e_scaled = py_e * HMS_MOM_OFFSET_SCALE;
+                const double pz_e_scaled = pz_e * HMS_MOM_OFFSET_SCALE;
+                const double p_e_mom_scaled = sqrt(max(0.0, px_e_scaled*px_e_scaled + py_e_scaled*py_e_scaled + pz_e_scaled*pz_e_scaled));
+                const double Ee_scaled = sqrt(max(0.0, p_e_mom_scaled*p_e_mom_scaled + nps::kElectronMass_GeV*nps::kElectronMass_GeV));
+
+                const double mm_p_no_offset = nps::missing_mass_proton_pi0(Ebeam, Ee, px_e, py_e, pz_e,
+                                                                          clusE[sel_i], clusE[sel_j],
+                                                                          clusX[sel_i], clusY[sel_i],
+                                                                          clusX[sel_j], clusY[sel_j],
+                                                                          nps::kDefaultZ_NPS_cm, -17.51);
+
+                const double mm_p = nps::missing_mass_proton_pi0(Ebeam, Ee_scaled, px_e_scaled, py_e_scaled, pz_e_scaled,
                                                                 clusE[sel_i], clusE[sel_j],
                                                                 clusX[sel_i], clusY[sel_i],
                                                                 clusX[sel_j], clusY[sel_j],
                                                                 nps::kDefaultZ_NPS_cm, -17.51);
 
-                const double mm_p_corr = nps::invariant_missing_mass_corrected_avnish_from_detector(mm_p*mm_p, Ebeam, Ee, px_e, py_e, pz_e,
+                const double mm_p_corr = nps::invariant_missing_mass_corrected_avnish_from_detector(mm_p*mm_p, Ebeam, Ee_scaled, px_e_scaled, py_e_scaled, pz_e_scaled,
+                                                                clusE[sel_i], clusE[sel_j],
+                                                                clusX[sel_i], clusY[sel_i],
+                                                                clusX[sel_j], clusY[sel_j],
+                                                                nps::kDefaultZ_NPS_cm, -17.51);
+
+                const double mm_p_corr_no_mom_offset = nps::invariant_missing_mass_corrected_avnish_from_detector(mm_p_no_offset*mm_p_no_offset, Ebeam, Ee, px_e, py_e, pz_e,
                                                                 clusE[sel_i], clusE[sel_j],
                                                                 clusX[sel_i], clusY[sel_i],
                                                                 clusX[sel_j], clusY[sel_j],
@@ -733,6 +847,8 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
                 entry.mpi0_all = mgg;  // Invariant mass
                 entry.mmiss_all = mm_p;
                 entry.mmiss_all_corr = mm_p_corr;
+                entry.mmiss_all_no_mom_offset = mm_p_no_offset;
+                entry.mmiss_all_corr_no_mom_offset = mm_p_corr_no_mom_offset;
                 entry.pi0_weight = 0.0;  // Will be filled in second pass
                 entry.is_exclusive = 0;  // Will be set in second pass
                 entry.is_weighted = 0;   // Will be set in second pass
@@ -763,7 +879,6 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
                 entry.yfp = hyfp;
                 entry.xpfp = hxpfp;
                 entry.ypfp = hypfp;
-                entry.reactz = hreactz;
                 entry.event_id = ev;
                 
                 treeData[ev] = entry;
@@ -792,12 +907,24 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         }
         
         cout << endl;
+        
+        // Print detailed cut flow statistics
+        cout << "\n===== Run " << run << " Cut Flow =====\n";
+        cout << " Total entries:               " << n_total << "\n";
+        cout << " Pass HMS cuts:               " << n_pass_hms << " (" << (100.0*n_pass_hms/n_total) << "%)\n";
+        cout << " Have >= 2 clusters:          " << n_ge2_hms << " (" << (100.0*n_ge2_hms/n_pass_hms) << "% of HMS)\n";
+        cout << " Pass spatial/energy/timing:  " << n_selected_for_analysis << " (" << (100.0*n_selected_for_analysis/n_ge2_hms) << "% of >=2 clusters)\n";
+        cout << "=====================================\n\n";
 
 
         // -------------------------
         // Summaries & background estimate
         // -------------------------
-        nps::CoincidenceBGResult bg = nps::estimate_coincidence_background_default(h_t1_t2);
+        // Use custom shifted windows (all except coin shifted by +3ns)
+        nps::CoincidenceBGResult bg = nps::estimate_coincidence_background_default(
+            h_t1_t2, coin_win, diag_windows, side_windows, 
+            full1_t1, full1_t2, full2_t2, full2_t1
+        );
 
         // Data-driven accidental subtraction (returns bg-subtracted histogram)
         h_coin_bgsub = nps::make_and_subtract_accidentals_data_driven(
@@ -859,15 +986,27 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
             try {
                 for (Long64_t ev = 0; ev < nentries; ++ev) {
                     if ((ev % print_every) == 0) {
-                        cout << " run " << run << " weighted pass " << ev << " / " << nentries << "\r" << flush;
+                        print_progress(run, "Weighted pass", ev, nentries);
                     }
 
                     T->GetEntry(ev);
 
-                    // Use cluster count from nclust_dbl (same as first pass)
-                    int nclust = static_cast<int>(lrint(nclust_dbl));
-                    if (nclust < 0) nclust = 0;
-                    if (nclust > MAX_CLUS) nclust = MAX_CLUS;
+                    // Load cluster data (same as first pass, with +150 ns timing offset)
+                    int nclust = 0;
+                    if (clusE_vec && clusX_vec && clusY_vec && clusT_vec) {
+                        nclust = (int) std::min<size_t>(clusE_vec->size(), MAX_CLUS);
+                        for (int i=0; i<nclust; ++i) {
+                            clusE[i] = (*clusE_vec)[i];
+                            clusX[i] = (*clusX_vec)[i];
+                            clusY[i] = (*clusY_vec)[i];
+                            clusT[i] = (*clusT_vec)[i] + 150.0;  // Add 150 ns offset for production data
+                        }
+                    } else {
+                        nclust = nclust_dbl;
+                        if (nclust < 0) nclust = 0;
+                        if (nclust > MAX_CLUS) nclust = MAX_CLUS;
+                        // If using arrays, timing offset may already be applied or stored directly
+                    }
 
                     if (nclust < 2) continue;
                     if (!nps::hms_electron_cuts(edtmtdc, hdelta, HgtrTh, HgtrPh, hcernpeSum, hcaletotnorm, hreactz)) continue;
@@ -900,9 +1039,18 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
 
                     const double mgg = nps::invariant_mass_pi0(clusE[sel_i], clusE[sel_j], clusX[sel_i], clusX[sel_j], clusY[sel_i], clusY[sel_j], nps::kDefaultZ_NPS_cm);
 
-                    const double mm_p = nps::missing_mass_proton_pi0(beam_energy, Ee, px_e, py_e, pz_e, clusE[sel_i], clusE[sel_j], clusX[sel_i], clusY[sel_i], clusX[sel_j], clusY[sel_j], nps::kDefaultZ_NPS_cm, -17.51);
+                    const double px_e_scaled = px_e * HMS_MOM_OFFSET_SCALE;
+                    const double py_e_scaled = py_e * HMS_MOM_OFFSET_SCALE;
+                    const double pz_e_scaled = pz_e * HMS_MOM_OFFSET_SCALE;
+                    const double p_e_mom_scaled = sqrt(max(0.0, px_e_scaled*px_e_scaled + py_e_scaled*py_e_scaled + pz_e_scaled*pz_e_scaled));
+                    const double Ee_scaled = sqrt(max(0.0, p_e_mom_scaled*p_e_mom_scaled + nps::kElectronMass_GeV*nps::kElectronMass_GeV));
 
-                    const double mm_p_corr = nps::invariant_missing_mass_corrected_avnish_from_detector(mm_p*mm_p, beam_energy, Ee, px_e, py_e, pz_e, clusE[sel_i], clusE[sel_j], clusX[sel_i], clusY[sel_i], clusX[sel_j], clusY[sel_j], nps::kDefaultZ_NPS_cm, -17.51);
+                    const double mm_p_no_offset = nps::missing_mass_proton_pi0(beam_energy, Ee, px_e, py_e, pz_e, clusE[sel_i], clusE[sel_j], clusX[sel_i], clusY[sel_i], clusX[sel_j], clusY[sel_j], nps::kDefaultZ_NPS_cm, -17.51);
+                    (void)mm_p_no_offset;
+
+                    const double mm_p = nps::missing_mass_proton_pi0(beam_energy, Ee_scaled, px_e_scaled, py_e_scaled, pz_e_scaled, clusE[sel_i], clusE[sel_j], clusX[sel_i], clusY[sel_i], clusX[sel_j], clusY[sel_j], nps::kDefaultZ_NPS_cm, -17.51);
+
+                    const double mm_p_corr = nps::invariant_missing_mass_corrected_avnish_from_detector(mm_p*mm_p, beam_energy, Ee_scaled, px_e_scaled, py_e_scaled, pz_e_scaled, clusE[sel_i], clusE[sel_j], clusX[sel_i], clusY[sel_i], clusX[sel_j], clusY[sel_j], nps::kDefaultZ_NPS_cm, -17.51);
 
                     bool isExclusive = (mm_p_corr >= 0.8 && mm_p_corr <= 1.1);
                     int bin = h_pi0_weight->FindBin(mgg);
@@ -1226,7 +1374,7 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         );
         fit1->SetLineColor(kBlue);
         fit1->SetLineStyle(kDashed);
-        fit1->SetLineWidth(2.5);
+        fit1->SetLineWidth(2);
         
         // fit2: second Gaussian component
         TF1 *fit2 = new TF1(Form("fit2_run%d", run), "gaus", 0.5, 1.8);
@@ -1237,7 +1385,7 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         );
         fit2->SetLineColor(kMagenta);
         fit2->SetLineStyle(kDashed);
-        fit2->SetLineWidth(2.5);
+        fit2->SetLineWidth(2);
 
         // Create canvas with all three fits
         TCanvas *c_mmiss_fit = new TCanvas(Form("c_mmiss_fit_run%d", run), "Missing Mass Weighted Fit", 1000, 700);
@@ -1328,7 +1476,7 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         
         // Declare branch variables fresh for this tree
         Int_t event_id = 0;
-        Double_t mpi0_all = 0, mmiss_all = 0, mmiss_all_corr = 0, pi0_weight = 0;
+        Double_t mpi0_all = 0, mmiss_all = 0, mmiss_all_corr = 0, mmiss_all_no_mom_offset = 0, mmiss_all_corr_no_mom_offset = 0, pi0_weight = 0;
         Int_t is_exclusive = 0, is_weighted = 0;
         Double_t Q2 = 0, W = 0, t = 0, tmin = 0, pt = 0;
         Double_t theta = 0, phi = 0, s = 0, xB = 0, z = 0;
@@ -1338,7 +1486,6 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         // HMS tracking variables
         Double_t delta = 0, xptar = 0, yptar = 0, xtar = 0, ytar = 0;
         Double_t xfp = 0, yfp = 0, xpfp = 0, ypfp = 0;
-        Double_t reactz = 0;
         // Seperating the exclusive peak
         Double_t exclusive_sep=0;
         
@@ -1347,6 +1494,8 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         treeOut->Branch("mpi0_all", &mpi0_all, "mpi0_all/D");
         treeOut->Branch("mmiss_all", &mmiss_all, "mmiss_all/D");
         treeOut->Branch("mmiss_all_corr", &mmiss_all_corr, "mmiss_all_corr/D");
+        treeOut->Branch("mmiss_all_no_mom_offset", &mmiss_all_no_mom_offset, "mmiss_all_no_mom_offset/D");
+        treeOut->Branch("mmiss_all_corr_no_mom_offset", &mmiss_all_corr_no_mom_offset, "mmiss_all_corr_no_mom_offset/D");
         treeOut->Branch("pi0_weight", &pi0_weight, "pi0_weight/D");
         treeOut->Branch("is_exclusive", &is_exclusive, "is_exclusive/I");
         treeOut->Branch("is_weighted", &is_weighted, "is_weighted/I");
@@ -1380,7 +1529,6 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         treeOut->Branch("yfp", &yfp, "yfp/D");
         treeOut->Branch("xpfp", &xpfp, "xpfp/D");
         treeOut->Branch("ypfp", &ypfp, "ypfp/D");
-        treeOut->Branch("reactz", &reactz, "reactz/D");
 
         treeOut->Branch("exclusive_sep", &exclusive_sep, "exclusive_sep/D");
         
@@ -1391,6 +1539,8 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
             mpi0_all = entry.mpi0_all;
             mmiss_all = entry.mmiss_all;
             mmiss_all_corr = entry.mmiss_all_corr;
+            mmiss_all_no_mom_offset = entry.mmiss_all_no_mom_offset;
+            mmiss_all_corr_no_mom_offset = entry.mmiss_all_corr_no_mom_offset;
             pi0_weight = entry.pi0_weight;
             is_exclusive = entry.is_exclusive;
             is_weighted = entry.is_weighted;
@@ -1421,7 +1571,6 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
             yfp = entry.yfp;
             xpfp = entry.xpfp;
             ypfp = entry.ypfp;
-            reactz = entry.reactz;
             exclusive_sep = 1.0 / ( pow(std::fabs(entry.mmiss_all_corr - 0.938), 0.5) + 0.01 );  // separation of event from exclusive peak in GeV (for potential future cuts)
             treeOut->Fill();
         }
@@ -1643,42 +1792,56 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         // Bash will reconstruct global CSV from successful per-run files
         // -------------------------
         {
+        auto write_csv_row = [&](std::ostream& out) {
+            out << std::fixed;
+            out << run << ","
+                << std::setprecision(6) << accumulated_charge_mC << ","
+                << std::setprecision(6) << run_current_mean << ","
+                << std::setprecision(6) << cpu_lt << ","
+                << std::setprecision(6) << beam_time << ","
+                << std::setprecision(0) << n_total << ","
+                << std::setprecision(0) << n_pass_hms << ","
+                << std::setprecision(0) << n_selected_for_analysis << ","
+                << std::setprecision(6) << bg.n_coin_raw << ","
+                << std::setprecision(6) << bg.n_accidentals << ","
+                << std::setprecision(6) << res.chi2_ndf << ","
+                << std::setprecision(3) << res.mu_MeV << ","
+                << std::setprecision(3) << res.sigma_MeV << ","
+                << std::setprecision(3) << res.signal_counts << ","
+                << std::setprecision(6) << mmiss_p_mean << ","
+                << std::setprecision(6) << mmiss_p_sigma << ","
+                << std::setprecision(6) << hms_eff << ","
+                << std::setprecision(6) << hms_eff_err << ","
+                << std::setprecision(6) << s1x_peak << ","
+                << std::setprecision(6) << s1x_err << ","
+                << std::setprecision(6) << s1y_peak << ","
+                << std::setprecision(6) << s1y_err << ","
+                << std::setprecision(6) << s2x_peak << ","
+                << std::setprecision(6) << s2x_err << ","
+                << std::setprecision(6) << s2y_peak << ","
+                << std::setprecision(6) << s2y_err << ","
+                << run_status << "\n";
+        };
+
         TString per_run_csv = Form("/tmp/nps_csv_run_%d_%d.txt", run, (int)time(nullptr));
         ofstream fg(per_run_csv.Data(), ios::out);
         if (fg.is_open()) {
-            fg << std::fixed;  // Apply fixed-point notation
-            fg << run << ","
-               << std::setprecision(6) << accumulated_charge_mC << ","
-               << std::setprecision(6) << run_current_mean << ","
-               << std::setprecision(6) << cpu_lt << ","
-               << std::setprecision(6) << beam_time << ","
-               << std::setprecision(0) << n_total << ","  // Integer counts
-               << std::setprecision(0) << n_pass_hms << ","  // Integer counts
-               << std::setprecision(0) << n_selected_for_analysis << ","  // Integer counts
-               << std::setprecision(6) << bg.n_coin_raw << ","
-               << std::setprecision(6) << bg.n_accidentals << ","
-               << std::setprecision(6) << res.chi2_ndf << ","
-               << std::setprecision(3) << res.mu_MeV << ","
-               << std::setprecision(3) << res.sigma_MeV << ","
-               << std::setprecision(3) << res.signal_counts << ","
-               << std::setprecision(6) << mmiss_p_mean << ","
-               << std::setprecision(6) << mmiss_p_sigma << ","
-               << std::setprecision(6) << hms_eff << ","
-               << std::setprecision(6) << hms_eff_err << ","
-               << std::setprecision(6) << s1x_peak << ","
-               << std::setprecision(6) << s1x_err << ","
-               << std::setprecision(6) << s1y_peak << ","
-               << std::setprecision(6) << s1y_err << ","
-               << std::setprecision(6) << s2x_peak << ","
-               << std::setprecision(6) << s2x_err << ","
-               << std::setprecision(6) << s2y_peak << ","
-               << std::setprecision(6) << s2y_err << ","
-               << run_status << "\n";
-            fg.flush();  // CRITICAL: Flush to disk before close (ensures data written even if crash occurs)
+            write_csv_row(fg);
+            fg.flush();
             fg.close();
-            cout << "[CSV_WRITTEN] " << per_run_csv << "\n";  // Signal to bash that CSV was written
+            cout << "[CSV_WRITTEN] " << per_run_csv << "\n";
         } else {
             logmsg(WARN, Form("Could not write per-run CSV %s", per_run_csv.Data()));
+        }
+
+        ofstream fglobal(global_csv.Data(), ios::app);
+        if (fglobal.is_open()) {
+            write_csv_row(fglobal);
+            fglobal.flush();
+            fglobal.close();
+        } else {
+            logmsg(WARN, Form("Could not append global CSV %s (errno=%d, %s)",
+                              global_csv.Data(), errno, std::strerror(errno)));
         }
         }
 
@@ -1850,17 +2013,17 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
         safe_delete(leg_theta);
         safe_delete(leg_phi);
 
-        // File is automatically closed by file_guard destructor
+        // Chain is automatically cleaned up by unique_ptr destructor
         sw_run.Stop();
         logmsg(INFO, Form("Run %d finished. Runtime: %f s (real)", run, sw_run.RealTime()));
         } catch (const std::exception& e) {
             logmsg(ERROR, Form("Exception during run %d processing: %s", run, e.what()));
             run_status = "ERROR";
-            continue;  // file_guard cleans up automatically
+            continue;  // unique_ptr cleans up automatically
         } catch (...) {
             logmsg(ERROR, Form("Unknown exception during run %d processing", run));
             run_status = "ERROR";
-            continue;  // file_guard cleans up automatically
+            continue;  // unique_ptr cleans up automatically
         }
     } // end runs
 
@@ -1874,9 +2037,7 @@ void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/n
     sw_total.Stop();
     logmsg(INFO, Form("ALL RUNS finished. Total runtime: %f s (real)", sw_total.RealTime()));
     
-    // Safely construct the CSV path message
-    TString csv_path = outPlotDir + "summary_all_runs.csv";
-    logmsg(INFO, Form("Wrote global summary CSV to %s", csv_path.Data()));
+    logmsg(INFO, Form("Wrote global summary CSV to %s", global_csv.Data()));
     
     // Exit cleanly to avoid ROOT cleanup segfaults
     gApplication->Terminate(0);

@@ -1,0 +1,355 @@
+# Why Fitting Only Missing Mass Gives Poor Invariant Mass Agreement
+
+## Executive Summary
+
+**Problem**: When `ENERGY_SMEARING_HISTOGRAM = 2` (M_miss only), the fit produces good missing mass agreement but poor invariant mass (M_γγ) agreement.
+
+**Root Cause**: The two observables constrain **different aspects** of the photon kinematics:
+- **M_miss** constrains the **sum** of photon energies: E₁ + E₂
+- **M_γγ** constrains the **product** of energies and opening angle: √(E₁ × E₂) and θ
+
+Fitting only M_miss optimizes the total energy but leaves energy asymmetry and angular resolution **unconstrained**.
+
+---
+
+## Physics of the Observables
+
+### 1. Missing Mass (Recoil Proton Mass)
+
+```
+M_miss² = (E_beam + M_p - E_e - E_γ1 - E_γ2)² - |p⃗_beam - p⃗_e - p⃗_γ1 - p⃗_γ2|²
+```
+
+**Key dependencies:**
+- **Strongly depends on:** E_γ1 + E_γ2 (total photon energy)
+- **Weakly depends on:** Individual photon directions (enters through momentum conservation)
+- **Insensitive to:** Energy asymmetry (E₁/E₂ ratio) as long as sum is correct
+
+### 2. Invariant Mass (π⁰ Mass)
+
+```
+M_γγ² = (E_γ1 + E_γ2)² - |p⃗_γ1 + p⃗_γ2|²
+     = 2E_γ1 E_γ2 (1 - cos θ)
+```
+
+**Key dependencies:**
+- **Strongly depends on:** 
+  - Energy product: E₁ × E₂ (geometric mean)
+  - Opening angle: θ between photons
+- **Sensitive to:**
+  - Energy asymmetry: α = (E₁ - E₂)/(E₁ + E₂)
+  - Position resolution (affects θ)
+
+---
+
+## Mathematical Demonstration
+
+For two photons with energies E₁ and E₂ and opening angle θ:
+
+### Case 1: Individual Event Example - Correct Sum, Wrong Asymmetry
+
+**Scenario A (Data):** E₁ = 3.0 GeV, E₂ = 2.0 GeV
+- Sum: E₁ + E₂ = 5.0 GeV
+- Product: E₁ × E₂ = 6.0 GeV²
+- Asymmetry: α = (3.0-2.0)/(3.0+2.0) = 0.20
+
+**Scenario B (Simulation):** E₁ = 3.5 GeV, E₂ = 1.5 GeV  
+- Sum: E₁ + E₂ = 5.0 GeV ✓ (same)
+- Product: E₁ × E₂ = 5.25 GeV² ✗ (12.5% different!)
+- Asymmetry: α = (3.5-1.5)/(3.5+1.5) = 0.40 ✗ (different!)
+
+**Result:**
+- M_miss will be nearly identical (same total energy)
+- M_γγ will differ by ~7% = √(5.25/6.0) - 1
+
+### Case 2: Statistical Distribution Over Many Events
+
+More importantly, consider the **event distributions**:
+
+**Data distribution:** Mean asymmetry ⟨α⟩_data = 0.30 (typical example)
+- Many events with E₁ ≈ E₂ (symmetric)
+- Fewer highly asymmetric events
+
+**Simulation distribution:** Mean asymmetry ⟨α⟩_sim = 0.25
+- Even more symmetric events than data
+- Slightly different asymmetry distribution shape
+
+**After applying identical Gaussian smearing to both:**
+```
+For each event i:
+  E1_smeared[i] = Gaus(μ × E1_sim[i], σ × √(μ×E1_sim[i]))
+  E2_smeared[i] = Gaus(μ × E2_sim[i], σ × √(μ×E2_sim[i]))
+```
+
+- Individual ratios fluctuate randomly, BUT...
+- The **mean asymmetry** stays near: ⟨α⟩_smeared ≈ ⟨α⟩_sim = 0.25
+- The **distribution shape** remains similar to simulation
+- Fitting M_miss optimizes (μ,σ) to match ⟨E₁+E₂⟩ but **not** ⟨E₁×E₂⟩ or ⟨α⟩
+
+### Case 2: Wrong Angular Resolution
+
+If position smearing is disabled (`ENABLE_POSITION_SMEARING = false`):
+- Opening angle comes directly from cluster positions
+- No additional smearing on θ
+- If simulation positions differ systematically from data → wrong θ → wrong M_γγ
+- But M_miss is relatively insensitive to small angular changes
+
+### Case 3: Why Identical Smearing Doesn't Fix Asymmetry Distribution
+
+**Key insight:** When you apply Gaussian smearing with **energy-dependent** width:
+
+```
+σ_E1 = σ × √E₁  ∝ √E₁
+σ_E2 = σ × √E₂  ∝ √E₂
+```
+
+The higher-energy photon gets a **larger absolute smearing** width:
+- If E₁ > E₂, then σ_E1 > σ_E2
+- But both are drawn from Gaussians centered on their original values
+- The fractional smearing σ/E is what matters for the ratio
+
+**Statistical result over many events:**
+- The smearing **broadens** the asymmetry distribution
+- But doesn't systematically **shift** its mean
+- If simulation has ⟨(E₁-E₂)/(E₁+E₂)⟩ = 0.25 and data has 0.30, smearing won't fix this 5% offset
+- Only fitting on M_γγ (which is sensitive to asymmetry) can detect and correct this mismatch
+
+---
+
+## Why This Happens in Your Code
+
+### Current Configuration Issues
+
+```cpp
+const bool ENABLE_POSITION_SMEARING = false;  // ← DISABLED!
+const int ENERGY_SMEARING_HISTOGRAM = 2;      // ← M_miss only
+```
+
+**Consequence:**
+1. **Energy smearing** is optimized to match M_miss peak
+   - Gets correct E₁ + E₂ on average
+   - But individual photon energy distributions may be wrong
+
+2. **No position smearing** means:
+   - Opening angle θ not smeared
+   - Angular resolution not calibrated
+   - If simulation cluster positions differ from data → wrong θ
+
+3. **Energy asymmetry unconstrained:**
+   - Per-photon smearing with parameters (μ, σ) applied identically to both photons
+   - But if simulation energy sharing differs from data:
+     - E.g., simulation: E₁/E₂ = 1.5, data: E₁/E₂ = 2.0
+     - Same sum, different product → wrong M_γγ
+
+---
+
+## Specific Code Analysis
+
+### In `eval_chi2_mmiss_only()` (lines 608-680):
+
+```cpp
+double E1_scaled = mu * E1;
+double E2_scaled = mu * E2;
+
+double sigma_E1 = computeEnergyResolution(E1_scaled, sigma, ...);
+double sigma_E2 = computeEnergyResolution(E2_scaled, sigma, ...);
+
+// Both photons smeared with SAME parameters (mu, sigma)
+E1_smeared = rng.Gaus(E1_scaled, sigma_E1);  // Random draw from Gaussian
+E2_smeared = rng.Gaus(E2_scaled, sigma_E2);  // Independent random draw
+```
+
+**The Problem:**
+- While individual event ratios fluctuate randomly, the **distribution** of E₁/E₂ asymmetries across many events reflects the simulation's input distribution
+- Parameters (μ, σ) are the **same** for both photons, so smearing broadens both energy distributions equally
+- This means: The **mean and shape** of the asymmetry distribution `(E1-E2)/(E1+E2)` remains similar to simulation
+- If simulation has the wrong energy asymmetry **distribution** (e.g., more symmetric events than data), fitting M_miss alone **cannot fix it**
+
+### Missing Mass Calculation:
+```cpp
+double mmiss = nps::missing_mass_proton_pi0(
+    Config::BEAM_ENERGY,
+    ev.Ee, ev.px_e, ev.py_e, ev.pz_e,  // electron (not smeared)
+    E1_smeared, E2_smeared,             // photon energies
+    x1_smeared, y1_smeared, x2_smeared, y2_smeared
+);
+```
+- Depends primarily on `E1_smeared + E2_smeared`
+- Direction dependence is weak
+
+### Invariant Mass Calculation:
+```cpp
+double mass = computeInvariantMass(E1_smeared, p1.px, p1.py, p1.pz,
+                                   E2_smeared, p2.px, p2.py, p2.pz);
+```
+- Equivalent to: `M² = 2*E1*E2*(1 - cos θ)`
+- Depends on `E1 × E2` (product) and `θ` (angle)
+- Very sensitive to energy asymmetry and angular resolution
+
+---
+
+## Visual Explanation
+
+```
+Observable Sensitivity Matrix:
+
+Parameter          M_miss    M_γγ
+─────────────────────────────────
+Total Energy       ████      ███
+(E₁ + E₂)
+
+Energy Product      █       ████
+(E₁ × E₂)          
+
+Energy Asymmetry    ·       ████
+(E₁/E₂)
+
+Opening Angle       ·       ████
+(θ)
+
+Position Res.       ·       ████
+(σ_pos → θ)
+
+█ = strong dependence, · = weak/no dependence
+```
+
+---
+
+## Solutions
+
+### Solution 1: **Enable Combined Fitting (RECOMMENDED)**
+
+```cpp
+const int ENERGY_SMEARING_HISTOGRAM = 0;  // Use BOTH M_γγ and M_miss
+const double W_MPI0 = 1.0;   // Equal weight
+const double W_MMISS = 1.0;  // Equal weight
+```
+
+**Why this works:**
+- M_miss constrains total energy (E₁ + E₂)
+- M_γγ constrains energy product (E₁ × E₂) and angle
+- Together they fully constrain the kinematics
+
+### Solution 2: **Enable Position Smearing**
+
+```cpp
+const bool ENABLE_POSITION_SMEARING = true;
+const double SIGMA_POS_MIN = 0.0;  
+const double SIGMA_POS_MAX = 0.2;   // cm
+const int SIGMA_POS_NSTEPS = 30;
+```
+
+**Why this helps:**
+- Smears opening angle θ → affects M_γγ width
+- Gives calibration freedom to match M_γγ shape
+- But still won't fix energy asymmetry issues
+
+### Solution 3: **Use Two-Stage Optimization**
+
+```cpp
+const bool USE_TWO_STAGE_OPTIMIZATION = true;
+const int ENERGY_SMEARING_HISTOGRAM = 0;  // Use both in Stage 2
+```
+
+**Why this is best:**
+- Stage 1: Fit σ_pos using M_γγ → calibrate angular resolution
+- Stage 2: Fit μ, σ using both observables → calibrate energy
+- Physically motivated separation of systematics
+
+### Solution 4: **Fit M_γγ Only for Energy**
+
+```cpp
+const int ENERGY_SMEARING_HISTOGRAM = 1;  // M_γγ only
+const bool ENABLE_POSITION_SMEARING = true;
+```
+
+**Trade-off:**
+- M_γγ is intrinsically more sensitive to both energy and angle
+- Will give good M_γγ agreement
+- M_miss might be slightly off due to kinematic correlations
+
+---
+
+## Recommended Configuration
+
+For best overall agreement with both observables:
+
+```cpp
+namespace Config {
+    // Use both observables with equal weights
+    const int ENERGY_SMEARING_HISTOGRAM = 0;  
+    const double W_MPI0 = 1.0;   
+    const double W_MMISS = 1.0;  
+    
+    // Enable position smearing
+    const bool ENABLE_POSITION_SMEARING = true;
+    const double SIGMA_POS_MAX = 0.2;  // cm
+    
+    // Use two-stage optimization (optional but recommended)
+    const bool USE_TWO_STAGE_OPTIMIZATION = true;
+}
+```
+
+---
+
+## Testing Your Understanding
+
+To verify this explanation, try this experiment:
+
+1. **Run with M_miss only:**
+   ```cpp
+   ENERGY_SMEARING_HISTOGRAM = 2
+   ENABLE_POSITION_SMEARING = false
+   ```
+   → Observe: Good M_miss, poor M_γγ
+
+2. **Run with M_γγ only:**
+   ```cpp
+   ENERGY_SMEARING_HISTOGRAM = 1
+   ENABLE_POSITION_SMEARING = false
+   ```
+   → Observe: Good M_γγ, potentially poor M_miss
+
+3. **Run with both:**
+   ```cpp
+   ENERGY_SMEARING_HISTOGRAM = 0
+   ENABLE_POSITION_SMEARING = true
+   ```
+   → Observe: Both well-matched!
+
+---
+
+## Additional Diagnostic: Energy Asymmetry Comparison
+
+Add this to your analysis to check if energy asymmetry is the issue:
+
+```cpp
+// In main analysis loop, fill these histograms:
+TH1D h_asym_data("h_asym_data", "Energy Asymmetry;(E1-E2)/(E1+E2)", 100, -1, 1);
+TH1D h_asym_sim("h_asym_sim", "Energy Asymmetry;(E1-E2)/(E1+E2)", 100, -1, 1);
+
+// For data events:
+double asym_data = (E1 - E2) / (E1 + E2);
+h_asym_data.Fill(asym_data);
+
+// For simulation events (after smearing):
+double asym_sim = (E1_smeared - E2_smeared) / (E1_smeared + E2_smeared);
+h_asym_sim.Fill(asym_sim);
+
+// Compare the two distributions
+```
+
+If the asymmetry distributions differ significantly, that explains the M_γγ discrepancy.
+
+---
+
+## References
+
+- Particle kinematics: PDG Review "Kinematics" section
+- Two-photon invariant mass: M² = 2E₁E₂(1 - cos θ)
+- Missing mass in ep → epγγ: Standard exclusive π⁰ reaction formalism
+
+---
+
+**Created:** 2026-02-25  
+**Author:** Analysis of nps_sim_smearing_new.C smearing methodology

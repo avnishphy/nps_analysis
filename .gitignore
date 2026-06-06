@@ -33,9 +33,70 @@ __pycache__/
 .ipynb_checkpoints/
 
 # -------------------------------
+# Generated analysis artifacts
+# -------------------------------
+*.root
+*.pdf
+*.png
+*.npz
+*.tar.gz
+*.q
+*_plots/
+plots/
+output/
+output_*/
+tmp_runlists/
+
+# -------------------------------
 # Local environment
 # -------------------------------
 pi0_analysis/root_analysis_env/output/
+pi0_analysis/root_analysis_env/output_*/
+pi0_analysis/root_analysis_env/tmp_runlists/
+pi0_analysis/root_analysis_env/scripts/output/
+pi0_analysis/root_analysis_env/scripts/production_diagnostics/
+pi0_analysis/root_analysis_env/scripts/edtm_tdc.pdf/
+
+# ROOT analysis generated artifacts
+pi0_analysis/root_analysis_env/**/*.root
+pi0_analysis/root_analysis_env/**/*.pdf
+pi0_analysis/root_analysis_env/**/*.png
+pi0_analysis/root_analysis_env/**/*.so
+pi0_analysis/root_analysis_env/**/*.pcm
+pi0_analysis/root_analysis_env/**/*.d
+pi0_analysis/root_analysis_env/**/__pycache__/
+pi0_analysis/root_analysis_env/**/*.pyc
+pi0_analysis/root_analysis_env/*.csv
+pi0_analysis/root_analysis_env/excl_xsec
+pi0_analysis/root_analysis_env/excl_xsec_no_simc_model
+pi0_analysis/root_analysis_env/scripts/check_edtm_tdc
+pi0_analysis/root_analysis_env/scripts/nps_sim_smearing_new
+pi0_analysis/root_analysis_env/scripts/nps_sim_smearing_new_try
+pi0_analysis/root_analysis_env/scripts/efficiencies/compute_luminosity_scaler
+pi0_analysis/root_analysis_env/scripts/efficiencies/final_compute_luminosity_standalone
+pi0_analysis/root_analysis_env/scripts/efficiencies/update_hms_track_eff
+pi0_analysis/root_analysis_env/scripts/efficiencies/*.csv
+pi0_analysis/root_analysis_env/scripts/efficiencies/*.csv.bak
+pi0_analysis/root_analysis_env/scripts/efficiencies/*_report.txt
+
+# Other local generated analysis areas
+pi0_analysis/root_analysis_env_main/
+pi0_analysis_env_main/
+pi0_analysis/NPS_detector_simulations/
+pi0_analysis/all_run_numbers.txt
+pi0_analysis/run_numbers.txt
+pi0_analysis/extract_run_numbers.sh
+pi0_analysis/hcswif_helper_stabilityCheck.py
+pi0_analysis/skim_pi0_data
+pi0_analysis/stabilityCheck*
+elastic_analysis/skim_elastic_data
+luminosity_analysis/*.csv
+luminosity_analysis/compute_luminosity_scaler
+luminosity_analysis/luminosity_2026
+luminosity_analysis/luminosity_2026.cxx
+luminosity_analysis/plot_per_run_scaler_trigger_vs_charge.py
+luminosity_analysis/run_compute_luminosity_scaler_parallel.sh
+luminosity_analysis/luminosity_plots/
 
 # -------------------------------
 # Clustering code folder

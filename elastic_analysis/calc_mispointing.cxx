@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cmath>
 
-int main() {
+int calc_mispointing() {
     char prefix;
     double theta_lab;
     double mispointing_y = 999.0, mispointing_x = 999.0;

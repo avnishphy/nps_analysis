@@ -54,10 +54,10 @@ void AddFilesWithWildcard(TChain* chain, const TString& pattern) {
 // Main skim function
 // ----------------------------------------------------------------------
 void skim_data(
-               const TString &inputDir="/mnt/d/avnish/nps_data_rootfiles_pass2_updated/LH2",
-            //    const TString &inputDir="/mnt/c/Users/as8oc/OneDrive/Documents/data_files_ifarm/LH2",
+               const TString &inputDir="/cache/hallc/c-nps/analysis/pass2/replays/updated/",
                const TString &runlistPath="config/runlist_x60_4b.txt",
-               const TString &outDir="output/skimmed/") {
+               const TString &outDir="/lustre24/expphy/volatile/hallc/nps/singhav/ROOTfiles/root_analysis_env_skim/x60_4b/"
+               ) {
 
     TStopwatch sw; sw.Start();
     logmsg(INFO, "========================================================");
@@ -75,7 +75,7 @@ void skim_data(
     if(!outdir.EndsWith("/")) outdir += "/";
 
     // --- Read desired branches
-    vector<string> branches = readBranchList("/home/ubuntu/nps_analysis/pi0_analysis/root_analysis_env/config/branches_to_read.txt");
+    vector<string> branches = readBranchList("/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/config/branches_to_read.txt");
     if(branches.empty()) logmsg(WARN, "Branch list empty. Will include all branches.");
 
     // --- Read runlist

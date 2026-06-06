@@ -4,7 +4,7 @@
 // Reads ROOT output files and extracts/calculates HMS tracking efficiency
 // Compiles and runs directly without Python overhead
 //
-// Compile: g++ -O3 update_hms_track_eff.cpp $(root-config --cflags --libs) -o update_hms_track_eff
+// Compile: g++ -O3 update_hms_track_eff.cpp `root-config --cflags --libs` -o update_hms_track_eff
 // Usage: ./update_hms_track_eff --root-dir /path/to/root/files --summary-csv summary_all_runs.csv
 
 #include <TFile.h>
@@ -38,7 +38,8 @@ std::string findRootFile(const std::string& root_dir, int run_number) {
     std::vector<std::string> patterns = {
         "nps_output_run_" + std::to_string(run_number) + ".root",
         "nps_analysis_run_" + std::to_string(run_number) + ".root",
-        "run_" + std::to_string(run_number) + ".root"
+        "run_" + std::to_string(run_number) + ".root",
+        "skim_run" + std::to_string(run_number) + ".root"
     };
     
     for (const auto& pattern : patterns) {
@@ -299,22 +300,26 @@ int main(int argc, char* argv[]) {
     
     std::vector<std::string> header = parseCSVLine(header_line);
     
-    // Find column indices
-    int run_col = -1, eff_col = -1, eff_err_col = -1;
-    
+    // Find column indices for new format
+    int run_col = -1;
+    int eff_col = -1;
+    int eff_err_col = -1;
     for (size_t i = 0; i < header.size(); ++i) {
         if (header[i] == "run") run_col = i;
         else if (header[i] == "hms_track_eff") eff_col = i;
         else if (header[i] == "hms_track_eff_err") eff_err_col = i;
     }
-    
-    if (run_col == -1 || eff_col == -1) {
-        std::cerr << "[ERROR] Required columns not found in CSV\n";
-        return 1;
+    // If efficiency columns are missing, add them
+    if (eff_col == -1) {
+        header.push_back("hms_track_eff");
+        eff_col = header.size() - 1;
     }
-    
     if (eff_err_col == -1) {
-        std::cerr << "[ERROR] hms_track_eff_err column not found\n";
+        header.push_back("hms_track_eff_err");
+        eff_err_col = header.size() - 1;
+    }
+    if (run_col == -1) {
+        std::cerr << "[ERROR] 'run' column not found in CSV\n";
         return 1;
     }
     
@@ -353,68 +358,33 @@ int main(int argc, char* argv[]) {
             std::cout << "[DEBUG] Skipping row with size " << row.size() << "\n";
             continue;
         }
-        
-        int run = std::stoi(row[run_col]);
-        
-        // Check if we should process this run
-        bool should_update = recalculate;  // Always update if --recalculate flag
-        
-        if (!recalculate && row.size() > static_cast<size_t>(eff_col)) {
-            try {
-                std::string eff_str = row[eff_col];
-                // Try to parse as double
-                double eff = 0.0;
-                try {
-                    eff = std::stod(eff_str);
-                } catch (...) {
-                    eff = 0.0;  // Parse error means it's empty/invalid
-                }
-                
-                // Update if: empty string, zero, NaN, or explicitly 1.0 (placeholder)
-                if (eff_str.empty() || eff == 0.0 || eff == 1.0) {
-                    should_update = true;
-                }
-                
-                if (!should_update) {
-                    std::cout << "[SKIP] Run " << run << " already has eff=" << std::fixed << std::setprecision(4) << eff << "\n";
-                    continue;
-                }
-            } catch (...) {
-                should_update = true;  // Parse error, update it
-            }
-        } else {
-            should_update = true;
+        // Ensure row has enough columns for new fields
+        while (row.size() <= static_cast<size_t>(eff_err_col)) {
+            row.push_back("");
         }
-        
-        if (!should_update) continue;
-        
+        int run = -1;
+        try {
+            run = std::stoi(row[run_col]);
+        } catch (...) {
+            std::cout << "[DEBUG] Could not parse run number in row\n";
+            continue;
+        }
         std::cout << "\n[Processing] Run " << run << std::endl;
-        
         // Find ROOT file
         std::string root_file = findRootFile(root_dir, run);
-        
         if (root_file.empty()) {
             std::cout << "[WARN] Could not find ROOT file for run " << run << std::endl;
             continue;
         }
-        
         std::cout << "[INFO] Found: " << fs::path(root_file).filename().string() << std::endl;
-        
         // Try to extract from ROOT file parameters
         EfficiencyResult result = extractEfficiencyFromROOT(root_file, run);
-        
         // If not found or recalculate, try from tree
         if (!result.found || recalculate) {
             result = calculateEfficiencyFromTree(root_file, run, tree_name);
         }
-        
         // Update CSV if found
         if (result.found) {
-            // Ensure row has enough columns
-            while (row.size() <= static_cast<size_t>(eff_err_col)) {
-                row.push_back("");
-            }
-            
             row[eff_col] = std::to_string(result.eff);
             row[eff_err_col] = std::to_string(result.eff_err);
             updated_count++;

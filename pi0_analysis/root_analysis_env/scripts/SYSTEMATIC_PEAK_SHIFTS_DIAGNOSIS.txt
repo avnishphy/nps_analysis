@@ -1,0 +1,361 @@
+===============================================================================
+  DIAGNOSING PEAK SHIFTS: Both M_γγ and M_miss Shifted Right
+===============================================================================
+Date: 2026-02-25
+Issue: After smearing, both invariant mass and missing mass peaks appear
+       shifted to the RIGHT (higher mass) compared to data peaks
+
+===============================================================================
+PHYSICS BACKGROUND
+===============================================================================
+
+Observable Dependencies:
+------------------------
+M_γγ² = 2E₁E₂(1 - cos θ)
+   - Depends on: Photon energies (E₁, E₂) and opening angle (θ)
+   - INCREASES with: Higher photon energies, larger opening angles
+   - Independent of: Beam energy, electron kinematics
+
+M_miss² = (E_beam + M_p - E_e - E_γ1 - E_γ2)² - |p⃗_beam - p⃗_e - p⃗_γ1 - p⃗_γ2|²
+   - Depends on: Beam energy, electron energy, photon energies, all momenta
+   - INCREASES with: Lower E_e + E_γ1 + E_γ2 (less energy in final state)
+   - DECREASES with: Higher photon energies (more energy in final state)
+
+KEY INSIGHT: M_γγ and M_miss have OPPOSITE sensitivity to photon energies!
+   - Higher photon E → M_γγ shifts RIGHT, M_miss shifts LEFT
+   - Lower photon E → M_γγ shifts LEFT, M_miss shifts RIGHT
+
+Therefore, if BOTH shift RIGHT, photon energy is NOT the only issue!
+
+===============================================================================
+POSSIBLE CAUSES (RANKED BY LIKELIHOOD)
+===============================================================================
+
+1. BEAM ENERGY MISMATCH (Most Likely)
+   ===================================
+   
+   Problem: Config::BEAM_ENERGY differs from simulation's actual beam energy
+   
+   Location in code:
+   ----------------
+   nps_sim_smearing_new.C, line ~115:
+      const double BEAM_ENERGY = 10.538;  // Must match simulation!
+   
+   Physics:
+   --------
+   If simulation used E_beam = 10.6 GeV, but Config::BEAM_ENERGY = 10.538 GeV:
+   
+   → M_miss calculation uses LOWER beam energy than simulation reality
+   → M_miss = √[(E_beam_config + M_p - E_e - E_γ) - ...] 
+   → With E_beam_config < E_beam_true, M_miss appears HIGHER (shifts RIGHT) ✓
+   
+   → Fitting tries to compensate by increasing μ (energy scale)
+   → This ALSO shifts M_γγ RIGHT ✓
+   
+   BOTH SHIFT RIGHT! ✓✓
+   
+   How to diagnose:
+   ----------------
+   - Check simulation input file (SIMC .inp file) for "Ebeam" parameter
+   - Verify it matches Config::BEAM_ENERGY exactly
+   - Common issue: Simulation used 10.6 GeV, but you set 10.538 GeV
+   
+   How to fix:
+   -----------
+   Set Config::BEAM_ENERGY to EXACTLY match simulation:
+      const double BEAM_ENERGY = 10.600;  // Match your SIMC input!
+   
+   Expected result:
+   ----------------
+   - M_miss peak should shift back toward data
+   - Fitted μ should be closer to 1.0
+   - Both peaks should align better
+
+
+2. SCATTERED ELECTRON ENERGY SYSTEMATIC (Likely)
+   ==============================================
+   
+   Problem: Electron energy (E_e) systematically underestimated in simulation
+   
+   Physics:
+   --------
+   If E_e in simulation is systematically LOW:
+   
+   → M_miss = √[(E_beam + M_p - E_e_low - E_γ) - ...]
+   → Lower E_e → Higher numerator → M_miss shifts RIGHT ✓
+   
+   → Fitting compensates by increasing photon energies (μ > 1)
+   → M_γγ also shifts RIGHT ✓
+   
+   How to diagnose:
+   ----------------
+   - Plot E_e distribution for data vs simulation (before smearing)
+   - Check if simulation E_e peak is systematically lower
+   - Compare HMS momentum calibration between data and simulation
+   - Check HMS δ (momentum offset) distribution
+   
+   How to fix:
+   -----------
+   - Verify HMS momentum calibration in simulation
+   - Check if HMS optics matrices are correct
+   - May need to apply momentum correction to simulated electrons
+   - Or account for it in the smearing process
+   
+   Note: Electron kinematics are NOT smeared in this code (line ~498, ~670):
+         ev.Ee, ev.px_e, ev.py_e, ev.pz_e  // scattered electron (NOT smeared)
+
+
+3. Y MISPOINTING OFFSET INCORRECT (Possible)
+   ==========================================
+   
+   Problem: Config::Y_MISPOINT doesn't match actual simulation value
+   
+   Location in code:
+   ----------------
+   Line ~118:
+      const double Y_MISPOINT = 0.103665;  // SIMC infile spec%e%offset%y
+   
+   Physics:
+   --------
+   Y mispointing affects photon trajectories:
+   - Wrong offset → photon directions systematically shifted
+   - Can affect BOTH photon angles (M_γγ) AND momentum balance (M_miss)
+   
+   Complex correlation:
+   → If Y_MISPOINT is wrong, photon hit positions shift vertically
+   → Opening angle θ changes → M_γγ shifts
+   → Momentum vector changes → M_miss shifts
+   → Direction determines whether both shift same way
+   
+   How to diagnose:
+   ----------------
+   - Check SIMC input file for: spec%e%offset%y parameter
+   - Verify it exactly matches Config::Y_MISPOINT
+   - Plot photon y-position distributions (data vs sim before smearing)
+   - Check for systematic vertical shift
+   
+   How to fix:
+   -----------
+   Match the SIMC infile exactly:
+      const double Y_MISPOINT = [value from spec%e%offset%y];
+
+
+4. TARGET POSITION / VERTEX SYSTEMATIC (Possible)
+   ===============================================
+   
+   Problem: Vertex z-position (interaction point) systematically wrong
+   
+   Physics:
+   --------
+   If simulation vertex is systematically shifted along beam:
+   
+   → Distance to NPS calorimeter is wrong
+   → Photon directions computed from (x, y, z) are wrong
+   → Opening angle θ is systematically off → M_γγ shifts
+   → Total momentum vector wrong → M_miss shifts
+   
+   How to diagnose:
+   ----------------
+   - Plot vertex z distribution (RV_z or h_react_z)
+   - Compare data vs simulation mean vertex position
+   - Check for systematic offset (e.g., data centered at -0.5 cm, sim at 0)
+   
+   How to fix:
+   -----------
+   - Verify target position in simulation matches experiment
+   - Check SIMC target length and position parameters
+   - May need vertex correction in analysis
+
+
+5. NPS DISTANCE MISMATCH (Less Likely but Check)
+   ==============================================
+   
+   Problem: NPS distance from target incorrect in calculation
+   
+   Location in code:
+   ----------------
+   Uses: nps::kDefaultZ_NPS_cm (from nps_helper.h)
+   
+   Physics:
+   --------
+   If calculation uses different NPS distance than simulation:
+   → Photon directions wrong (computed from x, y, z_NPS)
+   → Opening angle wrong → M_γγ shifts
+   → Momentum conservation affected → M_miss shifts (weaker effect)
+   
+   How to diagnose:
+   ----------------
+   - Check nps::kDefaultZ_NPS_cm value in nps_helper.h
+   - Verify it matches simulation NPS distance
+   - Common values: 650 cm, 700 cm, 750 cm
+   
+   How to fix:
+   -----------
+   Update nps_helper.h with correct distance for your kinematics
+
+
+6. CLUSTER POSITION CORRECTIONS (Unlikely for Both Shifts)
+   ========================================================
+   
+   Problem: Position corrections (x_corr, y_corr) are wrong
+   
+   If position corrections shift cluster positions systematically:
+   → Primarily affects M_γγ through angle
+   → Weak effect on M_miss through momentum
+   → Unlikely to cause symmetric rightward shift of both
+
+
+7. MOMENTUM SCALE ISSUE (Simulation Generator Level)
+   ==================================================
+   
+   Problem: SIMC or generator has wrong overall momentum scale
+   
+   Very rare, but if all momenta in simulation are systematically scaled:
+   → All energies affected
+   → Could cause correlated shifts in both observables
+   
+   How to diagnose:
+   ----------------
+   - Check other mass peaks (e.g., η if measured)
+   - Check if W² (invariant mass) also shifted
+   - Compare Q², x_B distributions to expected values
+
+===============================================================================
+DIAGNOSTIC PROCEDURE
+===============================================================================
+
+Step 1: Quick Checks
+--------------------
+✓ Print Config::BEAM_ENERGY and compare to SIMC input file
+✓ Print Config::Y_MISPOINT and compare to SIMC spec%e%offset%y
+✓ Print nps::kDefaultZ_NPS_cm and verify NPS distance
+
+Step 2: Compare Distributions (Before Smearing)
+------------------------------------------------
+Create diagnostic plots comparing raw data vs simulation:
+
+a) Beam/Electron:
+   - E_e (scattered electron energy)
+   - HMS δ (momentum offset)
+   - Vertex z position
+
+b) Photons:
+   - Total photon energy: E_γ1 + E_γ2
+   - Energy asymmetry: (E_γ1 - E_γ2)/(E_γ1 + E_γ2)
+   - Opening angle: θ_γγ
+   - Photon y-positions (check Y_MISPOINT effect)
+
+Step 3: Missing Mass Without Smearing
+--------------------------------------
+Calculate M_miss for simulation WITHOUT any smearing:
+   - If M_miss_sim is already shifted right → not a smearing issue!
+   - If M_miss_sim matches data → smearing parameters are wrong
+
+Step 4: Test Beam Energy Hypothesis
+------------------------------------
+Try increasing Config::BEAM_ENERGY by 0.05 GeV:
+   const double BEAM_ENERGY = 10.588;  // +0.05 GeV test
+   
+Run smearing and check:
+   - Does M_miss shift left (toward data)?
+   - Does fitted μ decrease?
+
+Step 5: Systematic Scan
+------------------------
+If above doesn't fix it, systematically vary:
+   - Y_MISPOINT (±0.01 cm steps)
+   - Vertex position (apply z offset)
+   - NPS distance (±5 cm steps)
+
+===============================================================================
+CODE MODIFICATIONS FOR DIAGNOSIS
+===============================================================================
+
+Add diagnostic output in main() function:
+
+```cpp
+// Near line 1700, after reading trees, add:
+cout << "\n========== DIAGNOSTIC INFO ==========" << endl;
+cout << "Config::BEAM_ENERGY = " << Config::BEAM_ENERGY << " GeV" << endl;
+cout << "Config::Y_MISPOINT = " << Config::Y_MISPOINT << " cm" << endl;
+cout << "nps::kDefaultZ_NPS_cm = " << nps::kDefaultZ_NPS_cm << " cm" << endl;
+
+// Calculate M_miss for first event WITHOUT smearing
+if (simTree->GetEntries() > 0) {
+    simTree->GetEntry(0);
+    double mmiss_test = nps::missing_mass_proton_pi0(
+        Config::BEAM_ENERGY,
+        sim_ev.Ee, sim_ev.px_e, sim_ev.py_e, sim_ev.pz_e,
+        sim_ev.e1, sim_ev.e2,  // NO SMEARING
+        sim_ev.x1, sim_ev.y1, sim_ev.x2, sim_ev.y2
+    );
+    cout << "Test M_miss (no smearing) = " << mmiss_test << " GeV" << endl;
+}
+cout << "======================================\n" << endl;
+```
+
+Add comparison histograms:
+
+```cpp
+// Before fitting loop
+TH1D h_Ee_data("h_Ee_data", "Electron Energy;E_e [GeV]", 100, 0, 12);
+TH1D h_Ee_sim("h_Ee_sim", "Electron Energy;E_e [GeV]", 100, 0, 12);
+TH1D h_Esum_data("h_Esum_data", "Total Photon Energy;E_γ1+E_γ2 [GeV]", 100, 0, 10);
+TH1D h_Esum_sim("h_Esum_sim", "Total Photon Energy;E_γ1+E_γ2 [GeV]", 100, 0, 10);
+
+// In data event loop:
+h_Ee_data.Fill(data_ev.Ee);
+h_Esum_data.Fill(data_ev.e1 + data_ev.e2);
+
+// In sim event loop:
+h_Ee_sim.Fill(sim_ev.Ee);
+h_Esum_sim.Fill(sim_ev.e1 + sim_ev.e2);
+
+// Save to output file for comparison
+```
+
+===============================================================================
+MOST LIKELY SOLUTION
+===============================================================================
+
+Based on experience, the #1 cause is BEAM ENERGY MISMATCH:
+
+1. Check your SIMC input file (*.inp):
+   ```
+   Ebeam = 10.600  ; GeV
+   ```
+
+2. Update nps_sim_smearing_new.C:
+   ```cpp
+   const double BEAM_ENERGY = 10.600;  // MATCH EXACTLY!
+   ```
+
+3. Recompile and rerun
+
+4. If M_miss shifts left (toward data) → PROBLEM SOLVED!
+   If not → proceed to Step 2 (check electron energy)
+
+===============================================================================
+WHEN TO WORRY
+===============================================================================
+
+If after checking all above, both peaks STILL shift right:
+→ May indicate fundamental issue with simulation physics
+→ Check SIMC model parameters (radiative corrections, elastic tail, etc.)
+→ Consult with simulation expert
+→ Consider if π⁰ production mechanism is modeled correctly
+
+===============================================================================
+REFERENCE
+===============================================================================
+
+For understanding why fitting M_miss alone gives poor M_γγ:
+   See: MISSING_MASS_FITTING_ISSUE.txt
+
+For configuration best practices:
+   See: CONFIGURATION_UPDATES.txt
+
+For smearing methodology comparison:
+   See: Original analysis comparison in this repository
+
+===============================================================================

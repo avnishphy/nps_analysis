@@ -30,8 +30,10 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 # ===== Configuration =====
 CFG_PATH = Path("/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/config/nps_dvcs_all_kins_main.csv")
-ROOT_DIR = Path("/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/output/plots/x60_4b")
-OUT_COMBINED_ROOT = Path.cwd() / "combined_branches_LH2.root"
+# ROOT_DIR = Path("/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/output/plots/x60_4b/production_wfpi0")
+# OUT_COMBINED_ROOT = ROOT_DIR / "combined_branches_LH2_wfpi0.root"
+ROOT_DIR = Path("/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/output/plots/x60_4b/")
+OUT_COMBINED_ROOT = ROOT_DIR / "combined_branches_LH2.root"
 TARGET_TO_COMBINE = "LH2"
 KIN_SETTING = "KinC_x60_4b"
 
@@ -40,11 +42,96 @@ BRANCHES_TO_EXCLUDE = ["event_id"]
 
 # Debug: Create focal plane diagnostic plots
 CREATE_FP_DEBUG_PLOTS = False
-FP_DEBUG_PDF = Path.cwd() / "focal_plane_debug.pdf"
+# FP_DEBUG_PDF = ROOT_DIR / "focal_plane_debug_wfpi0.pdf"
+FP_DEBUG_PDF = ROOT_DIR / "focal_plane_debug.pdf"
 
 # Create analysis plots
 CREATE_ANALYSIS_PLOTS = True
-ANALYSIS_PLOTS_PDF = Path.cwd() / "combined_branches_LH2_plots.pdf"
+# ANALYSIS_PLOTS_PDF = ROOT_DIR / "combined_branches_LH2_wfpi0_plots.pdf"
+ANALYSIS_PLOTS_PDF = ROOT_DIR / "combined_branches_LH2_plots.pdf"
+
+
+def fit_gaussian_from_histogram(
+    bin_centers: np.ndarray,
+    counts: np.ndarray,
+    fit_half_window: float = 0.035,
+    fit_range: Tuple[float, float] = (0.09, 0.18),
+) -> Optional[Tuple[float, float, float]]:
+    """Estimate Gaussian-like peak (amplitude, mean, sigma) from histogram robustly.
+
+    Uses background subtraction and moment/FWHM estimates, which are more stable
+    than log-quadratic fits for weighted histograms.
+
+    Returns None if the estimate cannot be performed robustly.
+    """
+    if len(bin_centers) != len(counts) or len(bin_centers) < 6:
+        return None
+
+    mask_range = (bin_centers >= fit_range[0]) & (bin_centers <= fit_range[1])
+    x_range = np.asarray(bin_centers[mask_range], dtype=float)
+    y_range = np.asarray(counts[mask_range], dtype=float)
+
+    if len(x_range) < 6:
+        return None
+
+    y_range = np.nan_to_num(y_range, nan=0.0, posinf=0.0, neginf=0.0)
+
+    # Smooth lightly for peak finding stability.
+    kernel = np.array([1.0, 2.0, 1.0], dtype=float)
+    kernel /= kernel.sum()
+    y_smooth = np.convolve(y_range, kernel, mode='same')
+
+    if np.all(y_smooth <= 0):
+        return None
+
+    # Robust baseline estimate for background-subtracted signal.
+    baseline = float(np.percentile(y_range, 20))
+    signal = np.clip(y_range - baseline, a_min=0.0, a_max=None)
+
+    if np.all(signal <= 0):
+        return None
+
+    peak_idx_local = int(np.argmax(y_smooth))
+    peak_x = x_range[peak_idx_local]
+
+    # Peak-centered window limits the influence from wide tails/background.
+    mask_window = np.abs(x_range - peak_x) <= fit_half_window
+    x_fit = x_range[mask_window]
+    y_fit = signal[mask_window]
+
+    if len(x_fit) < 5 or np.sum(y_fit) <= 0:
+        return None
+
+    # Moment estimate for Gaussian parameters.
+    weight_sum = np.sum(y_fit)
+    mean = float(np.sum(x_fit * y_fit) / weight_sum)
+    variance = float(np.sum(y_fit * (x_fit - mean) ** 2) / weight_sum)
+
+    if variance <= 0:
+        return None
+
+    sigma = float(np.sqrt(variance))
+
+    # FWHM-based fallback if moment sigma is pathological.
+    if sigma < 0.0015 or sigma > 0.06:
+        y_peak = float(np.max(y_fit))
+        half = 0.5 * y_peak
+        above = np.where(y_fit >= half)[0]
+        if len(above) >= 2:
+            fwhm = float(x_fit[above[-1]] - x_fit[above[0]])
+            if fwhm > 0:
+                sigma = fwhm / 2.354820045
+
+    amplitude = float(np.max(y_fit) + baseline)
+
+    if not np.isfinite(amplitude) or not np.isfinite(mean) or not np.isfinite(sigma) or sigma <= 0:
+        return None
+
+    # Keep physically sensible pi0 window.
+    if not (fit_range[0] <= mean <= fit_range[1]):
+        return None
+
+    return float(amplitude), float(mean), float(sigma)
 
 # ===== Helper Functions =====
 def safe_int(x: Any) -> Optional[int]:
@@ -219,6 +306,87 @@ def build_lookup(df_cfg: pd.DataFrame, kin_setting: str = None) -> Tuple[Dict[in
     return lookup, cfg_run_col
 
 
+def load_charge_map() -> Dict[int, float]:
+    """Load run charge map as charge_uC from one of known CSV sources."""
+    candidates = [
+        Path("/w/hallc-scshelf2102/nps/singhav/nps_analysis/luminosity_analysis/livetime_results_parallel.csv"),
+        Path("/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/scripts/efficiencies/livetime_results_parallel.csv"),
+        Path("/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/scripts/efficiencies/livetime_results_parallel_updatedtrig.csv"),
+    ]
+
+    def pick_col(columns: List[str], preferred: List[str], contains: Optional[str] = None) -> Optional[str]:
+        lower_map = {c.lower().strip(): c for c in columns}
+        for p in preferred:
+            if p.lower() in lower_map:
+                return lower_map[p.lower()]
+        if contains is not None:
+            for c in columns:
+                if contains in c.lower().strip():
+                    return c
+        return None
+
+    for csv_path in candidates:
+        if not csv_path.exists():
+            continue
+        try:
+            df = pd.read_csv(csv_path)
+        except Exception as e:
+            print(f"[WARN] Failed reading charge CSV {csv_path}: {e}")
+            continue
+
+        if df.empty:
+            print(f"[WARN] Charge CSV is empty: {csv_path}")
+            continue
+
+        cols = list(df.columns)
+        run_col = pick_col(cols, ["run", "run_number"], contains="run")
+        charge_uC_col = pick_col(cols, ["charge_uC", "charge_uc"]) 
+        charge_mC_col = pick_col(cols, ["accumulated_charge(mC)", "accumulated_charge_mc"], contains="charge")
+
+        if run_col is None:
+            print(f"[WARN] No run column found in {csv_path}; columns={cols}")
+            continue
+
+        if charge_uC_col is None and charge_mC_col is None:
+            print(f"[WARN] No recognized charge column found in {csv_path}; columns={cols}")
+            continue
+
+        out: Dict[int, float] = {}
+        for _, row in df.iterrows():
+            run = safe_int(row.get(run_col))
+            if run is None:
+                continue
+
+            charge_uC = None
+            if charge_uC_col is not None:
+                try:
+                    v = float(row.get(charge_uC_col))
+                    if np.isfinite(v) and v > 0:
+                        charge_uC = v
+                except Exception:
+                    charge_uC = None
+
+            if charge_uC is None and charge_mC_col is not None:
+                try:
+                    v = float(row.get(charge_mC_col))
+                    if np.isfinite(v) and v > 0:
+                        charge_uC = v * 1000.0
+                except Exception:
+                    charge_uC = None
+
+            if charge_uC is not None:
+                out[int(run)] = float(charge_uC)
+
+        if out:
+            print(f"[INFO] Loaded charge map for {len(out)} runs from {csv_path}")
+            return out
+
+        print(f"[WARN] No usable charge rows in {csv_path}")
+
+    print("[WARN] No charge CSV source loaded; combiner will use fallback unit charge per run")
+    return {}
+
+
 def combine_branches(lookup: Dict[int, Tuple[str, int, str, float]], root_dir: Path, target_to_combine: str = 'LH2'):
     """Combine event-level branch data from multiple runs.
     
@@ -230,6 +398,9 @@ def combine_branches(lookup: Dict[int, Tuple[str, int, str, float]], root_dir: P
     total_events = 0
 
     all_files = {p.name: p for p in root_dir.glob('*.root')}
+
+    # Load charge info from known CSV sources (run -> charge_uC)
+    charge_map = load_charge_map()
 
     for run, (token, ps_val, tgt, cput) in lookup.items():
         # Skip run 4349 due to bad focal plane data
@@ -247,10 +418,19 @@ def combine_branches(lookup: Dict[int, Tuple[str, int, str, float]], root_dir: P
         
         fpath = all_files[fname]
         seen_runs.append(run)
+
         cput_val = cput if (cput is not None and cput > 0) else 1.0
-        scale = float(ps_val) / float(cput_val)
-        
-        print(f"[INFO] Processing run {run}: token={token} ps={ps_val} cput={cput_val:.4f} scale={scale:.5f}")
+        charge_uC = charge_map.get(run, None)
+        if charge_uC is not None and charge_uC > 0:
+            charge_mC = charge_uC / 1000.0
+            charge_uC_for_branch = float(charge_uC)
+        else:
+            charge_mC = 1.0
+            charge_uC_for_branch = float(charge_mC * 1000.0)
+            print(f"[WARN] No valid charge_uC for run {run}, using charge_mC=1.0")
+        scale = float(ps_val) / (float(cput_val) * float(charge_mC))
+
+        print(f"[INFO] Processing run {run}: token={token} ps={ps_val} cput={cput_val:.4f} charge_mC={charge_mC:.4f} scale={scale:.5f}")
         
         try:
             with uproot.open(str(fpath)) as uf:
@@ -291,9 +471,11 @@ def combine_branches(lookup: Dict[int, Tuple[str, int, str, float]], root_dir: P
                 n_events = len(next(iter(branch_data.values())))
                 total_events += n_events
                 
-                # Add scale and run_number for each event
+                # Add scale, run_number, and charge_uC for each event
                 branch_data['scale'] = np.full(n_events, scale, dtype=np.float32)
                 branch_data['run_number'] = np.full(n_events, run, dtype=np.int32)
+                # Keep charge_uC finite for downstream weighting logic.
+                branch_data['charge_uC'] = np.full(n_events, charge_uC_for_branch, dtype=np.float32)
                 
                 # Convert to DataFrame for this run
                 df_run = pd.DataFrame(branch_data)
@@ -537,7 +719,8 @@ def create_analysis_plots(df: pd.DataFrame, output_path: Path):
         return
     
     # Check for optional weight and filter columns
-    has_pi0_weight = 'pi0_weight' in df.columns
+    pi0_weight_col = 'pi0_weight' if 'pi0_weight' in df.columns else ('pi0_weights' if 'pi0_weights' in df.columns else None)
+    has_pi0_weight = pi0_weight_col is not None
     has_is_exclusive = 'is_exclusive' in df.columns
     
     if not has_pi0_weight:
@@ -563,10 +746,34 @@ def create_analysis_plots(df: pd.DataFrame, output_path: Path):
             # pi0_final if available (using mpi0_all with pi0_weight and scale)
             if has_pi0_weight:
                 weights_final = df.loc[data_mpi0_all.index, 'scale'].values * \
-                               df.loc[data_mpi0_all.index, 'pi0_weight'].fillna(0).values
-                ax.hist(data_mpi0_all, bins=100, range=(0, 0.4), weights=weights_final,
-                       alpha=0.6, label='pi0_final (weighted)', 
-                       edgecolor='black', linewidth=0.5, color='red')
+                               df.loc[data_mpi0_all.index, pi0_weight_col].fillna(0).values
+                counts_w, edges_w, _ = ax.hist(data_mpi0_all, bins=100, range=(0, 0.4), weights=weights_final,
+                                              alpha=0.6, label='pi0_final (weighted)', 
+                                              edgecolor='black', linewidth=0.5, color='red')
+
+                # Fit weighted pi0 mass peak (mpi0_all with pi0_weight applied)
+                centers_w = 0.5 * (edges_w[:-1] + edges_w[1:])
+                fit_result = fit_gaussian_from_histogram(centers_w, counts_w)
+                if fit_result is not None:
+                    amp, mu, sigma = fit_result
+                    x_lo = max(0.09, mu - 4.0 * sigma)
+                    x_hi = min(0.18, mu + 4.0 * sigma)
+                    x_fit_line = np.linspace(x_lo, x_hi, 300)
+                    y_fit_line = amp * np.exp(-0.5 * ((x_fit_line - mu) / sigma) ** 2)
+                    ax.plot(x_fit_line, y_fit_line, color='darkred', linewidth=2.0,
+                            linestyle='--', label='Gaussian fit (weighted)')
+
+                    fit_text = (
+                        f"Weighted fit (mpi0_all × {pi0_weight_col}):\\n"
+                        f"$\\mu$ = {mu:.5f} GeV/$c^2$\\n"
+                        f"$\\sigma$ = {sigma:.5f} GeV/$c^2$"
+                    )
+                    ax.text(0.98, 0.95, fit_text, transform=ax.transAxes,
+                            fontsize=10, va='top', ha='right',
+                            bbox=dict(boxstyle='round', facecolor='white', alpha=0.85, edgecolor='gray'))
+                    print(f"[INFO] Weighted pi0 fit: mu={mu:.6f} GeV/c^2, sigma={sigma:.6f} GeV/c^2")
+                else:
+                    print("[WARN] Could not fit weighted pi0 peak for mpi0_all.")
             
             ax.set_xlabel(r'$m_{\pi^0}$ [GeV/$c^2$]', fontsize=12)
             ax.set_ylabel('Weighted Counts', fontsize=12)
@@ -656,7 +863,7 @@ def create_analysis_plots(df: pd.DataFrame, output_path: Path):
                     # Calculate weights: pi0_weight * scale
                     weights = df_phys.loc[data.index, 'scale'].values
                     if has_pi0_weight:
-                        weights = weights * df_phys.loc[data.index, 'pi0_weight'].fillna(1).values
+                        weights = weights * df_phys.loc[data.index, pi0_weight_col].fillna(1).values
                     
                     ax.hist(data, bins=60, weights=weights,
                            alpha=0.7, edgecolor='black', linewidth=0.5, color='steelblue')

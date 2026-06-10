@@ -61,6 +61,25 @@ rg "Config::|ENABLE_POSITION_SMEARING|section_map" scripts
 ## Running Analysis
 
 The scripts assume ROOT is available in `PATH`.
+Every Codex/agent session must load the Hall C/NPS ROOT environment before
+running ROOT, `root-config`, compiling ROOT macros, or running the smearing
+pipeline.
+
+For interactive `csh`/`tcsh`, use:
+
+```csh
+source /group/nps/singhav/setup.csh
+```
+
+Most Codex shells are `bash`, so run ROOT commands through `csh` after sourcing:
+
+```bash
+csh -c 'source /group/nps/singhav/setup.csh; root-config --version'
+csh -c 'source /group/nps/singhav/setup.csh; ./run_smearing_pipeline.sh'
+```
+
+In non-interactive `csh`/`tcsh` sessions, source
+`/usr/share/Modules/init/csh` first if `module` is not defined.
 
 Sequential original analysis:
 

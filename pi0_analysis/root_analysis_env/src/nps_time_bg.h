@@ -15,10 +15,15 @@
 #include <utility> // pair
 #include <string>
 
-// Forward-declare ROOT types here; header using this file that calls the functions
-// must include <TH2D.h>, <TH1D.h> etc.
-class TH2D;
-class TH1D;
+#include "TCanvas.h"
+#include "TH1D.h"
+#include "TH2D.h"
+#include "TLatex.h"
+#include "TLegend.h"
+#include "TLine.h"
+#include "TPad.h"
+#include "TPaveText.h"
+#include "TStyle.h"
 
 namespace nps{
 // --------------------

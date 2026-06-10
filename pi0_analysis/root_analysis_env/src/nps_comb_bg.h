@@ -18,6 +18,7 @@
 #include <TPaveText.h>
 #include <TMatrixDSym.h>
 #include <TFitResultPtr.h>
+#include <TFitResult.h>
 #include <TFile.h>
 #include <TLatex.h>
 #include <TMath.h>

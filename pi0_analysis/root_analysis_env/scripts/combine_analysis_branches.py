@@ -19,6 +19,7 @@ Usage:
 
 import os
 import re
+from collections import deque
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any, List
 
@@ -30,10 +31,10 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 # ===== Configuration =====
 CFG_PATH = Path("/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/config/nps_dvcs_all_kins_main.csv")
-# ROOT_DIR = Path("/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/output/plots/x60_4b/production_wfpi0")
-# OUT_COMBINED_ROOT = ROOT_DIR / "combined_branches_LH2_wfpi0.root"
-ROOT_DIR = Path("/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/output/plots/x60_4b/")
-OUT_COMBINED_ROOT = ROOT_DIR / "combined_branches_LH2.root"
+ROOT_DIR = Path("/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/output/plots/x60_4b/production_wfpi0")
+OUT_COMBINED_ROOT = ROOT_DIR / "combined_branches_LH2_wfpi0.root"
+# ROOT_DIR = Path("/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/output/plots/x60_4b/")
+# OUT_COMBINED_ROOT = ROOT_DIR / "combined_branches_LH2.root"
 TARGET_TO_COMBINE = "LH2"
 KIN_SETTING = "KinC_x60_4b"
 
@@ -49,6 +50,34 @@ FP_DEBUG_PDF = ROOT_DIR / "focal_plane_debug.pdf"
 CREATE_ANALYSIS_PLOTS = True
 # ANALYSIS_PLOTS_PDF = ROOT_DIR / "combined_branches_LH2_wfpi0_plots.pdf"
 ANALYSIS_PLOTS_PDF = ROOT_DIR / "combined_branches_LH2_plots.pdf"
+
+# Combined-level 2D mass-cut branches. These are recomputed from the combined
+# weighted mmiss_all:mpi0_all distribution, not copied from per-run flags.
+CREATE_COMBINED_2D_MASS_CUT = True
+COMBINED_MASS_CUT_TAG = "combined_2d_mass_cut"
+# Keep these off for now; debug text file carries compact important info.
+WRITE_COMBINED_MASS_CUT_PARAM_TREES = False
+
+MASS_CUT_CONFIG = {
+    "n_mpi0_bins": 160,
+    "mpi0_min": 0.11,
+    "mpi0_max": 0.15,
+    "n_mmiss_bins": 200,
+    "mmiss_min": 0.6,
+    "mmiss_max": 1.5,
+    "peak_fraction": -1.0,
+    "ellipse_core_quantile": 0.995,
+    "ellipse_padding": 1.05,
+    "auto_peak_min": 0.05,
+    "auto_peak_max": 0.60,
+    "auto_peak_step": 0.005,
+    "auto_min_core_total_fraction": 0.05,
+    "auto_min_core_bins": 30,
+    "mcd_keep_total_fraction": 0.30,
+    "mcd_iterations": 8,
+    "mcd_ellipse_quantile": 0.995,
+    "mcd_padding": 1.05,
+}
 
 
 def fit_gaussian_from_histogram(
@@ -502,7 +531,353 @@ def combine_branches(lookup: Dict[int, Tuple[str, int, str, float]], root_dir: P
     return df_combined
 
 
-def save_to_root(df: pd.DataFrame, output_path: Path):
+def weighted_quantile(values: np.ndarray, weights: np.ndarray, quantile: float) -> float:
+    if len(values) == 0:
+        return 0.0
+    order = np.argsort(values)
+    v = values[order]
+    w = weights[order]
+    total = float(np.sum(w))
+    if total <= 0.0:
+        return float(v[-1])
+    target = max(0.0, min(1.0, quantile)) * total
+    running = np.cumsum(w)
+    idx = int(np.searchsorted(running, target, side="left"))
+    idx = min(idx, len(v) - 1)
+    return float(v[idx])
+
+
+def compute_cov_model(x: np.ndarray, y: np.ndarray, w: np.ndarray) -> Optional[Dict[str, float]]:
+    weight_sum = float(np.sum(w))
+    if weight_sum <= 0.0 or len(x) < 3:
+        return None
+    mean_x = float(np.sum(w * x) / weight_sum)
+    mean_y = float(np.sum(w * y) / weight_sum)
+    dx = x - mean_x
+    dy = y - mean_y
+    cov_xx = float(np.sum(w * dx * dx) / weight_sum)
+    cov_xy = float(np.sum(w * dx * dy) / weight_sum)
+    cov_yy = float(np.sum(w * dy * dy) / weight_sum)
+    det = cov_xx * cov_yy - cov_xy * cov_xy
+    if det <= 0.0 or not np.isfinite(det):
+        return None
+    return {
+        "mean_x": mean_x,
+        "mean_y": mean_y,
+        "cov_xx": cov_xx,
+        "cov_xy": cov_xy,
+        "cov_yy": cov_yy,
+        "det": det,
+        "weight": weight_sum,
+        "n_bins": int(len(x)),
+    }
+
+
+def covariance_d2(model: Dict[str, float], x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    dx = x - model["mean_x"]
+    dy = y - model["mean_y"]
+    return (
+        model["cov_yy"] * dx * dx
+        - 2.0 * model["cov_xy"] * dx * dy
+        + model["cov_xx"] * dy * dy
+    ) / model["det"]
+
+
+def ellipse_points(model: Dict[str, float], d2_cut: float, n: int = 240) -> Tuple[np.ndarray, np.ndarray]:
+    trace = model["cov_xx"] + model["cov_yy"]
+    diff = model["cov_xx"] - model["cov_yy"]
+    root = np.sqrt(0.25 * diff * diff + model["cov_xy"] * model["cov_xy"])
+    lambda1 = max(0.0, 0.5 * trace + root)
+    lambda2 = max(0.0, 0.5 * trace - root)
+    angle = 0.5 * np.arctan2(2.0 * model["cov_xy"], diff)
+    ca = np.cos(angle)
+    sa = np.sin(angle)
+    axis1 = np.sqrt(max(0.0, d2_cut * lambda1))
+    axis2 = np.sqrt(max(0.0, d2_cut * lambda2))
+    t = np.linspace(0.0, 2.0 * np.pi, n + 1)
+    u = axis1 * np.cos(t)
+    v = axis2 * np.sin(t)
+    x = model["mean_x"] + u * ca - v * sa
+    y = model["mean_y"] + u * sa + v * ca
+    return x, y
+
+
+def add_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
+    """Add combined-level ellipse/MCD exclusivity flags and return ROOT debug payload."""
+    required = ["mpi0_all", "mmiss_all", "pi0_weight"]
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        print(f"[WARN] Missing columns for combined 2D mass cut: {missing}")
+        df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
+        df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
+        return None
+
+    cfg = MASS_CUT_CONFIG
+    x_all = df["mpi0_all"].to_numpy(dtype=float)
+    y_all = df["mmiss_all"].to_numpy(dtype=float)
+    pi0_w = df["pi0_weight"].to_numpy(dtype=float)
+    scale = df["scale"].to_numpy(dtype=float) if "scale" in df.columns else np.ones(len(df), dtype=float)
+    event_w = pi0_w * scale
+
+    valid = (
+        np.isfinite(x_all) & np.isfinite(y_all) & np.isfinite(event_w) &
+        (event_w > 0.0) &
+        (x_all >= cfg["mpi0_min"]) & (x_all < cfg["mpi0_max"]) &
+        (y_all >= cfg["mmiss_min"]) & (y_all < cfg["mmiss_max"])
+    )
+    if not np.any(valid):
+        print("[WARN] Combined 2D mass-cut histogram is empty after cuts.")
+        df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
+        df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
+        return None
+
+    x_edges = np.linspace(cfg["mpi0_min"], cfg["mpi0_max"], cfg["n_mpi0_bins"] + 1)
+    y_edges = np.linspace(cfg["mmiss_min"], cfg["mmiss_max"], cfg["n_mmiss_bins"] + 1)
+    h2, _, _ = np.histogram2d(x_all[valid], y_all[valid], bins=[x_edges, y_edges], weights=event_w[valid])
+    total_weight = float(np.sum(h2))
+    if total_weight <= 0.0:
+        print("[WARN] Combined 2D mass-cut histogram has zero total weight.")
+        df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
+        df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
+        return None
+
+    nx, ny = h2.shape
+    x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
+    y_centers = 0.5 * (y_edges[:-1] + y_edges[1:])
+    occupied = np.argwhere(h2 > 0.0)
+    point_x = x_centers[occupied[:, 0]]
+    point_y = y_centers[occupied[:, 1]]
+    point_w = h2[occupied[:, 0], occupied[:, 1]]
+
+    peak_flat = int(np.argmax(h2))
+    peak_ix, peak_iy = np.unravel_index(peak_flat, h2.shape)
+    peak_weight = float(h2[peak_ix, peak_iy])
+    peak_tolerance = max(1e-12, abs(peak_weight) * 1e-9)
+
+    def build_core(candidate_peak_fraction: float) -> Tuple[np.ndarray, Dict[str, float]]:
+        threshold_weight = candidate_peak_fraction * peak_weight
+        mask = np.zeros_like(h2, dtype=bool)
+        frontier = deque()
+
+        peak_bins = np.argwhere(np.abs(h2 - peak_weight) <= peak_tolerance)
+        for ix, iy in peak_bins:
+            if h2[ix, iy] + 1e-12 >= threshold_weight:
+                mask[ix, iy] = True
+                frontier.append((int(ix), int(iy)))
+
+        while frontier:
+            ix, iy = frontier.popleft()
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    if dx == 0 and dy == 0:
+                        continue
+                    jx = ix + dx
+                    jy = iy + dy
+                    if jx < 0 or jx >= nx or jy < 0 or jy >= ny:
+                        continue
+                    if mask[jx, jy]:
+                        continue
+                    if h2[jx, jy] + 1e-12 < threshold_weight:
+                        continue
+                    mask[jx, jy] = True
+                    frontier.append((jx, jy))
+
+        weight = float(np.sum(h2[mask]))
+        bins = int(np.count_nonzero(mask))
+        stats = {
+            "peak_fraction": float(candidate_peak_fraction),
+            "weight": weight,
+            "total_fraction": weight / total_weight if total_weight > 0.0 else 0.0,
+            "bins": bins,
+        }
+        return mask, stats
+
+    scan_rows = []
+    peak_fraction = float(cfg["peak_fraction"])
+    auto_jump_ratio = 1.0
+    if peak_fraction <= 0.0:
+        best_jump = 0.0
+        chosen_peak_fraction = float(cfg["auto_peak_max"])
+        previous = None
+        n_scan = int(np.floor((cfg["auto_peak_max"] - cfg["auto_peak_min"]) / cfg["auto_peak_step"] + 0.5)) + 1
+        for i in range(n_scan):
+            candidate = max(cfg["auto_peak_min"], cfg["auto_peak_max"] - i * cfg["auto_peak_step"])
+            _, current = build_core(candidate)
+            weight_ratio = 0.0
+            bin_ratio = 0.0
+            if previous is not None and previous["bins"] > 0 and previous["weight"] > 0.0:
+                weight_ratio = current["weight"] / previous["weight"]
+                bin_ratio = current["bins"] / previous["bins"]
+                jump = max(weight_ratio, bin_ratio)
+                previous_core_is_real = (
+                    previous["bins"] >= cfg["auto_min_core_bins"] and
+                    previous["total_fraction"] >= cfg["auto_min_core_total_fraction"]
+                )
+                if previous_core_is_real and jump > best_jump:
+                    best_jump = jump
+                    chosen_peak_fraction = previous["peak_fraction"]
+            scan_rows.append({
+                **current,
+                "weight_ratio_to_previous": float(weight_ratio),
+                "bin_ratio_to_previous": float(bin_ratio),
+            })
+            previous = current
+        peak_fraction = chosen_peak_fraction
+        auto_jump_ratio = best_jump
+
+    core_mask, core_stats = build_core(peak_fraction)
+    core_idx = np.argwhere(core_mask & (h2 > 0.0))
+    if len(core_idx) < 3:
+        print("[WARN] Combined 2D mass cut found too few core bins.")
+        df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
+        df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
+        return None
+
+    core_model = compute_cov_model(
+        x_centers[core_idx[:, 0]],
+        y_centers[core_idx[:, 1]],
+        h2[core_idx[:, 0], core_idx[:, 1]],
+    )
+    if core_model is None:
+        print("[WARN] Combined 2D mass cut covariance is singular.")
+        df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
+        df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
+        return None
+
+    core_d2 = covariance_d2(core_model, x_centers[core_idx[:, 0]], y_centers[core_idx[:, 1]])
+    core_w = h2[core_idx[:, 0], core_idx[:, 1]]
+    ellipse_d2_cut = weighted_quantile(core_d2, core_w, cfg["ellipse_core_quantile"])
+    ellipse_d2_cut *= cfg["ellipse_padding"] * cfg["ellipse_padding"]
+
+    mcd_model = core_model
+    best_mcd_model = None
+    best_mcd_subset = None
+    best_mcd_det = np.inf
+    mcd_target_weight = cfg["mcd_keep_total_fraction"] * total_weight
+
+    for _ in range(int(cfg["mcd_iterations"])):
+        d2 = covariance_d2(mcd_model, point_x, point_y)
+        order = np.argsort(d2)
+        running = 0.0
+        keep_indices = []
+        for idx in order:
+            keep_indices.append(idx)
+            running += point_w[idx]
+            if running >= mcd_target_weight:
+                break
+        keep_indices = np.asarray(keep_indices, dtype=int)
+        candidate_model = compute_cov_model(point_x[keep_indices], point_y[keep_indices], point_w[keep_indices])
+        if candidate_model is None:
+            break
+        mcd_model = candidate_model
+        if candidate_model["det"] < best_mcd_det:
+            best_mcd_det = candidate_model["det"]
+            best_mcd_model = candidate_model
+            best_mcd_subset = keep_indices
+
+    if best_mcd_model is None or best_mcd_subset is None:
+        best_mcd_model = core_model
+        best_mcd_subset = np.arange(len(point_x), dtype=int)
+
+    mcd_subset_d2 = covariance_d2(best_mcd_model, point_x[best_mcd_subset], point_y[best_mcd_subset])
+    mcd_subset_w = point_w[best_mcd_subset]
+    mcd_d2_cut = weighted_quantile(mcd_subset_d2, mcd_subset_w, cfg["mcd_ellipse_quantile"])
+    mcd_d2_cut *= cfg["mcd_padding"] * cfg["mcd_padding"]
+
+    ellipse_flags = np.zeros(len(df), dtype=np.int32)
+    mcd_flags = np.zeros(len(df), dtype=np.int32)
+    valid_idx = np.where(valid)[0]
+    event_ellipse_d2 = covariance_d2(core_model, x_all[valid], y_all[valid])
+    event_mcd_d2 = covariance_d2(best_mcd_model, x_all[valid], y_all[valid])
+    ellipse_flags[valid_idx[event_ellipse_d2 <= ellipse_d2_cut]] = 1
+    mcd_flags[valid_idx[event_mcd_d2 <= mcd_d2_cut]] = 1
+
+    df["is_exclusive_ellipse_combined"] = ellipse_flags
+    df["is_exclusive_mcd_combined"] = mcd_flags
+
+    xx, yy = np.meshgrid(x_centers, y_centers, indexing="ij")
+    bin_ellipse_mask = covariance_d2(core_model, xx, yy) <= ellipse_d2_cut
+    bin_mcd_mask = covariance_d2(best_mcd_model, xx, yy) <= mcd_d2_cut
+
+    ellipse_weight = float(np.sum(event_w[ellipse_flags == 1]))
+    mcd_weight = float(np.sum(event_w[mcd_flags == 1]))
+    legacy_exclusive_weight = 0.0
+    h_legacy_exclusive = np.zeros_like(h2)
+    if "is_exclusive" in df.columns:
+        legacy_valid = valid & (df["is_exclusive"].to_numpy(dtype=float) > 0.5)
+        legacy_exclusive_weight = float(np.sum(event_w[legacy_valid]))
+        if np.any(legacy_valid):
+            h_legacy_exclusive, _, _ = np.histogram2d(
+                x_all[legacy_valid],
+                y_all[legacy_valid],
+                bins=[x_edges, y_edges],
+                weights=event_w[legacy_valid],
+            )
+    params = {
+        "valid": 1.0,
+        "peak_fraction": float(peak_fraction),
+        "auto_jump_ratio": float(auto_jump_ratio),
+        "peak_weight": peak_weight,
+        "threshold_weight": float(peak_fraction * peak_weight),
+        "total_weight": total_weight,
+        "peak_ix": float(peak_ix + 1),
+        "peak_iy": float(peak_iy + 1),
+        "peak_mpi0": float(x_centers[peak_ix]),
+        "peak_mmiss": float(y_centers[peak_iy]),
+        "core_bins": float(core_stats["bins"]),
+        "core_weight": float(core_stats["weight"]),
+        "core_total_fraction": float(core_stats["total_fraction"]),
+        "mean_mpi0": core_model["mean_x"],
+        "mean_mmiss": core_model["mean_y"],
+        "cov_mpi0_mpi0": core_model["cov_xx"],
+        "cov_mpi0_mmiss": core_model["cov_xy"],
+        "cov_mmiss_mmiss": core_model["cov_yy"],
+        "cov_det": core_model["det"],
+        "ellipse_d2_cut": float(ellipse_d2_cut),
+        "ellipse_weight": ellipse_weight,
+        "ellipse_total_fraction": ellipse_weight / float(np.sum(event_w[valid])),
+        "mcd_mean_mpi0": best_mcd_model["mean_x"],
+        "mcd_mean_mmiss": best_mcd_model["mean_y"],
+        "mcd_cov_mpi0_mpi0": best_mcd_model["cov_xx"],
+        "mcd_cov_mpi0_mmiss": best_mcd_model["cov_xy"],
+        "mcd_cov_mmiss_mmiss": best_mcd_model["cov_yy"],
+        "mcd_det": best_mcd_model["det"],
+        "mcd_d2_cut": float(mcd_d2_cut),
+        "mcd_subset_weight": float(np.sum(mcd_subset_w)),
+        "mcd_subset_bins": float(len(best_mcd_subset)),
+        "mcd_weight": mcd_weight,
+        "mcd_total_fraction": mcd_weight / float(np.sum(event_w[valid])),
+        "legacy_is_exclusive_weight": legacy_exclusive_weight,
+        "legacy_is_exclusive_total_fraction": legacy_exclusive_weight / float(np.sum(event_w[valid])),
+    }
+
+    print("[INFO] Combined 2D mass cut:")
+    print(f"       peak_fraction={params['peak_fraction']:.3f} core={100.0 * params['core_total_fraction']:.2f}%")
+    print(f"       ellipse={int(np.sum(ellipse_flags))} events, MCD={int(np.sum(mcd_flags))} events")
+
+    ellipse_x, ellipse_y = ellipse_points(core_model, ellipse_d2_cut)
+    mcd_x, mcd_y = ellipse_points(best_mcd_model, mcd_d2_cut)
+
+    return {
+        "histograms": {
+            f"{COMBINED_MASS_CUT_TAG}_h_mmiss_vs_mpi0_weighted": (h2, x_edges, y_edges),
+            f"{COMBINED_MASS_CUT_TAG}_h_core_selected": (np.where(core_mask, h2, 0.0), x_edges, y_edges),
+            f"{COMBINED_MASS_CUT_TAG}_h_legacy_is_exclusive_selected": (h_legacy_exclusive, x_edges, y_edges),
+            f"{COMBINED_MASS_CUT_TAG}_h_ellipse_selected": (np.where(bin_ellipse_mask, h2, 0.0), x_edges, y_edges),
+            f"{COMBINED_MASS_CUT_TAG}_h_mcd_selected": (np.where(bin_mcd_mask, h2, 0.0), x_edges, y_edges),
+            f"{COMBINED_MASS_CUT_TAG}_h_core_mask": (core_mask.astype(float), x_edges, y_edges),
+            f"{COMBINED_MASS_CUT_TAG}_h_ellipse_mask": (bin_ellipse_mask.astype(float), x_edges, y_edges),
+            f"{COMBINED_MASS_CUT_TAG}_h_mcd_mask": (bin_mcd_mask.astype(float), x_edges, y_edges),
+        },
+        "params": params,
+        "scan": scan_rows,
+        "ellipse_line": (ellipse_x, ellipse_y),
+        "mcd_line": (mcd_x, mcd_y),
+        "peak": (float(x_centers[peak_ix]), float(y_centers[peak_iy])),
+    }
+
+
+def save_to_root(df: pd.DataFrame, output_path: Path, mass_cut_debug: Optional[Dict[str, Any]] = None):
     """Save DataFrame to ROOT file using uproot."""
     print(f"\n[INFO] Saving combined data to ROOT file: {output_path}")
     
@@ -514,10 +889,180 @@ def save_to_root(df: pd.DataFrame, output_path: Path):
     # Write to ROOT file
     with uproot.recreate(str(output_path)) as f:
         f.mktree("physics", data_dict)
+        if mass_cut_debug:
+            for name, hist_tuple in mass_cut_debug.get("histograms", {}).items():
+                f[name] = hist_tuple
+            # Disabled for now: these trees are verbose and less useful than
+            # histograms + compact debug text.
+            if WRITE_COMBINED_MASS_CUT_PARAM_TREES:
+                params = mass_cut_debug.get("params", {})
+                if params:
+                    f[f"{COMBINED_MASS_CUT_TAG}_params"] = {
+                        key: np.asarray([value], dtype=np.float64)
+                        for key, value in params.items()
+                    }
+                scan = mass_cut_debug.get("scan", [])
+                if scan:
+                    f[f"{COMBINED_MASS_CUT_TAG}_peak_scan"] = {
+                        key: np.asarray([row[key] for row in scan], dtype=np.float64)
+                        for key in scan[0].keys()
+                    }
     
     print(f"[INFO] Successfully saved {len(df)} events to {output_path}")
     print(f"[INFO] Tree name: 'physics'")
     print(f"[INFO] Branches: {list(data_dict.keys())}")
+    if mass_cut_debug:
+        print(f"[INFO] Wrote combined 2D mass-cut debug objects with tag '{COMBINED_MASS_CUT_TAG}'")
+
+
+def write_combined_mass_cut_debug_text(mass_cut_debug: Optional[Dict[str, Any]], output_root: Path):
+    if not mass_cut_debug:
+        return
+    params = mass_cut_debug.get("params", {})
+    if not params:
+        return
+
+    debug_path = output_root.with_name(f"{output_root.stem}_{COMBINED_MASS_CUT_TAG}_debug.txt")
+    keys = [
+        "peak_fraction", "auto_jump_ratio",
+        "peak_mpi0", "peak_mmiss", "peak_weight", "threshold_weight",
+        "core_bins", "core_weight", "core_total_fraction",
+        "mean_mpi0", "mean_mmiss", "ellipse_d2_cut",
+        "ellipse_weight", "ellipse_total_fraction",
+        "mcd_mean_mpi0", "mcd_mean_mmiss", "mcd_d2_cut",
+        "mcd_subset_bins", "mcd_subset_weight",
+        "mcd_weight", "mcd_total_fraction",
+        "legacy_is_exclusive_weight", "legacy_is_exclusive_total_fraction",
+    ]
+
+    with debug_path.open("w", encoding="utf-8") as fout:
+        fout.write("# Combined 2D mass-cut debug summary\n")
+        fout.write(f"tag={COMBINED_MASS_CUT_TAG}\n")
+        fout.write(f"weight=pi0_weight*scale\n")
+        fout.write(f"ellipse_branch=is_exclusive_ellipse_combined\n")
+        fout.write(f"mcd_branch=is_exclusive_mcd_combined\n")
+        fout.write("\n[parameters]\n")
+        for key in keys:
+            if key in params:
+                fout.write(f"{key}={params[key]:.12g}\n")
+        fout.write("\n[scan_notes]\n")
+        fout.write("Full scan not stored in ROOT. To inspect scan, temporarily enable WRITE_COMBINED_MASS_CUT_PARAM_TREES.\n")
+
+    print(f"[INFO] Combined 2D mass-cut debug text saved: {debug_path}")
+
+
+def write_combined_mass_cut_canvas(mass_cut_debug: Optional[Dict[str, Any]], output_root: Path):
+    if not mass_cut_debug:
+        return
+    histograms = mass_cut_debug.get("histograms", {})
+    all_tuple = histograms.get(f"{COMBINED_MASS_CUT_TAG}_h_mmiss_vs_mpi0_weighted")
+    core_tuple = histograms.get(f"{COMBINED_MASS_CUT_TAG}_h_core_selected")
+    legacy_tuple = histograms.get(f"{COMBINED_MASS_CUT_TAG}_h_legacy_is_exclusive_selected")
+    ellipse_tuple = histograms.get(f"{COMBINED_MASS_CUT_TAG}_h_ellipse_selected")
+    mcd_tuple = histograms.get(f"{COMBINED_MASS_CUT_TAG}_h_mcd_selected")
+    if not all_tuple or not ellipse_tuple or not mcd_tuple:
+        return
+
+    h_all, x_edges, y_edges = all_tuple
+    h_core, _, _ = core_tuple
+    h_legacy = legacy_tuple[0] if legacy_tuple else np.zeros_like(h_all)
+    h_ellipse, _, _ = ellipse_tuple
+    h_mcd, _, _ = mcd_tuple
+    ellipse_x, ellipse_y = mass_cut_debug.get("ellipse_line", (None, None))
+    mcd_x, mcd_y = mass_cut_debug.get("mcd_line", (None, None))
+    peak_x, peak_y = mass_cut_debug.get("peak", (None, None))
+    params = mass_cut_debug.get("params", {})
+
+    canvas_pdf = output_root.with_name(f"{output_root.stem}_{COMBINED_MASS_CUT_TAG}_canvas.pdf")
+    canvas_png = output_root.with_name(f"{output_root.stem}_{COMBINED_MASS_CUT_TAG}_canvas.png")
+
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    ax = axes[0, 0]
+    mesh = ax.pcolormesh(x_edges, y_edges, h_all.T, shading="auto", cmap="viridis")
+    fig.colorbar(mesh, ax=ax, label="Weighted counts")
+    if ellipse_x is not None:
+        ax.plot(ellipse_x, ellipse_y, color="magenta", linewidth=2.0, label="ellipse")
+    if mcd_x is not None:
+        ax.plot(mcd_x, mcd_y, color="lime", linewidth=2.0, label="MCD")
+    if np.any(h_legacy > 0.0):
+        ax.contour(
+            0.5 * (x_edges[:-1] + x_edges[1:]),
+            0.5 * (y_edges[:-1] + y_edges[1:]),
+            (h_legacy > 0.0).T.astype(float),
+            levels=[0.5],
+            colors=["blue"],
+            linewidths=1.5,
+        )
+        ax.plot([], [], color="blue", linewidth=1.5, label="de-correlation")
+    if peak_x is not None:
+        ax.axvline(peak_x, color="black", linestyle="--", linewidth=1.0)
+        ax.axhline(peak_y, color="black", linestyle="--", linewidth=1.0)
+    ax.set_title("All weighted events with ellipse/MCD overlay")
+    ax.set_xlabel("mpi0_all [GeV]")
+    ax.set_ylabel("mmiss_all [GeV]")
+    ax.legend(loc="upper right")
+    ax.text(
+        0.02, 0.98,
+        f"peak_fraction={params.get('peak_fraction', np.nan):.3f}\n"
+        f"core={100.0 * params.get('core_total_fraction', 0.0):.2f}%\n"
+        f"de-correlation={100.0 * params.get('legacy_is_exclusive_total_fraction', 0.0):.2f}%\n"
+        f"ellipse={100.0 * params.get('ellipse_total_fraction', 0.0):.2f}%\n"
+        f"MCD={100.0 * params.get('mcd_total_fraction', 0.0):.2f}%",
+        transform=ax.transAxes, va="top", ha="left",
+        bbox=dict(facecolor="white", alpha=0.8, edgecolor="none"),
+        fontsize=9,
+    )
+
+    ax = axes[0, 1]
+    mesh = ax.pcolormesh(x_edges, y_edges, h_mcd.T, shading="auto", cmap="viridis")
+    fig.colorbar(mesh, ax=ax, label="Weighted counts")
+    if ellipse_x is not None:
+        ax.plot(ellipse_x, ellipse_y, color="magenta", linewidth=2.0, label="ellipse")
+    if mcd_x is not None:
+        ax.plot(mcd_x, mcd_y, color="lime", linewidth=2.0, label="MCD")
+    core_idx = np.argwhere(h_core > 0.0)
+    if len(core_idx) > 0:
+        x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
+        y_centers = 0.5 * (y_edges[:-1] + y_edges[1:])
+        ax.scatter(x_centers[core_idx[:, 0]], y_centers[core_idx[:, 1]],
+                   s=6, color="red", alpha=0.6, label="core bins")
+    ax.set_title("MCD-selected weighted events")
+    ax.set_xlabel("mpi0_all [GeV]")
+    ax.set_ylabel("mmiss_all [GeV]")
+    ax.legend(loc="upper right")
+
+    x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
+    y_centers = 0.5 * (y_edges[:-1] + y_edges[1:])
+
+    ax = axes[1, 0]
+    ax.step(x_centers, np.sum(h_all, axis=1), where="mid", color="black", label="all")
+    ax.step(x_centers, np.sum(h_core, axis=1), where="mid", color="red", label="core")
+    ax.step(x_centers, np.sum(h_legacy, axis=1), where="mid", color="blue", label="de-correlation")
+    ax.step(x_centers, np.sum(h_ellipse, axis=1), where="mid", color="magenta", label="ellipse")
+    ax.step(x_centers, np.sum(h_mcd, axis=1), where="mid", color="green", label="MCD")
+    ax.set_title("mpi0_all projection")
+    ax.set_xlabel("mpi0_all [GeV]")
+    ax.set_ylabel("Weighted counts")
+    ax.legend()
+
+    ax = axes[1, 1]
+    ax.step(y_centers, np.sum(h_all, axis=0), where="mid", color="black", label="all")
+    ax.step(y_centers, np.sum(h_core, axis=0), where="mid", color="red", label="core")
+    ax.step(y_centers, np.sum(h_legacy, axis=0), where="mid", color="blue", label="de-correlation")
+    ax.step(y_centers, np.sum(h_ellipse, axis=0), where="mid", color="magenta", label="ellipse")
+    ax.step(y_centers, np.sum(h_mcd, axis=0), where="mid", color="green", label="MCD")
+    ax.set_title("mmiss_all projection")
+    ax.set_xlabel("mmiss_all [GeV]")
+    ax.set_ylabel("Weighted counts")
+    ax.legend()
+
+    fig.suptitle("Combined 2D Mass-Cut Debug", fontsize=14, fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(canvas_pdf, dpi=150)
+    fig.savefig(canvas_png, dpi=150)
+    plt.close(fig)
+    print(f"[INFO] Combined 2D mass-cut canvas saved: {canvas_pdf}")
+    print(f"[INFO] Combined 2D mass-cut canvas saved: {canvas_png}")
 
 
 def save_to_parquet(df: pd.DataFrame, output_path: Path):
@@ -721,12 +1266,18 @@ def create_analysis_plots(df: pd.DataFrame, output_path: Path):
     # Check for optional weight and filter columns
     pi0_weight_col = 'pi0_weight' if 'pi0_weight' in df.columns else ('pi0_weights' if 'pi0_weights' in df.columns else None)
     has_pi0_weight = pi0_weight_col is not None
-    has_is_exclusive = 'is_exclusive' in df.columns
+    exclusive_col = (
+        'is_exclusive_mcd_combined' if 'is_exclusive_mcd_combined' in df.columns else
+        'is_exclusive_mcd' if 'is_exclusive_mcd' in df.columns else
+        'is_exclusive' if 'is_exclusive' in df.columns else
+        None
+    )
+    has_is_exclusive = exclusive_col is not None
     
     if not has_pi0_weight:
         print("[WARN] Column 'pi0_weight' not found. Using uniform weights.")
     if not has_is_exclusive:
-        print("[WARN] Column 'is_exclusive' not found. Skipping exclusivity cuts.")
+        print("[WARN] No exclusivity column found. Skipping exclusivity cuts.")
     
     with PdfPages(str(output_path)) as pdf:
         
@@ -835,11 +1386,11 @@ def create_analysis_plots(df: pd.DataFrame, output_path: Path):
             'z': r'$z$'
         }
         
-        # Filter data if is_exclusive is available
+        # Filter data if an exclusivity selector is available
         df_phys = df.copy()
         if has_is_exclusive:
-            df_phys = df_phys[df_phys['is_exclusive'] == True]
-            print(f"[INFO] Applied exclusivity cut: {len(df_phys)}/{len(df)} events")
+            df_phys = df_phys[df_phys[exclusive_col] == True]
+            print(f"[INFO] Applied exclusivity cut ({exclusive_col}): {len(df_phys)}/{len(df)} events")
         
         available_physics_vars = [v for v in physics_vars if v in df_phys.columns]
         
@@ -1108,6 +1659,10 @@ def main():
     if df_combined.empty:
         print("[ERROR] No data to save. Exiting.")
         return
+
+    mass_cut_debug = None
+    if CREATE_COMBINED_2D_MASS_CUT:
+        mass_cut_debug = add_combined_2d_mass_cut(df_combined)
     
     # Print summary statistics
     print_summary_statistics(df_combined)
@@ -1119,9 +1674,12 @@ def main():
     # Create analysis plots
     if CREATE_ANALYSIS_PLOTS:
         create_analysis_plots(df_combined, ANALYSIS_PLOTS_PDF)
+
+    write_combined_mass_cut_debug_text(mass_cut_debug, OUT_COMBINED_ROOT)
+    write_combined_mass_cut_canvas(mass_cut_debug, OUT_COMBINED_ROOT)
     
     # Save to ROOT file
-    save_to_root(df_combined, OUT_COMBINED_ROOT)
+    save_to_root(df_combined, OUT_COMBINED_ROOT, mass_cut_debug)
     
     # Optionally save to other formats
     # save_to_parquet(df_combined, OUT_COMBINED_ROOT)

@@ -21,7 +21,7 @@
     //   - Outputs: discrete section parameters (CSV) + interpolated 2D maps (ROOT)
     //
     // Compile:
-    //   g++ nps_sim_smearing_new_try.C `root-config --cflags --libs` -O2 -std=c++17 -fopenmp -I../src -o nps_sim_smearing_new_try
+    //   g++ nps_sim_smearing_new_try.C `root-config --cflags --libs` -lMathMore -O2 -std=c++17 -fopenmp -I../src -o nps_sim_smearing_new_try
     //
     // Usage example: 
     //   ./nps_sim_smearing_new_try /w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/output/plots/x60_4b/combined_branches_LH2.root physics /w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/output/plots/x60_4b/simc_pi0_analysis_output.root simulation out_smear.root 11 16 -24 28 -34 34 0.2 50
@@ -50,6 +50,7 @@
     #include <set>
     #include <ctime>
     #include <memory>
+    #include <array>
     #include <omp.h>
 
     // Bring standard library types into global namespace for legacy headers
@@ -89,6 +90,7 @@
     #include "Math/Factory.h"
     #include "Math/Functor.h"
     #include "Math/Minimizer.h"
+    #include "Math/QuasiRandom.h"
 
     // Include project headers LAST (these depend on std and ROOT)
     #include "../src/utils.C"
@@ -213,21 +215,12 @@
         // ========================================================================
         // OPTIMIZATION STRATEGY SELECTION
         // ========================================================================
-        // Choose between staged sequential or simultaneous optimization
-        //
-        // STAGED (TRUE) [RECOMMENDED]:
-        //   Stage 1: Fit mu, sigma using selected observable (sigma_pos=0)
-        //   Stage 2: Fit sigma_pos using M_γγ only (mu, sigma fixed from Stage 1)
-        //   Stage 3: Joint refinement of all (mu, sigma, sigma_pos) simultaneously
-        //   Benefits: Physically motivated ordering; energy calibrated first (largest
-        //             effect), then angular resolution, then joint cleanup.
-        //
-        // SIMULTANEOUS (FALSE):
-        //   Fit all parameters together using weighted combined chi2
-        //   Benefits: Can find global minimum in parameter space
-        //   Drawback: Couples angular and energy systematics, slower convergence
-        //
-        const bool USE_THREE_STAGE_OPTIMIZATION = true;  // RECOMMENDED: true for best physics separation
+        // Default optimizer:
+        //   deterministic low-discrepancy bounded seeds -> keep best N seeds
+        //   -> Minuit2 MIGRAD from each seed -> HESSE/profile diagnostics.
+        // Legacy staged/grid code is kept as fallback only.
+        const bool USE_GLOBAL_MULTISTART_OPTIMIZATION = true;
+        const bool USE_THREE_STAGE_OPTIMIZATION = false;
         
         // CHI-SQUARED OBSERVABLE WEIGHTS
         // ========================================================================
@@ -319,10 +312,17 @@
 
         // Fit ranges for a and c (enabled mode only).
         // b always uses MU_MIN / MU_MAX defined above.
-        const double MU_A_MIN = -0.5;  const double MU_A_MAX = 0.5;
-        const double MU_C_MIN = -0.5;  const double MU_C_MAX = 0.5;
+        const double MU_A_MIN = -0.20;  const double MU_A_MAX = 0.20;
+        const double MU_C_MIN = -0.20;  const double MU_C_MAX = 0.20;
         const double MIGRAD_STEP_MU_A  = 0.0001;
         const double MIGRAD_STEP_MU_C  = 0.0001;
+
+        // Guard against artificial a=c=0 results.
+        // Coarse/fine grid scans seed only b and sigma; these deterministic
+        // nonzero (a,c) starts test whether MIGRAD is trapped by the zero seed.
+        const bool ENABLE_MU_AC_MULTISTART = true;
+        const double MU_A_MULTISTART_SPAN = 0.05;  // GeV
+        const double MU_C_MULTISTART_SPAN = 0.05;  // GeV
 
         
         // Resolution parameter (sigma) scan range
@@ -384,7 +384,7 @@
         // This parameter is global over the full calorimeter face (never section-wise).
         // Set ENABLE_ELECTRON_MOMENTUM_SCALING = false to keep legacy behavior.
         const bool ENABLE_ELECTRON_MOMENTUM_SCALING = false;  // RECOMMENDED: false unless you have specific reasons to suspect electron momentum scale issues
-        const bool ENABLE_FINAL_GLOBAL_PE_SCALE_STAGE4 = false;  // If false, keep per-section p_e_scale from Pass-2 and skip final global Stage-4 fit
+        const bool ENABLE_FINAL_GLOBAL_PE_SCALE_STAGE4 = false;  // If false, keep per-section p_e_scale from coupled sweeps and skip final global Stage-4 fit
         const double GLOBAL_PE_SCALE_DEFAULT = 0.995;              // initial seed for global p_e_scale fit
 
         // Initial seeds used before global two-step fit:
@@ -399,9 +399,21 @@
         const int PE_SCALE_NSTEPS = 100;
 
         
-        // Coarse grid search density (speeds up initial parameter space exploration)
-        // Higher divisor = coarser initial search = faster but might miss narrow minima
-        // RECOMMENDED: 3-4 for good balance of speed vs accuracy
+        // Global multistart controls. Workflow:
+        //   ROOT/GSL Sobol bounded seed scan -> keep best N seeds
+        //   -> Minuit2 MIGRAD each retained seed -> HESSE correlation diagnostics
+        //   -> limited profile scans for suspicious strongly correlated parameters.
+        const int GLOBAL_MULTISTART_SEEDS = 96;
+        const int GLOBAL_MULTISTART_KEEP_BEST = 8;
+        const bool ENABLE_HESSE_DIAGNOSTICS = true;
+        const bool ENABLE_PROFILE_SCANS = true;
+        const bool ENABLE_PARALLEL_SECTION_FITS = true;
+        const int PROFILE_SCAN_POINTS = 5;
+        const int PROFILE_MAX_PARAMETERS = 1;
+        const double PROFILE_CORR_THRESHOLD = 0.90;
+        const double PROFILE_RANGE_FRACTION = 0.10;
+
+        // Legacy coarse grid search density (fallback only)
         const int COARSE_GRID_DIVISOR = 3;         // Use Nsteps/3 for coarse search
         const int MAX_REFINEMENT_ITERATIONS = 1000;  // Maximum fine-grid refinement cycles
 
@@ -452,8 +464,10 @@
 
         // Optional exclusivity gating in event weights:
         //   false (default): use all events
-        //   true: multiply weights by is_exclusive when branch is available
+        //   true: multiply data/sim weights by their configured exclusivity branch
         const bool APPLY_IS_EXCLUSIVE_SELECTION = true;
+        const char* DATA_EXCLUSIVITY_BRANCH = "is_exclusive_ellipse_combined";
+        const char* SIM_EXCLUSIVITY_BRANCH  = "is_exclusive_ellipse";
         
         // Minimum events required per section (both data AND simulation)
         // Sections with insufficient statistics will be skipped with a warning
@@ -467,11 +481,16 @@
         const double MAX_CHI2_PER_NDF = 2.0;  // Warning threshold
         const bool SKIP_BAD_FITS = false;     // If true, exclude bad sections from output
 
-        // Iterative coupled section fitting (Pass-2)
-        // Refit sections in sweeps; after each sweep, refresh out-of-section photon
-        // coefficients from latest section fits to propagate cross-boundary coupling.
-        const bool ENABLE_ITERATIVE_COUPLED_PASS2 = true;
-        const int COUPLED_PASS2_MAX_SWEEPS = 5;
+        // Section fit orchestration.
+        // Iterative coupled sweep model:
+        //   sweep 1: out-of-section photons use nominal response
+        //            (a=0,b=1,c=0,sigma=0,sigma_pos=0).
+        //   sweep N: each section fits in-section parameters while out-of-section
+        //            photons use completed section parameters from sweep N-1.
+        //
+        // Each section fit still uses Sobol -> keep best N -> MIGRAD -> HESSE/profile.
+        const int ITERATIVE_SECTION_SWEEPS = 5;
+        const bool ENABLE_COUPLED_SWEEP_CONVERGENCE_STOP = true;
         const double COUPLED_CONV_MU = 5e-4;
         const double COUPLED_CONV_SIGMA = 5e-4;
         const double COUPLED_CONV_SIGMA_POS = 5e-4;
@@ -486,6 +505,10 @@
         
         // Output file naming
         const string CSV_FILENAME = "section_map.csv";
+        const string OPTIMIZER_SUMMARY_CSV_FILENAME = "smearing_optimizer_summary.csv";
+        const string OPTIMIZER_SEEDS_CSV_FILENAME = "smearing_optimizer_seeds.csv";
+        const string OPTIMIZER_PROFILE_CSV_FILENAME = "smearing_optimizer_profiles.csv";
+        const string CLOSURE_SUMMARY_CSV_FILENAME = "smearing_closure_summary.csv";
         const string CHI2_PDF_FILENAME = "chi2_scans.pdf";
         const string INTERPOLATED_SUFFIX = "_interpolated";
         
@@ -494,20 +517,23 @@
         // ========================================================================
         // This section helps verify your configuration intent.
         // 
-        // FOR THE RECOMMENDED PROFILE, verify these settings:
-        //   ✓ USE_THREE_STAGE_OPTIMIZATION = true  (separates angular/energy systematics)
-        //   ✓ ENERGY_SMEARING_HISTOGRAM = HIST_BOTH      (uses both observables)
-        //   ✓ ENABLE_POSITION_SMEARING = true    (calibrates angular resolution)
-        //   ✓ W_MPI0 and W_MMISS set intentionally for your strategy
+        // FOR THE CURRENT COUPLED-SWEEP PROFILE, verify these settings:
+        //   - ITERATIVE_SECTION_SWEEPS set intentionally
+        //   - USE_GLOBAL_MULTISTART_OPTIMIZATION = true
+        //   - ENERGY_SMEARING_HISTOGRAM = HIST_BOTH
+        //   - ENABLE_POSITION_SMEARING = false
+        //   - ENABLE_ELECTRON_MOMENTUM_SCALING = false
+        //   - W_MPI0, W_MMISS, and W_MPGG2 set intentionally for your strategy
         //
         // CURRENT DEFAULTS IN THIS FILE:
+        //   - iterative coupled section sweeps
         //   - ENERGY_SMEARING_HISTOGRAM = HIST_BOTH
-        //   - ENABLE_POSITION_SMEARING = true
-        //   - W_MPI0 = 1.5, W_MMISS = 0.0, W_MPGG2 = 1.0
+        //   - ENABLE_POSITION_SMEARING = false
+        //   - W_MPI0 = 2.0, W_MMISS = 1.0, W_MPGG2 = 1.0
         //
-        // AVOID THIS CONFIGURATION (poor M_γγ agreement):
+        // CAUTION:
         //   ✗ ENERGY_SMEARING_HISTOGRAM = HIST_MMISS_ONLY (M_miss only)
-        //   ✗ ENABLE_POSITION_SMEARING = false
+        //   ✗ very wide a/c bounds can create unphysical low-energy response
         //   See MISSING_MASS_FITTING_ISSUE.txt for detailed physics explanation
         // ========================================================================
 
@@ -526,7 +552,21 @@
         inline void print_configuration_summary() {
             cout << "\n==== Active Configuration ====\n";
             cout << "Optimization mode: "
-                << (USE_THREE_STAGE_OPTIMIZATION ? "staged (1-3 + optional 4)" : "simultaneous") << "\n";
+                << (USE_GLOBAL_MULTISTART_OPTIMIZATION ? "Sobol multistart + MIGRAD/HESSE/profile" :
+                    (USE_THREE_STAGE_OPTIMIZATION ? "legacy staged (1-3 + optional 4)" : "legacy simultaneous")) << "\n";
+            if (USE_GLOBAL_MULTISTART_OPTIMIZATION) {
+                cout << "Global seeds: " << GLOBAL_MULTISTART_SEEDS
+                    << "  keep-best: " << GLOBAL_MULTISTART_KEEP_BEST
+                    << "  HESSE=" << (ENABLE_HESSE_DIAGNOSTICS ? "on" : "off")
+                    << "  profile=" << (ENABLE_PROFILE_SCANS ? "on" : "off") << "\n";
+            }
+            cout << "Parallel section fits: "
+                << (ENABLE_PARALLEL_SECTION_FITS ? "enabled" : "disabled") << "\n";
+            cout << "Section orchestration: iterative coupled sweeps\n"
+                 << "  sweeps=" << ITERATIVE_SECTION_SWEEPS
+                 << "  convergence_stop=" << (ENABLE_COUPLED_SWEEP_CONVERGENCE_STOP ? "on" : "off") << "\n"
+                 << "  sweep 1 external photons: nominal a=0,b=1,c=0,sigma=0\n"
+                 << "  sweep N external photons: previous completed sweep results\n";
             cout << "Stage-2 observable: " << histogram_mode_label() << "\n";
             cout << "Position smearing fit: "
                 << (ENABLE_POSITION_SMEARING ? "enabled" : "disabled") << "\n";
@@ -542,14 +582,18 @@
                 << (ENABLE_ELECTRON_MOMENTUM_SCALING ? "enabled" : "disabled") << "\n";
             if (ENABLE_ELECTRON_MOMENTUM_SCALING && stage2_uses_mmiss()) {
                 if (ENABLE_FINAL_GLOBAL_PE_SCALE_STAGE4) {
-                    cout << "p_e_scale mode: per-section in Pass-2 sweeps + final global Stage-4 refinement\n";
+                    cout << "p_e_scale mode: per-section in coupled sweeps + final global Stage-4 refinement\n";
                 } else {
-                    cout << "p_e_scale mode: per-section in Pass-2 sweeps only (final global Stage-4 disabled)\n";
+                    cout << "p_e_scale mode: per-section in coupled sweeps only (final global Stage-4 disabled)\n";
                 }
             }
             cout << "Weights (W_MPI0, W_MMISS, W_MPGG2): " << W_MPI0 << ", " << W_MMISS << ", " << W_MPGG2 << "\n";
             cout << "Exclusive gating in weights: "
                 << (APPLY_IS_EXCLUSIVE_SELECTION ? "enabled" : "disabled (all events)") << "\n";
+            if (APPLY_IS_EXCLUSIVE_SELECTION) {
+                cout << "Data exclusive branch: " << DATA_EXCLUSIVITY_BRANCH << "\n";
+                cout << "Sim exclusive branch:  " << SIM_EXCLUSIVITY_BRANCH << "\n";
+            }
             cout << "mpgg2 energy scaling (w_mpgg2_energy): " << W_MPGG2_ENERGY << "\n";
             cout << "Energy-smearing PDF: "
                 << (ENERGY_SMEAR_SHAPE == SMEAR_SHAPE_LANDAU ? "Landau (sigma=FWHM)" : "Gaussian (sigma=std-dev)")
@@ -577,18 +621,17 @@
                      << "  b=" << MU_ENERGY_B_INIT
                      << "  c=" << MU_ENERGY_C_INIT << "\n"
                      << "  energy floor: E_floor=" << MU_ENERGY_MIN_GEV << " GeV\n";
+                cout << "  a/c MIGRAD multistart: "
+                     << (ENABLE_MU_AC_MULTISTART ? "enabled" : "disabled")
+                     << "  seed spans: da=" << MU_A_MULTISTART_SPAN
+                     << " GeV, dc=" << MU_C_MULTISTART_SPAN << " GeV\n";
             } else {
                 cout << "  mu_eff(E) = b*E  (a=0, c=0 fixed; b is the fitted scalar mu)\n";
             }
-            cout << "Pass-2 mode: "
-                << (ENABLE_ITERATIVE_COUPLED_PASS2 ? "iterative coupled" : "single sweep") << "\n";
-            if (ENABLE_ITERATIVE_COUPLED_PASS2) {
-                cout << "Pass-2 max sweeps: " << COUPLED_PASS2_MAX_SWEEPS
-                    << "  conv(mu,sigma,sigma_pos)=(" << COUPLED_CONV_MU
-                    << ", " << COUPLED_CONV_SIGMA
-                    << ", " << COUPLED_CONV_SIGMA_POS << ")\n";
-                cout << "Pass-2 sweep mode: iterative seeded refine (uses previous sweep parameters)\n";
-            }
+            cout << "Coupled sweep convergence thresholds: "
+                 << "mu=" << COUPLED_CONV_MU
+                 << " sigma=" << COUPLED_CONV_SIGMA
+                 << " sigma_pos=" << COUPLED_CONV_SIGMA_POS << "\n";
 
             if (ENABLE_ELECTRON_MOMENTUM_SCALING && !stage2_uses_mmiss()) {
                 cout << "Note: p_e_scale is disabled when Stage-2 mode does not use M_miss\n";
@@ -605,8 +648,124 @@
     //                      END OF USER CONFIGURATION
     // ============================================================================
 
+    inline double computeEnergyResolution(double E_scaled, double sigma,
+                                          double res_A, double res_B, double res_C);
+
+    struct ModelParameter {
+        string name;
+        double value;
+        double min_value;
+        double max_value;
+        string unit;
+        string description;
+
+        bool isValid() const {
+            return std::isfinite(value) && value >= min_value && value <= max_value;
+        }
+    };
+
+    struct SmearingModel1D {
+        enum class Type {
+            Constant,
+            Linear,
+            Polynomial,
+            APlusBEPlusCLnE
+        };
+
+        Type type = Type::APlusBEPlusCLnE;
+        string name = "a_plus_bE_plus_clnE";
+        vector<ModelParameter> parameters;
+        double x_floor = Config::MU_ENERGY_MIN_GEV;
+
+        double evaluate(double x) const {
+            const double x_safe = std::max(x, x_floor);
+            if (type == Type::Constant) {
+                return parameters.empty() ? 0.0 : parameters[0].value;
+            }
+            if (type == Type::Linear) {
+                const double a = parameters.size() > 0 ? parameters[0].value : 0.0;
+                const double b = parameters.size() > 1 ? parameters[1].value : 1.0;
+                return a + b * x_safe;
+            }
+            if (type == Type::Polynomial) {
+                double y = 0.0;
+                double xp = 1.0;
+                for (const auto &p : parameters) {
+                    y += p.value * xp;
+                    xp *= x_safe;
+                }
+                return y;
+            }
+            const double a = parameters.size() > 0 ? parameters[0].value : 0.0;
+            const double b = parameters.size() > 1 ? parameters[1].value : 1.0;
+            const double c = parameters.size() > 2 ? parameters[2].value : 0.0;
+            return a + b * x_safe + c * std::log(x_safe);
+        }
+
+        bool isValid() const {
+            if (!(x_floor > 0.0) || !std::isfinite(x_floor)) return false;
+            for (const auto &p : parameters) {
+                if (!p.isValid()) return false;
+            }
+            return true;
+        }
+    };
+
+    struct PhotonSmearingParameters {
+        double energy_mean_a = 0.0;
+        double energy_mean_b = 1.0;
+        double energy_mean_c = 0.0;
+        double energy_sigma = 0.0;
+        double position_sigma = 0.0;
+        double res_A = Config::RESOLUTION_A_DEFAULT;
+        double res_B = Config::RESOLUTION_B_DEFAULT;
+        double res_C = Config::RESOLUTION_C_DEFAULT;
+    };
+
+    inline SmearingModel1D makeEnergyMeanModel(double a, double b, double c) {
+        SmearingModel1D model;
+        model.type = SmearingModel1D::Type::APlusBEPlusCLnE;
+        model.name = "a_plus_bE_plus_clnE";
+        model.x_floor = Config::MU_ENERGY_MIN_GEV;
+        model.parameters = {
+            {"a", a, Config::MU_A_MIN, Config::MU_A_MAX, "GeV", "constant reconstructed-energy offset"},
+            {"b", b, Config::MU_MIN, Config::MU_MAX, "dimensionless", "linear energy-response coefficient"},
+            {"c", c, Config::MU_C_MIN, Config::MU_C_MAX, "GeV", "logarithmic energy-response coefficient"}
+        };
+        return model;
+    }
+
+    struct PhotonSmearingModel {
+        PhotonSmearingParameters params;
+        SmearingModel1D energy_mean_model;
+
+        explicit PhotonSmearingModel(const PhotonSmearingParameters &p)
+            : params(p), energy_mean_model(makeEnergyMeanModel(p.energy_mean_a,
+                                                               p.energy_mean_b,
+                                                               p.energy_mean_c)) {}
+
+        double meanEnergy(double E) const {
+            double E_mean = energy_mean_model.evaluate(E);
+            if (!std::isfinite(E_mean) || E_mean <= 0.0) return Config::NONPOSITIVE_CLAMP;
+            return E_mean;
+        }
+
+        double sigmaEnergy(double E_mean) const {
+            if (!(params.energy_sigma > 0.0) || !std::isfinite(params.energy_sigma)) return 0.0;
+            return computeEnergyResolution(E_mean, params.energy_sigma,
+                                           params.res_A, params.res_B, params.res_C);
+        }
+
+        double sigmaPosition(double E_mean) const {
+            if (!(params.position_sigma > 0.0) || !std::isfinite(params.position_sigma)) return 0.0;
+            if (!Config::ENABLE_ENERGY_DEPENDENT_SIGMA_POS) return params.position_sigma;
+            const double E_for_pos = std::max(E_mean, Config::SIGMA_POS_ENERGY_MIN_GEV);
+            return params.position_sigma * sqrt(Config::SIGMA_POS_ENERGY_E0_GEV / E_for_pos);
+        }
+    };
+
     // ============================================================================
-    // HMS ELECTRON CUTS (for simulation - consistent with simc_pi0_analysis.C)
+	    // HMS ELECTRON CUTS (for simulation - consistent with simc_pi0_analysis.C)
     // NOTE: These cuts are applied in simc_pi0_analysis.C, not in this script.
     //       This function is kept for reference/documentation purposes only.
     // ============================================================================
@@ -649,8 +808,8 @@
         // photon2_in_section = false → photon 2 belongs to a different section.
         bool photon1_in_section = false;
         bool photon2_in_section = false;
-        // Pass-1 (first-pass) calibration for out-of-section photons, used in pass 2.
-        // Set from the pass-1 fit result of whichever center-cell section owns each photon.
+        // External calibration for out-of-section photons.
+        // Sweep 1 uses defaults; later sweeps use previous completed section fits.
         // Defaults: mu_eff(E)=b*E with b=1 (no scale change), sigma=0 (no resolution smearing).
         // mu_eff(E) = mu_a_ext + mu_ext*E + mu_c_ext*ln(E)
         double mu_a1_ext = 0.0, mu1_ext = 1.0, mu_c1_ext = 0.0;
@@ -674,6 +833,10 @@
     // Returns σ_E based on selected model (simple stochastic or 3-term)
     inline double computeEnergyResolution(double E_scaled, double sigma,
                                         double res_A, double res_B, double res_C) {
+        if (!(E_scaled > 0.0) || !std::isfinite(E_scaled) ||
+            !(sigma >= 0.0) || !std::isfinite(sigma)) {
+            return 0.0;
+        }
         if (Config::USE_SIMPLE_STOCHASTIC_MODEL) {
             // Simple stochastic: σ_E = σ × √E
             return sigma * sqrt(E_scaled);
@@ -683,6 +846,7 @@
             double B_sq = res_B * res_B;
             double C_sq = res_C * res_C;
             double sigma_rel_sq = A_sq / E_scaled + B_sq / (E_scaled * E_scaled) + C_sq;
+            if (!(sigma_rel_sq >= 0.0) || !std::isfinite(sigma_rel_sq)) return 0.0;
             return sigma * E_scaled * sqrt(sigma_rel_sq);
         }
     }
@@ -710,12 +874,20 @@
                             double res_A, double res_B, double res_C,
                             TRandom3 &rng,
                             double &E_out, double &x_out, double &y_out) {
-        // Compute scaled energy using the linear+log model.
-        // For the disabled case (mu_a=0, mu_c=0) this reduces to E_sc = mu_b * E.
-        double E_safe = std::max(E, Config::MU_ENERGY_MIN_GEV);
-        double E_sc = mu_a + mu_b * E_safe + mu_c * std::log(E_safe);
-        // Clamp to a sane positive value before resolution smearing.
-        if (E_sc <= 0.0) E_sc = Config::NONPOSITIVE_CLAMP;
+	        PhotonSmearingParameters photon_params;
+	        photon_params.energy_mean_a = mu_a;
+	        photon_params.energy_mean_b = mu_b;
+	        photon_params.energy_mean_c = mu_c;
+	        photon_params.energy_sigma = sigma;
+	        photon_params.position_sigma = sigma_pos;
+	        photon_params.res_A = res_A;
+	        photon_params.res_B = res_B;
+	        photon_params.res_C = res_C;
+	        PhotonSmearingModel photon_model(photon_params);
+
+	        // Single active energy-response convention:
+	        // E_mean(E) = a + b*E_safe + c*ln(E_safe), in GeV.
+	        double E_sc = photon_model.meanEnergy(E);
 
         // --- Deterministic-draw block ------------------------------------------------
         // Always consume a FIXED number of RNG values per photon regardless of the
@@ -731,7 +903,7 @@
             // Always consume exactly LANDAU_MAX_REDRAWS Landau draws for energy.
             // Only the first accepted draw is used; the rest keep the RNG state
             // deterministic across parameter evaluations.
-            double fwhmE = computeEnergyResolution(E_sc, sigma, res_A, res_B, res_C);
+	            double fwhmE = photon_model.sigmaEnergy(E_sc);
             double landau_scale = fwhmE / max(Config::LANDAU_FWHM_TO_SCALE, 1e-9);
             double e_max_allowed = E_sc + Config::LANDAU_MAX_FWHM_ABOVE_MPV * fwhmE;
             e_max_allowed = max(e_max_allowed, Config::NONPOSITIVE_CLAMP);
@@ -757,8 +929,8 @@
             // sigma == 0 (in which case the pull is unused).
             double pull_e = rng.Gaus(0.0, 1.0);
             if (sigma > 0.0) {
-                double sigE = computeEnergyResolution(E_sc, sigma, res_A, res_B, res_C);
-                E_out = E_sc + sigE * pull_e;
+	                double sigE = photon_model.sigmaEnergy(E_sc);
+	                E_out = E_sc + sigE * pull_e;
                 if (E_out <= 0.0) E_out = Config::NONPOSITIVE_CLAMP;
             } else {
                 E_out = E_sc;
@@ -770,12 +942,8 @@
         double pull_x = rng.Gaus(0.0, 1.0);
         double pull_y = rng.Gaus(0.0, 1.0);
         if (sigma_pos > 0.0) {
-            double sigma_pos_eff = sigma_pos;
-            if (Config::ENABLE_ENERGY_DEPENDENT_SIGMA_POS) {
-                double E_for_pos = max(E_sc, Config::SIGMA_POS_ENERGY_MIN_GEV);
-                sigma_pos_eff = sigma_pos * sqrt(Config::SIGMA_POS_ENERGY_E0_GEV / E_for_pos);
-            }
-            x_out = x + sigma_pos_eff * pull_x;
+	            double sigma_pos_eff = photon_model.sigmaPosition(E_sc);
+	            x_out = x + sigma_pos_eff * pull_x;
             y_out = y + sigma_pos_eff * pull_y;
         } else {
             x_out = x;
@@ -1571,9 +1739,12 @@
             TH2D *h_mu_a = new TH2D("h_mu_a_interp",
                 "Interpolated #mu_{a} map (const offset);x [cm];y [cm]",
                 nbinsx, x_min_, x_max_, nbinsy, y_min_, y_max_);
-            TH2D *h_mu = new TH2D("h_mu_interp",
-                "Interpolated #mu_{b} map (linear coeff);x [cm];y [cm]",
-                nbinsx, x_min_, x_max_, nbinsy, y_min_, y_max_);
+	            TH2D *h_mu = new TH2D("h_mu_interp",
+	                "Interpolated #mu_{b} map (linear coeff);x [cm];y [cm]",
+	                nbinsx, x_min_, x_max_, nbinsy, y_min_, y_max_);
+	            TH2D *h_mu_b = new TH2D("h_mu_b_interp",
+	                "Interpolated #mu_{b} map (linear coeff);x [cm];y [cm]",
+	                nbinsx, x_min_, x_max_, nbinsy, y_min_, y_max_);
             TH2D *h_mu_c = new TH2D("h_mu_c_interp",
                 "Interpolated #mu_{c} map (log coeff);x [cm];y [cm]",
                 nbinsx, x_min_, x_max_, nbinsy, y_min_, y_max_);
@@ -1592,17 +1763,22 @@
                     double ma, mb, mc, sigma, sigma_pos;
                     getInterpolatedParams(x, y, ma, mb, mc, sigma, sigma_pos);
 
-                    h_mu_a->SetBinContent(ix, iy, ma);
-                    h_mu->SetBinContent(ix, iy, mb);
-                    h_mu_c->SetBinContent(ix, iy, mc);
-                    h_sigma->SetBinContent(ix, iy, sigma);
-                    h_sigma_pos->SetBinContent(ix, iy, sigma_pos);
-                }
-            }
+	                    h_mu_a->SetBinContent(ix, iy, ma);
+	                    h_mu->SetBinContent(ix, iy, mb);
+	                    h_mu_b->SetBinContent(ix, iy, mb);
+	                    h_mu_c->SetBinContent(ix, iy, mc);
+	                    h_sigma->SetBinContent(ix, iy, sigma);
+	                    h_sigma_pos->SetBinContent(ix, iy, sigma_pos);
+	                }
+	            }
 
-            h_mu_a->Write(); h_mu->Write(); h_mu_c->Write();
-            h_sigma->Write(); h_sigma_pos->Write();
-            fout.Close();
+	            TNamed("smearing_model_energy_mean", "a_plus_bE_plus_clnE").Write();
+	            TNamed("energy_mean_convention", "reconstructed_energy_GeV").Write();
+	            TNamed("energy_mean_formula", "E_mean = a + b*E_safe + c*ln(E_safe/1 GeV)").Write();
+	            TNamed("energy_log_floor_GeV", Form("%.8g", Config::MU_ENERGY_MIN_GEV)).Write();
+	            h_mu_a->Write(); h_mu->Write(); h_mu_b->Write(); h_mu_c->Write();
+	            h_sigma->Write(); h_sigma_pos->Write();
+	            fout.Close();
 
             cout << "Saved interpolated calibration maps to " << filename << endl;
         }
@@ -1629,6 +1805,30 @@
         vector<double> chi2_vs_sigma_pos;
     };
 
+    struct SeedDiagnostic {
+        int rank = -1;
+        int seed_index = -1;
+        double seed_chi2 = 1e300;
+        double migrad_chi2 = 1e300;
+        double mu_a = 0.0;
+        double mu = 1.0;
+        double mu_c = 0.0;
+        double sigma = 0.05;
+        double sigma_pos = 0.0;
+        double p_e_scale = 1.0;
+        bool minimized = false;
+        bool hesse_ok = false;
+        double max_abs_corr = 0.0;
+        string max_corr_pair = "";
+    };
+
+    struct ProfileDiagnostic {
+        string parameter;
+        double fixed_value = 0.0;
+        double chi2 = 1e300;
+        bool minimized = false;
+    };
+
     // Structure to store fit results
     struct FitResult {
         // mu_eff(E) = mu_a + mu * E + mu_c * ln(E_safe)
@@ -1644,6 +1844,14 @@
         double res_C = Config::RESOLUTION_C_DEFAULT;
         int ndf = 1;
         Chi2ScanData scan_data;
+        vector<SeedDiagnostic> seed_diagnostics;
+        vector<ProfileDiagnostic> profile_diagnostics;
+        string optimizer_mode = "unset";
+        int n_seed_trials = 0;
+        int n_migrad_trials = 0;
+        bool hesse_ok = false;
+        double max_abs_corr = 0.0;
+        string max_corr_pair = "";
         double chi2_per_ndf() const { return (ndf > 0) ? chi2 / ndf : 0.0; }
         // Evaluate effective scale at energy E: mu_eff(E) = a + b*E + c*ln(E_safe)
         double muEff(double E) const {
@@ -1747,6 +1955,11 @@
         double sigma, sigma_pos, p_e_scale;
         double chi2;
         bool minimized;
+        int n_starts = 1;
+        bool used_nonzero_ac_seed = false;
+        bool hesse_ok = false;
+        double max_abs_corr = 0.0;
+        string max_corr_pair = "";
     };
 
     // chi2_fn signature: (mu_a, mu_b, mu_c, sigma, sigma_pos, p_e_scale) -> double
@@ -1846,11 +2059,338 @@
 
         double chi2_best = chi2_fn(xbest[0], xbest[1], xbest[2],
                                    xbest[3], xbest[4], xbest[5]);
-        if (ok && chi2_best < out.chi2) {
+        // Keep a finite lower-chi2 point even if Minuit reports a non-success
+        // status; failures often mean covariance/convergence trouble, not that
+        // the returned coordinates are worse than the seed.
+        if (std::isfinite(chi2_best) && chi2_best < out.chi2) {
             out.mu_a = xbest[0]; out.mu = xbest[1]; out.mu_c = xbest[2];
             out.sigma = xbest[3]; out.sigma_pos = xbest[4]; out.p_e_scale = xbest[5];
             out.chi2 = chi2_best;
-            out.minimized = true;
+            out.minimized = ok;
+            if (ok && Config::ENABLE_HESSE_DIAGNOSTICS) {
+                out.hesse_ok = minimizer->Hesse();
+                const bool active[6] = {fit_mu_a, fit_mu, fit_mu_c, fit_sigma, fit_sigma_pos, fit_p_e_scale};
+                const char* names[6] = {"mu_a", "mu_b", "mu_c", "sigma", "sigma_pos", "p_e_scale"};
+                for (int i = 0; i < 6; ++i) {
+                    if (!active[i]) continue;
+                    for (int j = i + 1; j < 6; ++j) {
+                        if (!active[j]) continue;
+                        double corr = minimizer->Correlation(i, j);
+                        if (std::isfinite(corr) && std::fabs(corr) > out.max_abs_corr) {
+                            out.max_abs_corr = std::fabs(corr);
+                            out.max_corr_pair = string(names[i]) + ":" + names[j];
+                        }
+                    }
+                }
+            }
+        }
+        return out;
+    }
+
+    template <typename Chi2Fn>
+    MigradRefineResult run_migrad_ac_multistart_refinement(Chi2Fn chi2_fn,
+                                                           double mu_a_seed,
+                                                           double mu_seed,
+                                                           double mu_c_seed,
+                                                           double sigma_seed,
+                                                           double sigma_pos_seed,
+                                                           double p_e_scale_seed,
+                                                           bool fit_mu_a,
+                                                           bool fit_mu,
+                                                           bool fit_mu_c,
+                                                           bool fit_sigma,
+                                                           bool fit_sigma_pos,
+                                                           bool fit_p_e_scale) {
+        MigradRefineResult best = run_migrad_refinement(chi2_fn,
+                                                        mu_a_seed, mu_seed, mu_c_seed,
+                                                        sigma_seed, sigma_pos_seed, p_e_scale_seed,
+                                                        fit_mu_a, fit_mu, fit_mu_c,
+                                                        fit_sigma, fit_sigma_pos, fit_p_e_scale);
+        int n_starts = 1;
+
+        if (!Config::ENABLE_MU_AC_MULTISTART ||
+            !(fit_mu_a || fit_mu_c) ||
+            !Config::ENABLE_ENERGY_DEPENDENT_MU) {
+            best.n_starts = n_starts;
+            return best;
+        }
+
+        auto clamp_to = [](double v, double lo, double hi) {
+            return std::max(lo, std::min(hi, v));
+        };
+
+        const double da = Config::MU_A_MULTISTART_SPAN;
+        const double dc = Config::MU_C_MULTISTART_SPAN;
+        const vector<pair<double, double>> ac_offsets = {
+            { da,  0.0}, {-da,  0.0},
+            {0.0,   dc}, {0.0,  -dc},
+            { da,   dc}, {-da, -dc},
+            { da,  -dc}, {-da,  dc}
+        };
+
+        for (const auto &off : ac_offsets) {
+            const double a_start = fit_mu_a
+                ? clamp_to(mu_a_seed + off.first, Config::MU_A_MIN, Config::MU_A_MAX)
+                : mu_a_seed;
+            const double c_start = fit_mu_c
+                ? clamp_to(mu_c_seed + off.second, Config::MU_C_MIN, Config::MU_C_MAX)
+                : mu_c_seed;
+
+            if (std::fabs(a_start - mu_a_seed) < 1e-15 &&
+                std::fabs(c_start - mu_c_seed) < 1e-15) {
+                continue;
+            }
+
+            MigradRefineResult cand = run_migrad_refinement(chi2_fn,
+                                                            a_start, mu_seed, c_start,
+                                                            sigma_seed, sigma_pos_seed, p_e_scale_seed,
+                                                            fit_mu_a, fit_mu, fit_mu_c,
+                                                            fit_sigma, fit_sigma_pos, fit_p_e_scale);
+            ++n_starts;
+            if (cand.chi2 < best.chi2) {
+                best = cand;
+                best.used_nonzero_ac_seed = true;
+            }
+        }
+
+        best.n_starts = n_starts;
+        return best;
+    }
+
+    inline double lerp_bound(double lo, double hi, double u) {
+        return lo + (hi - lo) * std::min(1.0, std::max(0.0, u));
+    }
+
+    inline double sobol_unit_safe(double u) {
+        const double eps = 1e-12;
+        if (!std::isfinite(u)) return 0.5;
+        return std::min(1.0 - eps, std::max(eps, u));
+    }
+
+    struct FitFlags {
+        bool mu_a = false;
+        bool mu = true;
+        bool mu_c = false;
+        bool sigma = true;
+        bool sigma_pos = false;
+        bool p_e_scale = false;
+    };
+
+    struct ParamPoint {
+        double mu_a = Config::MU_ENERGY_A_INIT;
+        double mu = Config::MU_ENERGY_B_INIT;
+        double mu_c = Config::MU_ENERGY_C_INIT;
+        double sigma = 0.05;
+        double sigma_pos = 0.0;
+        double p_e_scale = 1.0;
+    };
+
+    template <typename Chi2Fn>
+    MigradRefineResult run_global_multistart_refinement(Chi2Fn chi2_fn,
+                                                        const ParamPoint &center,
+                                                        const FitFlags &flags,
+                                                        vector<SeedDiagnostic> *seed_debug) {
+        int ndim = 0;
+        if (flags.mu_a) ++ndim;
+        if (flags.mu) ++ndim;
+        if (flags.mu_c) ++ndim;
+        if (flags.sigma) ++ndim;
+        if (flags.sigma_pos) ++ndim;
+        if (flags.p_e_scale) ++ndim;
+        ndim = std::max(1, ndim);
+
+        const int n_seeds = std::max(1, Config::GLOBAL_MULTISTART_SEEDS);
+        vector<array<double, 6>> sobol_points(n_seeds + 1);
+        for (auto &pt : sobol_points) pt.fill(0.5);
+
+        ROOT::Math::QuasiRandomSobol sobol((unsigned int)ndim);
+        for (int iseed = 1; iseed <= n_seeds; ++iseed) {
+            double u[6] = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5};
+            if (!sobol.Next(u)) {
+                std::cerr << "[WARN] Sobol generator failed at seed " << iseed
+                          << "; using centered fallback for this seed." << std::endl;
+            }
+            for (int idim = 0; idim < ndim && idim < 6; ++idim) {
+                sobol_points[iseed][idim] = sobol_unit_safe(u[idim]);
+            }
+        }
+
+        vector<SeedDiagnostic> candidates;
+        candidates.reserve(Config::GLOBAL_MULTISTART_SEEDS + 1);
+
+        auto make_point = [&](int seed_index) {
+            ParamPoint p = center;
+            int dim = 0;
+            if (flags.mu_a) {
+                p.mu_a = (seed_index == 0) ? center.mu_a :
+                    lerp_bound(Config::MU_A_MIN, Config::MU_A_MAX, sobol_points[seed_index][dim]);
+                ++dim;
+            }
+            if (flags.mu) {
+                p.mu = (seed_index == 0) ? center.mu :
+                    lerp_bound(Config::MU_MIN, Config::MU_MAX, sobol_points[seed_index][dim]);
+                ++dim;
+            }
+            if (flags.mu_c) {
+                p.mu_c = (seed_index == 0) ? center.mu_c :
+                    lerp_bound(Config::MU_C_MIN, Config::MU_C_MAX, sobol_points[seed_index][dim]);
+                ++dim;
+            }
+            if (flags.sigma) {
+                p.sigma = (seed_index == 0) ? center.sigma :
+                    lerp_bound(Config::SIGMA_MIN, Config::SIGMA_MAX, sobol_points[seed_index][dim]);
+                ++dim;
+            }
+            if (flags.sigma_pos) {
+                p.sigma_pos = (seed_index == 0) ? center.sigma_pos :
+                    lerp_bound(Config::SIGMA_POS_MIN, Config::SIGMA_POS_MAX, sobol_points[seed_index][dim]);
+                ++dim;
+            }
+            if (flags.p_e_scale) {
+                p.p_e_scale = (seed_index == 0) ? center.p_e_scale :
+                    lerp_bound(Config::PE_SCALE_MIN, Config::PE_SCALE_MAX, sobol_points[seed_index][dim]);
+                ++dim;
+            }
+            p.mu_a = std::min(std::max(p.mu_a, Config::MU_A_MIN), Config::MU_A_MAX);
+            p.mu = std::min(std::max(p.mu, Config::MU_MIN), Config::MU_MAX);
+            p.mu_c = std::min(std::max(p.mu_c, Config::MU_C_MIN), Config::MU_C_MAX);
+            p.sigma = std::min(std::max(p.sigma, Config::SIGMA_MIN), Config::SIGMA_MAX);
+            p.sigma_pos = std::min(std::max(p.sigma_pos, Config::SIGMA_POS_MIN), Config::SIGMA_POS_MAX);
+            p.p_e_scale = std::min(std::max(p.p_e_scale, Config::PE_SCALE_MIN), Config::PE_SCALE_MAX);
+            return p;
+        };
+
+        for (int iseed = 0; iseed <= n_seeds; ++iseed) {
+            ParamPoint p = make_point(iseed);
+            SeedDiagnostic d;
+            d.seed_index = iseed;
+            d.mu_a = p.mu_a;
+            d.mu = p.mu;
+            d.mu_c = p.mu_c;
+            d.sigma = p.sigma;
+            d.sigma_pos = p.sigma_pos;
+            d.p_e_scale = p.p_e_scale;
+            d.seed_chi2 = chi2_fn(p.mu_a, p.mu, p.mu_c, p.sigma, p.sigma_pos, p.p_e_scale);
+            d.migrad_chi2 = d.seed_chi2;
+            candidates.push_back(d);
+        }
+
+        std::sort(candidates.begin(), candidates.end(),
+                  [](const SeedDiagnostic &a, const SeedDiagnostic &b) {
+                      return a.seed_chi2 < b.seed_chi2;
+                  });
+
+        const int keep = std::min((int)candidates.size(),
+                                  std::max(1, Config::GLOBAL_MULTISTART_KEEP_BEST));
+        candidates.resize(keep);
+
+        MigradRefineResult best{candidates[0].mu_a, candidates[0].mu, candidates[0].mu_c,
+                                candidates[0].sigma, candidates[0].sigma_pos,
+                                candidates[0].p_e_scale, candidates[0].seed_chi2, false};
+        best.n_starts = keep;
+
+        for (int i = 0; i < keep; ++i) {
+            SeedDiagnostic &d = candidates[i];
+            d.rank = i + 1;
+            MigradRefineResult mr = run_migrad_refinement(chi2_fn,
+                                                          d.mu_a, d.mu, d.mu_c,
+                                                          d.sigma, d.sigma_pos, d.p_e_scale,
+                                                          flags.mu_a, flags.mu, flags.mu_c,
+                                                          flags.sigma, flags.sigma_pos, flags.p_e_scale);
+            d.migrad_chi2 = mr.chi2;
+            d.mu_a = mr.mu_a;
+            d.mu = mr.mu;
+            d.mu_c = mr.mu_c;
+            d.sigma = mr.sigma;
+            d.sigma_pos = mr.sigma_pos;
+            d.p_e_scale = mr.p_e_scale;
+            d.minimized = mr.minimized;
+            d.hesse_ok = mr.hesse_ok;
+            d.max_abs_corr = mr.max_abs_corr;
+            d.max_corr_pair = mr.max_corr_pair;
+            if (mr.chi2 < best.chi2) best = mr;
+        }
+
+        if (seed_debug) *seed_debug = candidates;
+        return best;
+    }
+
+    template <typename Chi2Fn>
+    vector<ProfileDiagnostic> build_profile_diagnostics(Chi2Fn chi2_fn,
+                                                        const MigradRefineResult &best,
+                                                        const FitFlags &flags) {
+        vector<ProfileDiagnostic> out;
+        if (!Config::ENABLE_PROFILE_SCANS ||
+            !best.hesse_ok ||
+            best.max_abs_corr < Config::PROFILE_CORR_THRESHOLD) {
+            return out;
+        }
+
+        auto add_profile = [&](const string &name, int ipar, double center,
+                               double lo, double hi, const FitFlags &base_flags) {
+            int npoints = std::max(3, Config::PROFILE_SCAN_POINTS);
+            double span = Config::PROFILE_RANGE_FRACTION * (hi - lo);
+            double plo = std::max(lo, center - span);
+            double phi = std::min(hi, center + span);
+            for (int i = 0; i < npoints; ++i) {
+                double v = (npoints == 1) ? center : plo + (phi - plo) * i / (npoints - 1);
+                double a = best.mu_a, b = best.mu, c = best.mu_c;
+                double sig = best.sigma, spos = best.sigma_pos, pe = best.p_e_scale;
+                FitFlags pf = base_flags;
+                if (ipar == 0) { a = v; pf.mu_a = false; }
+                if (ipar == 1) { b = v; pf.mu = false; }
+                if (ipar == 2) { c = v; pf.mu_c = false; }
+                if (ipar == 3) { sig = v; pf.sigma = false; }
+                if (ipar == 4) { spos = v; pf.sigma_pos = false; }
+                if (ipar == 5) { pe = v; pf.p_e_scale = false; }
+                MigradRefineResult pr = run_migrad_refinement(chi2_fn, a, b, c, sig, spos, pe,
+                                                              pf.mu_a, pf.mu, pf.mu_c,
+                                                              pf.sigma, pf.sigma_pos, pf.p_e_scale);
+                ProfileDiagnostic d;
+                d.parameter = name;
+                d.fixed_value = v;
+                d.chi2 = pr.chi2;
+                d.minimized = pr.minimized;
+                out.push_back(d);
+            }
+        };
+
+        auto pair_has = [&](const string &name) {
+            size_t sep = best.max_corr_pair.find(':');
+            if (sep == string::npos) return best.max_corr_pair == name;
+            return best.max_corr_pair.substr(0, sep) == name ||
+                   best.max_corr_pair.substr(sep + 1) == name;
+        };
+
+        int nprofiled = 0;
+        if (flags.mu_a && nprofiled < Config::PROFILE_MAX_PARAMETERS &&
+            pair_has("mu_a")) {
+            add_profile("mu_a", 0, best.mu_a, Config::MU_A_MIN, Config::MU_A_MAX, flags);
+            ++nprofiled;
+        }
+        if (flags.mu && nprofiled < Config::PROFILE_MAX_PARAMETERS &&
+            pair_has("mu_b")) {
+            add_profile("mu_b", 1, best.mu, Config::MU_MIN, Config::MU_MAX, flags);
+            ++nprofiled;
+        }
+        if (flags.mu_c && nprofiled < Config::PROFILE_MAX_PARAMETERS &&
+            pair_has("mu_c")) {
+            add_profile("mu_c", 2, best.mu_c, Config::MU_C_MIN, Config::MU_C_MAX, flags);
+            ++nprofiled;
+        }
+        if (flags.sigma && nprofiled < Config::PROFILE_MAX_PARAMETERS &&
+            pair_has("sigma")) {
+            add_profile("sigma", 3, best.sigma, Config::SIGMA_MIN, Config::SIGMA_MAX, flags);
+            ++nprofiled;
+        }
+        if (flags.sigma_pos && nprofiled < Config::PROFILE_MAX_PARAMETERS &&
+            pair_has("sigma_pos")) {
+            add_profile("sigma_pos", 4, best.sigma_pos, Config::SIGMA_POS_MIN, Config::SIGMA_POS_MAX, flags);
+            ++nprofiled;
+        }
+        if (flags.p_e_scale && nprofiled < Config::PROFILE_MAX_PARAMETERS &&
+            pair_has("p_e_scale")) {
+            add_profile("p_e_scale", 5, best.p_e_scale, Config::PE_SCALE_MIN, Config::PE_SCALE_MAX, flags);
         }
         return out;
     }
@@ -1919,6 +2459,64 @@
                                     Config::RESOLUTION_B_DEFAULT,
                                     Config::RESOLUTION_C_DEFAULT);
         };
+
+        if (Config::USE_GLOBAL_MULTISTART_OPTIMIZATION) {
+            cout << "\n==== GLOBAL MULTISTART OPTIMIZATION ====" << endl;
+            const bool fit_p_e_local = Config::ENABLE_ELECTRON_MOMENTUM_SCALING && Config::stage2_uses_mmiss();
+            FitFlags flags;
+            flags.mu_a = Config::ENABLE_ENERGY_DEPENDENT_MU;
+            flags.mu = true;
+            flags.mu_c = Config::ENABLE_ENERGY_DEPENDENT_MU;
+            flags.sigma = true;
+            flags.sigma_pos = do_position_scan;
+            flags.p_e_scale = fit_p_e_local;
+
+            ParamPoint center;
+            center.mu_a = Config::MU_ENERGY_A_INIT;
+            center.mu = Config::MU_ENERGY_B_INIT;
+            center.mu_c = Config::MU_ENERGY_C_INIT;
+            center.sigma = 0.05;
+            center.sigma_pos = 0.0;
+            center.p_e_scale = global_p_e_scale;
+
+            MigradRefineResult mr = run_global_multistart_refinement(chi2_selected_eval,
+                                                                      center, flags,
+                                                                      &res.seed_diagnostics);
+            res.mu_a = mr.mu_a;
+            res.mu = mr.mu;
+            res.mu_c = mr.mu_c;
+            res.sigma = mr.sigma;
+            res.sigma_pos = mr.sigma_pos;
+            res.p_e_scale = mr.p_e_scale;
+            res.chi2 = mr.chi2;
+            res.hesse_ok = mr.hesse_ok;
+            res.max_abs_corr = mr.max_abs_corr;
+            res.max_corr_pair = mr.max_corr_pair;
+            res.n_seed_trials = Config::GLOBAL_MULTISTART_SEEDS + 1;
+            res.n_migrad_trials = (int)res.seed_diagnostics.size();
+            res.optimizer_mode = "sobol_multistart";
+            res.profile_diagnostics = build_profile_diagnostics(chi2_selected_eval, mr, flags);
+
+            cout << "Global multistart result: a=" << res.mu_a
+                << " b=" << res.mu
+                << " c=" << res.mu_c
+                << " sigma=" << res.sigma
+                << " sigma_pos=" << res.sigma_pos
+                << " p_e_scale=" << res.p_e_scale
+                << " chi2=" << res.chi2
+                << " HESSE=" << (res.hesse_ok ? "ok" : "no")
+                << " max_corr=" << res.max_abs_corr
+                << " pair=" << res.max_corr_pair << endl;
+
+            if (build_visualization_scans) {
+                cout << "\n--- Generating visualization data ---" << endl;
+                generate_visualization_scan_data(simEvents,
+                                                hdata_mpi0, hdata_mmiss, hdata_mpgg2,
+                                                rng, Nsmear,
+                                                res);
+            }
+            return res;
+        }
         
         // ========================================================================
         // OPTIMIZATION APPROACH SELECTION
@@ -2000,18 +2598,20 @@
             cout << " chi2=" << best_chi2_s1 << endl;
 
             {
-                MigradRefineResult mr = run_migrad_refinement(chi2_selected_eval,
-                                                            mu_a0, mu0, mu_c0, sigma0, 0.0, p_e_scale0,
-                                                            Config::ENABLE_ENERGY_DEPENDENT_MU, true,
-                                                            Config::ENABLE_ENERGY_DEPENDENT_MU,
-                                                            true, false, false);
-                if (mr.minimized) {
+                MigradRefineResult mr = run_migrad_ac_multistart_refinement(chi2_selected_eval,
+                                                                            mu_a0, mu0, mu_c0, sigma0, 0.0, p_e_scale0,
+                                                                            Config::ENABLE_ENERGY_DEPENDENT_MU, true,
+                                                                            Config::ENABLE_ENERGY_DEPENDENT_MU,
+                                                                            true, false, false);
+                if (mr.chi2 < best_chi2_s1) {
                     mu_a0 = mr.mu_a;
                     mu0   = mr.mu;
                     mu_c0 = mr.mu_c;
                     sigma0 = mr.sigma;
                     best_chi2_s1 = mr.chi2;
-                    cout << "Stage 1 MIGRAD refine: mu_a=" << mu_a0
+                    cout << "Stage 1 MIGRAD/multistart refine: starts=" << mr.n_starts
+                        << " nonzero_ac_seed=" << (mr.used_nonzero_ac_seed ? "yes" : "no")
+                        << " mu_a=" << mu_a0
                         << " mu=" << mu0 << " mu_c=" << mu_c0
                         << " sigma=" << sigma0
                         << " chi2=" << best_chi2_s1 << endl;
@@ -2133,19 +2733,21 @@
             cout << " chi2=" << best_chi2_s3 << endl;
 
             {
-                MigradRefineResult mr = run_migrad_refinement(chi2_selected_eval,
-                                                            mu_a0, mu0, mu_c0, sigma0, sigma_pos0, p_e_scale0,
-                                                            Config::ENABLE_ENERGY_DEPENDENT_MU, true,
-                                                            Config::ENABLE_ENERGY_DEPENDENT_MU,
-                                                            true, do_position_scan, false);
-                if (mr.minimized) {
+                MigradRefineResult mr = run_migrad_ac_multistart_refinement(chi2_selected_eval,
+                                                                            mu_a0, mu0, mu_c0, sigma0, sigma_pos0, p_e_scale0,
+                                                                            Config::ENABLE_ENERGY_DEPENDENT_MU, true,
+                                                                            Config::ENABLE_ENERGY_DEPENDENT_MU,
+                                                                            true, do_position_scan, false);
+                if (mr.chi2 < best_chi2_s3) {
                     mu_a0 = mr.mu_a;
                     mu0   = mr.mu;
                     mu_c0 = mr.mu_c;
                     sigma0 = mr.sigma;
                     sigma_pos0 = mr.sigma_pos;
                     best_chi2_s3 = mr.chi2;
-                    cout << "Stage 3 MIGRAD refine: mu_a=" << mu_a0
+                    cout << "Stage 3 MIGRAD/multistart refine: starts=" << mr.n_starts
+                        << " nonzero_ac_seed=" << (mr.used_nonzero_ac_seed ? "yes" : "no")
+                        << " mu_a=" << mu_a0
                         << " mu=" << mu0 << " mu_c=" << mu_c0
                         << " sigma=" << sigma0
                         << " sigma_pos=" << sigma_pos0
@@ -2281,19 +2883,21 @@
             cout << ", chi2=" << best_chi2 << endl;
 
             {
-                MigradRefineResult mr = run_migrad_refinement(chi2_selected_eval,
-                                                            mu_a0, mu0, mu_c0, sigma0, sigma_pos0, p_e_scale0,
-                                                            Config::ENABLE_ENERGY_DEPENDENT_MU, true,
-                                                            Config::ENABLE_ENERGY_DEPENDENT_MU,
-                                                            true, do_position_scan, false);
-                if (mr.minimized) {
+                MigradRefineResult mr = run_migrad_ac_multistart_refinement(chi2_selected_eval,
+                                                                            mu_a0, mu0, mu_c0, sigma0, sigma_pos0, p_e_scale0,
+                                                                            Config::ENABLE_ENERGY_DEPENDENT_MU, true,
+                                                                            Config::ENABLE_ENERGY_DEPENDENT_MU,
+                                                                            true, do_position_scan, false);
+                if (mr.chi2 < best_chi2) {
                     mu_a0 = mr.mu_a;
                     mu0   = mr.mu;
                     mu_c0 = mr.mu_c;
                     sigma0 = mr.sigma;
                     sigma_pos0 = mr.sigma_pos;
                     best_chi2 = mr.chi2;
-                    cout << "Simultaneous MIGRAD refine: mu_a=" << mu_a0
+                    cout << "Simultaneous MIGRAD/multistart refine: starts=" << mr.n_starts
+                        << " nonzero_ac_seed=" << (mr.used_nonzero_ac_seed ? "yes" : "no")
+                        << " mu_a=" << mu_a0
                         << ", mu=" << mu0 << ", mu_c=" << mu_c0
                         << ", sigma=" << sigma0;
                     if (do_position_scan) cout << ", sigma_pos=" << sigma_pos0;
@@ -2547,7 +3151,9 @@
             info->AddText(Form("N_{sel}   = %d (selected)", n_data_selected));
             info->AddText(Form("N_{sim}   = %d", n_sim));
             info->AddText(Form("N_{smear} = %d", nsmear));
-            info->AddText(Form("Opt. mode: %s", Config::USE_THREE_STAGE_OPTIMIZATION ? "3-stage" : "simult."));
+            info->AddText(Form("Opt. mode: %s",
+                            Config::USE_GLOBAL_MULTISTART_OPTIMIZATION ? "global multistart" :
+                            (Config::USE_THREE_STAGE_OPTIMIZATION ? "3-stage" : "simult.")));
             info->AddText(Form("Obs: %s", Config::histogram_mode_label()));
             info->AddText(Form("Weights: w_{M_{#gamma#gamma}}=%.2f, w_{M_{miss}}=%.2f, w_{(p+#gamma#gamma)^{2}}=%.2f",
                             Config::W_MPI0, Config::W_MMISS, Config::W_MPGG2));
@@ -2605,7 +3211,7 @@
         Double_t d_cluster_x_2, d_cluster_y_2, d_cluster_e_2;
         Double_t d_pi0_weight;
         Float_t d_scale;
-        Int_t d_is_exclusive = 1;
+        Int_t d_exclusive_flag = 1;
         Double_t d_mmiss_all = 0;  // Pre-calculated missing mass from data tree
         
         tdata->SetBranchAddress("cluster_x_1", &d_cluster_x_1);
@@ -2616,10 +3222,10 @@
         tdata->SetBranchAddress("cluster_e_2", &d_cluster_e_2);
         tdata->SetBranchAddress("pi0_weight", &d_pi0_weight);
         tdata->SetBranchAddress("scale", &d_scale);
-        bool has_data_is_exclusive = false;
-        if (tdata->GetBranch("is_exclusive")) {
-            tdata->SetBranchAddress("is_exclusive", &d_is_exclusive);
-            has_data_is_exclusive = true;
+        bool has_data_exclusive_branch = false;
+        if (tdata->GetBranch(Config::DATA_EXCLUSIVITY_BRANCH)) {
+            tdata->SetBranchAddress(Config::DATA_EXCLUSIVITY_BRANCH, &d_exclusive_flag);
+            has_data_exclusive_branch = true;
         }
         
         // Read pre-calculated missing mass from data tree
@@ -2637,7 +3243,7 @@
         Float_t s_clust_E[10];
         Int_t s_nclust = 0;  // Number of clusters
         Float_t s_full_weight;
-        Int_t s_is_exclusive = 1;
+        Int_t s_exclusive_flag = 1;
         
         // SIMC electron kinematics (for missing mass calculation)
         Float_t sc_e_E = 0, sc_e_Px = 0, sc_e_Py = 0, sc_e_Pz = 0;  // SIMC frame (MeV)
@@ -2650,19 +3256,25 @@
         tsim->SetBranchAddress("full_weight", &s_full_weight);
         // Optionally ignore sim full_weight if configured
 
-        bool has_sim_is_exclusive = false;
-        if (tsim->GetBranch("is_exclusive")) {
-            tsim->SetBranchAddress("is_exclusive", &s_is_exclusive);
-            has_sim_is_exclusive = true;
+        bool has_sim_exclusive_branch = false;
+        if (tsim->GetBranch(Config::SIM_EXCLUSIVITY_BRANCH)) {
+            tsim->SetBranchAddress(Config::SIM_EXCLUSIVITY_BRANCH, &s_exclusive_flag);
+            has_sim_exclusive_branch = true;
         }
 
         if (Config::APPLY_IS_EXCLUSIVE_SELECTION) {
-            cout << "Exclusivity weighting mode: enabled" << endl;
-            if (!has_data_is_exclusive) {
-                cerr << "WARNING: Data branch 'is_exclusive' not found; using factor=1 for data." << endl;
+            cout << "Exclusivity weighting mode: enabled\n";
+            cout << "  data branch: '" << Config::DATA_EXCLUSIVITY_BRANCH << "'\n";
+            cout << "  sim branch:  '" << Config::SIM_EXCLUSIVITY_BRANCH << "'" << endl;
+            if (!has_data_exclusive_branch) {
+                cerr << "ERROR: Data branch '" << Config::DATA_EXCLUSIVITY_BRANCH
+                     << "' not found. Re-run analysis/combine with 2D mass-cut branches." << endl;
+                return 6;
             }
-            if (!has_sim_is_exclusive) {
-                cerr << "WARNING: Simulation branch 'is_exclusive' not found; using factor=1 for simulation." << endl;
+            if (!has_sim_exclusive_branch) {
+                cerr << "ERROR: Simulation branch '" << Config::SIM_EXCLUSIVITY_BRANCH
+                     << "' not found. Re-run scripts/simc_pi0_analysis.C before smearing." << endl;
+                return 6;
             }
         } else {
             cout << "Exclusivity weighting mode: disabled (using all events)" << endl;
@@ -2774,8 +3386,8 @@
             
             // Calculate data event weight with optional exclusivity factor.
             double data_exclusive_factor = 1.0;
-            if (Config::APPLY_IS_EXCLUSIVE_SELECTION && has_data_is_exclusive) {
-                data_exclusive_factor = static_cast<double>(d_is_exclusive);
+            if (Config::APPLY_IS_EXCLUSIVE_SELECTION && has_data_exclusive_branch) {
+                data_exclusive_factor = static_cast<double>(d_exclusive_flag);
             }
             double weight = d_pi0_weight * d_scale * data_exclusive_factor;
 
@@ -2894,8 +3506,8 @@
             pair.x2 = s_clust_X[1];
             pair.y2 = s_clust_Y[1];
             double sim_exclusive_factor = 1.0;
-            if (Config::APPLY_IS_EXCLUSIVE_SELECTION && has_sim_is_exclusive) {
-                sim_exclusive_factor = static_cast<double>(s_is_exclusive);
+            if (Config::APPLY_IS_EXCLUSIVE_SELECTION && has_sim_exclusive_branch) {
+                sim_exclusive_factor = static_cast<double>(s_exclusive_flag);
             }
             pair.weight = (Config::USE_SIM_FULL_WEIGHT ? s_full_weight : 1.0) * sim_exclusive_factor;
             
@@ -2945,16 +3557,26 @@
         if (use_global_p_e_scale) {
             cout << "\n==== Global electron momentum scale mode enabled ====" << endl;
             if (Config::ENABLE_FINAL_GLOBAL_PE_SCALE_STAGE4) {
-                cout << "Pass-2 will jointly refine per-section p_e_scale with (mu, sigma, sigma_pos), then Stage 4 will do final global p_e_scale refinement." << endl;
+                cout << "Coupled sweeps will jointly refine per-section p_e_scale with (mu, sigma, sigma_pos), then Stage 4 will do final global p_e_scale refinement." << endl;
             } else {
-                cout << "Pass-2 will jointly refine per-section p_e_scale with (mu, sigma, sigma_pos); final global Stage-4 p_e_scale refinement is disabled." << endl;
+                cout << "Coupled sweeps will jointly refine per-section p_e_scale with (mu, sigma, sigma_pos); final global Stage-4 p_e_scale refinement is disabled." << endl;
             }
         }
 
-        // Output file
-        TFile fout(out_file.c_str(), "RECREATE");
+	        // Output file
+	        TFile fout(out_file.c_str(), "RECREATE");
+	        fout.cd();
+	        TNamed("smearing_model_energy_mean", "a_plus_bE_plus_clnE").Write();
+	        TNamed("energy_mean_convention", "reconstructed_energy_GeV").Write();
+	        TNamed("energy_mean_formula", "E_mean = a + b*E_safe + c*ln(E_safe/1 GeV)").Write();
+	        TNamed("energy_log_floor_GeV", Form("%.8g", Config::MU_ENERGY_MIN_GEV)).Write();
+	        TNamed("energy_sigma_model", Config::USE_SIMPLE_STOCHASTIC_MODEL ? "sigma_sqrt_Emean" : "scaled_three_term").Write();
+	        TNamed("position_sigma_model", Config::ENABLE_ENERGY_DEPENDENT_SIGMA_POS ? "sigma_pos_sqrt_E0_over_Emean" : "constant").Write();
+	        TNamed("optimizer_model", Config::USE_GLOBAL_MULTISTART_OPTIMIZATION ? "sobol_multistart_migrad_hesse_profile" : "legacy_grid_migrad").Write();
+	        TNamed("optimizer_global_seed_count", Form("%d", Config::GLOBAL_MULTISTART_SEEDS)).Write();
+	        TNamed("optimizer_keep_best_seeds", Form("%d", Config::GLOBAL_MULTISTART_KEEP_BEST)).Write();
 
-        // CSV summary - place in same directory as ROOT output
+	        // CSV summary - place in same directory as ROOT output
         string csv_file = out_file;
         size_t last_slash = csv_file.find_last_of('/');
         if (last_slash != string::npos) {
@@ -2962,6 +3584,16 @@
         } else {
             csv_file = Config::CSV_FILENAME;
         }
+        auto sibling_output_path = [&](const string &filename) {
+            if (last_slash != string::npos) {
+                return out_file.substr(0, last_slash + 1) + filename;
+            }
+            return filename;
+        };
+        string optimizer_summary_csv_file = sibling_output_path(Config::OPTIMIZER_SUMMARY_CSV_FILENAME);
+        string optimizer_seeds_csv_file = sibling_output_path(Config::OPTIMIZER_SEEDS_CSV_FILENAME);
+        string optimizer_profile_csv_file = sibling_output_path(Config::OPTIMIZER_PROFILE_CSV_FILENAME);
+        string closure_summary_csv_file = sibling_output_path(Config::CLOSURE_SUMMARY_CSV_FILENAME);
         ofstream csv(csv_file.c_str());
         csv << "ix,iy,xlo,xhi,ylo,yhi,n_data,n_sim,best_mu_a,best_mu_b,best_mu_c,best_sigma,best_sigma_pos_cm,best_p_e_scale,res_A,res_B,res_C,best_chi2,ndf,chi2_ndf,fit_status\n";
 
@@ -3137,7 +3769,7 @@
         
         // Report number of threads
         int num_threads = 1;
-        #pragma omp parallel
+        #pragma omp parallel if(Config::ENABLE_PARALLEL_SECTION_FITS)
         {
             #pragma omp single
             {
@@ -3146,100 +3778,14 @@
             }
         }
 
-        // =========================================================================
-        // === PASS 1: Fit each section using only "both-photons-in-section" pairs
-        // =========================================================================
-        // Build per-section subsets containing only pairs where BOTH photons hit
-        // the same (current) section.  These pairs are the cleanest calibration
-        // sample — no cross-calibration ambiguity.
-        vector<vector<ClusterPair>> sim_events_both_in_sec(nsec);
-        vector<int> sim_both_selected_count(nsec, 0);
-        for (int is = 0; is < nsec; ++is) {
-            for (const auto &ev : sim_events_per_section[is]) {
-                if (ev.photon1_in_section && ev.photon2_in_section) {
-                    sim_events_both_in_sec[is].push_back(ev);
-                    if (ev.weight > 0.0) ++sim_both_selected_count[is];
-                }
-            }
-            cout << "Section " << sections[is].name()
-                << "  both-in-sec sim=" << sim_events_both_in_sec[is].size()
-                << " (selected=" << sim_both_selected_count[is] << ")"
-                << "  all-sec sim="     << sim_events_per_section[is].size() << "\n";
-        }
-
-        vector<FitResult> fit_results_pass1(nsec);
-        vector<bool>      fit_success_pass1(nsec, false);
-        vector<int>       pass1_seed_mode(nsec, 0); // 0=skip, 1=both-in-sec, 2=all-sec fallback
-
-        cout << "\n==== PASS 1: fitting sections with both-photon-in-section pairs ====\n";
-        #pragma omp parallel
-        {
-            int thread_id_p1 = omp_get_thread_num();
-            TRandom3 rng_p1(thread_id_p1 * 234567 + time(NULL));
-
-            #pragma omp for schedule(dynamic)
-            for (int is = 0; is < nsec; ++is) {
-                size_t nsim_both = (size_t)sim_both_selected_count[is];
-                size_t nsim_all = (size_t)sim_selected_count_per_section[is];
-                size_t ndata_sec = (size_t)data_selected_count_per_section[is];
-
-                const vector<ClusterPair>* pass1_events = &sim_events_both_in_sec[is];
-                size_t nsim_seed = nsim_both;
-                int seed_mode = 1;
-                if (nsim_seed < (size_t)Config::MIN_EVENTS_PER_SECTION &&
-                    nsim_all >= (size_t)Config::MIN_EVENTS_PER_SECTION) {
-                    pass1_events = &sim_events_per_section[is];
-                    nsim_seed = nsim_all;
-                    seed_mode = 2;
-                }
-
-                if (ndata_sec < Config::MIN_EVENTS_PER_SECTION || nsim_seed < (size_t)Config::MIN_EVENTS_PER_SECTION) {
-                    #pragma omp critical(console)
-                    {
-                        cout << "[Pass1] Skipping section " << sections[is].name()
-                            << "  data_sel=" << ndata_sec
-                            << "  both-in-sec sim=" << nsim_both
-                            << "  all-sec sim=" << nsim_all << "\n";
-                    }
-                    continue;
-                }
-
-                FitResult fres1 = fit_section(*pass1_events,
-                                            *hdata_sec[is], *hdata_mmiss_sec[is], *hdata_mpgg2_sec[is],
-                                            rng_p1, Nsmear, global_p_e_scale, false);
-                #pragma omp critical(console)
-                {
-                    cout << "[Pass1] Section " << sections[is].name()
-                        << "  seed=" << (seed_mode == 1 ? "both-in-sec" : "all-sec-fallback")
-                        << "  mu=" << fres1.mu << "  sigma=" << fres1.sigma
-                        << "  chi2/ndf=" << fres1.chi2_per_ndf() << "\n";
-                }
-                fit_results_pass1[is] = fres1;
-                fit_success_pass1[is] = true;
-                pass1_seed_mode[is] = seed_mode;
-            }
-        }
-
-        {
-            int n_pass1_both = 0;
-            int n_pass1_fallback = 0;
-            int n_pass1_skipped = 0;
-            for (int is = 0; is < nsec; ++is) {
-                if (!fit_success_pass1[is]) { ++n_pass1_skipped; continue; }
-                if (pass1_seed_mode[is] == 1) ++n_pass1_both;
-                else if (pass1_seed_mode[is] == 2) ++n_pass1_fallback;
-            }
-            cout << "Pass-1 seed summary: both-in-sec=" << n_pass1_both
-                << ", all-sec-fallback=" << n_pass1_fallback
-                << ", skipped=" << n_pass1_skipped << "\n";
-        }
+        cout << "\n==== Iterative coupled section fitting ====\n";
+        cout << "No Pass-1/Pass-2 prefit path. Sweep 1 starts with nominal external photon response." << endl;
 
         // =========================================================================
         // === Cross-boundary ext parameter assignment
         // =========================================================================
-        // Shared helper used both for the initial Pass-1→Pass-2 handoff and for
-        // all subsequent Pass-2 coupled sweeps, ensuring a single consistent
-        // algorithm: nearest-center match → base-grid fallback → interpolation.
+        // Shared helper for sweep N -> sweep N+1 handoff.  It assigns
+        // out-of-section photon coefficients from completed section results.
         auto refresh_cross_boundary_ext = [&](const vector<FitResult> &src_results,
                                             const vector<bool> &src_success) {
             CalibrationMap coupled_map(nx, ny, x_min, x_max, y_min, y_max);
@@ -3330,22 +3876,34 @@
             return std::make_pair(assigned, interpolated);
         };
 
-        // =========================================================================
-        // === Between passes: assign ext calibration to cross-boundary photons
-        // =========================================================================
-        // Use the same nearest-center + base-grid + interpolation algorithm that
-        // Pass-2 sweeps use, so the initial ext assignment is fully consistent.
-        cout << "\n==== Between passes: assigning ext calibration for cross-boundary photons ====\n";
-        {
-            auto init_counts = refresh_cross_boundary_ext(fit_results_pass1, fit_success_pass1);
-            cout << "Initial ext assignment: " << init_counts.first
-                << " cross-boundary photon coefficient assignments";
-            if (init_counts.second > 0) cout << " (interpolation fallback=" << init_counts.second << ")";
-            cout << "." << endl;
-        }
+        auto reset_cross_boundary_ext_to_nominal = [&]() {
+            int assigned = 0;
+            for (int is = 0; is < nsec; ++is) {
+                for (auto &ev : sim_events_per_section[is]) {
+                    auto reset_photon = [&assigned](double &ma, double &mb, double &mc,
+                                                    double &sig, double &spos) {
+                        ma = 0.0;
+                        mb = 1.0;
+                        mc = 0.0;
+                        sig = 0.0;
+                        spos = 0.0;
+                        ++assigned;
+                    };
+                    if (!ev.photon1_in_section) {
+                        reset_photon(ev.mu_a1_ext, ev.mu1_ext, ev.mu_c1_ext,
+                                     ev.sigma1_ext, ev.sigma_pos1_ext);
+                    }
+                    if (!ev.photon2_in_section) {
+                        reset_photon(ev.mu_a2_ext, ev.mu2_ext, ev.mu_c2_ext,
+                                     ev.sigma2_ext, ev.sigma_pos2_ext);
+                    }
+                }
+            }
+            return assigned;
+        };
 
         // =========================================================================
-        // === PASS 2: Iterative coupled fit using all section events
+        // === Per-section Sobol/MIGRAD fit used by every sweep
         // =========================================================================
         auto fit_section_fast_refine = [&](const vector<ClusterPair> &simEvents,
                                         const TH1D &hdata_mpi0,
@@ -3391,6 +3949,55 @@
                                     ? min(max(seed.sigma_pos, Config::SIGMA_POS_MIN), Config::SIGMA_POS_MAX)
                                     : 0.0;
             double p_e0 = pe_seed;
+
+            auto chi2_eval = [&](double mu_a, double mu_b, double mu_c, double sigma, double sigma_pos, double p_e_scale) {
+                TRandom3 rng_eval(97531);
+                return eval_chi2_selected(mu_a, mu_b, mu_c, sigma, sigma_pos, p_e_scale,
+                                        simEvents,
+                                        hdata_mpi0, hdata_mmiss, hdata_mpgg2,
+                                        rng_eval, nsmear_local,
+                                        Config::RESOLUTION_A_DEFAULT,
+                                        Config::RESOLUTION_B_DEFAULT,
+                                        Config::RESOLUTION_C_DEFAULT,
+                                        Config::W_MPI0, Config::W_MMISS, Config::W_MPGG2);
+            };
+
+            if (Config::USE_GLOBAL_MULTISTART_OPTIMIZATION) {
+                FitFlags flags;
+                flags.mu_a = Config::ENABLE_ENERGY_DEPENDENT_MU;
+                flags.mu = true;
+                flags.mu_c = Config::ENABLE_ENERGY_DEPENDENT_MU;
+                flags.sigma = true;
+                flags.sigma_pos = Config::ENABLE_POSITION_SMEARING;
+                flags.p_e_scale = fit_p_e_local;
+
+                ParamPoint center;
+                center.mu_a = mu_a0;
+                center.mu = mu0;
+                center.mu_c = mu_c0;
+                center.sigma = sigma0;
+                center.sigma_pos = sigma_pos0;
+                center.p_e_scale = p_e0;
+
+                MigradRefineResult mr = run_global_multistart_refinement(chi2_eval,
+                                                                          center, flags,
+                                                                          &out.seed_diagnostics);
+                out.mu_a      = mr.mu_a;
+                out.mu        = mr.mu;
+                out.mu_c      = mr.mu_c;
+                out.sigma     = mr.sigma;
+                out.sigma_pos = mr.sigma_pos;
+                out.p_e_scale = mr.p_e_scale;
+                out.chi2      = mr.chi2;
+                out.hesse_ok = mr.hesse_ok;
+                out.max_abs_corr = mr.max_abs_corr;
+                out.max_corr_pair = mr.max_corr_pair;
+                out.n_seed_trials = Config::GLOBAL_MULTISTART_SEEDS + 1;
+                out.n_migrad_trials = (int)out.seed_diagnostics.size();
+                out.optimizer_mode = "sobol_multistart";
+                out.profile_diagnostics = build_profile_diagnostics(chi2_eval, mr, flags);
+                return out;
+            }
 
             double best_chi2 = eval_chi2_selected(mu_a0, mu0, mu_c0, sigma0, sigma_pos0, p_e0,
                                                 simEvents,
@@ -3451,24 +4058,13 @@
             out.chi2      = best_chi2;
 
             {
-                auto chi2_eval = [&](double mu_a, double mu_b, double mu_c, double sigma, double sigma_pos, double p_e_scale) {
-                    TRandom3 rng_eval(97531);
-                    return eval_chi2_selected(mu_a, mu_b, mu_c, sigma, sigma_pos, p_e_scale,
-                                            simEvents,
-                                            hdata_mpi0, hdata_mmiss, hdata_mpgg2,
-                                            rng_eval, nsmear_local,
-                                            Config::RESOLUTION_A_DEFAULT,
-                                            Config::RESOLUTION_B_DEFAULT,
-                                            Config::RESOLUTION_C_DEFAULT,
-                                            Config::W_MPI0, Config::W_MMISS, Config::W_MPGG2);
-                };
-                MigradRefineResult mr = run_migrad_refinement(chi2_eval,
-                                                            mu_a0, mu0, mu_c0, sigma0, sigma_pos0, p_e0,
-                                                            Config::ENABLE_ENERGY_DEPENDENT_MU, true,
-                                                            Config::ENABLE_ENERGY_DEPENDENT_MU,
-                                                            true, Config::ENABLE_POSITION_SMEARING,
-                                                            fit_p_e_local);
-                if (mr.minimized) {
+                MigradRefineResult mr = run_migrad_ac_multistart_refinement(chi2_eval,
+                                                                            mu_a0, mu0, mu_c0, sigma0, sigma_pos0, p_e0,
+                                                                            Config::ENABLE_ENERGY_DEPENDENT_MU, true,
+                                                                            Config::ENABLE_ENERGY_DEPENDENT_MU,
+                                                                            true, Config::ENABLE_POSITION_SMEARING,
+                                                                            fit_p_e_local);
+                if (mr.chi2 < out.chi2) {
                     out.mu_a      = mr.mu_a;
                     out.mu        = mr.mu;
                     out.mu_c      = mr.mu_c;
@@ -3492,86 +4088,58 @@
             }
         }
 
-        // Initialize Pass-2 seeds from Pass-1 values:
-        //   - direct: section has a successful Pass-1 fit
-        //   - derived: nearest successful Pass-1 section (center distance)
-        //   - fallback: deterministic defaults only if no successful Pass-1 seeds exist
-        int n_seeded_from_pass1 = 0;
-        int n_seeded_from_nearest_pass1 = 0;
-        int n_seeded_default = 0;
-        auto nearest_successful_pass1_section = [&](int is_ref) {
-            int best_js = -1;
-            double best_d2 = std::numeric_limits<double>::max();
-            double x_ref = x_min + (sections[is_ref].ix + 0.5) * base_wx;
-            double y_ref = y_min + (sections[is_ref].iy + 0.5) * base_wy;
-            for (int js = 0; js < nsec; ++js) {
-                if (!fit_success_pass1[js]) continue;
-                double x_js = x_min + (sections[js].ix + 0.5) * base_wx;
-                double y_js = y_min + (sections[js].iy + 0.5) * base_wy;
-                double dx = x_ref - x_js;
-                double dy = y_ref - y_js;
-                double d2 = dx * dx + dy * dy;
-                if (d2 < best_d2) {
-                    best_d2 = d2;
-                    best_js = js;
-                }
-            }
-            return best_js;
+        auto make_default_fit_seed = [&]() {
+            FitResult seed{};
+            seed.mu_a = Config::ENABLE_ENERGY_DEPENDENT_MU ? Config::MU_ENERGY_A_INIT : 0.0;
+            seed.mu = Config::MU_ENERGY_B_INIT;
+            seed.mu_c = Config::ENABLE_ENERGY_DEPENDENT_MU ? Config::MU_ENERGY_C_INIT : 0.0;
+            seed.sigma = 0.05;
+            seed.sigma_pos = 0.0;
+            seed.p_e_scale = global_p_e_scale;
+            seed.chi2 = 1e300;
+            seed.res_A = Config::RESOLUTION_A_DEFAULT;
+            seed.res_B = Config::RESOLUTION_B_DEFAULT;
+            seed.res_C = Config::RESOLUTION_C_DEFAULT;
+            seed.ndf = 1;
+            seed.scan_data = Chi2ScanData();
+            return seed;
         };
 
-        for (int is = 0; is < nsec; ++is) {
-            if (!section_active[is]) continue;
-
-            if (fit_success_pass1[is]) {
-                fit_results[is] = fit_results_pass1[is];
-                fit_results[is].p_e_scale = global_p_e_scale;
-                fit_results[is].scan_data = Chi2ScanData();
-                fit_success[is] = true;
-                ++n_seeded_from_pass1;
-                continue;
+        auto update_final_fit_status = [&]() {
+            for (int is = 0; is < nsec; ++is) {
+                if (!section_active[is]) continue;
+                if (!fit_success[is]) {
+                    fit_status[is] = "fit_failed";
+                    continue;
+                }
+                double chi2_ndf = fit_results[is].chi2_per_ndf();
+                bool good_fit = (chi2_ndf <= Config::MAX_CHI2_PER_NDF);
+                if (Config::SKIP_BAD_FITS && !good_fit) {
+                    fit_status[is] = "poor_fit_skipped";
+                    fit_success[is] = false;
+                } else {
+                    fit_status[is] = good_fit ? "fit_ok" : "poor_fit";
+                }
             }
+        };
 
-            int js = nearest_successful_pass1_section(is);
-            if (js >= 0) {
-                fit_results[is] = fit_results_pass1[js];
-                fit_results[is].p_e_scale = global_p_e_scale;
-                fit_results[is].scan_data = Chi2ScanData();
-                fit_success[is] = false;
-                ++n_seeded_from_nearest_pass1;
-            } else {
-                FitResult seed{};
-                seed.mu = 1.0;
-                seed.sigma = 0.05;
-                seed.sigma_pos = 0.0;
-                seed.p_e_scale = global_p_e_scale;
-                seed.chi2 = 1e300;
-                seed.res_A = Config::RESOLUTION_A_DEFAULT;
-                seed.res_B = Config::RESOLUTION_B_DEFAULT;
-                seed.res_C = Config::RESOLUTION_C_DEFAULT;
-                seed.ndf = 1;
-                seed.scan_data = Chi2ScanData();
-                fit_results[is] = seed;
-                fit_success[is] = false;
-                ++n_seeded_default;
-            }
-        }
-        cout << "Pass-2 sweep-1 seeding: from Pass-1=" << n_seeded_from_pass1
-            << ", from nearest Pass-1=" << n_seeded_from_nearest_pass1
-            << ", default-fallback=" << n_seeded_default << "\n";
+        int nominal_ext_assignments = reset_cross_boundary_ext_to_nominal();
+        cout << "\n==== Coupled sweep 0: nominal external photon response ====\n"
+             << "Set " << nominal_ext_assignments
+             << " out-of-section photon coefficient assignments to a=0,b=1,c=0,sigma=0,sigma_pos=0.\n";
 
-        // Start coupled iteration from pass-1 ext assignment already performed above.
-        const int max_sweeps = Config::ENABLE_ITERATIVE_COUPLED_PASS2 ? max(1, Config::COUPLED_PASS2_MAX_SWEEPS) : 1;
+        const int max_sweeps = max(1, Config::ITERATIVE_SECTION_SWEEPS);
         vector<FitResult> prev_results(nsec);
         vector<bool> prev_success(nsec, false);
 
-        cout << "\n==== PASS 2: coupled section fitting (max sweeps=" << max_sweeps << ") ====\n";
+        cout << "\n==== Iterative coupled section sweeps (parallel within sweep, barrier between sweeps) ====\n";
         for (int sweep = 0; sweep < max_sweeps; ++sweep) {
-            cout << "\n-- Pass-2 sweep " << (sweep + 1) << " / " << max_sweeps << " --" << endl;
+            cout << "\n-- Coupled sweep " << (sweep + 1) << " / " << max_sweeps << " --" << endl;
 
             vector<FitResult> sweep_results = fit_results;
             vector<bool> sweep_success = fit_success;
 
-            #pragma omp parallel
+            #pragma omp parallel if(Config::ENABLE_PARALLEL_SECTION_FITS)
             {
                 int thread_id = omp_get_thread_num();
                 TRandom3 thread_rng((sweep + 1) * 1000003 + thread_id * 123456 + time(NULL));
@@ -3580,26 +4148,29 @@
                 for (int is = 0; is < nsec; ++is) {
                     if (!section_active[is]) continue;
 
+                    FitResult seed = fit_success[is] ? fit_results[is] : make_default_fit_seed();
                     FitResult fres = fit_section_fast_refine(sim_events_per_section[is],
                                                             *hdata_sec[is], *hdata_mmiss_sec[is], *hdata_mpgg2_sec[is],
                                                             thread_rng, Nsmear,
-                                                            fit_results[is].p_e_scale,
-                                                            fit_results[is]);
+                                                            seed.p_e_scale,
+                                                            seed);
 
                     double chi2_ndf = fres.chi2_per_ndf();
                     #pragma omp critical(console)
                     {
                         cout << "[sweep " << (sweep + 1) << "] " << sections[is].name()
-                            << " -> mu=" << fres.mu
-                            << " sigma=" << fres.sigma
-                            << " sigma_pos=" << std::fixed << std::setprecision(5) << fres.sigma_pos << " cm";
+                            << " -> a=" << fres.mu_a
+                            << " b=" << fres.mu
+                            << " c=" << fres.mu_c
+                            << " sigma=" << fres.sigma;
+                        if (Config::ENABLE_POSITION_SMEARING) {
+                            cout << " sigma_pos=" << std::fixed << std::setprecision(5) << fres.sigma_pos << " cm";
+                        }
                         if (Config::ENABLE_ELECTRON_MOMENTUM_SCALING && Config::stage2_uses_mmiss()) {
                             cout << " p_e_scale=" << fres.p_e_scale;
                         }
                         cout << " chi2/ndf=" << chi2_ndf;
-                        if (chi2_ndf > Config::MAX_CHI2_PER_NDF) {
-                            cout << " [POOR]";
-                        }
+                        if (chi2_ndf > Config::MAX_CHI2_PER_NDF) cout << " [POOR]";
                         cout << "\n";
                     }
 
@@ -3621,65 +4192,33 @@
             fit_results = sweep_results;
             fit_success = sweep_success;
             auto refresh_counts = refresh_cross_boundary_ext(fit_results, fit_success);
-            int n_assigned = refresh_counts.first;
-            int n_interp = refresh_counts.second;
-            cout << "Sweep " << (sweep + 1) << ": refreshed " << n_assigned
-                << " cross-boundary photon coefficient assignments";
-            if (n_interp > 0) cout << " (interpolation fallback=" << n_interp << ")";
+            cout << "Sweep " << (sweep + 1) << " complete barrier: refreshed "
+                 << refresh_counts.first << " out-of-section photon assignments";
+            if (refresh_counts.second > 0) cout << " (interpolation fallback=" << refresh_counts.second << ")";
             cout << "." << endl;
 
-            bool converged = (ncomp > 0 &&
-                            max_dmu <= Config::COUPLED_CONV_MU &&
-                            max_dsig <= Config::COUPLED_CONV_SIGMA &&
-                            max_dpos <= Config::COUPLED_CONV_SIGMA_POS);
             if (ncomp > 0) {
                 cout << "Sweep " << (sweep + 1)
-                    << " deltas: dmu=" << max_dmu
-                    << " dsigma=" << max_dsig
-                    << " dsigma_pos=" << max_dpos << endl;
+                     << " deltas: dmu=" << max_dmu
+                     << " dsigma=" << max_dsig
+                     << " dsigma_pos=" << max_dpos << endl;
             }
 
             prev_results = fit_results;
             prev_success = fit_success;
 
-            if (Config::ENABLE_ITERATIVE_COUPLED_PASS2 && converged) {
-                cout << "Pass-2 coupled fit converged after sweep " << (sweep + 1) << "." << endl;
+            bool converged = (ncomp > 0 &&
+                              max_dmu <= Config::COUPLED_CONV_MU &&
+                              max_dsig <= Config::COUPLED_CONV_SIGMA &&
+                              max_dpos <= Config::COUPLED_CONV_SIGMA_POS);
+            if (Config::ENABLE_COUPLED_SWEEP_CONVERGENCE_STOP && converged) {
+                cout << "Coupled sweeps converged after sweep " << (sweep + 1) << "." << endl;
                 break;
             }
         }
 
-        // Final fit status labeling and optional poor-fit skipping
-        for (int is = 0; is < nsec; ++is) {
-            if (!section_active[is]) continue;
-            if (!fit_success[is]) {
-                fit_status[is] = "fit_failed";
-                continue;
-            }
-            double chi2_ndf = fit_results[is].chi2_per_ndf();
-            bool good_fit = (chi2_ndf <= Config::MAX_CHI2_PER_NDF);
-            if (Config::SKIP_BAD_FITS && !good_fit) {
-                fit_status[is] = "poor_fit_skipped";
-                fit_success[is] = false;
-            } else {
-                fit_status[is] = good_fit ? "fit_ok" : "poor_fit";
-            }
-        }
+        update_final_fit_status();
 
-        // Final coherence refresh: enforce cross-boundary ext coefficients to be
-        // consistent with the final accepted section mask (after optional skipping).
-        {
-            auto final_refresh_counts = refresh_cross_boundary_ext(fit_results, fit_success);
-            cout << "Final Pass-2 refresh: " << final_refresh_counts.first
-                << " cross-boundary photon assignments";
-            if (final_refresh_counts.second > 0) {
-                cout << " (interpolation fallback=" << final_refresh_counts.second << ")";
-            }
-            cout << "." << endl;
-        }
-
-        // =========================================================================
-        // === STAGE 4: Global p_e_scale using final Stage-3 section parameters
-        // =========================================================================
         if (use_global_p_e_scale && Config::ENABLE_FINAL_GLOBAL_PE_SCALE_STAGE4) {
             cout << "\n==== STAGE 4 (GLOBAL): final p_e_scale refinement with final section smearing ====" << endl;
             double best_chi2_global = 0.0;
@@ -3691,7 +4230,6 @@
                 for (int is = 0; is < nsec; ++is) {
                     if (fit_success[is]) fit_results[is].p_e_scale = global_p_e_scale;
                 }
-
                 cout << "Stage 4 result: global p_e_scale=" << global_p_e_scale
                     << " (chi2_mmiss=" << best_chi2_global << ")" << endl;
             }
@@ -3702,6 +4240,13 @@
         // Recompute final chi2 with finalized coefficients and finalized p_e_scale
         // so reported quality matches the exact model used for final output plots.
         cout << "\n==== Recomputing final section chi2 with finalized model state ====\n";
+        vector<double> chi2_before_final_recompute(nsec, 1e300);
+        vector<double> chi2_ndf_before_final_recompute(nsec, 1e300);
+        for (int is = 0; is < nsec; ++is) {
+            if (!fit_success[is]) continue;
+            chi2_before_final_recompute[is] = fit_results[is].chi2;
+            chi2_ndf_before_final_recompute[is] = fit_results[is].chi2_per_ndf();
+        }
         for (int is = 0; is < nsec; ++is) {
             if (!fit_success[is]) continue;
             TRandom3 rng_final_chi2(8000 + is);
@@ -3729,10 +4274,93 @@
             }
         }
 
+        {
+            ofstream closure_summary(closure_summary_csv_file.c_str());
+            closure_summary << "ix,iy,section,fit_status,optimizer_mode,chi2_before_final_recompute,"
+                            << "chi2_final,delta_chi2,chi2_ndf_before_final_recompute,"
+                            << "chi2_ndf_final,delta_chi2_ndf\n";
+            for (int is = 0; is < nsec; ++is) {
+                const FitResult &fr = fit_results[is];
+                const double chi2_before = chi2_before_final_recompute[is];
+                const double chi2_ndf_before = chi2_ndf_before_final_recompute[is];
+                const bool have_before = std::isfinite(chi2_before) && chi2_before < 1e299;
+                const bool have_ndf_before = std::isfinite(chi2_ndf_before) && chi2_ndf_before < 1e299;
+                closure_summary << sections[is].ix << "," << sections[is].iy << ","
+                                << sections[is].name() << ","
+                                << fit_status[is] << ","
+                                << fr.optimizer_mode << ","
+                                << chi2_before << ","
+                                << fr.chi2 << ","
+                                << (have_before ? fr.chi2 - chi2_before : 0.0) << ","
+                                << chi2_ndf_before << ","
+                                << fr.chi2_per_ndf() << ","
+                                << (have_ndf_before ? fr.chi2_per_ndf() - chi2_ndf_before : 0.0)
+                                << "\n";
+            }
+            cout << "  wrote " << closure_summary_csv_file << " (final-state closure consistency)\n";
+        }
+
+        cout << "\n==== Writing optimizer diagnostics ====\n";
+        {
+            ofstream opt_summary(optimizer_summary_csv_file.c_str());
+            opt_summary << "ix,iy,section,fit_status,optimizer_mode,n_seed_trials,n_migrad_trials,"
+                        << "hesse_ok,max_abs_corr,max_corr_pair,chi2,chi2_ndf,"
+                        << "mu_a,mu_b,mu_c,sigma,sigma_pos,p_e_scale\n";
+            for (int is = 0; is < nsec; ++is) {
+                const FitResult &fr = fit_results[is];
+                opt_summary << sections[is].ix << "," << sections[is].iy << ","
+                            << sections[is].name() << "," << fit_status[is] << ","
+                            << fr.optimizer_mode << ","
+                            << fr.n_seed_trials << "," << fr.n_migrad_trials << ","
+                            << (fr.hesse_ok ? 1 : 0) << ","
+                            << fr.max_abs_corr << "," << fr.max_corr_pair << ","
+                            << fr.chi2 << "," << fr.chi2_per_ndf() << ","
+                            << fr.mu_a << "," << fr.mu << "," << fr.mu_c << ","
+                            << fr.sigma << "," << fr.sigma_pos << "," << fr.p_e_scale << "\n";
+            }
+            cout << "  wrote " << optimizer_summary_csv_file << "\n";
+        }
+
+        {
+            ofstream opt_seeds(optimizer_seeds_csv_file.c_str());
+            opt_seeds << "ix,iy,section,rank,seed_index,seed_chi2,migrad_chi2,minimized,hesse_ok,"
+                      << "max_abs_corr,max_corr_pair,mu_a,mu_b,mu_c,sigma,sigma_pos,p_e_scale\n";
+            for (int is = 0; is < nsec; ++is) {
+                const FitResult &fr = fit_results[is];
+                for (const auto &sd : fr.seed_diagnostics) {
+                    opt_seeds << sections[is].ix << "," << sections[is].iy << ","
+                              << sections[is].name() << ","
+                              << sd.rank << "," << sd.seed_index << ","
+                              << sd.seed_chi2 << "," << sd.migrad_chi2 << ","
+                              << (sd.minimized ? 1 : 0) << "," << (sd.hesse_ok ? 1 : 0) << ","
+                              << sd.max_abs_corr << "," << sd.max_corr_pair << ","
+                              << sd.mu_a << "," << sd.mu << "," << sd.mu_c << ","
+                              << sd.sigma << "," << sd.sigma_pos << "," << sd.p_e_scale << "\n";
+                }
+            }
+            cout << "  wrote " << optimizer_seeds_csv_file << "\n";
+        }
+
+        {
+            ofstream opt_profile(optimizer_profile_csv_file.c_str());
+            opt_profile << "ix,iy,section,parameter,fixed_value,chi2,minimized\n";
+            for (int is = 0; is < nsec; ++is) {
+                const FitResult &fr = fit_results[is];
+                for (const auto &pd : fr.profile_diagnostics) {
+                    opt_profile << sections[is].ix << "," << sections[is].iy << ","
+                                << sections[is].name() << ","
+                                << pd.parameter << ","
+                                << pd.fixed_value << "," << pd.chi2 << ","
+                                << (pd.minimized ? 1 : 0) << "\n";
+                }
+            }
+            cout << "  wrote " << optimizer_profile_csv_file << "\n";
+        }
+
         // Regenerate visualization scan data from FINAL model state only
         // (latest coupled sweep + final p_e_scale/status state).
         cout << "\n==== Regenerating visualization scans from final sweep values ====\n";
-        #pragma omp parallel
+        #pragma omp parallel if(Config::ENABLE_PARALLEL_SECTION_FITS)
         {
             int thread_id_scan = omp_get_thread_num();
             TRandom3 rng_final_scan(8500 + thread_id_scan * 104729 + time(NULL));
@@ -4426,7 +5054,7 @@
                 gPad->SetGridx(); gPad->SetGridy();
 
                 const int NE = 80;
-                const double E_lo = Config::MU_ENERGY_MIN_GEV, E_hi = 8.0;
+                const double E_lo = Config::MU_ENERGY_MIN_GEV, E_hi = 6.0;
                 int colors[] = {kBlue, kRed, kGreen+2, kMagenta, kOrange+7, kCyan+2, kViolet+5, kGray+2};
                 TMultiGraph *mg = new TMultiGraph("mg_mueff", "#mu_{eff}(E) = a + b#cdotE + c#cdotln(E) per section;E [GeV];#mu_{eff}(E)");
                 TLegend *lg_me = new TLegend(0.65, 0.15, 0.95, 0.55);
@@ -4576,7 +5204,9 @@
 
             txt->AddText("NPS #pi^{0} Smearing Fit Summary");
             txt->AddText(" ");
-            txt->AddText(Form("Optimization mode: %s", Config::USE_THREE_STAGE_OPTIMIZATION ? "three-stage" : "simultaneous"));
+            txt->AddText(Form("Optimization mode: %s",
+                            Config::USE_GLOBAL_MULTISTART_OPTIMIZATION ? "global multistart" :
+                            (Config::USE_THREE_STAGE_OPTIMIZATION ? "three-stage" : "simultaneous")));
             txt->AddText(Form("Observable mode: %s", Config::histogram_mode_label()));
             txt->AddText(Form("Weights: w_{M_{#gamma#gamma}}=%.3f, w_{M_{miss}}=%.3f, w_{(p+#gamma#gamma)^{2}}=%.3f",
                             Config::W_MPI0, Config::W_MMISS, Config::W_MPGG2));
@@ -4589,8 +5219,8 @@
             txt->AddText(Form("Electron momentum scaling mode: %s",
                             use_global_p_e_scale
                                 ? (Config::ENABLE_FINAL_GLOBAL_PE_SCALE_STAGE4
-                                        ? "per-section Pass-2 + final global Stage-4"
-                                        : "per-section Pass-2 only (global Stage-4 disabled)")
+                                        ? "per-section coupled sweeps + final global Stage-4"
+                                        : "per-section coupled sweeps only (global Stage-4 disabled)")
                                 : "disabled"));
             if (use_global_p_e_scale) {
                 if (Config::ENABLE_FINAL_GLOBAL_PE_SCALE_STAGE4) {

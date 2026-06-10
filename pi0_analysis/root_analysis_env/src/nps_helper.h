@@ -10,6 +10,16 @@
 #include <array>
 #include <cmath>
 #include <algorithm>
+#include <iomanip>
+#include <iostream>
+
+#include "TCanvas.h"
+#include "TF1.h"
+#include "TLatex.h"
+#include "TLegend.h"
+#include "TLine.h"
+#include "TPad.h"
+#include "TSystem.h"
 
 using Vec3 = std::array<double,3>;
 using Vec4 = std::array<double,4>;

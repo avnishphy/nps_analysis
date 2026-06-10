@@ -14,10 +14,12 @@
 // ============================================================================
 
 #include "utils.C"
+#include <TF1.h>
 #include "nps_helper.h"
 #include "nps_time_bg.h"
 #include "nps_comb_bg.h"
 #include "nps_mmiss_cor.h"
+#include "nps_2d_mass_cut.h"
 #include "nps_hms_track_eff.h"
 #include "nps_yao_database_reader.h"
 
@@ -29,6 +31,7 @@
 
 // ROOT headers
 #include <TFile.h>
+#include <TApplication.h>
 #include <TTree.h>
 #include <TString.h>
 #include <TStopwatch.h>
@@ -461,7 +464,7 @@ void nps_analysis_wfpi0(const TString &skimDir_in = "/lustre24/expphy/volatile/h
         // -----------------------------------------------
         struct TreeEntry {
             Double_t mpi0_all, mmiss_all, mmiss_all_corr, mmiss_all_no_mom_offset, mmiss_all_corr_no_mom_offset, pi0_weight;
-            Int_t is_exclusive, is_weighted;
+            Int_t is_exclusive, is_exclusive_ellipse, is_exclusive_mcd, is_weighted;
             Double_t Q2, W, t, tmin, pt, theta, phi, s, xB, z;
             Int_t nclust_selected, event_id;
             Double_t cluster_x_1, cluster_y_1, cluster_e_1, cluster_x_2, cluster_y_2, cluster_e_2;
@@ -851,6 +854,8 @@ void nps_analysis_wfpi0(const TString &skimDir_in = "/lustre24/expphy/volatile/h
                 entry.mmiss_all_corr_no_mom_offset = mm_p_corr_no_mom_offset;
                 entry.pi0_weight = 0.0;  // Will be filled in second pass
                 entry.is_exclusive = 0;  // Will be set in second pass
+                entry.is_exclusive_ellipse = 0;
+                entry.is_exclusive_mcd = 0;
                 entry.is_weighted = 0;   // Will be set in second pass
                 entry.Q2 = phys.Q2;
                 entry.W = phys.W;
@@ -1159,6 +1164,50 @@ void nps_analysis_wfpi0(const TString &skimDir_in = "/lustre24/expphy/volatile/h
             logmsg(INFO, Form("Run %d: Weighted pass complete (%lld exclusive events)", run, n_weighted_events));
         } else {
             logmsg(WARN, Form("Run %d: Skipping weighted pass (weights not computed)", run));
+        }
+
+        // -----------------------------------------------
+        // 2D mmiss_all:mpi0_all exclusivity flags.
+        // These do not remove events; they add branch-level selectors.
+        // -----------------------------------------------
+        {
+            std::vector<nps2d::Point> mass_cut_points;
+            std::vector<Long64_t> mass_cut_event_ids;
+            mass_cut_points.reserve(treeData.size());
+            mass_cut_event_ids.reserve(treeData.size());
+            for (const auto& kv : treeData) {
+                const auto& entry = kv.second;
+                if (entry.pi0_weight <= 0.0 || !std::isfinite(entry.pi0_weight)) continue;
+                nps2d::Point p;
+                p.id = kv.first;
+                p.mpi0 = entry.mpi0_all;
+                p.mmiss = entry.mmiss_all;
+                p.weight = entry.pi0_weight;
+                mass_cut_points.push_back(p);
+                mass_cut_event_ids.push_back(kv.first);
+            }
+
+            nps2d::Config mass_cut_cfg;
+            mass_cut_cfg.output_dir = std::string(outPlotDir.Data());
+            mass_cut_cfg.tag = Form("mass_cut_run%d", run);
+            mass_cut_cfg.write_debug = true;
+            nps2d::Result mass_cut_result = nps2d::evaluate_mass_cuts(mass_cut_points, mass_cut_cfg);
+            if (mass_cut_result.params.valid) {
+                Long64_t n_ellipse = 0;
+                Long64_t n_mcd = 0;
+                for (std::size_t i = 0; i < mass_cut_event_ids.size(); ++i) {
+                    auto it = treeData.find(mass_cut_event_ids[i]);
+                    if (it == treeData.end()) continue;
+                    it->second.is_exclusive_ellipse = mass_cut_result.pass_ellipse[i];
+                    it->second.is_exclusive_mcd = mass_cut_result.pass_mcd[i];
+                    n_ellipse += mass_cut_result.pass_ellipse[i];
+                    n_mcd += mass_cut_result.pass_mcd[i];
+                }
+                logmsg(INFO, Form("Run %d: 2D mass cuts done (ellipse=%lld, MCD=%lld, peak_fraction=%.3f)",
+                                  run, n_ellipse, n_mcd, mass_cut_result.params.peak_fraction));
+            } else {
+                logmsg(WARN, Form("Run %d: 2D mass cuts failed; ellipse/MCD flags remain 0", run));
+            }
         }
 
         // -----------------------------------------------
@@ -1477,7 +1526,7 @@ void nps_analysis_wfpi0(const TString &skimDir_in = "/lustre24/expphy/volatile/h
         // Declare branch variables fresh for this tree
         Int_t event_id = 0;
         Double_t mpi0_all = 0, mmiss_all = 0, mmiss_all_corr = 0, mmiss_all_no_mom_offset = 0, mmiss_all_corr_no_mom_offset = 0, pi0_weight = 0;
-        Int_t is_exclusive = 0, is_weighted = 0;
+        Int_t is_exclusive = 0, is_exclusive_ellipse = 0, is_exclusive_mcd = 0, is_weighted = 0;
         Double_t Q2 = 0, W = 0, t = 0, tmin = 0, pt = 0;
         Double_t theta = 0, phi = 0, s = 0, xB = 0, z = 0;
         Int_t nclust_selected = 0;
@@ -1498,6 +1547,8 @@ void nps_analysis_wfpi0(const TString &skimDir_in = "/lustre24/expphy/volatile/h
         treeOut->Branch("mmiss_all_corr_no_mom_offset", &mmiss_all_corr_no_mom_offset, "mmiss_all_corr_no_mom_offset/D");
         treeOut->Branch("pi0_weight", &pi0_weight, "pi0_weight/D");
         treeOut->Branch("is_exclusive", &is_exclusive, "is_exclusive/I");
+        treeOut->Branch("is_exclusive_ellipse", &is_exclusive_ellipse, "is_exclusive_ellipse/I");
+        treeOut->Branch("is_exclusive_mcd", &is_exclusive_mcd, "is_exclusive_mcd/I");
         treeOut->Branch("is_weighted", &is_weighted, "is_weighted/I");
         
         treeOut->Branch("Q2", &Q2, "Q2/D");
@@ -1543,6 +1594,8 @@ void nps_analysis_wfpi0(const TString &skimDir_in = "/lustre24/expphy/volatile/h
             mmiss_all_corr_no_mom_offset = entry.mmiss_all_corr_no_mom_offset;
             pi0_weight = entry.pi0_weight;
             is_exclusive = entry.is_exclusive;
+            is_exclusive_ellipse = entry.is_exclusive_ellipse;
+            is_exclusive_mcd = entry.is_exclusive_mcd;
             is_weighted = entry.is_weighted;
             Q2 = entry.Q2;
             W = entry.W;

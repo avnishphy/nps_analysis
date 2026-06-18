@@ -100,9 +100,22 @@ Use a conservative job count when writing to shared filesystems.
 
 The pipeline compiles `scripts/nps_sim_smearing_new_try.C`, fits section-wise
 smearing parameters, and regenerates smeared SIMC output via
-`scripts/simc_pi0_analysis.C`. The smearing fit uses `is_exclusive_mcd` as the
-exclusive-event selector for both data and SIMC inputs; regenerate combined data
-and unsmeared SIMC after changing the 2D mass-cut logic.
+`scripts/simc_pi0_analysis.C`. The smearing fit uses
+`is_exclusive_ellipse_combined` for combined data and `is_exclusive_ellipse`
+for SIMC by default; regenerate combined data and unsmeared SIMC after changing
+the 2D mass-cut logic.
+
+Key diagnostics are written beside `section_map.csv`, including
+`smearing_sweep_history.csv`, `smearing_objective_breakdown.csv`,
+`smearing_closure_summary.csv`, `smearing_runtime_summary.csv`,
+`best_parameters.json`, `optimization_config.json`, and the optimizer
+seed/profile summaries. The coupled-sweep optimizer uses an explicit
+candidate/current-accepted/best-ever state model, so rejected sweeps are not
+allowed to seed later sweeps.
+
+Current validation status is reduced-validation only. Peak-window agreement
+improves in the latest reduced tests, but full-width/tail behavior still needs
+production-scale physics sign-off; see `smearing.md` for details.
 
 ## Configuration
 

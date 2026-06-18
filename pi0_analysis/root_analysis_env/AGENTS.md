@@ -6,6 +6,32 @@ These instructions apply to the `pi0_analysis/root_analysis_env` workspace.
 They are intended for Codex/agent sessions and for humans making changes in
 this analysis environment.
 
+## Token And Context Budget
+
+- Default to concise, high-signal replies. Use fuller explanation only when the
+  user asks, ambiguity would cause mistakes, or safety/irreversible actions need
+  explicit wording.
+- Treat token reduction as an ongoing workflow optimization. When a repeated
+  wasteful pattern appears, add a short rule here or update the relevant hook
+  docs so future sessions inherit the fix.
+- Prefer targeted reads over broad dumps. Use `rg`, `rg --files`, `sed -n`, and
+  focused `git diff -- <path>` commands; avoid loading generated outputs unless
+  the task needs them.
+- Summarize large command outputs instead of pasting them back. Preserve exact
+  errors, commands, file paths, run numbers, fit parameters, and physics-relevant
+  values.
+- For broad investigation or review, prefer compressed/structured agent output
+  when available, such as the local `.agents/skills/cavecrew` guidance, so
+  subagent results do not bloat main context.
+- Use local token-saving skills when requested or clearly useful:
+  `.agents/skills/caveman` for terse replies,
+  `.agents/skills/caveman-compress` for memory-file compression, and
+  `.agents/skills/caveman-stats` for session token accounting if its hook is
+  installed.
+- Hook changes, when added, should be deterministic and quiet by default: report
+  token stats or mode changes only on explicit commands, and never inject large
+  logs into the conversation.
+
 ## Project Overview
 
 This workspace contains ROOT/C++ and Python tooling for Hall C NPS pi0

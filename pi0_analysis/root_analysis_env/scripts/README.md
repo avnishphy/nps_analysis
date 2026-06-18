@@ -6,15 +6,23 @@ efficiency studies.
 
 ## Smearing And SIMC
 
-- `nps_sim_smearing_new.C`: C++ source for section-wise smearing fits.
-- `nps_sim_smearing_new`: compiled executable generated from the source.
+- `nps_sim_smearing_new_try.C`: active C++ source for section-wise smearing fits.
+- `nps_sim_smearing_new_try`: compiled executable generated from the source.
+- `nps_sim_smearing_new.C`: older/reference smearing source retained for comparison.
 - `simc_pi0_analysis.C`: SIMC pi0 analysis macro and smearing consumer.
+- `compare_smearing_outputs.py`: reproducible data/SIMC/smeared-SIMC comparison metrics and plots, including full-window shape metrics, peak-window mean/width checks, tail fractions, residual/zoom plots, and 2D mass-correlation plots.
+- `compare_smearing_strategies.py`: compact CSV comparison across smearing run directories.
+- `summarize_smearing_run.py`: writes runtime, best-parameter, and optimization-config summaries for one run directory.
 - `section_map.csv`: detector section map used by section smearing.
-- `TWO_STAGE_SMEARING_EXPLANATION.md`: detailed two-stage smearing notes.
 - `NPS_Smearing_Methodology.txt`: additional methodology notes.
 
 The top-level `run_smearing_pipeline.sh` compiles and runs the main smearing
-workflow.
+workflow. It also writes sweep/objective diagnostics, compact JSON/CSV
+summaries, and optional before/after comparison plots. Use the PyROOT
+comparison backend in the sourced Hall C ROOT environment for large ROOT trees;
+the uproot backend is kept as fallback.
+
+The canonical smearing workflow documentation is the top-level `smearing.md`.
 
 ## Data/SIMC Comparison And Combining
 

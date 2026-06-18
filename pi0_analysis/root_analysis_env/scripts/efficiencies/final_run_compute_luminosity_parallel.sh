@@ -19,6 +19,7 @@ Options:
   --db <path>                     DB file passed to compute
   --out-csv <path>                Final merged CSV output
                                   (default: final_luminosity_results_parallel.csv)
+                                  Also writes <stem>_no_good_events.<ext>
   --jobs <N>                      Parallel workers (default: nproc)
   --chunk-size <N>                Runs per job (default: auto from runs/jobs)
   --default-ps <value>            Forwarded to compute
@@ -182,6 +183,62 @@ cleanup() {
 }
 trap cleanup EXIT
 
+suffix_before_extension() {
+  local path="$1"
+  local suffix="$2"
+  local dir base stem ext
+  dir="$(dirname -- "$path")"
+  base="$(basename -- "$path")"
+  if [[ "$base" == *.* ]]; then
+    stem="${base%.*}"
+    ext=".${base##*.}"
+  else
+    stem="$base"
+    ext=""
+  fi
+  if [[ "$dir" == "." ]]; then
+    printf '%s%s%s\n' "$stem" "$suffix" "$ext"
+  else
+    printf '%s/%s%s%s\n' "$dir" "$stem" "$suffix" "$ext"
+  fi
+}
+
+merge_csv_chunks() {
+  local out_path="$1"
+  shift
+  local chunks=("$@")
+  if (( ${#chunks[@]} == 0 )); then
+    printf 'Error: no chunk CSV files were generated for %s\n' "$out_path" >&2
+    exit 2
+  fi
+
+  local header merge_tmp c
+  header="$(head -n 1 "${chunks[0]}")"
+  if [[ -z "$header" ]]; then
+    printf 'Error: chunk CSV header is empty in %s\n' "${chunks[0]}" >&2
+    exit 2
+  fi
+
+  merge_tmp="$tmpdir/$(basename "$out_path").body_unsorted.csv"
+  : > "$merge_tmp"
+  for c in "${chunks[@]}"; do
+    if [[ ! -s "$c" ]]; then
+      continue
+    fi
+    tail -n +2 "$c" >> "$merge_tmp"
+  done
+
+  if [[ ! -s "$merge_tmp" ]]; then
+    printf 'Error: merged CSV body is empty for %s\n' "$out_path" >&2
+    exit 2
+  fi
+
+  {
+    printf '%s\n' "$header"
+    sort -t, -k1,1n "$merge_tmp"
+  } > "$out_path"
+}
+
 printf 'Total unique runs: %d\n' "$num_runs"
 printf 'Parallel jobs: %d\n' "$jobs"
 printf 'Chunk size: %d\n' "$chunk_size"
@@ -248,39 +305,18 @@ export CURRENT_WINDOW="$current_window"
 
 xargs -P "$jobs" -n 1 "$worker" < "$chunk_list"
 
-mapfile -t csv_chunks < <(ls -1 "$tmpdir"/chunk_*.csv 2>/dev/null | sort)
-if (( ${#csv_chunks[@]} == 0 )); then
-  printf 'Error: no chunk CSV files were generated\n' >&2
-  exit 2
-fi
+mapfile -t csv_chunks < <(find "$tmpdir" -maxdepth 1 -type f -name 'chunk_*.csv' ! -name '*_no_good_events.csv' | sort)
+mapfile -t csv_chunks_no_good < <(find "$tmpdir" -maxdepth 1 -type f -name 'chunk_*_no_good_events.csv' | sort)
 
-header="$(head -n 1 "${csv_chunks[0]}")"
-if [[ -z "$header" ]]; then
-  printf 'Error: chunk CSV header is empty in %s\n' "${csv_chunks[0]}" >&2
-  exit 2
-fi
+out_csv_no_good="$(suffix_before_extension "$out_csv" "_no_good_events")"
 
-merge_tmp="$tmpdir/merged_body_unsorted.csv"
-: > "$merge_tmp"
-for c in "${csv_chunks[@]}"; do
-  if [[ ! -s "$c" ]]; then
-    continue
-  fi
-  tail -n +2 "$c" >> "$merge_tmp"
-done
-
-if [[ ! -s "$merge_tmp" ]]; then
-  printf 'Error: merged CSV body is empty\n' >&2
-  exit 2
-fi
-
-{
-  printf '%s\n' "$header"
-  sort -t, -k1,1n "$merge_tmp"
-} > "$out_csv"
+merge_csv_chunks "$out_csv" "${csv_chunks[@]}"
+merge_csv_chunks "$out_csv_no_good" "${csv_chunks_no_good[@]}"
 
 printf 'Wrote merged CSV: %s\n' "$out_csv"
+printf 'Wrote merged no-good-event CSV: %s\n' "$out_csv_no_good"
 printf 'Chunks merged: %d\n' "${#csv_chunks[@]}"
+printf 'No-good-event chunks merged: %d\n' "${#csv_chunks_no_good[@]}"
 if (( keep_temp == 1 )); then
   printf 'Temporary files kept at: %s\n' "$tmpdir"
 fi

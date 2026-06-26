@@ -79,9 +79,11 @@ struct AnalysisConfig {
 
     // If the SIMC file contains an event-level model cross-section branch,
     // the code will use it to convert data/MC ratios into absolute cross sections.
+    // siglab is written from SIMC main%sigcc, the same factor multiplied into
+    // Weight. See pi0_analysis/root_analysis_env/demodeling.md.
     // Candidate branch names are searched in this order.
     std::vector<std::string> model_xsec_candidates = {
-        "sigcm"
+        "siglab"
     };
 };
 

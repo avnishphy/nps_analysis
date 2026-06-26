@@ -617,7 +617,32 @@ def add_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
     y_all = df["mmiss_all"].to_numpy(dtype=float)
     pi0_w = df["pi0_weight"].to_numpy(dtype=float)
     scale = df["scale"].to_numpy(dtype=float) if "scale" in df.columns else np.ones(len(df), dtype=float)
-    event_w = pi0_w * scale
+    charge_fraction = np.ones(len(df), dtype=float)
+    total_charge_uC = np.nan
+    n_charge_runs = 0
+    weight_mode = "pi0_weight*scale"
+    if "charge_uC" in df.columns and "run_number" in df.columns:
+        charge_uC = pd.to_numeric(df["charge_uC"], errors="coerce").to_numpy(dtype=float)
+        run_number = pd.to_numeric(df["run_number"], errors="coerce").to_numpy(dtype=float)
+        valid_charge = np.isfinite(charge_uC) & (charge_uC > 0.0) & np.isfinite(run_number)
+        if np.any(valid_charge):
+            run_charge = pd.DataFrame({
+                "run_number": run_number[valid_charge].astype(np.int64),
+                "charge_uC": charge_uC[valid_charge],
+            }).drop_duplicates("run_number")
+            total_charge_uC = float(run_charge["charge_uC"].sum())
+            n_charge_runs = int(len(run_charge))
+            if np.isfinite(total_charge_uC) and total_charge_uC > 0.0:
+                charge_fraction = np.zeros(len(df), dtype=float)
+                charge_fraction[valid_charge] = charge_uC[valid_charge] / total_charge_uC
+                weight_mode = "pi0_weight*scale*charge_fraction"
+            else:
+                print("[WARN] Invalid total charge for combined 2D mass cut; using pi0_weight*scale")
+        else:
+            print("[WARN] No valid charge_uC/run_number rows for combined 2D mass cut; using pi0_weight*scale")
+    else:
+        print("[WARN] Missing charge_uC/run_number for combined 2D mass cut; using pi0_weight*scale")
+    event_w = pi0_w * scale * charge_fraction
 
     valid = (
         np.isfinite(x_all) & np.isfinite(y_all) & np.isfinite(event_w) &
@@ -820,6 +845,8 @@ def add_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
         "peak_weight": peak_weight,
         "threshold_weight": float(peak_fraction * peak_weight),
         "total_weight": total_weight,
+        "total_charge_uC": float(total_charge_uC) if np.isfinite(total_charge_uC) else -1.0,
+        "n_charge_runs": float(n_charge_runs),
         "peak_ix": float(peak_ix + 1),
         "peak_iy": float(peak_iy + 1),
         "peak_mpi0": float(x_centers[peak_ix]),
@@ -852,6 +879,7 @@ def add_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
     }
 
     print("[INFO] Combined 2D mass cut:")
+    print(f"       weight={weight_mode}")
     print(f"       peak_fraction={params['peak_fraction']:.3f} core={100.0 * params['core_total_fraction']:.2f}%")
     print(f"       ellipse={int(np.sum(ellipse_flags))} events, MCD={int(np.sum(mcd_flags))} events")
 
@@ -870,6 +898,7 @@ def add_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
             f"{COMBINED_MASS_CUT_TAG}_h_mcd_mask": (bin_mcd_mask.astype(float), x_edges, y_edges),
         },
         "params": params,
+        "weight_mode": weight_mode,
         "scan": scan_rows,
         "ellipse_line": (ellipse_x, ellipse_y),
         "mcd_line": (mcd_x, mcd_y),
@@ -926,6 +955,7 @@ def write_combined_mass_cut_debug_text(mass_cut_debug: Optional[Dict[str, Any]],
     keys = [
         "peak_fraction", "auto_jump_ratio",
         "peak_mpi0", "peak_mmiss", "peak_weight", "threshold_weight",
+        "total_charge_uC", "n_charge_runs",
         "core_bins", "core_weight", "core_total_fraction",
         "mean_mpi0", "mean_mmiss", "ellipse_d2_cut",
         "ellipse_weight", "ellipse_total_fraction",
@@ -938,7 +968,7 @@ def write_combined_mass_cut_debug_text(mass_cut_debug: Optional[Dict[str, Any]],
     with debug_path.open("w", encoding="utf-8") as fout:
         fout.write("# Combined 2D mass-cut debug summary\n")
         fout.write(f"tag={COMBINED_MASS_CUT_TAG}\n")
-        fout.write(f"weight=pi0_weight*scale\n")
+        fout.write(f"weight={mass_cut_debug.get('weight_mode', 'pi0_weight*scale')}\n")
         fout.write(f"ellipse_branch=is_exclusive_ellipse_combined\n")
         fout.write(f"mcd_branch=is_exclusive_mcd_combined\n")
         fout.write("\n[parameters]\n")

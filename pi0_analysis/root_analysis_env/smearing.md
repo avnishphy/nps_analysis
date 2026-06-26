@@ -110,33 +110,33 @@ The fitter reads SIMC branches including:
 - `clust_E`
 - `nclust`
 - `full_weight`
-- `sigcm`
+- `siglab`
 - `is_exclusive_ellipse` by default
 - `sc_e_E`, `sc_e_Px`, `sc_e_Py`, `sc_e_Pz` for missing mass
 
 SIMC smearing weights are always de-modeled from the SIMC cross-section model:
 
 ```text
-w_sim_base = full_weight / sigcm
+w_sim_base = full_weight / siglab
 w_sim = w_sim_base * is_exclusive_ellipse
 ```
 
 This is intentionally consistent with
 `scripts/excl_xsec_pi0_analysis_no_simc_model.C`. The point is to fit detector
 response on the accepted phase-space basis, not on the generator model
-cross-section shape.
+cross-section shape. The branch choice is documented in `demodeling.md`.
 
 The fitter skips SIMC events with invalid model weights:
 
 ```text
 !finite(full_weight)
-!finite(sigcm)
-abs(sigcm) < 1e-20
-!finite(full_weight/sigcm)
+!finite(siglab)
+abs(siglab) < 1e-20
+!finite(full_weight/siglab)
 ```
 
 The skipped count is printed to the log and stored in the ROOT output metadata.
-If `full_weight` or `sigcm` is missing, the fitter stops with a clear error.
+If `full_weight` or `siglab` is missing, the fitter stops with a clear error.
 
 ## Exclusivity Convention
 
@@ -584,8 +584,8 @@ run_tag
 timestamped_output_file
 chi2_pdf_file
 chi2_progress_dir
-sim_weight_mode = full_weight_over_sigcm
-sim_model_xsec_branch = sigcm
+sim_weight_mode = full_weight_over_siglab
+sim_model_xsec_branch = siglab
 sim_skipped_invalid_model_weight_events
 ```
 
@@ -766,7 +766,7 @@ Questions to ask:
 - Are response ratios physically reasonable across sections?
 - Are `sigma_pos` values plausible, or is position smearing compensating for
   energy-response problems?
-- Did many SIMC events get skipped due to invalid `full_weight/sigcm`?
+- Did many SIMC events get skipped due to invalid `full_weight/siglab`?
 - Are data and SIMC using the intended ellipse branches?
 
 ## Common Failure Modes
@@ -785,9 +785,9 @@ Fix:
 csh -c 'source /group/nps/singhav/setup.csh; ./run_smearing_pipeline.sh'
 ```
 
-### Missing `sigcm`
+### Missing `siglab`
 
-The fitter now requires `sigcm` for SIMC de-modeling. If the branch is missing,
+The fitter now requires `siglab` for SIMC de-modeling. If the branch is missing,
 regenerate the SIMC input with the model cross-section branch preserved.
 
 ### Missing Ellipse Branch
@@ -815,7 +815,7 @@ Check for:
 - excessive area normalization effects
 - too few events in a section
 - optimizer subset not matching full-event recompute
-- pathological `full_weight/sigcm` tails
+- pathological `full_weight/siglab` tails
 
 ### Parameters On Bounds
 

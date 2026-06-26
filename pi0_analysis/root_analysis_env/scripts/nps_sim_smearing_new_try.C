@@ -238,7 +238,7 @@
         //   - Higher W_MPI0: If M_γγ has better statistics or precision
         //
         const double W_MPI0 = 1.0;   // Weight for invariant mass chi2 (M_γγ)
-        const double W_MMISS = 1.5;  // Weight for missing mass chi2 (M_miss)
+        const double W_MMISS = 1.45;  // Weight for missing mass chi2 (M_miss)
         const double W_MPGG2 = 0.0;  // Weight for (p_target + γγ)^2 chi2
         const double W_MPGG2_ENERGY = 1.0;  // Energy scaling factor for mpgg2 calculation: E -> w_mpgg2_energy * E
         
@@ -475,9 +475,15 @@
         const char* DATA_EXCLUSIVITY_BRANCH = "is_exclusive_ellipse_combined";
         const char* SIM_EXCLUSIVITY_BRANCH  = "is_exclusive_ellipse";
 
-        // SIMC de-modeling: remove the generator cross-section model from event
-        // weights so the smearing fit uses the accepted phase-space basis.
-        const char* SIM_MODEL_XSEC_BRANCH = "sigcm";
+        // SIMC event weighting:
+        //   false: use the raw SIMC full_weight branch
+        //   true:  de-model by dividing full_weight by SIM_MODEL_XSEC_BRANCH
+        const bool USE_SIM_MODEL_XSEC_DEMODELING = false;
+
+        // SIMC de-modeling branch, used only when USE_SIM_MODEL_XSEC_DEMODELING
+        // is true. The output tree stores the SIMC cross-section factor as siglab.
+        // See pi0_analysis/root_analysis_env/demodeling.md.
+        const char* SIM_MODEL_XSEC_BRANCH = "siglab";
         const double SIM_MODEL_XSEC_MIN_ABS = 1e-20;
         
         // Minimum events required per section (both data AND simulation)
@@ -492,15 +498,9 @@
         const double MAX_CHI2_PER_NDF = 2.0;  // Warning threshold
         const bool SKIP_BAD_FITS = false;     // If true, exclude bad sections from output
 
-        // Runtime controls for optimizer only. Final chi2 recompute, final section
-        // plots, section maps, and all-section summaries still use the full event
-        // buffers and the command-line Nsmear value.
+        // Runtime control for optimizer smearing draws. Optimization now uses the
+        // full simulation event buffers; no event thinning is applied.
         const int OPTIMIZATION_NSMEAR = 80;
-        const int OPT_MAX_SIM_EVENTS_PER_SECTION = 25000;
-        const int OPT_MAX_SIM_EVENTS_GLOBAL_PREFIT = 60000;
-        const int OPT_SUBSET_MGG_BINS = 32;
-        const double OPT_SUBSET_MGG_MIN = 0.05;
-        const double OPT_SUBSET_MGG_MAX = 0.25;
 
         // Section fit orchestration.
         // Iterative coupled sweep model:
@@ -608,8 +608,7 @@
                  << "  sweep N external photons: previous accepted sweep results\n";
             cout << "Fit observable: " << histogram_mode_label() << "\n";
             cout << "Optimizer acceleration: Nsmear <= " << OPTIMIZATION_NSMEAR
-                 << ", max sim events/section=" << OPT_MAX_SIM_EVENTS_PER_SECTION
-                 << ", max global prefit sim events=" << OPT_MAX_SIM_EVENTS_GLOBAL_PREFIT << "\n";
+                 << ", optimizer uses full simulation event buffers\n";
             cout << "Position smearing fit: "
                 << (ENABLE_POSITION_SMEARING ? "enabled" : "disabled") << "\n";
             if (ENABLE_POSITION_SMEARING) {
@@ -630,8 +629,12 @@
                 }
             }
             cout << "Weights (W_MPI0, W_MMISS, W_MPGG2): " << W_MPI0 << ", " << W_MMISS << ", " << W_MPGG2 << "\n";
-            cout << "SIMC cross-section de-modeling: enabled; sim event weight = full_weight/"
-                 << SIM_MODEL_XSEC_BRANCH << "\n";
+            if (USE_SIM_MODEL_XSEC_DEMODELING) {
+                cout << "SIMC cross-section de-modeling: enabled; sim event weight = full_weight/"
+                     << SIM_MODEL_XSEC_BRANCH << "\n";
+            } else {
+                cout << "SIMC cross-section de-modeling: disabled; sim event weight = full_weight\n";
+            }
             cout << "Exclusive gating in weights: "
                 << (APPLY_IS_EXCLUSIVE_SELECTION ? "enabled" : "disabled (all events)") << "\n";
             if (APPLY_IS_EXCLUSIVE_SELECTION) {
@@ -1223,100 +1226,6 @@
         factor = max(Config::MGG_LINEAR_FACTOR_MIN, min(Config::MGG_LINEAR_FACTOR_MAX, factor));
         E1 = max(Config::NONPOSITIVE_CLAMP, E1 * factor);
         E2 = max(Config::NONPOSITIVE_CLAMP, E2 * factor);
-    }
-
-    inline vector<ClusterPair> makeOptimizationSubset(const vector<ClusterPair> &events,
-                                                      int max_events,
-                                                      int n_bins) {
-        if (max_events <= 0 || (int)events.size() <= max_events) return events;
-
-        n_bins = max(1, n_bins);
-        vector<vector<int>> bins(n_bins);
-        const double lo = Config::OPT_SUBSET_MGG_MIN;
-        const double hi = Config::OPT_SUBSET_MGG_MAX;
-        const double width = max(1e-12, hi - lo);
-
-        for (int i = 0; i < (int)events.size(); ++i) {
-            const auto &ev = events[i];
-            double mgg = nps::invariant_mass_pi0(ev.e1, ev.e2, ev.x1, ev.x2, ev.y1, ev.y2,
-                                                 nps::kDefaultZ_NPS_cm);
-            int ibin = 0;
-            if (std::isfinite(mgg)) {
-                ibin = (int)floor((mgg - lo) / width * n_bins);
-            }
-            ibin = max(0, min(n_bins - 1, ibin));
-            bins[ibin].push_back(i);
-        }
-
-        vector<int> take(n_bins, 0);
-        int total_take = 0;
-        for (int ibin = 0; ibin < n_bins; ++ibin) {
-            const int n = (int)bins[ibin].size();
-            if (n == 0) continue;
-            int t = (int)floor((double)max_events * n / (double)events.size());
-            t = max(1, min(n, t));
-            take[ibin] = t;
-            total_take += t;
-        }
-
-        while (total_take > max_events) {
-            int drop_bin = -1;
-            int largest_take = 1;
-            for (int ibin = 0; ibin < n_bins; ++ibin) {
-                if (take[ibin] > largest_take) {
-                    largest_take = take[ibin];
-                    drop_bin = ibin;
-                }
-            }
-            if (drop_bin < 0) break;
-            --take[drop_bin];
-            --total_take;
-        }
-        while (total_take < max_events) {
-            int add_bin = -1;
-            int largest_room = 0;
-            for (int ibin = 0; ibin < n_bins; ++ibin) {
-                int room = (int)bins[ibin].size() - take[ibin];
-                if (room > largest_room) {
-                    largest_room = room;
-                    add_bin = ibin;
-                }
-            }
-            if (add_bin < 0) break;
-            ++take[add_bin];
-            ++total_take;
-        }
-
-        vector<ClusterPair> subset;
-        subset.reserve(total_take);
-        for (int ibin = 0; ibin < n_bins; ++ibin) {
-            const int n = (int)bins[ibin].size();
-            const int t = take[ibin];
-            if (n == 0 || t == 0) continue;
-
-            vector<int> chosen;
-            chosen.reserve(t);
-            for (int j = 0; j < t; ++j) {
-                int local = (int)floor(((double)j + 0.5) * n / t);
-                local = max(0, min(n - 1, local));
-                chosen.push_back(bins[ibin][local]);
-            }
-
-            double total_w = 0.0;
-            double chosen_w = 0.0;
-            for (int idx : bins[ibin]) total_w += events[idx].weight;
-            for (int idx : chosen) chosen_w += events[idx].weight;
-            double scale = (std::isfinite(total_w) && std::isfinite(chosen_w) && chosen_w > 0.0)
-                         ? total_w / chosen_w
-                         : (double)n / (double)t;
-
-            for (int idx : chosen) {
-                ClusterPair ev = events[idx];
-                ev.weight *= scale;
-                subset.push_back(ev);
-            }
-        }
-        return subset;
     }
 
     inline void fillSmearedHistogramsAtParams(const vector<ClusterPair> &simEvents,
@@ -2148,7 +2057,18 @@
         void saveAsHistogram(const string &filename,
                              const string &run_tag = "",
                              const string &created_at_local = "") const {
+            TDirectory *save_dir = gDirectory;
+            Bool_t original_adddir_status = TH1::AddDirectoryStatus();
+            TH1::AddDirectory(kFALSE);
+
             TFile fout(filename.c_str(), "RECREATE");
+            if (fout.IsZombie()) {
+                cerr << "ERROR: Could not create interpolated calibration map file "
+                     << filename << endl;
+                TH1::AddDirectory(original_adddir_status);
+                if (save_dir) save_dir->cd();
+                return;
+            }
             fout.cd();
             if (!run_tag.empty()) TNamed("run_tag", run_tag.c_str()).Write();
             if (!created_at_local.empty()) TNamed("created_at_local", created_at_local.c_str()).Write();
@@ -2212,9 +2132,27 @@
 	            TNamed("energy_mean_convention", "reconstructed_energy_GeV").Write();
 	            TNamed("energy_mean_formula", "E_mean = a + b*E_safe + c*ln(E_safe/1 GeV)").Write();
 	            TNamed("energy_log_floor_GeV", Form("%.8g", Config::MU_ENERGY_MIN_GEV)).Write();
-	            h_mu_a->Write(); h_mu->Write(); h_mu_b->Write(); h_mu_c->Write();
-	            h_sigma->Write(); h_sigma_pos->Write();
+            h_mu_a->Write(); h_mu->Write(); h_mu_b->Write(); h_mu_c->Write();
+            h_sigma->Write(); h_sigma_pos->Write();
             for (TH2D *h : response_ratio_maps) h->Write();
+
+            double resp_z_min = std::numeric_limits<double>::infinity();
+            double resp_z_max = -std::numeric_limits<double>::infinity();
+            for (TH2D *h : response_ratio_maps) {
+                for (int ix = 1; ix <= h->GetNbinsX(); ++ix) {
+                    for (int iy = 1; iy <= h->GetNbinsY(); ++iy) {
+                        double z = h->GetBinContent(ix, iy);
+                        if (!std::isfinite(z)) continue;
+                        resp_z_min = std::min(resp_z_min, z);
+                        resp_z_max = std::max(resp_z_max, z);
+                    }
+                }
+            }
+            if (std::isfinite(resp_z_min) && std::isfinite(resp_z_max)) {
+                double pad = 0.05 * std::max(1e-6, resp_z_max - resp_z_min);
+                resp_z_min -= pad;
+                resp_z_max += pad;
+            }
 
             TDirectory *canvas_dir = fout.mkdir("interpolated_canvases");
             TCanvas *c_params = new TCanvas("c_interpolated_parameter_maps", "Interpolated parameter maps", 1800, 900);
@@ -2238,16 +2176,29 @@
                 response_ratio_maps[ie]->SetStats(0);
                 response_ratio_maps[ie]->SetMarkerSize(0.6);
                 response_ratio_maps[ie]->GetZaxis()->SetTitle("#mu_{eff}/E");
+                if (std::isfinite(resp_z_min) && std::isfinite(resp_z_max) && resp_z_max > resp_z_min) {
+                    response_ratio_maps[ie]->SetMinimum(resp_z_min);
+                    response_ratio_maps[ie]->SetMaximum(resp_z_max);
+                }
                 response_ratio_maps[ie]->Draw("COLZ");
             }
             writeCanvasToDir(canvas_dir, c_resp, "c_interpolated_response_ratio_maps");
 
-	            fout.Close();
-
-            cout << "Saved interpolated calibration maps to " << filename << endl;
             delete c_params;
             delete c_resp;
+            delete h_mu_a;
+            delete h_mu;
+            delete h_mu_b;
+            delete h_mu_c;
+            delete h_sigma;
+            delete h_sigma_pos;
             for (TH2D *h : response_ratio_maps) delete h;
+
+	            fout.Close();
+            TH1::AddDirectory(original_adddir_status);
+            if (save_dir) save_dir->cd();
+
+            cout << "Saved interpolated calibration maps to " << filename << endl;
         }
         
         // Print parameters at a specific position
@@ -3387,6 +3338,8 @@
         Double_t d_cluster_x_2, d_cluster_y_2, d_cluster_e_2;
         Double_t d_pi0_weight;
         Float_t d_scale;
+        Float_t d_charge_uC = 0.0f;
+        Int_t d_run_number = 0;
         Int_t d_exclusive_flag = 1;
         Double_t d_mmiss_all = 0;  // Pre-calculated missing mass from data tree
         
@@ -3398,6 +3351,16 @@
         tdata->SetBranchAddress("cluster_e_2", &d_cluster_e_2);
         tdata->SetBranchAddress("pi0_weight", &d_pi0_weight);
         tdata->SetBranchAddress("scale", &d_scale);
+        if (!tdata->GetBranch("charge_uC")) {
+            cerr << "ERROR: data branch 'charge_uC' is required for charge-fraction normalization." << endl;
+            return 6;
+        }
+        if (!tdata->GetBranch("run_number")) {
+            cerr << "ERROR: data branch 'run_number' is required to sum charge once per run." << endl;
+            return 6;
+        }
+        tdata->SetBranchAddress("charge_uC", &d_charge_uC);
+        tdata->SetBranchAddress("run_number", &d_run_number);
         bool has_data_exclusive_branch = false;
         if (tdata->GetBranch(Config::DATA_EXCLUSIVITY_BRANCH)) {
             tdata->SetBranchAddress(Config::DATA_EXCLUSIVITY_BRANCH, &d_exclusive_flag);
@@ -3419,7 +3382,7 @@
         Float_t s_clust_E[10];
         Int_t s_nclust = 0;  // Number of clusters
         Float_t s_full_weight = 0.0f;
-        Float_t s_sigcm = 0.0f;
+        Float_t s_model_xsec = 0.0f;
         Int_t s_exclusive_flag = 1;
         
         // SIMC electron kinematics (for missing mass calculation)
@@ -3432,23 +3395,32 @@
         tsim->SetBranchAddress("nclust", &s_nclust);
         if (!tsim->GetBranch("full_weight")) {
             cerr << "ERROR: SIMC branch 'full_weight' not found. "
-                 << "Model-independent smearing requires full_weight/"
-                 << Config::SIM_MODEL_XSEC_BRANCH << "." << endl;
+                 << "Smearing requires SIMC event weights." << endl;
             return 6;
         }
-        if (!tsim->GetBranch(Config::SIM_MODEL_XSEC_BRANCH)) {
+        tsim->SetBranchAddress("full_weight", &s_full_weight);
+        if (Config::USE_SIM_MODEL_XSEC_DEMODELING && !tsim->GetBranch(Config::SIM_MODEL_XSEC_BRANCH)) {
             cerr << "ERROR: SIMC model cross-section branch '"
                  << Config::SIM_MODEL_XSEC_BRANCH << "' not found. "
                  << "Model-independent smearing requires full_weight/"
                  << Config::SIM_MODEL_XSEC_BRANCH << "." << endl;
             return 6;
         }
-        tsim->SetBranchAddress("full_weight", &s_full_weight);
-        tsim->SetBranchAddress(Config::SIM_MODEL_XSEC_BRANCH, &s_sigcm);
-        cout << "SIMC cross-section de-modeling: enabled\n"
-             << "  sim weight = full_weight/" << Config::SIM_MODEL_XSEC_BRANCH << "\n"
-             << "  invalid if |" << Config::SIM_MODEL_XSEC_BRANCH << "| < "
-             << Config::SIM_MODEL_XSEC_MIN_ABS << endl;
+        if (Config::USE_SIM_MODEL_XSEC_DEMODELING) {
+            tsim->SetBranchAddress(Config::SIM_MODEL_XSEC_BRANCH, &s_model_xsec);
+            cout << "SIMC cross-section de-modeling: enabled\n"
+                 << "  sim weight = full_weight/" << Config::SIM_MODEL_XSEC_BRANCH << "\n"
+                 << "  invalid if |" << Config::SIM_MODEL_XSEC_BRANCH << "| < "
+                 << Config::SIM_MODEL_XSEC_MIN_ABS << endl;
+        } else {
+            cout << "SIMC cross-section de-modeling: disabled\n"
+                 << "  sim weight = full_weight\n"
+                 << "  ignoring sigcm/siglab model cross-section branches" << endl;
+        }
+        cout << "Data weight = pi0_weight * scale * charge_fraction"
+             << (Config::APPLY_IS_EXCLUSIVE_SELECTION ? " * data_exclusive_factor" : "")
+             << "\n"
+             << "  charge_fraction = charge_uC / total_charge_uC, summed once per run_number" << endl;
 
         bool has_sim_exclusive_branch = false;
         if (tsim->GetBranch(Config::SIM_EXCLUSIVITY_BRANCH)) {
@@ -3558,8 +3530,30 @@
         vector<vector<double>> data_mpgg2_per_section(nsec);         // (p_target + gamma+gamma)^2
         vector<vector<double>> data_weight_per_section(nsec);
         vector<int> data_selected_count_per_section(nsec, 0); // count with positive selected weight
+        long long data_skipped_nonpositive_selected_weight = 0;
 
         Long64_t ndata = tdata->GetEntries();
+
+        // scripts/combine_analysis_branches.py defines scale as
+        // prescale / (computer_live_time * charge_mC). To combine runs without
+        // over-weighting low-charge runs, recover each run's luminosity share.
+        std::set<int> seen_data_runs;
+        double total_charge_uC = 0.0;
+        for (Long64_t i=0; i<ndata; ++i) {
+            tdata->GetEntry(i);
+            if (seen_data_runs.insert(static_cast<int>(d_run_number)).second &&
+                std::isfinite(static_cast<double>(d_charge_uC)) &&
+                d_charge_uC > 0.0f) {
+                total_charge_uC += static_cast<double>(d_charge_uC);
+            }
+        }
+        if (!(total_charge_uC > 0.0) || !std::isfinite(total_charge_uC)) {
+            cerr << "ERROR: total charge_uC from data tree is invalid; cannot normalize data weights." << endl;
+            return 6;
+        }
+        cout << "Data charge normalization: total_charge_uC=" << total_charge_uC
+             << " from " << seen_data_runs.size() << " run(s)" << endl;
+
         for (Long64_t i=0;i<ndata;++i) {
             tdata->GetEntry(i);
             
@@ -3578,12 +3572,22 @@
             PhotonMomentum dp2 = computePhotonMomentum(d_cluster_e_2_mpgg2, d_cluster_x_2, d_cluster_y_2, nps::kDefaultZ_NPS_cm);
             double mpgg2 = computeTargetPlusDiphotonMass2(d_cluster_e_1_mpgg2, dp1, d_cluster_e_2_mpgg2, dp2);
             
-            // Calculate data event weight with optional exclusivity factor.
+            // Calculate data event weight with the same charge normalization
+            // used by the cross-section analysis. The exclusive factor is read
+            // from the precomputed branch produced by combine_analysis_branches.py.
             double data_exclusive_factor = 1.0;
             if (Config::APPLY_IS_EXCLUSIVE_SELECTION && has_data_exclusive_branch) {
                 data_exclusive_factor = static_cast<double>(d_exclusive_flag);
             }
-            double weight = d_pi0_weight * d_scale * data_exclusive_factor;
+            double charge_fraction = 0.0;
+            if (std::isfinite(static_cast<double>(d_charge_uC)) && d_charge_uC > 0.0f) {
+                charge_fraction = static_cast<double>(d_charge_uC) / total_charge_uC;
+            }
+            double weight = d_pi0_weight * d_scale * charge_fraction * data_exclusive_factor;
+            if (!(weight > 0.0) || !std::isfinite(weight)) {
+                ++data_skipped_nonpositive_selected_weight;
+                continue;
+            }
 
             bool touches_geometry = event_touches_geometry(d_cluster_x_1, d_cluster_y_1,
                                     d_cluster_x_2, d_cluster_y_2);
@@ -3617,7 +3621,7 @@
                     data_mmiss_per_section[is].push_back(mmiss);
                     data_mpgg2_per_section[is].push_back(mpgg2);
                     data_weight_per_section[is].push_back(weight);
-                    if (weight > 0.0) ++data_selected_count_per_section[is];
+                    ++data_selected_count_per_section[is];
                 }
             }
         }
@@ -3671,12 +3675,15 @@
             cout << "Section "<<sections[is].name()<<" data entries="<<data_mass_per_section[is].size()
                 << "  (selected=" << data_selected_count_per_section[is] << ")\n";
         }
+        cout << "Data selected-weight summary: skipped non-positive/non-finite selected weights="
+             << data_skipped_nonpositive_selected_weight << "\n";
 
         // Now load sim tree and build per-section sim event lists
         cout << "Scanning sim tree and building per-section sim event buffers..." << endl;
         vector<vector<ClusterPair>> sim_events_per_section(nsec);
         vector<int> sim_selected_count_per_section(nsec, 0);
-        long long sim_skipped_invalid_model_weight = 0;
+        long long sim_skipped_invalid_base_weight = 0;
+        long long sim_skipped_nonpositive_selected_weight = 0;
         Long64_t nsim = tsim->GetEntries();
         for (Long64_t i=0;i<nsim;++i) {
             tsim->GetEntry(i);
@@ -3704,18 +3711,28 @@
             if (Config::APPLY_IS_EXCLUSIVE_SELECTION && has_sim_exclusive_branch) {
                 sim_exclusive_factor = static_cast<double>(s_exclusive_flag);
             }
-            if (!std::isfinite(s_full_weight) ||
-                !std::isfinite(s_sigcm) ||
-                std::fabs(static_cast<double>(s_sigcm)) < Config::SIM_MODEL_XSEC_MIN_ABS) {
-                ++sim_skipped_invalid_model_weight;
+            if (!std::isfinite(s_full_weight)) {
+                ++sim_skipped_invalid_base_weight;
                 continue;
             }
-            double sim_base_weight = static_cast<double>(s_full_weight) / static_cast<double>(s_sigcm);
+            double sim_base_weight = static_cast<double>(s_full_weight);
+            if (Config::USE_SIM_MODEL_XSEC_DEMODELING) {
+                if (!std::isfinite(s_model_xsec) ||
+                    std::fabs(static_cast<double>(s_model_xsec)) < Config::SIM_MODEL_XSEC_MIN_ABS) {
+                    ++sim_skipped_invalid_base_weight;
+                    continue;
+                }
+                sim_base_weight = static_cast<double>(s_full_weight) / static_cast<double>(s_model_xsec);
+            }
             if (!std::isfinite(sim_base_weight)) {
-                ++sim_skipped_invalid_model_weight;
+                ++sim_skipped_invalid_base_weight;
                 continue;
             }
             pair.weight = sim_base_weight * sim_exclusive_factor;
+            if (!(pair.weight > 0.0) || !std::isfinite(pair.weight)) {
+                ++sim_skipped_nonpositive_selected_weight;
+                continue;
+            }
             
             // Store transformed electron kinematics
             pair.Ee = s_e_E;
@@ -3744,37 +3761,33 @@
                     sec_pair.photon1_in_section = in1;
                     sec_pair.photon2_in_section = in2;
                     sim_events_per_section[is].push_back(sec_pair);
-                    if (sec_pair.weight > 0.0) ++sim_selected_count_per_section[is];
+                    ++sim_selected_count_per_section[is];
                 }
             }
         }
         for (int is=0; is<nsec; ++is)
             cout << "Section "<<sections[is].name()<<" sim entries="<<sim_events_per_section[is].size()
                 << "  (selected=" << sim_selected_count_per_section[is] << ")\n";
-        cout << "SIMC cross-section de-modeling summary: weight=full_weight/"
-             << Config::SIM_MODEL_XSEC_BRANCH
-             << ", skipped invalid model-weight events="
-             << sim_skipped_invalid_model_weight << "\n";
+        cout << "SIMC event-weight summary: weight="
+             << (Config::USE_SIM_MODEL_XSEC_DEMODELING ? Form("full_weight/%s", Config::SIM_MODEL_XSEC_BRANCH)
+                                                       : "full_weight")
+             << ", skipped invalid base-weight events="
+             << sim_skipped_invalid_base_weight
+             << ", skipped non-positive/non-finite selected weights="
+             << sim_skipped_nonpositive_selected_weight << "\n";
 
         const int optimizer_nsmear = max(1, min(Nsmear, Config::OPTIMIZATION_NSMEAR));
         vector<vector<ClusterPair>> sim_events_opt_per_section(nsec);
         long long opt_full_events_total = 0;
-        long long opt_subset_events_total = 0;
         for (int is = 0; is < nsec; ++is) {
-            sim_events_opt_per_section[is] = makeOptimizationSubset(
-                sim_events_per_section[is],
-                Config::OPT_MAX_SIM_EVENTS_PER_SECTION,
-                Config::OPT_SUBSET_MGG_BINS);
+            sim_events_opt_per_section[is] = sim_events_per_section[is];
             opt_full_events_total += (long long)sim_events_per_section[is].size();
-            opt_subset_events_total += (long long)sim_events_opt_per_section[is].size();
         }
-        cout << "\n==== Optimizer event thinning ====\n"
+        cout << "\n==== Optimizer event buffers ====\n"
              << "Optimizer Nsmear=" << optimizer_nsmear
              << " (final Nsmear=" << Nsmear << ")\n"
-             << "Section optimizer sim events: " << opt_subset_events_total
-             << " / " << opt_full_events_total
-             << " after deterministic M_gg-stratified, weight-compensated thinning.\n"
-             << "Final chi2 recompute and output histograms still use full sim events.\n";
+             << "Section optimizer sim events: " << opt_full_events_total
+             << " (full event buffers; no thinning).\n";
 
         // RNG - will be created per-thread in parallel region
         TRandom3 rng(0);  // Main thread RNG
@@ -3814,13 +3827,24 @@
 	        TNamed("optimizer_keep_best_seeds", Form("%d", Config::GLOBAL_MULTISTART_KEEP_BEST)).Write();
 	        TNamed("optimizer_nsmear", Form("%d", optimizer_nsmear)).Write();
 	        TNamed("final_nsmear", Form("%d", Nsmear)).Write();
-	        TNamed("optimizer_max_sim_events_per_section", Form("%d", Config::OPT_MAX_SIM_EVENTS_PER_SECTION)).Write();
-	        TNamed("optimizer_max_sim_events_global_prefit", Form("%d", Config::OPT_MAX_SIM_EVENTS_GLOBAL_PREFIT)).Write();
+	        TNamed("optimizer_event_mode", "full_sim_events").Write();
 	        TNamed("coupled_sweep_acceptance_strategy", sweep_acceptance_strategy.c_str()).Write();
-	        TNamed("sim_weight_mode", "full_weight_over_sigcm").Write();
-	        TNamed("sim_model_xsec_branch", Config::SIM_MODEL_XSEC_BRANCH).Write();
+	        TNamed("data_weight_mode", "pi0_weight_times_scale_times_charge_fraction_times_optional_exclusive").Write();
+	        TNamed("data_charge_normalization", "charge_fraction=charge_uC/total_charge_uC_once_per_run_number").Write();
+	        TNamed("data_total_charge_uC", Form("%.17g", total_charge_uC)).Write();
+	        TNamed("data_exclusive_branch", Config::APPLY_IS_EXCLUSIVE_SELECTION ? Config::DATA_EXCLUSIVITY_BRANCH : "disabled").Write();
+	        TNamed("sim_weight_mode",
+                   Config::USE_SIM_MODEL_XSEC_DEMODELING
+                       ? Form("full_weight_over_%s", Config::SIM_MODEL_XSEC_BRANCH)
+                       : "full_weight").Write();
+	        TNamed("sim_use_model_xsec_demodeling", Config::USE_SIM_MODEL_XSEC_DEMODELING ? "true" : "false").Write();
+	        TNamed("sim_model_xsec_branch",
+                   Config::USE_SIM_MODEL_XSEC_DEMODELING ? Config::SIM_MODEL_XSEC_BRANCH : "none").Write();
 	        TNamed("sim_model_xsec_min_abs", Form("%.17g", Config::SIM_MODEL_XSEC_MIN_ABS)).Write();
-	        TNamed("sim_skipped_invalid_model_weight_events", Form("%lld", sim_skipped_invalid_model_weight)).Write();
+	        TNamed("sim_skipped_invalid_base_weight_events", Form("%lld", sim_skipped_invalid_base_weight)).Write();
+	        TNamed("sim_skipped_invalid_model_weight_events", Form("%lld", sim_skipped_invalid_base_weight)).Write();
+	        TNamed("data_skipped_nonpositive_selected_weight_events", Form("%lld", data_skipped_nonpositive_selected_weight)).Write();
+	        TNamed("sim_skipped_nonpositive_selected_weight_events", Form("%lld", sim_skipped_nonpositive_selected_weight)).Write();
             TDirectory *diagnostic_canvas_dir = fout.mkdir("diagnostic_canvases");
             TDirectory *diagnostic_map_dir = fout.mkdir("diagnostic_maps");
             fout.cd();
@@ -4593,7 +4617,7 @@
                 info->AddText(Form("global objective=%.6g", objective));
                 info->AddText(Form("accepted=%s best=%s", candidate_accepted ? "yes" : "no",
                                    accepted_best ? "yes" : "no"));
-                info->AddText("Section plots use optimizer subset + optimizer Nsmear");
+                info->AddText("Section plots use full sim events + optimizer Nsmear");
                 info->Draw();
 
                 c_chi2->Print(pdf_file.c_str());
@@ -5107,14 +5131,12 @@
                 sim_global_prefit_selected >= Config::MIN_EVENTS_PER_SECTION &&
                 hdata_summary_mpi0.Integral() > 0.0 &&
                 !sim_events_global_prefit.empty()) {
-                vector<ClusterPair> sim_events_global_prefit_opt = makeOptimizationSubset(
-                    sim_events_global_prefit,
-                    Config::OPT_MAX_SIM_EVENTS_GLOBAL_PREFIT,
-                    Config::OPT_SUBSET_MGG_BINS);
+                vector<ClusterPair> sim_events_global_prefit_opt = sim_events_global_prefit;
                 cout << "\n==== GLOBAL PREFIT: all-calorimeter response seed ====\n"
                      << "Using " << data_global_prefit_selected << " selected data events and "
                      << sim_global_prefit_selected << " selected sim events"
-                     << " (optimizer subset=" << sim_events_global_prefit_opt.size()
+                     << " (optimizer selected sim events=" << sim_events_global_prefit_opt.size()
+                     << ", full selected buffer"
                      << ", optimizer Nsmear=" << optimizer_nsmear
                      << "). Path: Sobol -> keep best N -> MIGRAD -> HESSE/profile.\n";
 
@@ -5676,8 +5698,8 @@
 
         {
             ofstream closure_summary(closure_summary_csv_file.c_str());
-            closure_summary << "ix,iy,section,fit_status,optimizer_mode,optimizer_chi2_subset,"
-                            << "full_final_chi2,delta_full_minus_optimizer,optimizer_chi2_ndf_subset,"
+            closure_summary << "ix,iy,section,fit_status,optimizer_mode,optimizer_chi2,"
+                            << "full_final_chi2,delta_full_minus_optimizer,optimizer_chi2_ndf,"
                             << "full_final_chi2_ndf,delta_full_minus_optimizer_chi2_ndf,"
                             << "optimizer_nsmear,final_nsmear,n_sim_optimizer,n_sim_full\n";
             for (int is = 0; is < nsec; ++is) {
@@ -5702,7 +5724,7 @@
                                 << "," << sim_events_per_section[is].size()
                                 << "\n";
             }
-            cout << "  wrote " << closure_summary_csv_file << " (optimizer subset vs full final chi2)\n";
+            cout << "  wrote " << closure_summary_csv_file << " (optimizer Nsmear vs full final Nsmear)\n";
         }
 
         cout << "\n==== Writing optimizer diagnostics ====\n";
@@ -6492,32 +6514,44 @@
 
         // ---- Visualization: energy response ratio curves for a selection of sections ----
         {
-            // Select up to 8 fitted sections evenly spaced in section index
+            // Select many fitted sections evenly spaced in section index for a compact overview.
             vector<int> sel_sections;
             {
-                int step = max(1, (int)score_order.size() > 0 ? nsec / min(8, nsec) : 1);
-                for (int is = 0; is < nsec && (int)sel_sections.size() < 8; is += step) {
+                const int max_curve_sections = 24;
+                int n_target = min(max_curve_sections, nsec);
+                int step = max(1, nsec / max(1, n_target));
+                for (int is = 0; is < nsec && (int)sel_sections.size() < max_curve_sections; is += step) {
                     if (fit_success[is]) sel_sections.push_back(is);
                 }
+                for (int is = 0; is < nsec && (int)sel_sections.size() < max_curve_sections; ++is) {
+                    if (fit_success[is] &&
+                        std::find(sel_sections.begin(), sel_sections.end(), is) == sel_sections.end()) {
+                        sel_sections.push_back(is);
+                    }
+                }
                 if (sel_sections.empty()) {
-                    for (int is = 0; is < nsec && (int)sel_sections.size() < 8; ++is)
+                    for (int is = 0; is < nsec && (int)sel_sections.size() < max_curve_sections; ++is)
                         if (fit_success[is]) sel_sections.push_back(is);
                 }
             }
             if (!sel_sections.empty()) {
-                TCanvas *c_resp = new TCanvas("c_response_ratio_curves", "Energy Response Ratio Curves per Section", 1400, 700);
+                TCanvas *c_resp = new TCanvas("c_response_ratio_curves", "Energy Response Ratio Curves per Section", 1700, 900);
                 c_resp->Divide(1, 1);
                 c_resp->cd(1);
                 gPad->SetLeftMargin(0.12); gPad->SetBottomMargin(0.14);
+                gPad->SetRightMargin(0.04); gPad->SetTopMargin(0.08);
                 gPad->SetGridx(); gPad->SetGridy();
 
                 const int NE = 80;
                 const double E_lo = Config::RESPONSE_CURVE_E_MIN_GEV;
                 const double E_hi = Config::RESPONSE_CURVE_E_MAX_GEV;
-                int colors[] = {kBlue, kRed, kGreen+2, kMagenta, kOrange+7, kCyan+2, kViolet+5, kGray+2};
+                int colors[] = {kBlue, kRed, kGreen+2, kMagenta, kOrange+7, kCyan+2,
+                                kViolet+5, kGray+2, kAzure+7, kPink+7, kSpring+5, kTeal+3};
+                int styles[] = {1, 2, 3};
                 TMultiGraph *mg = new TMultiGraph("mg_response_ratio", "Energy response ratio R(E)=#mu_{eff}(E)/E per section;E [GeV];#mu_{eff}(E)/E");
-                TLegend *lg_me = new TLegend(0.65, 0.15, 0.95, 0.55);
+                TLegend *lg_me = new TLegend(0.13, 0.68, 0.96, 0.91);
                 lg_me->SetBorderSize(1); lg_me->SetFillColor(0); lg_me->SetTextSize(0.026);
+                lg_me->SetNColumns(3);
 
                 for (int ii = 0; ii < (int)sel_sections.size(); ++ii) {
                     int is = sel_sections[ii];
@@ -6529,7 +6563,11 @@
                         double mu_eff = fr.mu_a + fr.mu * E_s + fr.mu_c * std::log(E_s);
                         g->SetPoint(ie, E, (E_s > 0.0) ? mu_eff / E_s : 0.0);
                     }
-                    g->SetLineColor(colors[ii % 8]); g->SetLineWidth(2);
+                    int n_colors = sizeof(colors) / sizeof(colors[0]);
+                    int n_styles = sizeof(styles) / sizeof(styles[0]);
+                    g->SetLineColor(colors[ii % n_colors]);
+                    g->SetLineStyle(styles[(ii / n_colors) % n_styles]);
+                    g->SetLineWidth(1);
                     mg->Add(g, "L");
                     double E_ref = 2.0;
                     double E_ref_s = std::max(E_ref, Config::MU_ENERGY_MIN_GEV);
@@ -6576,13 +6614,39 @@
                     h->SetBinContent(bx, by, (E_s > 0.0) ? mu_eff / E_s : 0.0);
                 }
                 response_maps.push_back(h);
+            }
+
+            double resp_z_min = std::numeric_limits<double>::infinity();
+            double resp_z_max = -std::numeric_limits<double>::infinity();
+            for (TH2D *h : response_maps) {
+                for (int ix = 1; ix <= h->GetNbinsX(); ++ix) {
+                    for (int iy = 1; iy <= h->GetNbinsY(); ++iy) {
+                        double z = h->GetBinContent(ix, iy);
+                        if (!std::isfinite(z) || z <= 0.0) continue;
+                        resp_z_min = std::min(resp_z_min, z);
+                        resp_z_max = std::max(resp_z_max, z);
+                    }
+                }
+            }
+            if (std::isfinite(resp_z_min) && std::isfinite(resp_z_max)) {
+                double pad = 0.05 * std::max(1e-6, resp_z_max - resp_z_min);
+                resp_z_min -= pad;
+                resp_z_max += pad;
+            }
+
+            for (int ie = 0; ie < N_E_fixed; ++ie) {
                 c_resp2d->cd(ie + 1);
                 gPad->SetRightMargin(0.15); gPad->SetLeftMargin(0.10); gPad->SetBottomMargin(0.14);
+                TH2D *h = response_maps[ie];
                 h->SetStats(0);
                 h->SetMarkerSize(1.0);
                 h->GetXaxis()->SetTitleSize(0.05); h->GetYaxis()->SetTitleSize(0.05);
                 h->GetZaxis()->SetTitle("#mu_{eff}/E");
                 h->GetZaxis()->SetLabelSize(0.035);
+                if (std::isfinite(resp_z_min) && std::isfinite(resp_z_max) && resp_z_max > resp_z_min) {
+                    h->SetMinimum(resp_z_min);
+                    h->SetMaximum(resp_z_max);
+                }
                 h->Draw("COLZ TEXT");
             }
             c_resp2d->Print(pdf_file.c_str());
@@ -6686,10 +6750,11 @@
             txt->AddText(Form("Observable mode: %s", Config::histogram_mode_label()));
             txt->AddText(Form("Weights: w_{M_{#gamma#gamma}}=%.3f, w_{M_{miss}}=%.3f, w_{(p+#gamma#gamma)^{2}}=%.3f",
                             Config::W_MPI0, Config::W_MMISS, Config::W_MPGG2));
-            txt->AddText(Form("SIMC de-modeling: sim weight = full_weight/%s",
-                            Config::SIM_MODEL_XSEC_BRANCH));
-            txt->AddText(Form("Invalid SIMC model-weight events skipped: %lld",
-                            sim_skipped_invalid_model_weight));
+            txt->AddText(Config::USE_SIM_MODEL_XSEC_DEMODELING
+                         ? Form("SIMC de-modeling: sim weight = full_weight/%s", Config::SIM_MODEL_XSEC_BRANCH)
+                         : "SIMC de-modeling: disabled; sim weight = full_weight");
+            txt->AddText(Form("Invalid SIMC base-weight events skipped: %lld",
+                            sim_skipped_invalid_base_weight));
             txt->AddText(Form("Energy model: %s", Config::USE_SIMPLE_STOCHASTIC_MODEL ? "#sigma_{E}=#sigma#sqrt{E}" : "3-term resolution model"));
             txt->AddText(Form("Position smearing: %s", Config::ENABLE_POSITION_SMEARING ? "enabled" : "disabled"));
             txt->AddText(Form("N_{smear} per event: %d", Nsmear));

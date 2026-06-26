@@ -79,7 +79,7 @@ struct AnalysisConfig {
     // the code will use it to convert data/MC ratios into absolute cross sections.
     // Candidate branch names are searched in this order.
     std::vector<std::string> model_xsec_candidates = {
-        "sigcm"
+        "siglab"
     };
 };
 

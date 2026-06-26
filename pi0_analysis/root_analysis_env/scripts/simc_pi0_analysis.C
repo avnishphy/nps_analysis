@@ -1,7 +1,8 @@
 // ============================================================================
 // File: simc_pi0_analysis.C
 // Purpose: Analysis script for pure pi0 GEANT4 simulation
-// Input: nps_excl_pi0_x60_4b_geant_500k_5ns.root (pure pi0 simulation)
+// Input: nps_excl_x60_4b_500k.root, nps_sidis_pi0_x60_4b_500k.root,
+//        nps_delta_pi0_x60_4b_500k.root
 // Output: Processed ROOT file with physics variables and weights
 //
 // OUTPUT TREE CONTENT:
@@ -124,8 +125,12 @@ const double RESOLUTION_C = 1.14;    // Constant term (1.14%)
 const bool USE_INDIVIDUAL_PHOTON_BRANCHES = true;  // Set to true to use phot1/phot2 branches instead of clusters
 
 // Smearing file paths (relative to script location or absolute)
+// const char* SMEAR_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/out_smear_20260619_110840.root";
+// const char* SMEAR_INTERP_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/out_smear_20260619_110840_interpolated.root";
+// const char* SECTION_MAP_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/section_map.csv";
+
 const char* SMEAR_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/out_smear.root";
-const char* SMEAR_INTERP_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/out_smear_interpolated.root";
+const char* SMEAR_INTERP_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/out_smear.root";
 const char* SECTION_MAP_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/section_map.csv";
 
 std::string ACTIVE_SMEAR_FILE = SMEAR_FILE_SECTION;
@@ -726,8 +731,10 @@ void simc_pi0_analysis()
     // Input files (processed into the same output trees)
     const char* input_file_exclusive_default = "/w/hallc-scshelf2102/nps/singhav/geant4_simc/HallC_NPS/DVCS_evt_gen/DVCS/nps_excl_x60_4b_500k.root";
     const char* input_file_sidis_default = "/w/hallc-scshelf2102/nps/singhav/geant4_simc/HallC_NPS/DVCS_evt_gen/DVCS/nps_sidis_pi0_x60_4b_500k.root";
+    const char* input_file_delta_default = "/w/hallc-scshelf2102/nps/singhav/geant4_simc/HallC_NPS/DVCS_evt_gen/DVCS/nps_delta_pi0_x60_4b_500k.root";
     const char* input_file_exclusive = std::getenv("NPS_SIMC_EXCLUSIVE_INPUT") ? std::getenv("NPS_SIMC_EXCLUSIVE_INPUT") : input_file_exclusive_default;
     const char* input_file_sidis = std::getenv("NPS_SIMC_SIDIS_INPUT") ? std::getenv("NPS_SIMC_SIDIS_INPUT") : input_file_sidis_default;
+    const char* input_file_delta = std::getenv("NPS_SIMC_DELTA_INPUT") ? std::getenv("NPS_SIMC_DELTA_INPUT") : input_file_delta_default;
     const char* output_file_default = "output/plots/x60_4b/production_wfpi0/simc_pi0_analysis_output.root";
     const char* output_file_smeared_default = "output/plots/x60_4b/production_wfpi0/simc_pi0_analysis_output_smeared.root";
     const char* output_file = std::getenv("NPS_SIMC_OUTPUT_FILE") ? std::getenv("NPS_SIMC_OUTPUT_FILE") : output_file_default;
@@ -975,9 +982,6 @@ void simc_pi0_analysis()
     Double_t x_beam = 0;   // Beam x position at target from simulation
     Float_t vtx_z = 0;    // Vertex z position from simulation
     Float_t in_siglab = 0.0;
-    Float_t in_sigcm = 0.0;
-    bool has_siglab_branch = false;
-    bool has_sigcm_branch = false;
     
     // ========================================================================
     // Create Output Files and Trees
@@ -1014,9 +1018,8 @@ void simc_pi0_analysis()
     Float_t out_s;              // Invariant s = (k + p)^2 (GeV^2)
     Float_t out_tmin;           // Minimal kinematic t (GeV^2)
     Float_t out_phi;            // Azimuthal angle (radians)
-    // Added siglab and sigcm
+    // SIMC event-level cross section used for de-modeling
     Float_t out_siglab;
-    Float_t out_sigcm;
     
     // HMS variables
     Float_t out_hsdelta;
@@ -1034,6 +1037,8 @@ void simc_pi0_analysis()
     Float_t out_sc_e_Py;
     Float_t out_sc_e_Pz;
     Int_t out_is_exclusive;
+    Int_t out_is_sidis;
+    Int_t out_is_delta;
     
     // Smeared output variables (same structure)
     ULong64_t out_event_id_sm; // Unique event ID for smeared output
@@ -1063,15 +1068,16 @@ void simc_pi0_analysis()
     Float_t out_hreactz_sm;
     Float_t out_theta_c_sm;
     Float_t out_vtx_z_sm;
-    // Added siglab and sigcm for smeared
+    // SIMC event-level cross section used for de-modeling
     Float_t out_siglab_sm;
-    Float_t out_sigcm_sm;
     // Electron kinematics (SIMC frame, MeV) - smeared version
     Float_t out_sc_e_E_sm;
     Float_t out_sc_e_Px_sm;
     Float_t out_sc_e_Py_sm;
     Float_t out_sc_e_Pz_sm;
     Int_t out_is_exclusive_sm;
+    Int_t out_is_sidis_sm;
+    Int_t out_is_delta_sm;
 
     // Helper: get event-by-event smearing coefficients.
     // Priority: interpolated maps (if available) -> section-map defaults.
@@ -1200,9 +1206,8 @@ void simc_pi0_analysis()
     outtree->Branch("s", &out_s, "s/F");
     outtree->Branch("tmin", &out_tmin, "tmin/F");
     outtree->Branch("phi", &out_phi, "phi/F");
-    // Add siglab and sigcm branches
+    // SIMC event-level cross section used for de-modeling
     outtree->Branch("siglab", &out_siglab, "siglab/F");
-    outtree->Branch("sigcm", &out_sigcm, "sigcm/F");
     
     outtree->Branch("hsdelta", &out_hsdelta, "hsdelta/F");
     outtree->Branch("hsyptar", &out_hsyptar, "hsyptar/F");
@@ -1219,6 +1224,8 @@ void simc_pi0_analysis()
     outtree->Branch("sc_e_Py", &out_sc_e_Py, "sc_e_Py/F");
     outtree->Branch("sc_e_Pz", &out_sc_e_Pz, "sc_e_Pz/F");
     outtree->Branch("is_exclusive", &out_is_exclusive, "is_exclusive/I");
+    outtree->Branch("is_sidis", &out_is_sidis, "is_sidis/I");
+    outtree->Branch("is_delta", &out_is_delta, "is_delta/I");
     
     // Create branches for smeared tree
     if (use_smearing) {
@@ -1249,15 +1256,16 @@ void simc_pi0_analysis()
         outtree_smeared->Branch("hreactz", &out_hreactz_sm, "hreactz/F");
         outtree_smeared->Branch("theta_c", &out_theta_c_sm, "theta_c/F");
         outtree_smeared->Branch("vtx_z", &out_vtx_z_sm, "vtx_z/F");
-        // Add siglab and sigcm branches for smeared
+        // SIMC event-level cross section used for de-modeling
         outtree_smeared->Branch("siglab", &out_siglab_sm, "siglab/F");
-        outtree_smeared->Branch("sigcm", &out_sigcm_sm, "sigcm/F");
         // Electron kinematics (SIMC frame, MeV)
         outtree_smeared->Branch("sc_e_E", &out_sc_e_E_sm, "sc_e_E/F");
         outtree_smeared->Branch("sc_e_Px", &out_sc_e_Px_sm, "sc_e_Px/F");
         outtree_smeared->Branch("sc_e_Py", &out_sc_e_Py_sm, "sc_e_Py/F");
         outtree_smeared->Branch("sc_e_Pz", &out_sc_e_Pz_sm, "sc_e_Pz/F");
         outtree_smeared->Branch("is_exclusive", &out_is_exclusive_sm, "is_exclusive/I");
+        outtree_smeared->Branch("is_sidis", &out_is_sidis_sm, "is_sidis/I");
+        outtree_smeared->Branch("is_delta", &out_is_delta_sm, "is_delta/I");
     }
     
     // ========================================================================
@@ -1270,11 +1278,14 @@ void simc_pi0_analysis()
         const char* label;
         const char* path;
         bool is_exclusive;
+        bool is_sidis;
+        bool is_delta;
     };
 
     const std::vector<InputSample> input_samples = {
-        {"exclusive", input_file_exclusive, true},
-        {"sidis", input_file_sidis, false}
+        {"exclusive", input_file_exclusive, true, false, false},
+        {"sidis", input_file_sidis, false, true, false},
+        {"delta_pi0", input_file_delta, false, false, true}
     };
 
     Int_t processed = 0;
@@ -1333,16 +1344,18 @@ void simc_pi0_analysis()
         clust_X = nullptr;
         clust_Y = nullptr;
         in_siglab = 0.0;
-        in_sigcm = 0.0;
 
-        has_siglab_branch = (tree->GetBranch("siglab") != nullptr);
-        has_sigcm_branch = (tree->GetBranch("sigcm") != nullptr);
-        if (has_siglab_branch) {
-            tree->SetBranchAddress("siglab", &in_siglab);
+        // De-modeling uses siglab for both SIMC samples because SIMC writes
+        // siglab from main%sigcc, the same cross-section factor included in
+        // Weight. See pi0_analysis/root_analysis_env/demodeling.md.
+        if (!tree->GetBranch("siglab")) {
+            cerr << "ERROR: Required branch 'siglab' is missing in "
+                 << sample.path << " (" << sample.label << ")." << endl;
+            infile->Close();
+            delete infile;
+            return;
         }
-        if (has_sigcm_branch) {
-            tree->SetBranchAddress("sigcm", &in_sigcm);
-        }
+        tree->SetBranchAddress("siglab", &in_siglab);
 
         if (USE_INDIVIDUAL_PHOTON_BRANCHES) {
             // Use individual photon branches
@@ -1453,8 +1466,9 @@ void simc_pi0_analysis()
             out_sc_e_Py = sc_e_Py;
             out_sc_e_Pz = sc_e_Pz;
             out_is_exclusive = sample.is_exclusive ? 1 : 0;
-            out_siglab = has_siglab_branch ? in_siglab : 0.0f;
-            out_sigcm = has_sigcm_branch ? in_sigcm : 0.0f;
+            out_is_sidis = sample.is_sidis ? 1 : 0;
+            out_is_delta = sample.is_delta ? 1 : 0;
+            out_siglab = in_siglab;
             
             // Initialize NPS/physics variables to sentinel values
             out_nclust = 0;
@@ -1655,13 +1669,14 @@ void simc_pi0_analysis()
                 out_theta_c_sm = theta_c_sm;
                 out_vtx_z_sm = vtx_z;
                 out_siglab_sm = out_siglab;
-                out_sigcm_sm = out_sigcm;
                 // Fill electron kinematics (SIMC frame, MeV) - same as unsmeared
                 out_sc_e_E_sm = sc_e_E;
                 out_sc_e_Px_sm = sc_e_Px;
                 out_sc_e_Py_sm = sc_e_Py;
                 out_sc_e_Pz_sm = sc_e_Pz;
                 out_is_exclusive_sm = sample.is_exclusive ? 1 : 0;
+                out_is_sidis_sm = sample.is_sidis ? 1 : 0;
+                out_is_delta_sm = sample.is_delta ? 1 : 0;
                 outtree_smeared->Fill();
             }
         }
@@ -1713,8 +1728,9 @@ void simc_pi0_analysis()
             out_sc_e_Py = sc_e_Py;
             out_sc_e_Pz = sc_e_Pz;
             out_is_exclusive = sample.is_exclusive ? 1 : 0;
-            out_siglab = has_siglab_branch ? in_siglab : 0.0f;
-            out_sigcm = has_sigcm_branch ? in_sigcm : 0.0f;
+            out_is_sidis = sample.is_sidis ? 1 : 0;
+            out_is_delta = sample.is_delta ? 1 : 0;
+            out_siglab = in_siglab;
             
             // Initialize NPS/physics variables to sentinel values
             out_nclust = 0;
@@ -1950,7 +1966,6 @@ void simc_pi0_analysis()
                 out_theta_c_sm = theta_c_sm;
                 out_vtx_z_sm = vtx_z;
                 out_siglab_sm = out_siglab;
-                out_sigcm_sm = out_sigcm;
                 
                 // Fill electron kinematics (SIMC frame, MeV) - same as unsmeared
                 out_sc_e_E_sm = sc_e_E;
@@ -1958,6 +1973,8 @@ void simc_pi0_analysis()
                 out_sc_e_Py_sm = sc_e_Py;
                 out_sc_e_Pz_sm = sc_e_Pz;
                 out_is_exclusive_sm = sample.is_exclusive ? 1 : 0;
+                out_is_sidis_sm = sample.is_sidis ? 1 : 0;
+                out_is_delta_sm = sample.is_delta ? 1 : 0;
                 
                 outtree_smeared->Fill();
             }

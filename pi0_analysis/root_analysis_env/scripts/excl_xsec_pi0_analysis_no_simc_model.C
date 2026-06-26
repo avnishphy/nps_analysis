@@ -78,10 +78,12 @@ struct AnalysisConfig {
     bool write_pdf = true;
 
     // Event-level SIMC model xsec branch used for de-modeling weight:
-    //   w_base = full_weight / sigcm
+    //   w_base = full_weight / siglab
+    // siglab is the branch written from SIMC main%sigcc, the same factor
+    // multiplied into Weight. See pi0_analysis/root_analysis_env/demodeling.md.
     // Candidate branch names are searched in this order.
     std::vector<std::string> model_xsec_candidates = {
-        "sigcm"
+        "siglab"
     };
 };
 
@@ -89,7 +91,7 @@ struct PhiBin {
     double data = 0.0, data_sumw2 = 0.0;
     double sim  = 0.0, sim_sumw2  = 0.0;
 
-    // De-modeled SIMC basis sums, built with weight = full_weight/sigcm.
+    // De-modeled SIMC basis sums, built with weight = full_weight/siglab.
     double sim_base = 0.0;
     double sim_base_cos1 = 0.0;
     double sim_base_cos2 = 0.0;
@@ -506,7 +508,7 @@ private:
                         float phi,
                         float full_weight,
                         int is_exclusive,
-                        float sigcm,
+                        float model_xsec,
                         int helicity,
                         bool use_helicity,
                         float W);
@@ -554,7 +556,7 @@ void ExclPi0XSecAnalysis::detect_optional_branches() {
     }
 
     if (!has_model_xsec) {
-        die("No SIMC model cross-section branch (e.g. sigcm) found. This extraction requires de-modeling with full_weight/sigcm.");
+        die("No SIMC model cross-section branch 'siglab' found. This extraction requires de-modeling with full_weight/siglab.");
     }
     if (!has_helicity) warn("No helicity branch found in data tree. TL' will not be optimized.");
     if (has_helicity && !has_sim_helicity) {
@@ -596,7 +598,7 @@ void ExclPi0XSecAnalysis::build_binning() {
                 q2_xb_data.emplace_back(q2, xb);
             }
         } else {
-            float q2 = 0, tval = 0, tmin = 0, xb = 0, phi = 0, full_weight = 0, sigcm = 0;
+            float q2 = 0, tval = 0, tmin = 0, xb = 0, phi = 0, full_weight = 0, model_xsec = 0;
             int is_exclusive = 0, helicity = 0;
             t->SetBranchAddress("Q2", &q2);
             t->SetBranchAddress("t", &tval);
@@ -605,7 +607,7 @@ void ExclPi0XSecAnalysis::build_binning() {
             t->SetBranchAddress("phi", &phi);
             t->SetBranchAddress("full_weight", &full_weight);
             t->SetBranchAddress("is_exclusive", &is_exclusive);
-            t->SetBranchAddress(model_xsec_branch.c_str(), &sigcm);
+            t->SetBranchAddress(model_xsec_branch.c_str(), &model_xsec);
             if (has_sim_helicity) t->SetBranchAddress("helicity", &helicity);
             const Long64_t n = t->GetEntries();
             for (Long64_t i = 0; i < n; ++i) {
@@ -613,7 +615,7 @@ void ExclPi0XSecAnalysis::build_binning() {
                 if (!is_exclusive) continue;
                 if (!(q2 >= cfg.q2_min && q2 <= cfg.q2_max)) continue;
                 if (!(xb >= cfg.xb_min && xb <= cfg.xb_max)) continue;
-                if (!std::isfinite(full_weight) || !std::isfinite(sigcm) || std::fabs(sigcm) < 1e-20f) continue;
+                if (!std::isfinite(full_weight) || !std::isfinite(model_xsec) || std::fabs(model_xsec) < 1e-20f) continue;
                 double tprime = calc_tprime(tval, tmin);
                 if (!(tprime >= cfg.tprime_min && tprime <= cfg.tprime_max)) continue;
                 if (!std::isfinite(phi)) continue;
@@ -781,7 +783,7 @@ void ExclPi0XSecAnalysis::fill_sim_event(float q2,
                                          float phi,
                                          float full_weight,
                                          int is_exclusive,
-                                         float sigcm,
+                                         float model_xsec,
                                          int helicity,
                                          bool use_helicity,
                                          float W) {
@@ -791,7 +793,7 @@ void ExclPi0XSecAnalysis::fill_sim_event(float q2,
     double tprime = calc_tprime(t, tmin);
     if (!slice_passes_kin(q2, xb, tprime)) return;
     if (!std::isfinite(phi)) return;
-    if (!std::isfinite(full_weight) || !std::isfinite(sigcm) || std::fabs(sigcm) < 1e-20f) return;
+    if (!std::isfinite(full_weight) || !std::isfinite(model_xsec) || std::fabs(model_xsec) < 1e-20f) return;
 
     cutflow.n_sim_pass++;
 
@@ -803,7 +805,7 @@ void ExclPi0XSecAnalysis::fill_sim_event(float q2,
     if (it < 0 || ix < 0 || ip < 0) return;
     cutflow.n_sim_inrange++;
 
-    const double base_w = static_cast<double>(full_weight) / static_cast<double>(sigcm);
+    const double base_w = static_cast<double>(full_weight) / static_cast<double>(model_xsec);
     if (!std::isfinite(base_w)) return;
 
     const double phiw = wrap_phi(phi);
@@ -885,7 +887,7 @@ void ExclPi0XSecAnalysis::fill_from_trees() {
     }
 
     // SIMC loop
-    float sim_q2 = 0, sim_t = 0, sim_tmin = 0, sim_xb = 0, sim_phi = 0, full_weight = 0, sim_sigcm = 0, sim_W = 0;
+    float sim_q2 = 0, sim_t = 0, sim_tmin = 0, sim_xb = 0, sim_phi = 0, full_weight = 0, sim_model_xsec = 0, sim_W = 0;
     int sim_is_exclusive = 0, sim_helicity = 0;
     t_sim->SetBranchAddress("Q2", &sim_q2);
     t_sim->SetBranchAddress("t", &sim_t);
@@ -895,7 +897,7 @@ void ExclPi0XSecAnalysis::fill_from_trees() {
     t_sim->SetBranchAddress("full_weight", &full_weight);
     t_sim->SetBranchAddress("is_exclusive", &sim_is_exclusive);
     t_sim->SetBranchAddress("W", &sim_W);
-    t_sim->SetBranchAddress(model_xsec_branch.c_str(), &sim_sigcm);
+    t_sim->SetBranchAddress(model_xsec_branch.c_str(), &sim_model_xsec);
     if (has_sim_helicity) t_sim->SetBranchAddress("helicity", &sim_helicity);
 
     const Long64_t nsim = t_sim->GetEntries();
@@ -908,7 +910,7 @@ void ExclPi0XSecAnalysis::fill_from_trees() {
                        sim_phi,
                        full_weight,
                        sim_is_exclusive,
-                       sim_sigcm,
+                       sim_model_xsec,
                        sim_helicity,
                        has_sim_helicity,
                        sim_W);

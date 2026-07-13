@@ -1,15 +1,23 @@
-# SIMC De-Modeling Convention
+# SIMC Weighting Conventions
 
-This workflow removes the SIMC event-level cross-section model from SIMC event
-weights with:
+The current workflow uses two related SIMC weighting conventions:
+
+- Smearing calibration removes the full SIMC event-level cross-section factor:
 
 ```text
 w_sim_base = full_weight / siglab
 ```
 
-Use `siglab` for both exclusive and SIDIS pi0 samples.
+- The no-SIMC-model cross-section extraction fits a CM-response basis:
 
-## Reason
+```text
+w_xsec_base = full_weight / sigcm
+```
+
+Do not interchange these two denominators without also changing the fitted
+quantity and the response factors.
+
+## Common SIMC Factorization
 
 The processed SIMC tree branch `full_weight` is built from the input SIMC
 `Weight` branch multiplied by the run/sample normalization in
@@ -51,56 +59,87 @@ Therefore `full_weight / siglab` removes the same event-level cross-section
 model factor that SIMC multiplied into `Weight`, while preserving generator,
 phase-space, acceptance, and normalization factors.
 
-## Exclusive Pi0
-
-For exclusive pion production, SIMC returns the lab five-fold cross section to
-`event.f`:
+Use `siglab` for smearing de-modeling across exclusive, SIDIS pi0, and delta
+samples. The SIMC source assigns `main%sigcc` by channel:
 
 ```fortran
-! /group/nps/singhav/simc_gfortran_updated/physics_pion.f:191
+! /u/group/nps/singhav/simc_gfortran_updated/event.f
+doing_pion  -> main%sigcc = peepi(vertex,main)
+doing_delta -> main%sigcc = peedelta(vertex,main)
+doing_semi  -> main%sigcc = peepiX(vertex,vertex0,main,survivalprob,.FALSE.)
+```
+
+The ntuple writes that same `main%sigcc` as `siglab`:
+
+```fortran
+! pion/kaon/delta ntuple
+ntu(44) = main%sigcc              ! d5sig
+
+! semi/rho ntuple
+ntu(39) = main%sigcc              ! d5sig
+```
+
+## Smearing
+
+Smearing should fit detector response, not the SIMC model cross-section shape.
+The active smearing fitter is configured as:
+
+```cpp
+// scripts/nps_sim_smearing_new_try.C
+const bool USE_SIM_MODEL_XSEC_DEMODELING = true;
+const char* SIM_MODEL_XSEC_BRANCH = "siglab";
+```
+
+The smearing event weight is therefore:
+
+```text
+w_sim = (full_weight / siglab) * is_exclusive_ellipse
+```
+
+This is the correct common choice for exclusive, SIDIS, and delta rows because
+`siglab` is the exact `main%sigcc` factor in `Weight`.
+
+## Cross-Section Extraction
+
+The no-SIMC-model exclusive cross-section macro intentionally uses:
+
+```text
+w_xsec_base = full_weight / sigcm
+```
+
+For exclusive pion production, SIMC forms:
+
+```fortran
+! /u/group/nps/singhav/simc_gfortran_updated/physics_pion.f
+ntup%sigcm = sigma_eepi
 peepi = sigma_eepi*jacobian*(gtpr*fac)
 
-! /group/nps/singhav/simc_gfortran_updated/event.f:1459
+! /u/group/nps/singhav/simc_gfortran_updated/event.f
 main%sigcc = peepi(vertex,main)
 ```
 
-Since `siglab` is written from `main%sigcc`, it is the correct denominator for
-exclusive de-modeling.
+Thus:
 
-## SIDIS Pi0
-
-For SIDIS, the returned cross section is `sigma_eepiX`:
-
-```fortran
-! /group/nps/singhav/simc_gfortran_updated/semi_physics.f:562
-sigma_eepiX = sigsemi*jacobian/1.e6
-
-! /group/nps/singhav/simc_gfortran_updated/semi_physics.f:584
-sigma_eepiX = sigma_eepiX*fac
-
-! /group/nps/singhav/simc_gfortran_updated/semi_physics.f:595
-peepiX = sigma_eepiX
-
-! /group/nps/singhav/simc_gfortran_updated/event.f:1521
-main%sigcc = peepiX(vertex,vertex0,main,survivalprob,.FALSE.)
+```text
+full_weight / sigcm
+  = normalization * SF_weight * jacobian * gen_weight
+    * (siglab / sigcm)
+  = normalization * SF_weight * jacobian * gen_weight
+    * davejac * gtpr * fac
 ```
 
-Again, `siglab` is written from `main%sigcc`, so `full_weight / siglab` removes
-the event-level cross-section factor in `Weight`.
+This removes the SIMC CM model cross section while keeping SIMC's lab/CM
+Jacobian, flux convention, and Fermi-motion factor in the response matrix. That
+is why the cross-section macro must not multiply an additional gamma/flux factor
+on top of this basis.
 
-## Pipeline Usage
+## Current Consumers
 
-The active de-modeling consumers are configured to use `siglab`:
+- `scripts/nps_sim_smearing_new_try.C`: `full_weight/siglab`
+- `scripts/excl_xsec_pi0_analysis_no_simc_model.C`: `full_weight/sigcm`
+- `scripts/excl_xsec_pi0_analysis.C`: model-ratio legacy path; check
+  `model_xsec_mode` before using outputs
 
-- `scripts/nps_sim_smearing_new_try.C`
-- `scripts/excl_xsec_pi0_analysis_no_simc_model.C`
-- `scripts/excl_xsec_pi0_analysis.C`
-
-In the smearing fitter this is enforced by:
-
-```cpp
-// pi0_analysis/root_analysis_env/scripts/nps_sim_smearing_new_try.C
-const char* SIM_MODEL_XSEC_BRANCH = "siglab";
-double sim_base_weight = static_cast<double>(s_full_weight) / static_cast<double>(s_model_xsec);
-TNamed("sim_weight_mode", "full_weight_over_siglab").Write();
-```
+The practical rule is: use `siglab` when removing the SIMC model from detector
+smearing weights; use `sigcm` only for the exclusive CM-response cross-section
+fit that is designed around that basis.

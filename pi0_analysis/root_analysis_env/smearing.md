@@ -121,10 +121,13 @@ w_sim_base = full_weight / siglab
 w_sim = w_sim_base * is_exclusive_ellipse
 ```
 
-This is intentionally consistent with
-`scripts/excl_xsec_pi0_analysis_no_simc_model.C`. The point is to fit detector
-response on the accepted phase-space basis, not on the generator model
-cross-section shape. The branch choice is documented in `demodeling.md`.
+This is the detector-response convention. It removes the exact SIMC
+`main%sigcc` factor that was multiplied into `Weight`, so the smearing fit is
+not driven by the generator cross-section model. Use `siglab` for all three
+processed SIMC samples: exclusive, SIDIS, and delta. The exclusive
+cross-section extraction uses a different `full_weight/sigcm` CM-response basis;
+that convention should not be copied into the smearing fitter. The branch choice
+is documented in `demodeling.md`.
 
 The fitter skips SIMC events with invalid model weights:
 

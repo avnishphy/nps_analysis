@@ -14,6 +14,9 @@
 #include <TStyle.h>
 #include <TROOT.h>
 #include <TSystem.h>
+#include <TGaxis.h>
+#include <TPad.h>
+#include <TPaveText.h>
 #include <TVectorD.h>
 #include <TMatrixD.h>
 #include <TDecompLU.h>
@@ -47,6 +50,7 @@ struct AnalysisConfig {
 
     std::string out_root = "excl_xsec_pi0_analysis_no_simc_model_output.root";
     std::string out_csv  = "excl_xsec_pi0_analysis_no_simc_model_summary.csv";
+    
     std::string out_slice_csv = "excl_xsec_pi0_analysis_no_simc_model_slice_summary.csv";
     std::string out_dir  = "output_pi0_xsec_no_simc_model";
     std::string out_all_plots_pdf = "all_generated_plots_no_simc_model.pdf";
@@ -77,13 +81,14 @@ struct AnalysisConfig {
     bool write_png = true;
     bool write_pdf = true;
 
-    // Event-level SIMC model xsec branch used for de-modeling weight:
-    //   w_base = full_weight / siglab
-    // siglab is the branch written from SIMC main%sigcc, the same factor
-    // multiplied into Weight. See pi0_analysis/root_analysis_env/demodeling.md.
+    // Event-level SIMC CM model branch used for de-modeling weight:
+    //   w_base = full_weight / sigcm
+    // SIMC has siglab = sigcm * davejac * gtpr * fac. Dividing by sigcm
+    // removes only the model cross section while preserving the pion
+    // lab/CM Jacobian, SIMC flux convention, and Fermi-motion correction.
     // Candidate branch names are searched in this order.
     std::vector<std::string> model_xsec_candidates = {
-        "siglab"
+        "sigcm"
     };
 };
 
@@ -91,7 +96,7 @@ struct PhiBin {
     double data = 0.0, data_sumw2 = 0.0;
     double sim  = 0.0, sim_sumw2  = 0.0;
 
-    // De-modeled SIMC basis sums, built with weight = full_weight/siglab.
+    // De-modeled SIMC basis sums, built with weight = full_weight/sigcm.
     double sim_base = 0.0;
     double sim_base_cos1 = 0.0;
     double sim_base_cos2 = 0.0;
@@ -178,6 +183,7 @@ struct SliceResult {
     double mean_q2_abs  = 0.0, mean_xb_abs  = 0.0, mean_tprime_abs  = 0.0;
     bool has_model_xsec = false;
     double epsilon = 0.0;
+    double gamma_flux = 0.0;
     FourierFit fit_ratio;
     FourierFit fit_xsec;
     FourierFit fit_asym; // used for helicity-odd diagnostic / TL' extraction
@@ -223,6 +229,18 @@ static double epsilon_virtual(double ebeam, double q2, double xb, double mp) {
     double den = 1.0 - y + 0.5 * y * y + term;
     if (den <= 0.0) return 0.0;
     return clamp(num / den, 0.0, 1.0);
+}
+
+static double virtual_photon_flux(double ebeam, double q2, double xb, double mp, double epsilon) {
+    // Gamma_{gamma*} = alpha/(8pi) * Q2/(M^2 E^2) * (1-xB)/xB^3 * 1/(1-epsilon).
+    // This is a flux factor, not an additional SIMC generation Jacobian.
+    constexpr double alpha = 1.0 / 137.035999084;
+    if (ebeam <= 0.0 || q2 <= 0.0 || xb <= 0.0 || mp <= 0.0) return 0.0;
+    const double eps = clamp(epsilon, 0.0, 1.0 - 1e-12);
+    return (alpha / (8.0 * TMath::Pi())) *
+           (q2 / (mp * mp * ebeam * ebeam)) *
+           ((1.0 - xb) / (xb * xb * xb)) *
+           (1.0 / (1.0 - eps));
 }
 
 static std::vector<double> quantile_edges(std::vector<double> values, int nbins, double lo, double hi) {
@@ -300,9 +318,14 @@ static std::vector<double> phi_basis_means(double phi1, double phi2) {
     return {1.0, c1, c2, s1};
 }
 
-static std::array<double, 4> sigma_model_basis(double phi, double epsilon, int helicity_sign) {
+static std::array<double, 4> sigma_model_basis(double phi, double epsilon, double gamma_flux, int helicity_sign) {
     const double inv2pi = 1.0 / (2.0 * TMath::Pi());
     const double eps = clamp(epsilon, 0.0, 1.0);
+    (void)gamma_flux;
+    // const double gamma = (std::isfinite(gamma_flux) && gamma_flux > 0.0) ? gamma_flux : 0.0;
+    // Gamma is intentionally not multiplied here. With w_base = full_weight/sigcm,
+    // the retained factor siglab/sigcm already contains SIMC's davejac*gtpr*fac.
+    // Reapplying this macro's Gamma would double-count the flux-like part.
     const double k_tl = std::sqrt(std::max(0.0, 2.0 * eps * (1.0 + eps)));
     const double k_tlp = std::sqrt(std::max(0.0, 2.0 * eps * (1.0 - eps)));
     return {
@@ -315,13 +338,67 @@ static std::array<double, 4> sigma_model_basis(double phi, double epsilon, int h
 
 static double sigma_model_value(double phi,
                                 double epsilon,
+                                double gamma_flux,
                                 double sigma_u,
                                 double sigma_tl,
                                 double sigma_tt,
                                 double sigma_tlp,
                                 int helicity_sign) {
-    const auto b = sigma_model_basis(phi, epsilon, helicity_sign);
+    const auto b = sigma_model_basis(phi, epsilon, gamma_flux, helicity_sign);
     return b[0] * sigma_u + b[1] * sigma_tl + b[2] * sigma_tt + b[3] * sigma_tlp;
+}
+
+static void style_current_pad(double left = 0.13, double right = 0.04, double bottom = 0.12, double top = 0.08, bool grid = false) {
+    if (!gPad) return;
+    gPad->SetLeftMargin(left);
+    gPad->SetRightMargin(right);
+    gPad->SetBottomMargin(bottom);
+    gPad->SetTopMargin(top);
+    gPad->SetTicks(1, 1);
+    gPad->SetGrid(grid, grid);
+}
+
+static void style_axis(TAxis* ax, double title_size = 0.045, double label_size = 0.04, double title_offset = 1.1) {
+    if (!ax) return;
+    ax->SetTitleSize(title_size);
+    ax->SetLabelSize(label_size);
+    ax->SetTitleOffset(title_offset);
+}
+
+static void style_hist_axes(TH1* h, double title_size = 0.045, double label_size = 0.04) {
+    if (!h) return;
+    style_axis(h->GetXaxis(), title_size, label_size, 1.05);
+    style_axis(h->GetYaxis(), title_size, label_size, 1.25);
+    h->SetTitleSize(title_size);
+}
+
+static void style_graph_axes(TGraphErrors* g, double title_size = 0.045, double label_size = 0.04) {
+    if (!g) return;
+    style_axis(g->GetXaxis(), title_size, label_size, 1.05);
+    style_axis(g->GetYaxis(), title_size, label_size, 1.25);
+}
+
+static TLegend* make_compact_legend(double x1, double y1, double x2, double y2, double text_size = 0.035) {
+    auto leg = new TLegend(x1, y1, x2, y2);
+    leg->SetBorderSize(0);
+    leg->SetFillStyle(0);
+    leg->SetTextFont(42);
+    leg->SetTextSize(text_size);
+    return leg;
+}
+
+static void draw_pad_message(const std::string& title, const std::string& line1, const std::string& line2 = "") {
+    if (!gPad) return;
+    gPad->Clear();
+    style_current_pad();
+    TLatex note;
+    note.SetNDC(true);
+    note.SetTextFont(42);
+    note.SetTextSize(0.052);
+    note.DrawLatex(0.12, 0.78, title.c_str());
+    note.SetTextSize(0.038);
+    note.DrawLatex(0.12, 0.62, line1.c_str());
+    if (!line2.empty()) note.DrawLatex(0.12, 0.52, line2.c_str());
 }
 
 static FourierFit weighted_linear_fit(const std::vector<std::vector<double>>& X,
@@ -556,7 +633,7 @@ void ExclPi0XSecAnalysis::detect_optional_branches() {
     }
 
     if (!has_model_xsec) {
-        die("No SIMC model cross-section branch 'siglab' found. This extraction requires de-modeling with full_weight/siglab.");
+        die("No SIMC CM model cross-section branch 'sigcm' found. This extraction requires de-modeling with full_weight/sigcm.");
     }
     if (!has_helicity) warn("No helicity branch found in data tree. TL' will not be optimized.");
     if (has_helicity && !has_sim_helicity) {
@@ -805,6 +882,9 @@ void ExclPi0XSecAnalysis::fill_sim_event(float q2,
     if (it < 0 || ix < 0 || ip < 0) return;
     cutflow.n_sim_inrange++;
 
+    // No bin migration is applied in this macro. Each reconstructed SIMC event
+    // contributes only to its reconstructed analysis bin, so the de-modeled
+    // SIMC sum is the diagonal effective response for that bin.
     const double base_w = static_cast<double>(full_weight) / static_cast<double>(model_xsec);
     if (!std::isfinite(base_w)) return;
 
@@ -963,6 +1043,11 @@ void ExclPi0XSecAnalysis::compute_ratios_and_xsec() {
                 if (!(std::isfinite(xb_for_eps) && xb_for_eps > 0.0)) xb_for_eps = 0.5 * (xb_edges_by_q2[iq][ix] + xb_edges_by_q2[iq][ix + 1]);
 
                 s.epsilon = epsilon_virtual(cfg.ebeam, std::max(1e-12, q2_for_eps), std::max(1e-12, xb_for_eps), cfg.mp);
+                s.gamma_flux = virtual_photon_flux(cfg.ebeam,
+                                                   std::max(1e-12, q2_for_eps),
+                                                   std::max(1e-12, xb_for_eps),
+                                                   cfg.mp,
+                                                   s.epsilon);
                 for (int ip = 0; ip < cfg.n_phi; ++ip) {
                     PhiBin& pb = s.phi[ip];
                     pb.data /= contam;
@@ -972,7 +1057,9 @@ void ExclPi0XSecAnalysis::compute_ratios_and_xsec() {
                     pb.data_plus_sumw2 /= (contam * contam);
                     pb.data_minus_sumw2 /= (contam * contam);
 
-                    // These are solved after optimization in fit_slices().
+                    // These are solved in fit_slices() from the diagonal
+                    // response-weighted basis K_r F_n; no N_rv migration matrix
+                    // is formed in this version.
                     pb.sim = 0.0;
                     pb.sim_sumw2 = 0.0;
                     pb.ratio = 0.0;
@@ -1012,6 +1099,11 @@ void ExclPi0XSecAnalysis::fit_slices() {
                 s.fit_asym = FourierFit();
 
                 const double eps = clamp(s.epsilon, 0.0, 1.0);
+                // const double gamma = (std::isfinite(s.gamma_flux) && s.gamma_flux > 0.0) ? s.gamma_flux : 0.0;
+                // Do not apply this macro's Gamma in the yield matrix. The
+                // full_weight/sigcm SIMC base keeps siglab/sigcm =
+                // davejac*gtpr*fac, so the needed flux/Jacobian convention is
+                // already inside the per-event acceptance sum.
                 const double inv2pi = 1.0 / (2.0 * TMath::Pi());
                 const double k_tl = std::sqrt(std::max(0.0, 2.0 * eps * (1.0 + eps)));
                 const double k_tlp = std::sqrt(std::max(0.0, 2.0 * eps * (1.0 - eps)));
@@ -1156,12 +1248,13 @@ void ExclPi0XSecAnalysis::fit_slices() {
                     if (s.fit_xsec.ok) {
                         pb.xsec = sigma_model_value(phi_c,
                                                     eps,
+                                                    s.gamma_flux,
                                                     s.fit_xsec.sigmaU,
                                                     s.fit_xsec.sigmaTL,
                                                     s.fit_xsec.sigmaTT,
                                                     s.fit_xsec.sigmaTLp,
                                                     0);
-                        const std::array<double, 4> basis_xsec = sigma_model_basis(phi_c, eps, 0);
+                        const std::array<double, 4> basis_xsec = sigma_model_basis(phi_c, eps, s.gamma_flux, 0);
                         pb.xsec_err = std::sqrt(cov_variance(basis_xsec));
                     } else {
                         pb.xsec = 0.0;
@@ -1226,7 +1319,7 @@ void ExclPi0XSecAnalysis::draw_slice_bin_label(int it, int iq, int ix, double y_
     TLatex lat;
     lat.SetNDC(true);
     lat.SetTextFont(42);
-    lat.SetTextSize(0.031);
+    lat.SetTextSize(0.026);
     lat.DrawLatex(0.11, y_ndc, format_slice_bin_label(it, iq, ix).c_str());
 }
 
@@ -1279,44 +1372,54 @@ void ExclPi0XSecAnalysis::make_global_plots() {
     auto h_tprime_data_corr = clone_scaled_data_hist(h_tprime_data.get(), "h_tprime_data_corr");
     auto h_phi_data_corr = clone_scaled_data_hist(h_phi_data.get(), "h_phi_data_corr");
 
+    auto clone_area_scaled_sim_hist = [](const TH1D* src, const char* name, const TH1D* data_ref) {
+        TH1D* h = dynamic_cast<TH1D*>(src->Clone(name));
+        if (h) {
+            h->SetDirectory(nullptr);
+            const double sim_int = h->Integral();
+            const double data_int = data_ref ? data_ref->Integral() : 0.0;
+            if (sim_int > 0.0 && data_int > 0.0) h->Scale(data_int / sim_int);
+        }
+        return std::unique_ptr<TH1D>(h);
+    };
+
+    auto h_q2_sim_shape = clone_area_scaled_sim_hist(h_q2_sim.get(), "h_q2_sim_shape", h_q2_data_corr.get());
+    auto h_xb_sim_shape = clone_area_scaled_sim_hist(h_xb_sim.get(), "h_xb_sim_shape", h_xb_data_corr.get());
+    auto h_tprime_sim_shape = clone_area_scaled_sim_hist(h_tprime_sim.get(), "h_tprime_sim_shape", h_tprime_data_corr.get());
+    auto h_phi_sim_shape = clone_area_scaled_sim_hist(h_phi_sim.get(), "h_phi_sim_shape", h_phi_data_corr.get());
+
+    auto draw_shape_overlay = [](TH1D* hdata, TH1D* hsim, const char* data_label, const char* sim_label) {
+        hdata->SetLineWidth(2);
+        hdata->SetLineColor(kBlack);
+        hsim->SetLineWidth(2);
+        hsim->SetLineColor(kRed);
+        hdata->GetYaxis()->SetTitle("Weighted counts (SIMC area norm.)");
+        const double ymax = std::max(hdata->GetMaximum(), hsim->GetMaximum());
+        hdata->SetMinimum(0.0);
+        hdata->SetMaximum((ymax > 0.0) ? 1.18 * ymax : 1.0);
+        hdata->Draw("hist");
+        hsim->Draw("hist same");
+        hdata->Draw("hist same");
+        auto leg = make_compact_legend(0.50, 0.72, 0.88, 0.88, 0.038);
+        leg->AddEntry(hdata, data_label, "l");
+        leg->AddEntry(hsim, sim_label, "l");
+        leg->Draw();
+    };
+
     TCanvas c1("c1", "global", 1200, 900);
     c1.Divide(2,2);
 
     c1.cd(1);
-    h_q2_data_corr->SetLineWidth(2); h_q2_data_corr->SetLineColor(kBlack);
-    h_q2_sim->SetLineWidth(2); h_q2_sim->SetLineColor(kRed);
-    double max_q2 = std::max(h_q2_data_corr->GetMaximum(), h_q2_sim->GetMaximum());
-    h_q2_data_corr->SetMaximum(1.1 * max_q2);
-    h_q2_data_corr->Draw("hist");
-    h_q2_sim->Draw("hist same");
-    auto leg1 = new TLegend(0.52,0.72,0.88,0.88); leg1->AddEntry(h_q2_data_corr.get(),"Data (tgt corrected)","l"); leg1->AddEntry(h_q2_sim.get(),"SIMC","l"); leg1->Draw();
+    draw_shape_overlay(h_q2_data_corr.get(), h_q2_sim_shape.get(), "Data (tgt corrected)", "SIMC (area normalized)");
 
     c1.cd(2);
-    h_xb_data_corr->SetLineWidth(2); h_xb_data_corr->SetLineColor(kBlack);
-    h_xb_sim->SetLineWidth(2); h_xb_sim->SetLineColor(kRed);
-    double max_xb = std::max(h_xb_data_corr->GetMaximum(), h_xb_sim->GetMaximum());
-    h_xb_data_corr->SetMaximum(1.1 * max_xb);
-    h_xb_data_corr->Draw("hist");
-    h_xb_sim->Draw("hist same");
-    auto leg2 = new TLegend(0.52,0.72,0.88,0.88); leg2->AddEntry(h_xb_data_corr.get(),"Data (tgt corrected)","l"); leg2->AddEntry(h_xb_sim.get(),"SIMC","l"); leg2->Draw();
+    draw_shape_overlay(h_xb_data_corr.get(), h_xb_sim_shape.get(), "Data (tgt corrected)", "SIMC (area normalized)");
 
     c1.cd(3);
-    h_tprime_data_corr->SetLineWidth(2); h_tprime_data_corr->SetLineColor(kBlack);
-    h_tprime_sim->SetLineWidth(2); h_tprime_sim->SetLineColor(kRed);
-    double max_tprime = std::max(h_tprime_data_corr->GetMaximum(), h_tprime_sim->GetMaximum());
-    h_tprime_data_corr->SetMaximum(1.1 * max_tprime);
-    h_tprime_data_corr->Draw("hist");
-    h_tprime_sim->Draw("hist same");
-    auto leg3 = new TLegend(0.52,0.72,0.88,0.88); leg3->AddEntry(h_tprime_data_corr.get(),"Data (tgt corrected)","l"); leg3->AddEntry(h_tprime_sim.get(),"SIMC","l"); leg3->Draw();
+    draw_shape_overlay(h_tprime_data_corr.get(), h_tprime_sim_shape.get(), "Data (tgt corrected)", "SIMC (area normalized)");
 
     c1.cd(4);
-    h_phi_data_corr->SetLineWidth(2); h_phi_data_corr->SetLineColor(kBlack);
-    h_phi_sim->SetLineWidth(2); h_phi_sim->SetLineColor(kRed);
-    double max_phi = std::max(h_phi_data_corr->GetMaximum(), h_phi_sim->GetMaximum());
-    h_phi_data_corr->SetMaximum(1.1 * max_phi);
-    h_phi_data_corr->Draw("hist");
-    h_phi_sim->Draw("hist same");
-    auto leg4 = new TLegend(0.52,0.72,0.88,0.88); leg4->AddEntry(h_phi_data_corr.get(),"Data (tgt corrected)","l"); leg4->AddEntry(h_phi_sim.get(),"SIMC","l"); leg4->Draw();
+    draw_shape_overlay(h_phi_data_corr.get(), h_phi_sim_shape.get(), "Data (tgt corrected)", "SIMC (area normalized)");
 
     c1.Update();
     write_canvas_pdf_png(&c1, (fs::path(cfg.out_dir) / "global" / "global_1d_distributions").string());
@@ -1343,6 +1446,9 @@ void ExclPi0XSecAnalysis::make_global_plots() {
 
     // --- DEBUG: t' quantile bin edges ---
     TCanvas c3("c3", "t' binning", 800, 700);
+    h_tprime_data_corr->GetYaxis()->SetTitle("Tgt-corrected weighted counts");
+    h_tprime_data_corr->SetMinimum(0.0);
+    h_tprime_data_corr->SetMaximum(1.15 * std::max(1e-12, h_tprime_data_corr->GetMaximum()));
     h_tprime_data_corr->Draw("hist");
     for (size_t i = 1; i < tprime_edges.size() - 1; ++i) {
         TLine* l = new TLine(tprime_edges[i], 0, tprime_edges[i], h_tprime_data_corr->GetMaximum());
@@ -1353,6 +1459,9 @@ void ExclPi0XSecAnalysis::make_global_plots() {
 
     // --- DEBUG: phi bin edges ---
     TCanvas c4("c4", "phi binning", 800, 700);
+    h_phi_data_corr->GetYaxis()->SetTitle("Tgt-corrected weighted counts");
+    h_phi_data_corr->SetMinimum(0.0);
+    h_phi_data_corr->SetMaximum(1.15 * std::max(1e-12, h_phi_data_corr->GetMaximum()));
     h_phi_data_corr->Draw("hist");
     for (size_t i = 1; i < phi_edges.size() - 1; ++i) {
         TLine* l = new TLine(phi_edges[i], 0, phi_edges[i], h_phi_data_corr->GetMaximum());
@@ -1475,8 +1584,8 @@ void ExclPi0XSecAnalysis::make_slice_plots() {
                 const SliceResult& s = slice(it, iq, ix);
                 std::ostringstream tag;
                 tag << "t" << it << "_q" << iq << "_x" << ix;
-                TCanvas c(("c_"+tag.str()).c_str(), tag.str().c_str(), 1400, 900);
-                c.Divide(2,2);
+                TCanvas c(("c_"+tag.str()).c_str(), tag.str().c_str(), 1600, 1100);
+                c.Divide(2, 2, 0.01, 0.02);
 
                 std::vector<double> phi_c(cfg.n_phi), ydata(cfg.n_phi), yerr(cfg.n_phi), ysim(cfg.n_phi), ysimerr(cfg.n_phi), ratio(cfg.n_phi), ratioerr(cfg.n_phi);
                 for (int ip = 0; ip < cfg.n_phi; ++ip) {
@@ -1488,20 +1597,25 @@ void ExclPi0XSecAnalysis::make_slice_plots() {
                 }
 
                 c.cd(1);
+                style_current_pad(0.13, 0.04, 0.12, 0.10);
                 auto gdata = new TGraphErrors(cfg.n_phi, phi_c.data(), ydata.data(), nullptr, yerr.data());
                 auto gsim  = new TGraphErrors(cfg.n_phi, phi_c.data(), ysim.data(), nullptr, ysimerr.data());
                 gdata->SetTitle("Data/SIMC yields;#phi [rad];Weighted counts");
                 gdata->SetMarkerStyle(20); gdata->SetLineColor(kBlack); gdata->SetMarkerColor(kBlack);
                 gsim->SetMarkerStyle(24); gsim->SetLineColor(kRed); gsim->SetMarkerColor(kRed);
                 gdata->Draw("AP");
+                style_graph_axes(gdata, 0.046, 0.04);
                 gsim->Draw("P SAME");
-                auto l1 = new TLegend(0.63,0.74,0.88,0.88); l1->AddEntry(gdata,"Data","p"); l1->AddEntry(gsim,"SIMC","p"); l1->Draw();
+                auto l1 = make_compact_legend(0.68, 0.76, 0.90, 0.89, 0.035);
+                l1->AddEntry(gdata,"Data","p"); l1->AddEntry(gsim,"SIMC","p"); l1->Draw();
                 draw_slice_bin_label(it, iq, ix);
 
                 c.cd(2);
+                style_current_pad(0.13, 0.04, 0.12, 0.10);
                 auto grat = new TGraphErrors(cfg.n_phi, phi_c.data(), ratio.data(), nullptr, ratioerr.data());
                 grat->SetTitle("Ratio data/SIMC;#phi [rad];Ratio");
                 grat->SetMarkerStyle(20); grat->Draw("AP");
+                style_graph_axes(grat, 0.046, 0.04);
                 if (s.fit_ratio.ok) {
                     auto f = new TF1(("fr_"+tag.str()).c_str(), "[0] + [1]*cos(x) + [2]*cos(2*x)", cfg.phi_min, cfg.phi_max);
                     f->SetParameters(s.fit_ratio.p[0], s.fit_ratio.p[1], s.fit_ratio.p[2]);
@@ -1511,9 +1625,14 @@ void ExclPi0XSecAnalysis::make_slice_plots() {
                 draw_slice_bin_label(it, iq, ix);
 
                 c.cd(3);
+                style_current_pad(0.13, 0.04, 0.12, 0.10);
                 if (s.fit_xsec.ok && s.fit_xsec.p.size() >= 3) {
                     const bool fit_tlp = (has_helicity && has_sim_helicity && s.fit_xsec.p.size() >= 4);
                     const double eps = clamp(s.epsilon, 0.0, 1.0);
+                    // const double gamma = (std::isfinite(s.gamma_flux) && s.gamma_flux > 0.0) ? s.gamma_flux : 0.0;
+                    // Gamma is recorded for diagnostics, but not used in this
+                    // CM-response overlay because full_weight/sigcm already
+                    // carries SIMC's davejac*gtpr*fac through siglab/sigcm.
                     const double inv2pi = 1.0 / (2.0 * TMath::Pi());
                     const double k_lt = std::sqrt(std::max(0.0, 2.0 * eps * (1.0 + eps)));
                     const double k_tlp = std::sqrt(std::max(0.0, 2.0 * eps * (1.0 - eps)));
@@ -1565,8 +1684,9 @@ void ExclPi0XSecAnalysis::make_slice_plots() {
                     gx->SetMarkerColor(kBlack);
                     gx->SetLineColor(kBlack);
                     gx->SetMinimum(ymin - 0.14 * span);
-                    gx->SetMaximum(ymax + 0.20 * span);
+                    gx->SetMaximum(ymax + 0.32 * span);
                     gx->Draw("AP");
+                    style_graph_axes(gx, 0.046, 0.04);
 
                     auto g_tot = new TGraphErrors(ncurve, ph_curve.data(), y_tot.data(), nullptr, nullptr);
                     auto g_u = new TGraphErrors(ncurve, ph_curve.data(), y_u.data(), nullptr, nullptr);
@@ -1591,9 +1711,7 @@ void ExclPi0XSecAnalysis::make_slice_plots() {
                     g_tt->Draw("L SAME");
                     if (g_tlp) g_tlp->Draw("L SAME");
 
-                    auto l3 = new TLegend(0.43, 0.52, 0.89, 0.88);
-                    l3->SetBorderSize(0);
-                    l3->SetFillStyle(0);
+                    auto l3 = make_compact_legend(0.63, 0.58, 0.91, 0.88, 0.030);
                     l3->AddEntry(gx, "Extracted d#sigma/d#phi", "p");
                     l3->AddEntry(g_tot, "Total model", "l");
                     l3->AddEntry(g_u, "#sigma_{U} term", "l");
@@ -1602,31 +1720,34 @@ void ExclPi0XSecAnalysis::make_slice_plots() {
                     if (g_tlp) l3->AddEntry(g_tlp, "#sigma_{TL'} sin#phi term", "l");
                     l3->Draw();
 
-                    TLatex comp;
-                    comp.SetNDC(true);
-                    comp.SetTextFont(42);
-                    comp.SetTextSize(0.027);
+                    auto comp = new TPaveText(0.13, 0.73, 0.57, 0.84, "NDC");
+                    comp->SetBorderSize(0);
+                    comp->SetFillColorAlpha(kWhite, 0.85);
+                    comp->SetTextAlign(12);
+                    comp->SetTextFont(42);
+                    comp->SetTextSize(0.022);
                     if (fit_tlp) {
-                        comp.DrawLatex(0.11, 0.90,
-                                       Form("#sigma_{U}=%.3g#pm%.2g, #sigma_{LT}=%.3g#pm%.2g, #sigma_{TT}=%.3g#pm%.2g, #sigma_{TL'}=%.3g#pm%.2g",
-                                            s.fit_xsec.sigmaU, std::max(0.0, s.fit_xsec.sigmaU_err),
-                                            s.fit_xsec.sigmaTL, std::max(0.0, s.fit_xsec.sigmaTL_err),
-                                            s.fit_xsec.sigmaTT, std::max(0.0, s.fit_xsec.sigmaTT_err),
-                                            s.fit_xsec.sigmaTLp, std::max(0.0, s.fit_xsec.sigmaTLp_err)));
+                        comp->AddText(Form("#sigma_{U}=%.3g#pm%.2g, #sigma_{LT}=%.3g#pm%.2g",
+                                           s.fit_xsec.sigmaU, std::max(0.0, s.fit_xsec.sigmaU_err),
+                                           s.fit_xsec.sigmaTL, std::max(0.0, s.fit_xsec.sigmaTL_err)));
+                        comp->AddText(Form("#sigma_{TT}=%.3g#pm%.2g, #sigma_{TL'}=%.3g#pm%.2g",
+                                           s.fit_xsec.sigmaTT, std::max(0.0, s.fit_xsec.sigmaTT_err),
+                                           s.fit_xsec.sigmaTLp, std::max(0.0, s.fit_xsec.sigmaTLp_err)));
                     } else {
-                        comp.DrawLatex(0.11, 0.90,
-                                       Form("#sigma_{U}=%.3g#pm%.2g, #sigma_{LT}=%.3g#pm%.2g, #sigma_{TT}=%.3g#pm%.2g",
-                                            s.fit_xsec.sigmaU, std::max(0.0, s.fit_xsec.sigmaU_err),
-                                            s.fit_xsec.sigmaTL, std::max(0.0, s.fit_xsec.sigmaTL_err),
-                                            s.fit_xsec.sigmaTT, std::max(0.0, s.fit_xsec.sigmaTT_err)));
+                        comp->AddText(Form("#sigma_{U}=%.3g#pm%.2g, #sigma_{LT}=%.3g#pm%.2g",
+                                           s.fit_xsec.sigmaU, std::max(0.0, s.fit_xsec.sigmaU_err),
+                                           s.fit_xsec.sigmaTL, std::max(0.0, s.fit_xsec.sigmaTL_err)));
+                        comp->AddText(Form("#sigma_{TT}=%.3g#pm%.2g",
+                                           s.fit_xsec.sigmaTT, std::max(0.0, s.fit_xsec.sigmaTT_err)));
                     }
+                    comp->Draw();
                 } else {
-                    auto h = new TH1D(("hfit_" + tag.str()).c_str(), "Fit unavailable for contribution plot", 10, 0, 1);
-                    h->Draw();
+                    draw_pad_message("Fit unavailable", "Not enough populated #phi bins in this slice.");
                 }
                 draw_slice_bin_label(it, iq, ix);
 
                 c.cd(4);
+                style_current_pad(0.13, 0.04, 0.12, 0.10);
                 if (has_helicity) {
                     std::vector<double> asym(cfg.n_phi), asymerr(cfg.n_phi);
                     for (int ip = 0; ip < cfg.n_phi; ++ip) {
@@ -1641,9 +1762,13 @@ void ExclPi0XSecAnalysis::make_slice_plots() {
                     ga->SetMarkerColor(kBlack);
                     ga->SetLineColor(kBlack);
                     ga->Draw("AP");
+                    style_graph_axes(ga, 0.046, 0.04);
 
                     if (has_sim_helicity && s.fit_xsec.ok && s.fit_xsec.p.size() >= 4) {
                         const double eps = clamp(s.epsilon, 0.0, 1.0);
+                        // const double gamma = (std::isfinite(s.gamma_flux) && s.gamma_flux > 0.0) ? s.gamma_flux : 0.0;
+                        // Same convention as the fit rows: no extra Gamma on
+                        // top of the full_weight/sigcm event base.
                         const double inv2pi = 1.0 / (2.0 * TMath::Pi());
                         const double k_tl = std::sqrt(std::max(0.0, 2.0 * eps * (1.0 + eps)));
                         const double k_tlp = std::sqrt(std::max(0.0, 2.0 * eps * (1.0 - eps)));
@@ -1674,9 +1799,7 @@ void ExclPi0XSecAnalysis::make_slice_plots() {
                         gmodel->SetMarkerColor(kRed + 1);
                         gmodel->Draw("PL SAME");
 
-                        auto l4 = new TLegend(0.54, 0.74, 0.88, 0.88);
-                        l4->SetBorderSize(0);
-                        l4->SetFillStyle(0);
+                        auto l4 = make_compact_legend(0.56, 0.76, 0.90, 0.89, 0.033);
                         l4->AddEntry(ga, "Data A_{h}", "p");
                         l4->AddEntry(gmodel, "Optimized model A_{h}", "lp");
                         l4->Draw();
@@ -1684,12 +1807,13 @@ void ExclPi0XSecAnalysis::make_slice_plots() {
                         TLatex note;
                         note.SetNDC(true);
                         note.SetTextFont(42);
-                        note.SetTextSize(0.028);
-                        note.DrawLatex(0.12, 0.85, "SIMC helicity branch missing: no TL' optimization");
+                        note.SetTextSize(0.034);
+                        note.DrawLatex(0.13, 0.83, "SIMC helicity branch missing");
+                        note.SetTextSize(0.030);
+                        note.DrawLatex(0.13, 0.75, "No TL' optimization drawn.");
                     }
                 } else {
-                    auto h = new TH1D(("hnd_"+tag.str()).c_str(), "No helicity branch;TL' not extracted", 10, 0, 1);
-                    h->Draw();
+                    draw_pad_message("No helicity branch", "TL' is not extracted for this input.");
                 }
                 draw_slice_bin_label(it, iq, ix);
 
@@ -1755,8 +1879,9 @@ void ExclPi0XSecAnalysis::make_sigma_vs_tprime_plots() {
 
             std::ostringstream tag;
             tag << "q" << iq << "_x" << ix;
-            TCanvas c(("c_sigma_vs_t_" + tag.str()).c_str(), "sigma_vs_tprime", 1000, 760);
+            TCanvas c(("c_sigma_vs_t_" + tag.str()).c_str(), "sigma_vs_tprime", 1100, 820);
             c.cd();
+            style_current_pad(0.16, 0.04, 0.13, 0.18, true);
             double xmin = std::numeric_limits<double>::infinity();
             double xmax = -std::numeric_limits<double>::infinity();
             double ymin = std::numeric_limits<double>::infinity();
@@ -1777,13 +1902,16 @@ void ExclPi0XSecAnalysis::make_sigma_vs_tprime_plots() {
             const double xspan = std::max(1e-6, xmax - xmin);
             const double yspan = std::max(1e-9, ymax - ymin);
             TH1D h_coeff_frame(("h_coeff_frame_" + tag.str()).c_str(),
-                               "Raw fitted #sigma terms vs -t' (no #epsilon or 1/2#pi factors);-t' [GeV^{2}];Coefficient value",
+                               ";-t' [GeV^{2}];d#sigma/dt [b/GeV^{2}]",
                                100,
                                xmin - 0.08 * xspan,
                                xmax + 0.08 * xspan);
             h_coeff_frame.SetMinimum(ymin - 0.18 * yspan);
             h_coeff_frame.SetMaximum(ymax + 0.24 * yspan);
+            const Int_t old_max_digits = TGaxis::GetMaxDigits();
+            TGaxis::SetMaxDigits(2);
             h_coeff_frame.Draw();
+            style_hist_axes(&h_coeff_frame, 0.045, 0.04);
 
             auto g_u = new TGraphErrors(static_cast<int>(x.size()), x.data(), sigma_u.data(), ex.data(), sigma_u_err.data());
             auto g_tl = new TGraphErrors(static_cast<int>(x.size()), x.data(), sigma_tl.data(), ex.data(), sigma_tl_err.data());
@@ -1806,9 +1934,7 @@ void ExclPi0XSecAnalysis::make_sigma_vs_tprime_plots() {
                 g_tlp->Draw("P SAME");
             }
 
-            auto leg_coeff = new TLegend(0.59, 0.56, 0.89, 0.88);
-            leg_coeff->SetBorderSize(0);
-            leg_coeff->SetFillStyle(0);
+            auto leg_coeff = make_compact_legend(0.70, 0.72, 0.90, 0.88, 0.040);
             leg_coeff->AddEntry(g_u, "#sigma_{U}", "p");
             leg_coeff->AddEntry(g_tl, "#sigma_{LT}", "p");
             leg_coeff->AddEntry(g_tt, "#sigma_{TT}", "p");
@@ -1818,14 +1944,19 @@ void ExclPi0XSecAnalysis::make_sigma_vs_tprime_plots() {
             TLatex lat1;
             lat1.SetNDC(true);
             lat1.SetTextFont(42);
-            lat1.SetTextSize(0.03);
-            lat1.DrawLatex(0.12, 0.92,
+            lat1.SetTextAlign(22);
+            lat1.SetTextSize(0.040);
+            lat1.DrawLatex(0.50, 0.965, "Fitted response terms vs -t'");
+            lat1.SetTextSize(0.030);
+            lat1.DrawLatex(0.50, 0.925,
                            Form("Q^{2} #in [%.3f, %.3f] GeV^{2}, x_{B} #in [%.3f, %.3f]",
                                 q2_edges[iq], q2_edges[iq + 1], xb_edges_by_q2[iq][ix], xb_edges_by_q2[iq][ix + 1]));
-            lat1.DrawLatex(0.12, 0.87, "Markers show raw fitted coefficients only; no #epsilon or 1/2#pi factors applied");
+            lat1.SetTextSize(0.026);
+            lat1.DrawLatex(0.50, 0.885, "No bin-migration correction; SIMC supplies diagonal effective response");
 
             c.Update();
             write_canvas_pdf_png(&c, (fs::path(cfg.out_dir) / "sigma_vs_tprime" / ("sigma_terms_vs_minus_tprime_" + tag.str())).string());
+            TGaxis::SetMaxDigits(old_max_digits);
         }
     }
 }
@@ -1887,6 +2018,11 @@ void ExclPi0XSecAnalysis::write_results() {
     meta << "\nphi_edges:";
     for (double x : phi_edges) meta << " " << x;
     meta << "\nmodel_xsec_branch=" << (has_model_xsec ? model_xsec_branch : "NONE");
+    meta << "\nresponse_mode=diagonal_no_bin_migration";
+    meta << "\nfit_basis=(1/(2pi))*{sigmaU,sqrt(2eps(1+eps))*sigmaLT*cos(phi),eps*sigmaTT*cos(2phi),h*sqrt(2eps(1-eps))*sigmaTLp*sin(phi)}";
+    meta << "\ngamma_flux_usage=calculated_and_written_only_not_multiplied_in_fit";
+    meta << "\ngamma_flux_note=full_weight_over_sigcm_retains_siglab_over_sigcm_equals_davejac_times_gtpr_times_fac";
+    meta << "\nsim_weight_mode=full_weight_over_sigcm";
     meta << "\nhelicity_data=" << (has_helicity ? "yes" : "no");
     meta << "\nhelicity_sim=" << (has_sim_helicity ? "yes" : "no");
     TObjString(meta.str().c_str()).Write("analysis_metadata");
@@ -1896,7 +2032,7 @@ void ExclPi0XSecAnalysis::write_csv() {
     std::ofstream out(cfg.out_csv);
     out << std::setprecision(10);
     out << "it,iq,ix,ip,phi_lo,phi_hi,phi_center,q2_mean_data,xb_mean_data,tprime_mean_data,q2_mean_sim,xb_mean_sim,tprime_mean_sim,"
-        << "epsilon,data,data_err,sim,sim_err,ratio,ratio_err,xsec,xsec_err,xsec_sys_tgt\n";
+        << "epsilon,gamma_flux,data,data_err,sim,sim_err,ratio,ratio_err,xsec,xsec_err,xsec_sys_tgt\n";
     for (int it = 0; it < cfg.n_tprime; ++it) {
         for (int iq = 0; iq < cfg.n_q2; ++iq) {
             for (int ix = 0; ix < cfg.n_xb; ++ix) {
@@ -1910,7 +2046,7 @@ void ExclPi0XSecAnalysis::write_csv() {
                         << phi_lo << "," << phi_hi << "," << phi_c << ","
                         << pb.mean_q2_data << "," << pb.mean_xb_data << "," << pb.mean_tprime_data << ","
                         << pb.mean_q2_sim << "," << pb.mean_xb_sim << "," << pb.mean_tprime_sim << ","
-                        << s.epsilon << ","
+                        << s.epsilon << "," << s.gamma_flux << ","
                         << pb.data << "," << std::sqrt(std::max(0.0, pb.data_sumw2)) << ","
                         << pb.sim << "," << std::sqrt(std::max(0.0, pb.sim_sumw2)) << ","
                         << pb.ratio << "," << pb.ratio_err << ","
@@ -1926,7 +2062,7 @@ void ExclPi0XSecAnalysis::write_slice_csv() {
     out << std::setprecision(10);
     out << "it,iq,ix,tprime_lo,tprime_hi,tprime_center,q2_lo,q2_hi,xb_lo,xb_hi,"
         << "mean_q2_data,mean_xb_data,mean_tprime_data,mean_q2_sim,mean_xb_sim,mean_tprime_sim,"
-        << "epsilon,has_model_xsec,sumw_data,sumw_sim,"
+        << "epsilon,gamma_flux,has_model_xsec,sumw_data,sumw_sim,"
         << "fit_ratio_ok,fit_ratio_chi2,fit_ratio_ndf,fit_ratio_A,fit_ratio_Aerr,fit_ratio_B,fit_ratio_Berr,fit_ratio_C,fit_ratio_Cerr,"
         << "fit_xsec_ok,fit_xsec_chi2,fit_xsec_ndf,fit_xsec_sigmaU,fit_xsec_sigmaUerr,fit_xsec_sigmaTL,fit_xsec_sigmaTLerr,fit_xsec_sigmaTT,fit_xsec_sigmaTTerr,"
         << "fit_asym_ok,fit_asym_chi2,fit_asym_ndf,fit_asym_sigmaTLp,fit_asym_sigmaTLperr\n";
@@ -1944,7 +2080,7 @@ void ExclPi0XSecAnalysis::write_slice_csv() {
                     << xlo << "," << xhi << ","
                     << s.mean_q2_data << "," << s.mean_xb_data << "," << s.mean_tprime_data << ","
                     << s.mean_q2_sim << "," << s.mean_xb_sim << "," << s.mean_tprime_sim << ","
-                    << s.epsilon << "," << (s.has_model_xsec ? 1 : 0) << ","
+                    << s.epsilon << "," << s.gamma_flux << "," << (s.has_model_xsec ? 1 : 0) << ","
                     << s.sumw_data << "," << s.sumw_sim << ","
                     << (s.fit_ratio.ok ? 1 : 0) << "," << s.fit_ratio.chi2 << "," << s.fit_ratio.ndf << ","
                     << (s.fit_ratio.p.size() > 0 ? s.fit_ratio.p[0] : 0.0) << "," << (s.fit_ratio.perr.size() > 0 ? s.fit_ratio.perr[0] : 0.0) << ","
@@ -2003,6 +2139,15 @@ int main(int argc, char** argv) {
     try {
         TH1::SetDefaultSumw2(kTRUE);
         gStyle->SetOptStat(0);
+        gStyle->SetTitleFont(42, "XYZ");
+        gStyle->SetLabelFont(42, "XYZ");
+        gStyle->SetTitleSize(0.045, "XYZ");
+        gStyle->SetLabelSize(0.04, "XYZ");
+        gStyle->SetTitleOffset(1.15, "X");
+        gStyle->SetTitleOffset(1.25, "Y");
+        gStyle->SetLegendBorderSize(0);
+        gStyle->SetPadTickX(1);
+        gStyle->SetPadTickY(1);
         AnalysisConfig cfg;
         if (argc > 1) cfg.out_root = argv[1];
         if (argc > 2) cfg.out_csv = argv[2];

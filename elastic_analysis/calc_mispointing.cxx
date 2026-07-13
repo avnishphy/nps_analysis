@@ -1,3 +1,11 @@
+/*
+Run from a bash shell with the Hall C/NPS ROOT environment loaded:
+
+  csh -c 'source /group/nps/singhav/setup.csh; cd /work/hallc/nps/singhav/nps_analysis/elastic_analysis; root -l -q calc_mispointing.cxx'
+
+Then enter the spectrometer type (`h` for HMS or `p` for SHMS) and theta_lab.
+*/
+
 #include <iostream>
 #include <cmath>
 

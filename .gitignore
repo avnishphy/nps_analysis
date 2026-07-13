@@ -79,8 +79,9 @@ pi0_analysis/root_analysis_env/scripts/efficiencies/*.csv
 pi0_analysis/root_analysis_env/scripts/efficiencies/*.csv.bak
 pi0_analysis/root_analysis_env/scripts/efficiencies/*_report.txt
 
+pi0_analysis/root_analysis_env_main/output/
+
 # Other local generated analysis areas
-pi0_analysis/root_analysis_env_main/
 pi0_analysis_env_main/
 pi0_analysis/NPS_detector_simulations/
 pi0_analysis/all_run_numbers.txt

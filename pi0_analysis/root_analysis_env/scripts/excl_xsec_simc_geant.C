@@ -659,7 +659,7 @@ void excl_xsec_simc_geant(
 	// Book histograms for binning visualization
 	TH1D* h_t_data_1d = new TH1D("h_t_data_1d", "Data t;t [GeV^{2}];Weighted counts", 120, -4.0, 0.5);
 	TH1D* h_q2_data_1d = new TH1D("h_q2_data_1d", "Data Q^{2};Q^{2} [GeV^{2}];Weighted counts", 120, 4.0, 8.0);
-	TH1D* h_xb_data_1d = new TH1D("h_xb_data_1d", "Data x_{B};x_{B};Weighted counts", 120, 0.3, 0.9);
+	TH1D* h_xb_data_1d = new TH1D("h_xb_data_1d", "Data x_{B};x_{B};Weighted countds", 120, 0.3, 0.9);
 	TH1D* h_phi_data_1d = new TH1D("h_phi_data_1d", "Data #phi;#phi [rad];Weighted counts", 120, 0.0, kTwoPi);
 
 	TH1D* h_t_sim_1d = new TH1D("h_t_sim_1d", "Sim t;t [GeV^{2}];Weighted counts", 120, -4.0, 0.5);

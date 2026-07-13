@@ -53,7 +53,7 @@ fi
 
 for arg in "$@"; do
     while IFS= read -r run; do
-        for file in /mss/hallc/c-nps/raw/nps_coin_${run}.dat.*; do
+        for file in /mss/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_${run}_*_1_-1.root; do
             if [ -e "$file" ]; then
                 echo "Executing command: jcache get ${file} -x"
                 jcache get "${file}" -x

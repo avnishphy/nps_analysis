@@ -39,6 +39,8 @@
 #include <cstdlib>
 #include <limits>
 #include <utility>
+#include <unordered_map>
+#include <cctype>
 #include "TFile.h"
 #include "TTree.h"
 #include "TH1F.h"
@@ -65,12 +67,14 @@ using namespace std;
 // Constants (use nps namespace constants from nps_helper.h)
 // ============================================================================
 const double BEAM_ENERGY = 10.538;      // GeV (hallc typical)
-const double NORMFAC_excl = 0.598673e9;      // Normalization factor for simulation
-const double NORMFAC_sidis = 0.104726E+13;
-const double NEVENTS = 1000000.0;        // Number of events in simulation SIMC infile
+const double NORMFAC_excl = 0.156618E+10;      // x36_5
+const double NORMFAC_sidis = 0.343527E+13; // x36_5
+const double NORMFAC_delta = 0.139343E+10; // x36_5
+const double NEVENTS = 500000.0;        // Number of events in simulation SIMC infile
 const int MAX_CLUS = 20;                // Maximum clusters
 const double DEFAULT_TIME_WINDOW_WRT_150 = 10.0; // Time window for cluster selection
-const double Y_MISPOINT = 0.103665;      // Y mispointing offset (cm) - SIMC infile for x60_4b spec%e%offset%y
+const double Y_MISPOINT = 0.086273;      // Y mispointing offset (cm) - SIMC infile for x36_5 spec%e%offset%y
+const char* KIN_CONFIG_CSV_DEFAULT = "config/nps_dvcs_all_kins_main.csv";
 
 // ============================================================================
 // ENERGY RESOLUTION MODEL SELECTION (must match nps_sim_smearing_new_try.C)
@@ -125,18 +129,20 @@ const double RESOLUTION_C = 1.14;    // Constant term (1.14%)
 const bool USE_INDIVIDUAL_PHOTON_BRANCHES = true;  // Set to true to use phot1/phot2 branches instead of clusters
 
 // Smearing file paths (relative to script location or absolute)
-// const char* SMEAR_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/out_smear_20260619_110840.root";
-// const char* SMEAR_INTERP_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/out_smear_20260619_110840_interpolated.root";
-// const char* SECTION_MAP_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/section_map.csv";
-
-const char* SMEAR_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/out_smear.root";
-const char* SMEAR_INTERP_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/out_smear.root";
+const char* SMEAR_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/out_smear_20260619_110840.root";
+const char* SMEAR_INTERP_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/out_smear_20260619_110840_interpolated.root";
 const char* SECTION_MAP_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/section_map.csv";
+
+// const char* SMEAR_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/out_smear.root";
+// const char* SMEAR_INTERP_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/out_smear.root";
+// const char* SECTION_MAP_FILE_SECTION = "output/plots/x60_4b/production_wfpi0/section_map.csv";
 
 std::string ACTIVE_SMEAR_FILE = SMEAR_FILE_SECTION;
 std::string ACTIVE_SMEAR_INTERP_FILE = SMEAR_INTERP_FILE_SECTION;
 std::string ACTIVE_SECTION_MAP_FILE = SECTION_MAP_FILE_SECTION;
 std::string ACTIVE_SMEARING_MODE = "section";
+double ACTIVE_NPS_Z_CM = nps::kDefaultZ_NPS_cm;
+double ACTIVE_NPS_THETA_DEG = -17.51;
 
 // Electron momentum scale loaded from section_map.csv (best_p_e_scale column)
 // Applied as: p' = scale * p, then E' = sqrt(|p'|^2 + m_e^2)
@@ -187,6 +193,158 @@ struct ElectronKinematics {
 bool file_exists(const std::string& filename) {
     std::ifstream f(filename.c_str());
     return f.good();
+}
+
+double env_double_or(const char* name, double fallback) {
+    const char* value = std::getenv(name);
+    if (!value || std::string(value).empty()) return fallback;
+    try {
+        const double parsed = std::stod(value);
+        if (std::isfinite(parsed)) return parsed;
+    } catch (...) {
+    }
+    std::cerr << "Warning: ignoring invalid " << name << "=" << value << std::endl;
+    return fallback;
+}
+
+std::string trim_copy(const std::string& s) {
+    size_t first = 0;
+    while (first < s.size() && std::isspace(static_cast<unsigned char>(s[first]))) {
+        ++first;
+    }
+    size_t last = s.size();
+    while (last > first && std::isspace(static_cast<unsigned char>(s[last - 1]))) {
+        --last;
+    }
+    return s.substr(first, last - first);
+}
+
+std::vector<std::string> split_csv_quoted(const std::string& line) {
+    std::vector<std::string> fields;
+    std::string current;
+    bool in_quotes = false;
+    for (size_t i = 0; i < line.size(); ++i) {
+        const char c = line[i];
+        if (c == '"') {
+            if (in_quotes && i + 1 < line.size() && line[i + 1] == '"') {
+                current.push_back('"');
+                ++i;
+            } else {
+                in_quotes = !in_quotes;
+            }
+        } else if (c == ',' && !in_quotes) {
+            fields.push_back(trim_copy(current));
+            current.clear();
+        } else {
+            current.push_back(c);
+        }
+    }
+    fields.push_back(trim_copy(current));
+    return fields;
+}
+
+bool parse_double_token(const std::vector<std::string>& row, int idx, double& out) {
+    if (idx < 0 || idx >= static_cast<int>(row.size())) return false;
+    try {
+        out = std::stod(row[idx]);
+        return std::isfinite(out);
+    } catch (...) {
+        return false;
+    }
+}
+
+bool load_nps_geometry_from_config(const char* config_csv,
+                                   const std::string& kin,
+                                   double& z_nps_cm,
+                                   double& nps_theta_deg) {
+    if (!config_csv || !config_csv[0] || kin.empty()) return false;
+
+    std::ifstream in(config_csv);
+    if (!in.is_open()) return false;
+
+    std::string line;
+    if (!std::getline(in, line)) return false;
+
+    const std::vector<std::string> header = split_csv_quoted(line);
+    std::unordered_map<std::string, int> col;
+    for (size_t i = 0; i < header.size(); ++i) {
+        col[header[i]] = static_cast<int>(i);
+    }
+    if (!col.count("Kin_old") || !col.count("NPS_Thet") || !col.count("NPS_target_distance")) {
+        return false;
+    }
+
+    const int idx_kin = col["Kin_old"];
+    const int idx_theta = col["NPS_Thet"];
+    const int idx_z = col["NPS_target_distance"];
+
+    while (std::getline(in, line)) {
+        if (trim_copy(line).empty()) continue;
+        const std::vector<std::string> row = split_csv_quoted(line);
+        if (idx_kin >= static_cast<int>(row.size()) || row[idx_kin] != kin) continue;
+
+        double theta = 0.0;
+        double z = 0.0;
+        if (!parse_double_token(row, idx_theta, theta) ||
+            !parse_double_token(row, idx_z, z)) {
+            continue;
+        }
+        if (theta <= -9999.0 || z <= 0.0 || z <= -9999.0) continue;
+
+        nps_theta_deg = theta;
+        z_nps_cm = z;
+        return true;
+    }
+
+    return false;
+}
+
+void resolve_nps_geometry() {
+    const char* z_env = std::getenv("NPS_Z_NPS_CM");
+    const char* signed_theta_env = std::getenv("NPS_THETA_NPS_DEG");
+    const char* physical_theta_env = std::getenv("NPS_NPS_THETA_DEG");
+
+    ACTIVE_NPS_Z_CM = nps::kDefaultZ_NPS_cm;
+    ACTIVE_NPS_THETA_DEG = -17.51;
+    std::string source = "defaults";
+
+    const char* kin_env = std::getenv("NPS_KIN");
+    if (!kin_env || std::string(kin_env).empty()) {
+        kin_env = std::getenv("NPS_SMEAR_KIN");
+    }
+    const char* config_env = std::getenv("NPS_KIN_CONFIG_CSV");
+    if (!config_env || std::string(config_env).empty()) {
+        config_env = std::getenv("NPS_CONFIG_CSV");
+    }
+    const char* config_csv = (config_env && config_env[0]) ? config_env : KIN_CONFIG_CSV_DEFAULT;
+
+    double config_z = 0.0;
+    double config_theta = 0.0;
+    if (kin_env && load_nps_geometry_from_config(config_csv, kin_env, config_z, config_theta)) {
+        ACTIVE_NPS_Z_CM = config_z;
+        ACTIVE_NPS_THETA_DEG = -config_theta;
+        source = std::string("config ") + config_csv + " kin=" + kin_env;
+    }
+
+    if (z_env && !std::string(z_env).empty()) {
+        ACTIVE_NPS_Z_CM = env_double_or("NPS_Z_NPS_CM", ACTIVE_NPS_Z_CM);
+        source = "environment";
+    }
+    if (signed_theta_env && !std::string(signed_theta_env).empty()) {
+        ACTIVE_NPS_THETA_DEG = env_double_or("NPS_THETA_NPS_DEG", ACTIVE_NPS_THETA_DEG);
+        source = "environment";
+    } else if (physical_theta_env && !std::string(physical_theta_env).empty()) {
+        ACTIVE_NPS_THETA_DEG = -env_double_or("NPS_NPS_THETA_DEG", -ACTIVE_NPS_THETA_DEG);
+        source = "environment";
+    }
+
+    if (source == "defaults") {
+        std::cerr << "Warning: using default NPS geometry; set NPS_KIN or NPS_Z_NPS_CM/NPS_THETA_NPS_DEG" << std::endl;
+    }
+
+    std::cout << "NPS geometry: z=" << ACTIVE_NPS_Z_CM
+              << " cm, theta(NPS->Hall)=" << ACTIVE_NPS_THETA_DEG
+              << " deg (" << source << ")" << std::endl;
 }
 
 bool resolve_smearing_paths() {
@@ -616,7 +774,7 @@ void apply_mgg_linear_pair_energy_correction(double &E1,
     if (!ENABLE_MGG_LINEAR_ENERGY_CORRECTION) return;
     if (E1 <= 0.0 || E2 <= 0.0) return;
 
-    const double mgg = nps::invariant_mass_pi0(E1, E2, x1, x2, y1, y2, nps::kDefaultZ_NPS_cm);
+    const double mgg = nps::invariant_mass_pi0(E1, E2, x1, x2, y1, y2, ACTIVE_NPS_Z_CM);
     if (!std::isfinite(mgg)) return;
 
     double factor = 1.0 + MGG_LINEAR_SLOPE * (mgg - MGG_LINEAR_PIVOT_GEV);
@@ -739,6 +897,8 @@ void simc_pi0_analysis()
     const char* output_file_smeared_default = "output/plots/x60_4b/production_wfpi0/simc_pi0_analysis_output_smeared.root";
     const char* output_file = std::getenv("NPS_SIMC_OUTPUT_FILE") ? std::getenv("NPS_SIMC_OUTPUT_FILE") : output_file_default;
     const char* output_file_smeared = std::getenv("NPS_SIMC_SMEARED_OUTPUT_FILE") ? std::getenv("NPS_SIMC_SMEARED_OUTPUT_FILE") : output_file_smeared_default;
+
+    resolve_nps_geometry();
 
     bool smearing_paths_resolved = resolve_smearing_paths();
     if (smearing_paths_resolved) {
@@ -982,6 +1142,7 @@ void simc_pi0_analysis()
     Double_t x_beam = 0;   // Beam x position at target from simulation
     Float_t vtx_z = 0;    // Vertex z position from simulation
     Float_t in_siglab = 0.0;
+    Float_t in_sigcm = 0.0;
     
     // ========================================================================
     // Create Output Files and Trees
@@ -1020,6 +1181,7 @@ void simc_pi0_analysis()
     Float_t out_phi;            // Azimuthal angle (radians)
     // SIMC event-level cross section used for de-modeling
     Float_t out_siglab;
+    Float_t out_sigcm;
     
     // HMS variables
     Float_t out_hsdelta;
@@ -1070,6 +1232,7 @@ void simc_pi0_analysis()
     Float_t out_vtx_z_sm;
     // SIMC event-level cross section used for de-modeling
     Float_t out_siglab_sm;
+    Float_t out_sigcm_sm;
     // Electron kinematics (SIMC frame, MeV) - smeared version
     Float_t out_sc_e_E_sm;
     Float_t out_sc_e_Px_sm;
@@ -1208,6 +1371,7 @@ void simc_pi0_analysis()
     outtree->Branch("phi", &out_phi, "phi/F");
     // SIMC event-level cross section used for de-modeling
     outtree->Branch("siglab", &out_siglab, "siglab/F");
+    outtree->Branch("sigcm", &out_sigcm, "sigcm/F");
     
     outtree->Branch("hsdelta", &out_hsdelta, "hsdelta/F");
     outtree->Branch("hsyptar", &out_hsyptar, "hsyptar/F");
@@ -1258,6 +1422,7 @@ void simc_pi0_analysis()
         outtree_smeared->Branch("vtx_z", &out_vtx_z_sm, "vtx_z/F");
         // SIMC event-level cross section used for de-modeling
         outtree_smeared->Branch("siglab", &out_siglab_sm, "siglab/F");
+        outtree_smeared->Branch("sigcm", &out_sigcm_sm, "sigcm/F");
         // Electron kinematics (SIMC frame, MeV)
         outtree_smeared->Branch("sc_e_E", &out_sc_e_E_sm, "sc_e_E/F");
         outtree_smeared->Branch("sc_e_Px", &out_sc_e_Px_sm, "sc_e_Px/F");
@@ -1277,15 +1442,16 @@ void simc_pi0_analysis()
     struct InputSample {
         const char* label;
         const char* path;
+        Double_t normfac;
         bool is_exclusive;
         bool is_sidis;
         bool is_delta;
     };
 
     const std::vector<InputSample> input_samples = {
-        {"exclusive", input_file_exclusive, true, false, false},
-        {"sidis", input_file_sidis, false, true, false},
-        {"delta_pi0", input_file_delta, false, false, true}
+        {"exclusive", input_file_exclusive, NORMFAC_excl, true, false, false},
+        {"sidis", input_file_sidis, NORMFAC_sidis, false, true, false},
+        {"delta_pi0", input_file_delta, NORMFAC_delta, false, false, true}
     };
 
     Int_t processed = 0;
@@ -1297,8 +1463,8 @@ void simc_pi0_analysis()
     cout << "NOTE: Only events passing ALL cuts will be written to output" << endl;
 
     for (const auto& sample : input_samples) {
-        const Double_t normfac = sample.is_exclusive ? NORMFAC_excl : NORMFAC_sidis;
-        const Double_t weight_factor = normfac / NEVENTS;
+        const Double_t weight_factor = sample.normfac / NEVENTS;
+        cout << "Normfac (" << sample.label << "): " << sample.normfac << endl;
         cout << "Weight factor (" << sample.label << "): " << weight_factor << endl;
 
         TFile *infile = TFile::Open(sample.path, "READ");
@@ -1344,10 +1510,9 @@ void simc_pi0_analysis()
         clust_X = nullptr;
         clust_Y = nullptr;
         in_siglab = 0.0;
+        in_sigcm = 0.0;
 
-        // De-modeling uses siglab for both SIMC samples because SIMC writes
-        // siglab from main%sigcc, the same cross-section factor included in
-        // Weight. See pi0_analysis/root_analysis_env/demodeling.md.
+        // Preserve SIMC event-level cross sections for de-modeling.
         if (!tree->GetBranch("siglab")) {
             cerr << "ERROR: Required branch 'siglab' is missing in "
                  << sample.path << " (" << sample.label << ")." << endl;
@@ -1355,7 +1520,23 @@ void simc_pi0_analysis()
             delete infile;
             return;
         }
+        TBranch* sigcm_branch = tree->GetBranch("sigcm");
+        if (!sigcm_branch && sample.is_exclusive) {
+            cerr << "ERROR: Required branch 'sigcm' is missing in "
+                 << sample.path << " (" << sample.label << ")." << endl;
+            infile->Close();
+            delete infile;
+            return;
+        }
+        if (!sigcm_branch) {
+            cout << "Warning: Optional branch 'sigcm' is missing in "
+                 << sample.path << " (" << sample.label
+                 << "); writing sigcm=0 for this sample." << endl;
+        }
         tree->SetBranchAddress("siglab", &in_siglab);
+        if (sigcm_branch) {
+            tree->SetBranchAddress("sigcm", &in_sigcm);
+        }
 
         if (USE_INDIVIDUAL_PHOTON_BRANCHES) {
             // Use individual photon branches
@@ -1469,6 +1650,7 @@ void simc_pi0_analysis()
             out_is_sidis = sample.is_sidis ? 1 : 0;
             out_is_delta = sample.is_delta ? 1 : 0;
             out_siglab = in_siglab;
+            out_sigcm = in_sigcm;
             
             // Initialize NPS/physics variables to sentinel values
             out_nclust = 0;
@@ -1521,14 +1703,14 @@ void simc_pi0_analysis()
             double mpi0 = nps::invariant_mass_pi0(phot1_Ecal, phot2_Ecal, 
                                                    phot1_hit_x, phot2_hit_x,
                                                    phot1_hit_y, phot2_hit_y, 
-                                                   nps::kDefaultZ_NPS_cm);
+                                                   ACTIVE_NPS_Z_CM);
             
             // Calculate missing mass using nps helper function
             double mmiss = nps::missing_mass_proton_pi0(BEAM_ENERGY, Ee, px_e, py_e, pz_e,
                                                          phot1_Ecal, phot2_Ecal,
                                                          phot1_hit_x, phot1_hit_y,
                                                          phot2_hit_x, phot2_hit_y,
-                                                         nps::kDefaultZ_NPS_cm, -17.51);
+                                                         ACTIVE_NPS_Z_CM, ACTIVE_NPS_THETA_DEG);
             
             // Debug: print detailed kinematics for first few events that pass all cuts
             if (processed < 5) {
@@ -1550,7 +1732,7 @@ void simc_pi0_analysis()
                                                           BEAM_ENERGY, Ee, px_e, py_e, pz_e,
                                                           phot1_Ecal, phot1_hit_x, phot1_hit_y,
                                                           phot2_Ecal, phot2_hit_x, phot2_hit_y,
-                                                          nps::kDefaultZ_NPS_cm, -17.51);
+                                                          ACTIVE_NPS_Z_CM, ACTIVE_NPS_THETA_DEG);
             
             // Fill output variables
             out_nclust = 2;
@@ -1624,19 +1806,19 @@ void simc_pi0_analysis()
                 double mpi0_sm = nps::invariant_mass_pi0(phot1_E_sm, phot2_E_sm, 
                                                          phot1_X_sm, phot2_X_sm,
                                                          phot1_Y_sm, phot2_Y_sm, 
-                                                         nps::kDefaultZ_NPS_cm);
+                                                         ACTIVE_NPS_Z_CM);
                 
                 double mmiss_sm = nps::missing_mass_proton_pi0(BEAM_ENERGY, Ee_sm, px_e_sm, py_e_sm, pz_e_sm,
                                                                phot1_E_sm, phot2_E_sm,
                                                                phot1_X_sm, phot1_Y_sm,
                                                                phot2_X_sm, phot2_Y_sm,
-                                                               nps::kDefaultZ_NPS_cm, -17.51);
+                                                               ACTIVE_NPS_Z_CM, ACTIVE_NPS_THETA_DEG);
                 
                 nps::PhysicsVars phys_sm = nps::compute_physics_vars_from_detector(
                                                           BEAM_ENERGY, Ee_sm, px_e_sm, py_e_sm, pz_e_sm,
                                                           phot1_E_sm, phot1_X_sm, phot1_Y_sm,
                                                           phot2_E_sm, phot2_X_sm, phot2_Y_sm,
-                                                          nps::kDefaultZ_NPS_cm, -17.51);
+                                                          ACTIVE_NPS_Z_CM, ACTIVE_NPS_THETA_DEG);
                 
                 // Fill smeared output
                 out_nclust_sm = 2;
@@ -1669,6 +1851,7 @@ void simc_pi0_analysis()
                 out_theta_c_sm = theta_c_sm;
                 out_vtx_z_sm = vtx_z;
                 out_siglab_sm = out_siglab;
+                out_sigcm_sm = out_sigcm;
                 // Fill electron kinematics (SIMC frame, MeV) - same as unsmeared
                 out_sc_e_E_sm = sc_e_E;
                 out_sc_e_Px_sm = sc_e_Px;
@@ -1731,6 +1914,7 @@ void simc_pi0_analysis()
             out_is_sidis = sample.is_sidis ? 1 : 0;
             out_is_delta = sample.is_delta ? 1 : 0;
             out_siglab = in_siglab;
+            out_sigcm = in_sigcm;
             
             // Initialize NPS/physics variables to sentinel values
             out_nclust = 0;
@@ -1813,7 +1997,7 @@ void simc_pi0_analysis()
                 sel_j = good_idx[1];
             } else {
                 auto pr = nps::choose_best_pair_closest_pi0(good_idx, clusE, clusX, clusY, clusT, 
-                                                             nps::kDefaultZ_NPS_cm, nps::kPi0Mass_GeV, 2.0);
+                                                             ACTIVE_NPS_Z_CM, nps::kPi0Mass_GeV, 2.0);
                 sel_i = pr.first;
                 sel_j = pr.second;
                 if (sel_i < 0 || sel_j < 0) {
@@ -1826,14 +2010,14 @@ void simc_pi0_analysis()
             double mpi0 = nps::invariant_mass_pi0(clusE[sel_i], clusE[sel_j],
                                                    clusX[sel_i], clusX[sel_j],
                                                    clusY[sel_i], clusY[sel_j],
-                                                   nps::kDefaultZ_NPS_cm);
+                                                   ACTIVE_NPS_Z_CM);
             
             // Calculate missing mass using nps helper function
             double mmiss = nps::missing_mass_proton_pi0(BEAM_ENERGY, Ee, px_e, py_e, pz_e,
                                                          clusE[sel_i], clusE[sel_j],
                                                          clusX[sel_i], clusY[sel_i],
                                                          clusX[sel_j], clusY[sel_j],
-                                                         nps::kDefaultZ_NPS_cm, -17.51);
+                                                         ACTIVE_NPS_Z_CM, ACTIVE_NPS_THETA_DEG);
             
             // Debug: print detailed kinematics for first few events that pass all cuts
             if (processed < 50) {
@@ -1855,7 +2039,7 @@ void simc_pi0_analysis()
                                                           BEAM_ENERGY, Ee, px_e, py_e, pz_e,
                                                           clusE[sel_i], clusX[sel_i], clusY[sel_i],
                                                           clusE[sel_j], clusX[sel_j], clusY[sel_j],
-                                                          nps::kDefaultZ_NPS_cm, -17.51);
+                                                          ACTIVE_NPS_Z_CM, ACTIVE_NPS_THETA_DEG);
             
             // Fill output variables
             out_nclust = 2;
@@ -1926,19 +2110,19 @@ void simc_pi0_analysis()
                 double mpi0_sm = nps::invariant_mass_pi0(clus1_E_sm, clus2_E_sm,
                                                          clus1_X_sm, clus2_X_sm,
                                                          clus1_Y_sm, clus2_Y_sm,
-                                                         nps::kDefaultZ_NPS_cm);
+                                                         ACTIVE_NPS_Z_CM);
                 
                 double mmiss_sm = nps::missing_mass_proton_pi0(BEAM_ENERGY, Ee_sm, px_e_sm, py_e_sm, pz_e_sm,
                                                                clus1_E_sm, clus2_E_sm,
                                                                clus1_X_sm, clus1_Y_sm,
                                                                clus2_X_sm, clus2_Y_sm,
-                                                               nps::kDefaultZ_NPS_cm, -17.51);
+                                                               ACTIVE_NPS_Z_CM, ACTIVE_NPS_THETA_DEG);
                 
                 nps::PhysicsVars phys_sm = nps::compute_physics_vars_from_detector(
                                                           BEAM_ENERGY, Ee_sm, px_e_sm, py_e_sm, pz_e_sm,
                                                           clus1_E_sm, clus1_X_sm, clus1_Y_sm,
                                                           clus2_E_sm, clus2_X_sm, clus2_Y_sm,
-                                                          nps::kDefaultZ_NPS_cm, -17.51);
+                                                          ACTIVE_NPS_Z_CM, ACTIVE_NPS_THETA_DEG);
                 
                 // Fill smeared output
                 out_nclust_sm = 2;
@@ -1966,6 +2150,7 @@ void simc_pi0_analysis()
                 out_theta_c_sm = theta_c_sm;
                 out_vtx_z_sm = vtx_z;
                 out_siglab_sm = out_siglab;
+                out_sigcm_sm = out_sigcm;
                 
                 // Fill electron kinematics (SIMC frame, MeV) - same as unsmeared
                 out_sc_e_E_sm = sc_e_E;

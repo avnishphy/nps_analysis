@@ -1,0 +1,787 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue
+}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  columns=fullflexible,
+  keepspaces=true
+}
+
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\ub}{\mu\mathrm{b}}
+\newcommand{\MeV}{\mathrm{MeV}}
+\newcommand{\GeV}{\mathrm{GeV}}
+\newcommand{\sr}{\mathrm{sr}}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\phicm}{\phi_{\mathrm{cm}}}
+\newcommand{\thecm}{\theta_{\mathrm{cm}}}
+\newcommand{\xb}{x_B}
+\newcommand{\Qsq}{Q^2}
+\newcommand{\Ebeam}{E}
+\newcommand{\Escat}{E'}
+\newcommand{\Mtar}{M}
+
+\title{SIMC Cross-Section and Normalization Notes for Exclusive, SIDIS, and Delta-Pi0 Modes}
+\author{NPS analysis notes}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Purpose}
+
+This note summarizes the SIMC normalization and cross-section flow discussed for
+the NPS pi0 analysis, with particular emphasis on the relation between the
+exclusive SIMC 5-fold cross section
+\[
+  \frac{\dd^5\sigma}{\dd \Escat\,\dd\Omega_e\,\dd\Omega_h}
+\]
+and the differential form
+\[
+  \frac{\dd\sigma}
+       {\dd \Qsq\,\dd \xb\,\dd\phi_e\,\dd t\,\dd\phicm}.
+\]
+
+The code references below refer to
+\texttt{/group/nps/singhav/simc\_gfortran\_updated}.
+
+\section{Main SIMC Weighting Flow}
+
+SIMC generates Monte Carlo events in spectrometer variables, computes a physics
+cross section at the event kinematics, and then scales the accepted event sum by
+luminosity and generated phase-space volume.
+
+At the event level, the physics cross section is stored in
+\texttt{main\%sigcc}.  The dispatch is in \texttt{event.f}:
+
+\begin{lstlisting}
+1458 elseif (doing_pion) then
+1459   main%sigcc = peepi(vertex,main)
+...
+1511 elseif (doing_delta) then
+1512   main%sigcc = peedelta(vertex,main) !Need new xsec model.
+...
+1520 elseif (doing_semi) then
+1521   main%sigcc = peepiX(vertex,vertex0,main,survivalprob,.FALSE.)
+\end{lstlisting}
+
+The event weight is then
+
+\begin{lstlisting}
+1558 main%weight = main%SF_weight*main%jacobian*main%gen_weight*main%sigcc
+1559 main%weight = main%weight * tgtweight
+\end{lstlisting}
+
+Thus, schematically,
+\[
+  w_i
+  =
+  W_{\mathrm{SF},i}\,
+  J_{\mathrm{gen},i}\,
+  W_{\mathrm{gen},i}\,
+  \sigma_i\,
+  W_{\mathrm{target}},
+\]
+where
+\begin{itemize}
+  \item \(W_{\mathrm{SF}}\) is the spectral-function or nuclear model weight;
+  \item \(J_{\mathrm{gen}}\equiv\texttt{main\%jacobian}\) converts generated
+        spectrometer slopes to solid angle;
+  \item \(W_{\mathrm{gen}}\equiv\texttt{main\%gen\_weight}\) accounts for event-by-event
+        restrictions of the generated energy interval;
+  \item \(\sigma_i\equiv\texttt{main\%sigcc}\) is the physics cross section;
+  \item \(W_{\mathrm{target}}\equiv\texttt{tgtweight}\) counts the relevant target
+        protons or neutrons for pion/kaon production.
+\end{itemize}
+
+\section{Luminosity, Target Factor, and Normalization}
+
+\subsection{Target factor}
+
+SIMC defines
+\begin{lstlisting}
+94 targetfac=targ%mass_amu/3.75914d+6/(targ%abundancy/100.)
+95      >    *abs(cos(targ%angle))/(targ%thick*1000.)
+\end{lstlisting}
+in \texttt{simc.f}.  The luminosity is then
+\begin{lstlisting}
+101 luminosity = EXPER%charge/targetfac
+\end{lstlisting}
+
+Equivalently,
+\[
+  \mathcal{L}_{\mathrm{int}}
+  =
+  Q_{\mathrm{mC}}\,
+  3.75914\times 10^6\,
+  \frac{(t_{\mathrm{mg/cm^2}})\,f_{\mathrm{abund}}}
+       {A_{\mathrm{amu}}\,|\cos\theta_{\mathrm{target}}|},
+\]
+where
+\[
+  f_{\mathrm{abund}} = \frac{\texttt{targ\%abundancy}}{100}.
+\]
+The output units are \(\ub^{-1}\).  The factor \texttt{targ\%thick*1000}
+appears because the input thickness is given in \(\mathrm{mg/cm^2}\), but the
+database processing converts \texttt{targ\%thick} to \(\mathrm{g/cm^2}\).
+
+\subsection{End-of-run normalization}
+
+The run-level normalization starts as
+\begin{lstlisting}
+368 normfac = luminosity/ntried*nevent
+\end{lstlisting}
+which Fortran evaluates left-to-right:
+\[
+  \texttt{normfac}
+  =
+  \mathcal{L}_{\mathrm{int}}\,
+  \frac{N_{\mathrm{event}}}{N_{\mathrm{tried}}}.
+\]
+It is not \(\mathcal{L}_{\mathrm{int}}/(N_{\mathrm{tried}}N_{\mathrm{event}})\).
+
+SIMC then multiplies by the generated phase-space volume:
+\begin{lstlisting}
+376 domega_e=(gen%e%yptar%max-gen%e%yptar%min)
+377      >    *(gen%e%xptar%max-gen%e%xptar%min)
+...
+380 domega_p=(gen%p%yptar%max-gen%p%yptar%min)
+381      >    *(gen%p%xptar%max-gen%p%xptar%min)
+383 genvol = domega_e
+...
+387 if (doing_deuterium.or.doing_heavy.or.doing_pion.or.doing_kaon
+388      >      .or.doing_delta.or.doing_rho .or. doing_semi) then
+389   genvol = genvol * domega_p * (gen%e%E%max-gen%e%E%min)
+390 endif
+392 if (doing_heavy.or.doing_semi) then
+393   genvol = genvol * (gen%p%E%max-gen%p%E%min)
+394 endif
+396 normfac = normfac * genvol
+\end{lstlisting}
+
+Therefore
+\[
+  \texttt{normfac}
+  =
+  \mathcal{L}_{\mathrm{int}}\,
+  \frac{N_{\mathrm{event}}}{N_{\mathrm{tried}}}\,
+  V_{\mathrm{gen}}.
+\]
+
+For exclusive pion/pi0 and the separate \texttt{doing\_delta} mode,
+\[
+  V_{\mathrm{gen}}^{\mathrm{excl}}
+  =
+  \Delta\Omega_e^{\mathrm{gen}}\,
+  \Delta\Omega_h^{\mathrm{gen}}\,
+  \Delta \Escat .
+\]
+For SIDIS,
+\[
+  V_{\mathrm{gen}}^{\mathrm{SIDIS}}
+  =
+  \Delta\Omega_e^{\mathrm{gen}}\,
+  \Delta\Omega_h^{\mathrm{gen}}\,
+  \Delta \Escat\,
+  \Delta E_h .
+\]
+
+\section{The Three Different ``Jacobian'' Factors}
+
+SIMC uses the name \texttt{jacobian} in several different contexts.  They are
+not the same object.
+
+\subsection{Generated slope to solid angle: \texttt{main\%jacobian}}
+
+SIMC generates uniformly in spectrometer slopes \((x'_{\mathrm{tar}},y'_{\mathrm{tar}})\),
+not directly in physical solid angle.  The code comment in \texttt{event.f} says
+
+\begin{lstlisting}
+265 ! 1: We generate uniformly in xptar/yptar, not theta/phi.
+267 ! range, and have a jacobian for each event taking into account the mapping
+268 ! between the solid angle on the unit sphere, and the dxptar/dyptar volume
+269 ! (the jacobian is 1/cos**3(dtheta), where dtheta is the angle between the
+270 ! event and the central spectrometer vector
+\end{lstlisting}
+
+The actual code is
+\begin{lstlisting}
+1013 r = sqrt(1.+vertex%e%yptar**2+vertex%e%xptar**2)
+1014 main%jacobian = main%jacobian / r**3
+...
+1021 r = sqrt(1.+vertex%p%yptar**2+vertex%p%xptar**2)
+1022 main%jacobian = main%jacobian / r**3
+\end{lstlisting}
+
+Thus, for each generated arm,
+\[
+  J_{\mathrm{gen}}
+  =
+  \frac{\dd\Omega}{\dd x'_{\mathrm{tar}}\,\dd y'_{\mathrm{tar}}}
+  =
+  \frac{1}
+       {\left(1+x_{\mathrm{tar}}^{\prime\,2}
+                +y_{\mathrm{tar}}^{\prime\,2}\right)^{3/2}}.
+\]
+This is the factor appearing in the event weight as \texttt{main\%jacobian}.
+
+\subsection{Exclusive CM-to-lab Jacobian}
+
+The exclusive pion model gives a hadronic virtual-photon cross section in
+\((t,\phicm)\).  SIMC needs the lab hadron solid angle for its generated
+variables, so \texttt{transform\_to\_cm} returns a local variable also named
+\texttt{jacobian}.
+
+The exact definition in \texttt{jacobians.f} is
+\begin{lstlisting}
+271 jacobian = abs(dt_dcos_lab*dphicmdphi-dt_dphi_lab*dphicmdcos)
+\end{lstlisting}
+
+Mathematically,
+\[
+  J_{\mathrm{excl}}
+  =
+  \left|
+  \frac{\partial(t,\phicm)}
+       {\partial(\cos\theta_{h,\mathrm{lab}},\phi_{h,\mathrm{lab}})}
+  \right|.
+\]
+This is the factor that converts
+\[
+  \frac{\dd^2\sigma_{\gamma^*N}}{\dd t\,\dd\phicm}
+  \quad\longrightarrow\quad
+  \frac{\dd^2\sigma_{\gamma^*N}}{\dd\Omega_{h,\mathrm{lab}}}.
+\]
+
+\subsection{SIDIS \((z,p_T^2)\) to detected-hadron variables}
+
+In \texttt{semi\_physics.f}, the SIDIS model first constructs
+\[
+  \frac{\dd\sigma}
+       {\dd\Omega_e\,\dd \Escat\,\dd z\,\dd p_T^2\,\dd\phi_h}.
+\]
+It is then converted to
+\[
+  \frac{\dd\sigma}
+       {\dd\Omega_e\,\dd \Escat\,\dd E_h\,\dd\cos\theta_{hq}\,\dd\phi_h}.
+\]
+The code says
+\begin{lstlisting}
+556 C Need to convert to dsig/ (dOmega_e dE_e dE_h dCos(theta) dPhi_had
+557 C This is just given by 1/omega * 2*p_h**2*cos(theta)
+559 jacobian = 1./(nu/1000.)*2.*(phad/1000.)**2*cthpq
+562 sigma_eepiX = sigsemi*jacobian/1.e6
+\end{lstlisting}
+Thus
+\[
+  J_{\mathrm{SIDIS}}
+  =
+  \frac{1}{\nu}\,2p_h^2\cos\theta_{hq},
+\]
+with \(\nu\) and \(p_h\) expressed in \(\GeV\) in that line.
+
+\section{Exclusive Pion/Pi0 Cross Section}
+
+\subsection{Function and units}
+
+The exclusive pion/pi0 cross section is calculated in \texttt{peepi} in
+\texttt{physics\_pion.f}.  The function header states
+\begin{lstlisting}
+8 *   output:
+9 * peepi !d5sigma/dEe'dOmegae'Omegapi (microbarn/MeV/sr^2)
+\end{lstlisting}
+
+Inside the routine, the model first produces a 2-fold virtual-photon
+center-of-mass cross section:
+\begin{lstlisting}
+169 * sigma_eepi is two-fold C.M. cross section: d2sigma/dt/dphi_cm [ub/MeV**2/rad]
+\end{lstlisting}
+That quantity is called \(\sigma_{\mathrm{cm}}\) below:
+\[
+  \sigma_{\mathrm{cm}}
+  \equiv
+  \frac{\dd^2\sigma_{\gamma^*N}}
+       {\dd t\,\dd\phicm}.
+\]
+
+\subsection{The active model}
+
+For the high-\(W\) region, SIMC uses Peter Bosted's 2021 exclusive fit:
+\begin{lstlisting}
+125 CDG Use Peter Bosted's new fit to world, JLab 6 GeV, and preliminary 12 GeV data
+126 ntup%sigcm1 = sig_param_2021(thetacm,phicm,main%t/1.e6,vertex%q2/1.e6,s/1.e6,main%epsilon,
+127      >           which_pion,doing_pizero)
+129 sigma_eepi = ntup%sigcm1
+\end{lstlisting}
+
+For \(\pi^0\), \texttt{sig\_param\_2021} averages the pi-plus and pi-minus fits:
+\begin{lstlisting}
+788 if(doing_pizero) then
+789    call exclfit(... sigexcl3p, pp, 0.0)
+791    call exclfit(... sigexcl3m, pm, 0.0)
+793    sigexcl3 = (sigexcl3m + sigexcl3p)/2.0 ! first pass, average of pi+ and pi-
+\end{lstlisting}
+
+Below \(W=2~\GeV\), SIMC blends toward the \texttt{sigmaid} MAID-style model:
+\begin{lstlisting}
+133 if(main%wcm.lt.2000) then ! W less than 2.0 GeV
+146    call sigmaid(ipi,Q2gev,Wgev,E0,cthcm,phicm,sig0)
+148    ntup%sigcm2 = sig0 / ppicm / qstar / 2.
+152    fac1 = min(1., max(0.,(Wgev - 1.5) / 0.4))
+153    sigma_eepi = ntup%sigcm1 * fac1 + ntup%sigcm2 * (1 - fac1)
+154 endif
+\end{lstlisting}
+
+Thus
+\[
+  \sigma_{\mathrm{cm}}
+  =
+  \begin{cases}
+    \sigma_{\mathrm{MAID}}, & W \lesssim 1.5~\GeV,\\
+    f(W)\,\sigma_{\mathrm{Bosted2021}}
+      +[1-f(W)]\,\sigma_{\mathrm{MAID}},
+      & 1.5~\GeV < W < 1.9~\GeV,\\
+    \sigma_{\mathrm{Bosted2021}}, & W \gtrsim 1.9~\GeV,
+  \end{cases}
+\]
+where
+\[
+  f(W)=\min\left[1,\max\left(0,\frac{W-1.5}{0.4}\right)\right].
+\]
+
+\subsection{Separated 2-fold form}
+
+The Bosted 2021 fit is evaluated through \texttt{exclfit}.  Its separated
+structure is
+\begin{lstlisting}
+840 sig219 = (sigt +
+841      >   eps * sigl +
+842      >   eps * cos(2.0*phicm) * sigtt +
+843      >   sqrt(2.0 * eps * (1.0+eps)) *
+844      >   cos(phicm) * siglt)
+850 sig = sig219 *8.539 / (s_gev - mtar_gev**2)**2
+851 sig = sig / 2.0 / 3.1415928 / 1.0d+06
+\end{lstlisting}
+
+In mathematical notation,
+\[
+  \frac{\dd^2\sigma_{\gamma^*N}}
+       {\dd t\,\dd\phicm}
+  =
+  \left[
+    \sigma_T
+    +\eps\,\sigma_L
+    +\eps\cos(2\phicm)\,\sigma_{TT}
+    +\sqrt{2\eps(1+\eps)}\cos\phicm\,\sigma_{LT}
+  \right]
+  \frac{8.539}{(W^2-M_p^2)^2}
+  \frac{1}{2\pi}
+  \frac{1}{10^6}.
+\]
+The final factor \(10^{-6}\) converts the result to \(\ub/\MeV^2/\mathrm{rad}\)
+when \(t,Q^2,W^2\) are passed in \(\GeV\)-based units inside the fit.
+
+\subsection{Conversion to the SIMC exclusive 5-fold cross section}
+
+The exclusive 5-fold result returned by \texttt{peepi} is
+\begin{lstlisting}
+188 fac = 1./(1.-pferz*pfer/efer) * targ%Mtar_struck/efer
+189 gtpr = alpha/2./(pi**2)*vertex%e%E/vertex%Ein*k_eq/vertex%q2/(1.-main%epsilon)
+191 peepi = sigma_eepi*jacobian*(gtpr*fac)
+\end{lstlisting}
+
+Define
+\[
+  \Gamma_T'
+  =
+  \frac{\alpha}{2\pi^2}
+  \frac{\Escat}{\Ebeam}
+  \frac{K_{\mathrm{eq}}}{\Qsq}
+  \frac{1}{1-\eps},
+\]
+where the SIMC equivalent photon energy is
+\[
+  K_{\mathrm{eq}}
+  =
+  \frac{W^2-M_{\mathrm{struck}}^2}{2M_{\mathrm{struck}}}.
+\]
+Also define the Fermi-motion flux correction
+\[
+  F_{\mathrm{fermi}}
+  =
+  \frac{1}{1-p_{\parallel}/E_{\mathrm{fermi}}}
+  \frac{M_{\mathrm{struck}}}{E_{\mathrm{fermi}}},
+\]
+which is implemented as the variable \texttt{fac}.  Then SIMC returns
+\[
+  \boxed{
+  \frac{\dd^5\sigma_{\mathrm{excl}}}
+       {\dd \Escat\,\dd\Omega_e\,\dd\Omega_{h,\mathrm{lab}}}
+  =
+  \frac{\dd^2\sigma_{\gamma^*N}}
+       {\dd t\,\dd\phicm}
+  \,
+  J_{\mathrm{excl}}
+  \,
+  \Gamma_T'
+  \,
+  F_{\mathrm{fermi}}
+  }.
+\]
+
+\section{Delta-Pi0 Channels}
+
+There are two distinct ``delta'' meanings in this SIMC checkout.
+
+\subsection{The NPS delta-pi0 input path}
+
+The file \texttt{nps\_delta\_pi0\_x60\_4b.inp} uses
+\[
+  \texttt{doing\_pion}=1,\qquad
+  \texttt{which\_pion}=2,\qquad
+  \texttt{doing\_pizero}=1,\qquad
+  \texttt{doing\_semi}=0.
+\]
+Therefore it follows the exclusive pion/pi0 function \texttt{peepi}, not the
+separate \texttt{peedelta} function.
+
+After \texttt{peepi}, SIMC applies an empirical Delta-channel scale factor:
+\begin{lstlisting}
+1464 if(which_pion.eq.2) then ! g* p -> pi+ Delta0, g* n -> pi+ Delta-, or g* p -> pi0 Delta+
+1465    if(doing_hydpi) then
+1466       if (doing_pizero) then
+1467          main%sigcc = 0.55*main%sigcc ! g* p -> pi0 Delta+
+\end{lstlisting}
+Thus for the hydrogen \(\pi^0\Delta^+\) setting,
+\[
+  \boxed{
+  \dd^5\sigma(p(e,e'\pi^0)\Delta^+)
+  =
+  0.55\,
+  \dd^5\sigma_{\mathrm{excl}\,\pi^0}
+  }.
+\]
+
+\subsection{The separate \texttt{doing\_delta} path}
+
+The separate \texttt{doing\_delta} path calls \texttt{peedelta}.  The intended
+form mirrors the exclusive pion form, but the active code currently ignores the
+computed \(\sigma_{\mathrm{cm}}\):
+\begin{lstlisting}
+99  ntup%sigcm1 = sig_blok(thetacm,phicm,main%t/1.d6,vertex%q2/1.d6,s/1.d6,main%epsilon,
+100      >    targ%Mtar_struck/1000.,which_pion)
+101 sigma_eepi = ntup%sigcm1
+...
+130 ! peedelta = sigma_eepi*jacobian*(gtpr*fac)
+132 peedelta = 1.0*jacobian*(gtpr*fac)
+\end{lstlisting}
+So the active \texttt{doing\_delta} return is
+\[
+  \dd^5\sigma_{\texttt{doing\_delta}}
+  =
+  1\cdot J_{\mathrm{excl}}\Gamma_T'F_{\mathrm{fermi}},
+\]
+not
+\[
+  \sigma_{\mathrm{cm}}J_{\mathrm{excl}}\Gamma_T'F_{\mathrm{fermi}}.
+\]
+The code comment in \texttt{event.f} marks this path with
+\texttt{!Need new xsec model.}
+
+\section{SIDIS Pi0 Cross Section}
+
+The SIDIS function is \texttt{peepiX} in \texttt{semi\_physics.f}.  The header
+states
+\begin{lstlisting}
+6 * This routine calculates p(e,e'pi+)X semi-iinclusive cross sections from
+7 * the CTEQ5M parton distribution functions and a simple parameterization
+8 * of the favored and unfavored fragmentation functions.
+\end{lstlisting}
+
+The active pion fragmentation uses Peter Bosted's 2021 parameterization:
+\begin{lstlisting}
+450 C Peter Bosted's parameterization
+451 c uses a modified scaling variable (replaces z) for the fragmentation function
+452 c (see Accardi et al https://arxiv.org/abs/0907.2395)
+453 c new PB fit using zp for pions. This is z * D
+\end{lstlisting}
+For \(\pi^0\), it averages the favored and unfavored pion fragmentation pieces:
+\begin{lstlisting}
+480 if(doing_pizero) then ! just get averge of pi+ and pi-
+481    u1 = (yf + yu) / 2.
+482    d1 = (yf + yu) / 2.
+483    ub = (yf + yu) / 2.
+484    d1 = (yf + yu) / 2.
+485 endif
+\end{lstlisting}
+
+The quark-weighted fragmentation ratio is
+\begin{lstlisting}
+499 dsigdz = (qu**2 * u    * u1 +
+500      >            qu**2 * ubar * ub +
+501      >      qd**2 * d    * d1 +
+502      >            qd**2 * dbar * db +
+503      >      qs**2 * s    * s1 +
+504      >            qs**2 * sbar * sb)/sum_sq/zhad
+\end{lstlisting}
+and the transverse-momentum dependence is
+\begin{lstlisting}
+516 b =  1./ (0.120 * zhad**2 + 0.200)
+517 sighad = dsigdz*b*exp(-b*pt2gev)/2./pi
+\end{lstlisting}
+
+The inclusive electron part uses \texttt{F1F2IN21}:
+\begin{lstlisting}
+537 call F1F2IN21(z8, a8, Q2gev, Wsq, F1, F2)
+...
+550 sige = 4.*alpha**2*(Eprime/1000)**2/Q2gev**2 * ( W2*W2coeff + 2.*W1*sin2th2)
+\end{lstlisting}
+
+SIMC then constructs
+\begin{lstlisting}
+552 C DJG This dsig/(dOmega_e dE_e dz dpt**2 dPhi_had) in microbarn/GeV**3/sr
+553 sigsemi = sige*sighad*(hbarc/1000.)**2*10000.0
+\end{lstlisting}
+and converts to detected hadron variables:
+\begin{lstlisting}
+559 jacobian = 1./(nu/1000.)*2.*(phad/1000.)**2*cthpq
+562 sigma_eepiX = sigsemi*jacobian/1.e6
+584 sigma_eepiX = sigma_eepiX*fac
+595 peepiX = sigma_eepiX
+\end{lstlisting}
+
+Thus, schematically,
+\[
+  \dd\sigma_{\mathrm{SIDIS}}
+  =
+  \left[
+    \dd\sigma_e(F_1,F_2)
+  \right]
+  \left[
+    D_{q\to h}(z,p_T^2)
+  \right]
+  J_{\mathrm{SIDIS}}
+  F_{\mathrm{fermi}}.
+\]
+
+\section{Deriving the Desired Exclusive Form}
+
+\subsection{Starting point}
+
+SIMC's exclusive pion function returns
+\[
+  \frac{\dd^5\sigma_{\mathrm{excl}}}
+       {\dd \Escat\,\dd\Omega_e\,\dd\Omega_{h,\mathrm{lab}}}
+  =
+  \sigma_{\mathrm{cm}}\,
+  J_{\mathrm{excl}}\,
+  \Gamma_T'\,
+  F_{\mathrm{fermi}},
+\]
+with
+\[
+  \sigma_{\mathrm{cm}}
+  =
+  \frac{\dd^2\sigma_{\gamma^*N}}
+       {\dd t\,\dd\phicm}.
+\]
+
+If the desired variables already include \(t\) and \(\phicm\), then the
+exclusive hadron Jacobian must be removed.  Therefore
+\[
+  \frac{\dd\sigma}
+       {\dd \Escat\,\dd\Omega_e\,\dd t\,\dd\phicm}
+  =
+  \sigma_{\mathrm{cm}}\,
+  \Gamma_T'\,
+  F_{\mathrm{fermi}}.
+\]
+
+\subsection{Electron-variable transformation}
+
+Use
+\[
+  \dd\Omega_e = \dd\cos\theta_e\,\dd\phi_e
+\]
+and fixed beam energy \(\Ebeam\).  The electron variables satisfy
+\[
+  \Qsq = 2\Ebeam\Escat(1-\cos\theta_e),
+  \qquad
+  \nu = \Ebeam-\Escat,
+  \qquad
+  \xb = \frac{\Qsq}{2\Mtar\nu}.
+\]
+Solving for the Jacobian gives
+\[
+  \left|
+  \frac{\partial(\Escat,\cos\theta_e)}
+       {\partial(\Qsq,\xb)}
+  \right|
+  =
+  \frac{\nu}{2\Ebeam\Escat\xb}
+  =
+  \frac{\Qsq}{4\Mtar\Ebeam\Escat\xb^2}.
+\]
+
+Derivation:
+\[
+  \frac{\partial \Qsq}{\partial \Escat}
+  =
+  2\Ebeam(1-\cos\theta_e)
+  =
+  \frac{\Qsq}{\Escat},
+\]
+\[
+  \frac{\partial \Qsq}{\partial \cos\theta_e}
+  =
+  -2\Ebeam\Escat,
+\]
+\[
+  \frac{\partial \xb}{\partial \Escat}
+  =
+  \frac{\xb}{\Escat}+\frac{\xb}{\nu},
+  \qquad
+  \frac{\partial \xb}{\partial\cos\theta_e}
+  =
+  -\frac{\Ebeam\Escat}{\Mtar\nu}.
+\]
+Thus
+\[
+  \left|
+  \frac{\partial(\Qsq,\xb)}
+       {\partial(\Escat,\cos\theta_e)}
+  \right|
+  =
+  \frac{2\Ebeam\Escat\xb}{\nu},
+\]
+and the inverse is
+\[
+  \left|
+  \frac{\partial(\Escat,\cos\theta_e)}
+       {\partial(\Qsq,\xb)}
+  \right|
+  =
+  \frac{\nu}{2\Ebeam\Escat\xb}
+  =
+  \frac{\Qsq}{4\Mtar\Ebeam\Escat\xb^2}.
+\]
+
+\subsection{Final result}
+
+Keeping the electron azimuth differential, the desired exclusive form is
+\[
+  \boxed{
+  \frac{\dd\sigma}
+       {\dd \Qsq\,\dd\xb\,\dd\phi_e\,\dd t\,\dd\phicm}
+  =
+  \left[
+    \frac{\dd^2\sigma_{\gamma^*N}}
+         {\dd t\,\dd\phicm}
+  \right]
+  \Gamma_T'
+  F_{\mathrm{fermi}}
+  \frac{\Qsq}{4\Mtar\Ebeam\Escat\xb^2}
+  }.
+\]
+
+Equivalently, in SIMC variable names,
+\[
+  \boxed{
+  \frac{\dd\sigma}
+       {\dd \Qsq\,\dd\xb\,\dd\phi_e\,\dd t\,\dd\phicm}
+  =
+  \texttt{sigma\_eepi}
+  \times
+  \texttt{gtpr}
+  \times
+  \texttt{fac}
+  \times
+  \frac{\texttt{vertex\%Q2}}
+       {4\,M\,\texttt{vertex\%Ein}\,\texttt{vertex\%e\%E}\,\texttt{vertex\%xbj}^2}
+  }.
+\]
+
+If instead the electron azimuth is integrated over and the cross section is
+azimuthally symmetric in \(\phi_e\), then
+\[
+  \boxed{
+  \frac{\dd\sigma}
+       {\dd \Qsq\,\dd\xb\,\dd t\,\dd\phicm}
+  =
+  2\pi
+  \left[
+    \frac{\dd^2\sigma_{\gamma^*N}}
+         {\dd t\,\dd\phicm}
+  \right]
+  \Gamma_T'
+  F_{\mathrm{fermi}}
+  \frac{\Qsq}{4\Mtar\Ebeam\Escat\xb^2}
+  }.
+\]
+
+\subsection{Important practical warning}
+
+Do not include the SIMC exclusive local \texttt{jacobian} when the target
+variables are already \((t,\phicm)\).  That Jacobian is only needed for
+\[
+  (t,\phicm)\rightarrow \Omega_{h,\mathrm{lab}}.
+\]
+The final \((\Qsq,\xb,\phi_e,t,\phicm)\) formula keeps the hadron variables as
+\((t,\phicm)\), so the hadron-side Jacobian cancels out.
+
+\section{Unit Conventions}
+
+SIMC mixes MeV and GeV conventions in a controlled way:
+\begin{itemize}
+  \item \texttt{vertex\%Q2}, \texttt{main\%t}, \texttt{vertex\%Ein}, and
+        \texttt{vertex\%e\%E} are generally in MeV-based units.
+  \item The exclusive parameterization is called with
+        \(\Qsq,t,W^2\) divided by \(10^6\), i.e. in \(\GeV^2\).
+  \item \texttt{sig\_param\_2021} converts the returned 2-fold cross section
+        to \(\ub/\MeV^2/\mathrm{rad}\) using the \(10^{-6}\) factor.
+  \item The SIMC \texttt{gtpr} uses MeV units and has dimensions \(1/\MeV\).
+\end{itemize}
+
+Therefore the boxed formula above is internally consistent if
+\(\Qsq, \Ebeam, \Escat,\Mtar\) are all taken in the same MeV-based convention
+used by SIMC.  If one rewrites the final result in \(\GeV^2\) for \(\Qsq\) and
+\(t\), the corresponding powers of \(10^3\) or \(10^6\) must be applied
+consistently.
+
+\section{Minimal Dictionary}
+
+\begin{center}
+\begin{tabular}{ll}
+\hline
+SIMC name & Meaning \\
+\hline
+\texttt{sigma\_eepi} & \(\dd^2\sigma_{\gamma^*N}/(\dd t\,\dd\phicm)\) for exclusive pion/pi0 \\
+\texttt{peepi} & exclusive \(\dd^5\sigma/(\dd \Escat\,\dd\Omega_e\,\dd\Omega_h)\) \\
+\texttt{peepiX} & SIDIS detected-hadron cross section \\
+\texttt{gtpr} & virtual photon flux \(\Gamma_T'\) \\
+\texttt{fac} & Fermi-motion flux correction \\
+\texttt{jacobian} in \texttt{peepi} & \(\partial(t,\phicm)/\partial(\cos\theta_h,\phi_h)\) \\
+\texttt{main\%jacobian} & generated slope to solid-angle correction \\
+\texttt{genvol} & generated phase-space volume \\
+\texttt{normfac} & luminosity times accepted fraction times \texttt{genvol} \\
+\hline
+\end{tabular}
+\end{center}
+
+\end{document}

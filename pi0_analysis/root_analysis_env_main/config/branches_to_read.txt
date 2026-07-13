@@ -1,0 +1,148 @@
+# ============================================================
+# Branches to enable for skim stage and analysis modules
+# ============================================================
+
+# ---------------------------
+# NPS Calorimeter branches
+# ---------------------------
+NPS.cal.nclust
+NPS.cal.clusE
+NPS.cal.clusX
+NPS.cal.clusY
+NPS.cal.clusT
+NPS.cal.fly.block_clusterID
+NPS.cal.fly.e
+NPS.cal.fly.goodAdcTdcDiffTime
+NPS.cal.vtpClusE
+NPS.cal.vtpClusSize
+NPS.cal.vtpClusTime
+NPS.cal.vtpClusY
+NPS.cal.vtpClusX
+
+# ---------------------------
+# HMS Electron branches
+# ---------------------------
+# Drift chambers
+H.dc.x_fp
+H.dc.y_fp
+H.dc.xp_fp
+H.dc.yp_fp
+H.dc.ntrack
+
+# GR tracker
+H.gtr.x
+H.gtr.y
+H.gtr.p
+H.gtr.px
+H.gtr.py
+H.gtr.pz
+H.gtr.beta
+H.gtr.dp
+H.gtr.th
+H.gtr.ph
+
+# Calorimeters
+H.cal.eprtracknorm
+H.cal.etottracknorm
+H.cal.etotnorm
+H.cal.etot
+H.cal.etrack
+H.cal.etracknorm
+
+# Cherenkov
+H.cer.npeSum
+
+# Hodoscopes
+H.hod.goodscinhit
+H.hod.betanotrack
+H.hod.starttime
+H.hod.fpHitsTime
+
+# Reaction vertex
+H.react.z
+
+# ---------------------------
+# Scalers
+# ---------------------------
+# Beam Current Monitors (BCM)
+H.BCM4A.scaler
+H.BCM4A.scalerCharge
+H.BCM4A.scalerChargeCut
+H.BCM4A.scalerCurrent
+H.BCM4A.scalerCut
+
+H.BCM2.scaler
+H.BCM2.scalerCharge
+H.BCM2.scalerChargeCut
+H.BCM2.scalerCurrent
+H.BCM2.scalerCut
+
+# Triggers
+H.hTRIG4.scaler
+H.hTRIG4.scalerCut
+H.hTRIG4.scalerRate
+T.hms.hTRIG4_tdcTimeRaw
+T.hms.hTRIG4_tdcMultiplicity
+
+H.hTRIG3.scaler
+H.hTRIG3.scalerCut
+H.hTRIG3.scalerRate
+T.hms.hTRIG3_tdcTimeRaw
+T.hms.hTRIG3_tdcMultiplicity
+
+H.EDTM.scaler
+H.hL1ACCP.scaler
+H.hEL_REAL.scaler
+H.1MHz.scalerTime
+
+# Hodoscope scalers
+H.S1X.scaler
+H.S1X.scalerCut
+H.S1X.scalerRate
+
+H.S1Y.scaler
+H.S1Y.scalerCut
+H.S1Y.scalerRate
+
+H.S1XS1Y.scaler
+H.S1XS1Y.scalerCut
+H.S1XS1Y.scalerRate
+
+H.S2X.scaler
+H.S2X.scalerCut
+H.S2X.scalerRate
+
+H.S2Y.scaler
+H.S2Y.scalerCut
+H.S2Y.scalerRate
+
+H.S2XS2Y.scaler
+H.S2XS2Y.scalerCut
+H.S2XS2Y.scalerRate
+
+# TDC raw times for triggers
+T.hms.npsTRIG1_tdcTimeRaw
+T.hms.npsTRIG6_tdcTimeRaw
+T.hms.hEDTM_tdcTimeRaw
+
+# Helicity
+T.helicity.hel
+T.helicity.helpred
+T.helicity.helrep
+T.helicity.mps
+T.helicity.npqrt
+
+# Coincidence times
+CTime.epCoinTime1_ROC1
+CTime.epCoinTime2_ROC1
+
+# ---------------------------
+# Event metadata (optional)
+# ---------------------------
+# run
+# event
+# segment
+
+# ---------------------------
+# Add any additional branches needed for specific analysis modules
+# ---------------------------

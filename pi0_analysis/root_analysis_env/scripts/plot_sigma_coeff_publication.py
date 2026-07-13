@@ -8,9 +8,15 @@ This script reads:
 
 It writes a single multi-page PDF containing:
 - Overall coefficient plots: dσ/dt vs -t' for each (iq, ix)
-- Per-slice plots: dσ/(dt' dphi) vs phi with model components and uncertainty bands
+- Per-slice plots: dσ/(dt dphi) vs phi with model components and uncertainty bands
 
 All sigma-like values are displayed in nb/GeV^2 by applying a configurable scale.
+
+Current extraction convention:
+- SIMC acceptance basis uses full_weight/sigcm.
+- Gamma is kept in the CSV as a diagnostic, but is not multiplied into the
+  plotted response basis because full_weight/sigcm retains siglab/sigcm =
+  davejac * gtpr * fac.
 """
 
 from __future__ import annotations
@@ -108,6 +114,7 @@ def parse_slice_csv(slice_csv: str) -> Tuple[Dict[GroupKey, List[dict]], Dict[Sl
                 "xb_lo": to_float(row.get("xb_lo", "nan")),
                 "xb_hi": to_float(row.get("xb_hi", "nan")),
                 "epsilon": to_float(row.get("epsilon", "nan")),
+                "gamma_flux": to_float(row.get("gamma_flux", "nan")),
                 "fit_xsec_chi2": to_float(row.get("fit_xsec_chi2", "nan")),
                 "fit_xsec_ndf": to_float(row.get("fit_xsec_ndf", "nan")),
                 "fit_asym_ok": to_int(row.get("fit_asym_ok", "0"), 0),
@@ -170,6 +177,7 @@ def parse_phi_csv(phi_csv: str) -> Dict[SliceKey, List[dict]]:
                 "xsec": xsec,
                 "xsec_err": xsec_err,
                 "epsilon": to_float(row.get("epsilon", "nan")),
+                "gamma_flux": to_float(row.get("gamma_flux", "nan")),
             }
             by_slice_phi[(it, iq, ix)].append(rec)
 
@@ -229,7 +237,9 @@ def draw_title_page(
         "Units and conventions:",
         f"- Sigma values scaled by {nb_scale:g} to display nb/GeV^2",
         "- Overall plots: y-axis is dσ/dt [nb/GeV^2]",
-        "- Per-slice contribution/helicity panels: y-axis is dσ/(dt' dφ) [nb/GeV^2]",
+        "- Per-slice contribution/helicity panels: y-axis is dσ/(dt dφ) [nb/GeV^2]",
+        "- SIMC basis is full_weight/sigcm, preserving davejac*gtpr*fac through siglab/sigcm",
+        "- Gamma is read from CSV for diagnostics only; it is not multiplied into plotted components",
         "",
         "Per-slice multipanel content:",
         "- Data vs SIMC yields",
@@ -366,6 +376,9 @@ def draw_overall_group_page(pdf: PdfPages, rows: List[dict], iq: int, ix: int, n
 def component_model(phi: np.ndarray, fit_row: dict) -> Dict[str, np.ndarray]:
     eps = clamp(fit_row.get("epsilon", 0.0), 0.0, 1.0)
     inv2pi = 1.0 / (2.0 * math.pi)
+    # No explicit Gamma factor here. The extraction now fits against the
+    # full_weight/sigcm SIMC basis, which already keeps siglab/sigcm =
+    # davejac*gtpr*fac in the event response.
     k_lt = math.sqrt(max(0.0, 2.0 * eps * (1.0 + eps)))
     k_tlp = math.sqrt(max(0.0, 2.0 * eps * (1.0 - eps)))
 
@@ -433,6 +446,7 @@ def draw_per_slice_page(
     xblo = fit_row["xb_lo"]
     xbhi = fit_row["xb_hi"]
     eps = fit_row.get("epsilon", float("nan"))
+    gamma_flux = fit_row.get("gamma_flux", float("nan"))
 
     phi_data = np.array([r["phi_center"] for r in phi_rows], dtype=float)
     xsec_data = nb_scale * np.array([r["xsec"] for r in phi_rows], dtype=float)
@@ -594,7 +608,7 @@ def draw_per_slice_page(
     ax_xsec.axhline(0.0, color="0.4", linestyle="--", linewidth=1.0)
 
     ax_xsec.set_xlabel(r"$\phi$ [rad]")
-    ax_xsec.set_ylabel(r"$d\sigma/(dt'\,d\phi)$ [nb/GeV$^2$]")
+    ax_xsec.set_ylabel(r"$d\sigma/(dt\,d\phi)$ [nb/GeV$^2$]")
     ax_xsec.set_title(
         rf"Per-Slice Cross Section  (it={it}, iq={iq}, ix={ix})"
     )
@@ -607,13 +621,23 @@ def draw_per_slice_page(
     )
     ax_xsec.text(0.012, 0.98, info, transform=ax_xsec.transAxes, va="top", fontsize=10.0)
 
+    if math.isfinite(gamma_flux):
+        ax_xsec.text(
+            0.012,
+            0.94,
+            rf"$\Gamma={gamma_flux:.3e}$ stored only; not multiplied in this basis",
+            transform=ax_xsec.transAxes,
+            va="top",
+            fontsize=9.3,
+        )
+
     chi2 = fit_row.get("fit_xsec_chi2", float("nan"))
     ndf = fit_row.get("fit_xsec_ndf", float("nan"))
     if math.isfinite(chi2) and math.isfinite(ndf) and ndf > 0.0:
         qtxt = rf"Fit quality: $\chi^2/ndf={chi2/ndf:.2f}$"
     else:
         qtxt = r"Fit quality: n/a"
-    ax_xsec.text(0.012, 0.90, qtxt, transform=ax_xsec.transAxes, va="top", fontsize=10.0)
+    ax_xsec.text(0.012, 0.86 if math.isfinite(gamma_flux) else 0.90, qtxt, transform=ax_xsec.transAxes, va="top", fontsize=10.0)
 
     ax_xsec.legend(loc="best", framealpha=0.96)
 
@@ -621,7 +645,7 @@ def draw_per_slice_page(
     if has_tlp and ax_hel is not None:
         ax_hel.set_title("Helicity contribution placeholder")
         ax_hel.set_xlabel(r"$\phi$ [rad]")
-        ax_hel.set_ylabel(r"$d\sigma/(dt'\,d\phi)$ [nb/GeV$^2$]")
+        ax_hel.set_ylabel(r"$d\sigma/(dt\,d\phi)$ [nb/GeV$^2$]")
         ax_hel.axhline(0.0, color="0.4", linestyle="--", linewidth=1.0)
         ax_hel.fill_between(phi_curve, tlp - etlp, tlp + etlp, color="#9467bd", alpha=0.12, linewidth=0.0, label=r"$\sigma_{TL'}\sin\phi \pm 1\sigma$")
         ax_hel.plot(phi_curve, tlp, color="#7c3aed", linewidth=2.2, linestyle=(0, (4, 2)), label=r"$\sigma_{TL'}\sin\phi$")

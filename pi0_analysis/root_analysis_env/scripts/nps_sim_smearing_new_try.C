@@ -146,7 +146,7 @@
         const double BEAM_ENERGY = 10.538;  // Hall C typical beam energy
         
         // Y mispointing offset (cm) - must match simc_pi0_analysis.C
-        const double Y_MISPOINT = 0.103665;  // SIMC infile for x60_4b spec%e%offset%y
+        const double Y_MISPOINT = 0.086273;  // SIMC infile for x36_5 spec%e%offset%y
         
         // Clamp value for non-positive energy smearing draws (GeV)
         const double NONPOSITIVE_CLAMP = 1e-6;
@@ -478,13 +478,13 @@
         // SIMC event weighting:
         //   false: use the raw SIMC full_weight branch
         //   true:  de-model by dividing full_weight by SIM_MODEL_XSEC_BRANCH
-        const bool USE_SIM_MODEL_XSEC_DEMODELING = false;
+        const bool USE_SIM_MODEL_XSEC_DEMODELING = true;
 
         // SIMC de-modeling branch, used only when USE_SIM_MODEL_XSEC_DEMODELING
         // is true. The output tree stores the SIMC cross-section factor as siglab.
         // See pi0_analysis/root_analysis_env/demodeling.md.
         const char* SIM_MODEL_XSEC_BRANCH = "siglab";
-        const double SIM_MODEL_XSEC_MIN_ABS = 1e-20;
+        const double SIM_MODEL_XSEC_MIN_ABS = 1e-30;
         
         // Minimum events required per section (both data AND simulation)
         // Sections with insufficient statistics will be skipped with a warning

@@ -37,10 +37,17 @@ from matplotlib.backends.backend_pdf import PdfPages
 DEFAULT_TARGET = "LH2"
 DEFAULT_CONFIG = "nps_dvcs_all_kins_main.csv"
 BRANCHES_TO_EXCLUDE = {"event_id"}
-
-# Debug-mode hard overrides requested by workflow integration task.
-DEBUG_LIVETIME_OVERRIDE = 1.0
-DEBUG_EFFICIENCY_OVERRIDE = 1.0
+REQUIRED_EFFICIENCY_COLUMNS = (
+    "run_number",
+    "kinematic_setting",
+    "HEL_charge_after_cut_uC",
+    "HMS_tracking_eff",
+    "HMS_hodo_3of4_eff",
+    "NewGen_EDTM_livetime",
+    "HMS_tracking_eff_err",
+    "HMS_hodo_3of4_eff_err",
+    "NewGen_EDTM_livetime_err",
+)
 
 # Combined-level 2D mass-cut branches. Recomputed from the merged weighted
 # mmiss_all:mpi0_all distribution, not copied from per-run flags.
@@ -55,20 +62,31 @@ MASS_CUT_CONFIG = {
     "n_mmiss_bins": 200,
     "mmiss_min": 0.6,
     "mmiss_max": 1.5,
+    "seed_mpi0": 0.13498,
+    "seed_mpi0_half_width": 0.010,
     "seed_mmiss": 0.938,
-    "seed_mmiss_half_width": 0.03,
+    "seed_mmiss_half_width": 0.030,
+    "smoothing_radius_bins": 1,
     "peak_fraction": -1.0,
-    "ellipse_core_quantile": 0.995,
+    "core_quantile": 0.6827,
+    "ellipse_quantile": 0.990,
+    "ellipse_grow_iterations": 20,
     "ellipse_padding": 1.05,
     "auto_peak_min": 0.05,
     "auto_peak_max": 0.60,
     "auto_peak_step": 0.005,
-    "auto_min_core_total_fraction": 0.05,
-    "auto_min_core_bins": 30,
-    "mcd_keep_total_fraction": 0.30,
+    "auto_min_core_total_fraction": 0.005,
+    "auto_max_core_total_fraction": 0.30,
+    "auto_min_core_bins": 8,
+    "max_model_mpi0_offset": 0.008,
+    "max_model_mmiss_offset": 0.100,
+    "mcd_candidate_mpi0_half_width": 0.015,
+    "mcd_candidate_mmiss_half_width": 0.180,
+    "mcd_keep_candidate_fraction": 0.50,
     "mcd_iterations": 8,
-    "mcd_ellipse_quantile": 0.995,
+    "mcd_ellipse_quantile": 0.975,
     "mcd_padding": 1.05,
+    "covariance_regularization_bins": 0.50,
 }
 
 
@@ -94,17 +112,19 @@ class RunConfig:
     prescale_token: str
     prescale_value: float
     target: str
-    charge_uC_fallback: Optional[float]
 
 
 @dataclass(frozen=True)
 class RunEfficiencyMeta:
-    ps_value: float
-    charge_uC: Optional[float]
-    livetime_raw: float
-    efficiency_raw: float
-    livetime_used: float
-    efficiency_used: float
+    charge_uC: float
+    tracking_eff: float
+    tracking_eff_err: float
+    hodo_3of4_eff: float
+    hodo_3of4_eff_err: float
+    livetime: float
+    livetime_err: float
+    efficiency: float
+    efficiency_err: float
 
 
 @dataclass(frozen=True)
@@ -182,16 +202,18 @@ def pick_column(columns: Iterable[str],
 def extract_prescale_r(token: str) -> Optional[int]:
     if not isinstance(token, str):
         return None
-    m = re.search(r"ps\d*\s*=\s*(\d+)", token.strip(), flags=re.IGNORECASE)
-    if m:
-        return int(m.group(1))
-    if "=" in token:
-        rhs = token.split("=")[-1].strip()
-        try:
-            return int(rhs)
-        except Exception:
-            return None
-    return None
+    assignments = [
+        (int(trigger), int(setting))
+        for trigger, setting in re.findall(
+            r"ps\s*(\d+)\s*=\s*(-?\d+)", token, flags=re.IGNORECASE
+        )
+    ]
+    enabled = [(trigger, setting) for trigger, setting in assignments if setting >= 0]
+    if not enabled:
+        return None
+    # Temporary, explicit policy for multi-trigger runs: use first enabled
+    # assignment in token order. Plotting writes those runs to an audit CSV.
+    return enabled[0][1]
 
 
 def prescale_from_token(token: str) -> float:
@@ -370,9 +392,6 @@ def build_lookup(df_cfg: pd.DataFrame,
 
     type_col = pick_column(df_cfg.columns, ["Type", "run_type"], contains="type")
     target_col = pick_column(df_cfg.columns, ["target"], contains="target")
-    charge_mc_col = pick_column(df_cfg.columns,
-                                ["charge(mC)", "accumulated_charge(mC)", "charge_mc"],
-                                contains="charge")
 
     initial_rows = len(df_cfg)
     df_cfg = df_cfg[df_cfg[kin_col].map(clean_text) == kin_setting]
@@ -398,17 +417,10 @@ def build_lookup(df_cfg: pd.DataFrame,
 
         target = clean_text(row.get(target_col)) if target_col else ""
 
-        charge_uC_fallback: Optional[float] = None
-        if charge_mc_col is not None:
-            charge_mc = safe_float(row.get(charge_mc_col))
-            if charge_mc is not None and charge_mc > 0:
-                charge_uC_fallback = float(charge_mc * 1000.0)
-
         lookup[int(run)] = RunConfig(
             prescale_token=token,
             prescale_value=float(ps_value),
             target=target,
-            charge_uC_fallback=charge_uC_fallback,
         )
 
     if not lookup:
@@ -422,67 +434,65 @@ def load_efficiency_metadata(efficiency_csv: Path,
     df = pd.read_csv(efficiency_csv, dtype=str, keep_default_na=False, skipinitialspace=True)
     df.columns = [str(c).strip() for c in df.columns]
 
-    run_col = pick_column(df.columns, ["run_number", "run"], contains="run")
-    if run_col is None:
-        raise ValueError(f"Efficiency CSV missing run column: {efficiency_csv}")
+    missing_columns = [name for name in REQUIRED_EFFICIENCY_COLUMNS if name not in df.columns]
+    if missing_columns:
+        raise ValueError(
+            f"Efficiency CSV missing required column(s): {', '.join(missing_columns)}\n"
+            f"CSV: {efficiency_csv}"
+        )
 
-    kin_col = pick_column(df.columns, ["kinematic_setting", "Kin_old"], contains="kin")
-    ps_factor_col = pick_column(df.columns, ["ps_factor", "ps_value"], contains="psfactor")
-    ps_token_col = pick_column(df.columns, ["prescale_token", "prescale"], contains="prescale")
-    charge_after_col = pick_column(df.columns, ["HEL_charge_after_cut_uC", "hel_charge_after_cut_uc"],
-                                   contains="chargeafter")
-    charge_before_col = pick_column(df.columns, ["HEL_charge_before_cut_uC", "hel_charge_before_cut_uc"],
-                                    contains="chargebefore")
-    livetime_col = pick_column(df.columns, ["NewGen_EDTM_livetime", "livetime"], contains="livetime")
-    efficiency_col = pick_column(df.columns,
-                                 ["efficiency", "HMS_tracking_eff", "HMS_hodo_3of4_eff"],
-                                 contains="eff")
-
-    if kin_col is not None:
-        before = len(df)
-        df = df[df[kin_col].map(clean_text) == kin_setting]
-        print(f"[INFO] Filtered efficiency CSV by kinematic_setting='{kin_setting}': {before} -> {len(df)} rows")
+    before = len(df)
+    df = df[df["kinematic_setting"].map(clean_text) == kin_setting]
+    print(f"[INFO] Filtered efficiency CSV by kinematic_setting='{kin_setting}': {before} -> {len(df)} rows")
 
     out: Dict[int, RunEfficiencyMeta] = {}
     for _, row in df.iterrows():
-        run = safe_int(row.get(run_col))
+        run = safe_int(row.get("run_number"))
         if run is None:
+            print("[WARN] Skipping efficiency row with invalid run_number")
             continue
 
-        ps_value = safe_float(row.get(ps_factor_col)) if ps_factor_col else None
-        if ps_value is None and ps_token_col is not None:
-            ps_value = prescale_from_token(clean_text(row.get(ps_token_col)))
-        if ps_value is None or ps_value <= 0:
-            ps_value = 1.0
+        numeric_columns = REQUIRED_EFFICIENCY_COLUMNS[2:]
+        values = {name: safe_float(row.get(name)) for name in numeric_columns}
+        invalid = [name for name, value in values.items() if value is None]
+        if invalid:
+            print(f"[WARN] Skipping run {run}: invalid efficiency value(s): {', '.join(invalid)}")
+            continue
 
-        charge_uC = None
-        if charge_after_col is not None:
-            charge_uC = safe_float(row.get(charge_after_col))
-        if (charge_uC is None or charge_uC <= 0) and charge_before_col is not None:
-            charge_uC = safe_float(row.get(charge_before_col))
-        if charge_uC is not None and charge_uC <= 0:
-            charge_uC = None
+        charge_uC = float(values["HEL_charge_after_cut_uC"])
+        tracking_eff = float(values["HMS_tracking_eff"])
+        hodo_eff = float(values["HMS_hodo_3of4_eff"])
+        livetime = float(values["NewGen_EDTM_livetime"])
+        tracking_err = float(values["HMS_tracking_eff_err"])
+        hodo_err = float(values["HMS_hodo_3of4_eff_err"])
+        livetime_err = float(values["NewGen_EDTM_livetime_err"])
 
-        livetime_raw = safe_float(row.get(livetime_col)) if livetime_col else None
-        efficiency_raw = safe_float(row.get(efficiency_col)) if efficiency_col else None
+        if charge_uC <= 0 or tracking_eff <= 0 or hodo_eff <= 0 or livetime <= 0:
+            print(f"[WARN] Skipping run {run}: charge, efficiencies, and livetime must be positive")
+            continue
+        if tracking_err < 0 or hodo_err < 0 or livetime_err < 0:
+            print(f"[WARN] Skipping run {run}: efficiency and livetime errors must be nonnegative")
+            continue
+
+        efficiency = tracking_eff * hodo_eff
+        efficiency_err = float(np.hypot(hodo_eff * tracking_err, tracking_eff * hodo_err))
 
         out[int(run)] = RunEfficiencyMeta(
-            ps_value=float(ps_value),
             charge_uC=charge_uC,
-            livetime_raw=float(livetime_raw) if livetime_raw is not None else 1.0,
-            efficiency_raw=float(efficiency_raw) if efficiency_raw is not None else 1.0,
-            livetime_used=float(DEBUG_LIVETIME_OVERRIDE),
-            efficiency_used=float(DEBUG_EFFICIENCY_OVERRIDE),
+            tracking_eff=tracking_eff,
+            tracking_eff_err=tracking_err,
+            hodo_3of4_eff=hodo_eff,
+            hodo_3of4_eff_err=hodo_err,
+            livetime=livetime,
+            livetime_err=livetime_err,
+            efficiency=efficiency,
+            efficiency_err=efficiency_err,
         )
 
     if not out:
         raise ValueError(f"No usable rows found in efficiency CSV: {efficiency_csv}")
 
-    print(
-        f"[INFO] Loaded efficiency metadata for {len(out)} runs from {efficiency_csv}\n"
-        f"       Debug override in effect: livetime={DEBUG_LIVETIME_OVERRIDE}, "
-        f"efficiency={DEBUG_EFFICIENCY_OVERRIDE}"
-    )
+    print(f"[INFO] Loaded efficiency metadata for {len(out)} runs from {efficiency_csv}")
     return out
 
 
@@ -573,24 +583,27 @@ def combine_branches(lookup: Dict[int, RunConfig],
             continue
 
         eff = efficiency_map.get(run)
-        ps_value = eff.ps_value if eff else cfg.prescale_value
+        if eff is None:
+            print(f"[WARN] No valid efficiency metadata for run {run}; skipping run")
+            continue
 
-        charge_uC = eff.charge_uC if eff and eff.charge_uC else cfg.charge_uC_fallback
-        if charge_uC is None or charge_uC <= 0:
-            charge_uC = 1000.0
-            print(f"[WARN] Missing valid charge for run {run}; using fallback charge_uC=1000")
-
-        livetime = eff.livetime_used if eff else DEBUG_LIVETIME_OVERRIDE
-        efficiency = eff.efficiency_used if eff else DEBUG_EFFICIENCY_OVERRIDE
+        ps_value = cfg.prescale_value
+        charge_uC = eff.charge_uC
+        livetime = eff.livetime
+        efficiency = eff.efficiency
 
         denom = (charge_uC / 1000.0) * livetime * efficiency
-        if denom <= 0:
-            denom = 1.0
         scale = float(ps_value) / float(denom)
+        scale_err = scale * float(np.hypot(
+            eff.livetime_err / livetime,
+            eff.efficiency_err / efficiency,
+        ))
 
         print(
             f"[INFO] run={run} ps={ps_value:.6g} charge_uC={charge_uC:.6g} "
-            f"livetime={livetime:.6g} efficiency={efficiency:.6g} scale={scale:.6g}"
+            f"livetime={livetime:.6g}+/-{eff.livetime_err:.3g} "
+            f"efficiency={efficiency:.6g}+/-{eff.efficiency_err:.3g} "
+            f"scale={scale:.6g}+/-{scale_err:.3g}"
         )
 
         try:
@@ -630,11 +643,20 @@ def combine_branches(lookup: Dict[int, RunConfig],
 
                 n_events = reference_len
                 branch_data["scale"] = np.full(n_events, scale, dtype=np.float32)
+                branch_data["scale_err"] = np.full(n_events, scale_err, dtype=np.float32)
                 branch_data["run_number"] = np.full(n_events, run, dtype=np.int32)
                 branch_data["charge_uC"] = np.full(n_events, charge_uC, dtype=np.float32)
                 branch_data["ps_value"] = np.full(n_events, ps_value, dtype=np.float32)
                 branch_data["livetime"] = np.full(n_events, livetime, dtype=np.float32)
+                branch_data["livetime_err"] = np.full(n_events, eff.livetime_err, dtype=np.float32)
+                branch_data["HMS_tracking_eff"] = np.full(n_events, eff.tracking_eff, dtype=np.float32)
+                branch_data["HMS_tracking_eff_err"] = np.full(n_events, eff.tracking_eff_err, dtype=np.float32)
+                branch_data["HMS_hodo_3of4_eff"] = np.full(n_events, eff.hodo_3of4_eff, dtype=np.float32)
+                branch_data["HMS_hodo_3of4_eff_err"] = np.full(
+                    n_events, eff.hodo_3of4_eff_err, dtype=np.float32
+                )
                 branch_data["efficiency"] = np.full(n_events, efficiency, dtype=np.float32)
+                branch_data["efficiency_err"] = np.full(n_events, eff.efficiency_err, dtype=np.float32)
 
                 df_run = pd.DataFrame(branch_data)
                 combined_data.append(df_run)
@@ -670,7 +692,13 @@ def weighted_quantile(values: np.ndarray, weights: np.ndarray, quantile: float) 
     return float(v[idx])
 
 
-def compute_cov_model(x: np.ndarray, y: np.ndarray, w: np.ndarray) -> Optional[Dict[str, float]]:
+def compute_cov_model(
+    x: np.ndarray,
+    y: np.ndarray,
+    w: np.ndarray,
+    regularization_x: float = 0.0,
+    regularization_y: float = 0.0,
+) -> Optional[Dict[str, float]]:
     weight_sum = float(np.sum(w))
     if weight_sum <= 0.0 or len(x) < 3:
         return None
@@ -678,9 +706,11 @@ def compute_cov_model(x: np.ndarray, y: np.ndarray, w: np.ndarray) -> Optional[D
     mean_y = float(np.sum(w * y) / weight_sum)
     dx = x - mean_x
     dy = y - mean_y
-    cov_xx = float(np.sum(w * dx * dx) / weight_sum)
+    cov_xx = float(np.sum(w * dx * dx) / weight_sum + regularization_x ** 2)
     cov_xy = float(np.sum(w * dx * dy) / weight_sum)
-    cov_yy = float(np.sum(w * dy * dy) / weight_sum)
+    cov_yy = float(np.sum(w * dy * dy) / weight_sum + regularization_y ** 2)
+    max_abs_cov_xy = 0.995 * np.sqrt(cov_xx * cov_yy)
+    cov_xy = float(np.clip(cov_xy, -max_abs_cov_xy, max_abs_cov_xy))
     det = cov_xx * cov_yy - cov_xy * cov_xy
     if det <= 0.0 or not np.isfinite(det):
         return None
@@ -694,6 +724,51 @@ def compute_cov_model(x: np.ndarray, y: np.ndarray, w: np.ndarray) -> Optional[D
         "weight": weight_sum,
         "n_bins": int(len(x)),
     }
+
+
+def model_is_anchored(model: Dict[str, float], cfg: Dict[str, float]) -> bool:
+    return (
+        abs(model["mean_x"] - cfg["seed_mpi0"]) <= cfg["max_model_mpi0_offset"]
+        and abs(model["mean_y"] - cfg["seed_mmiss"]) <= cfg["max_model_mmiss_offset"]
+    )
+
+
+def chi2_quantile_df2(quantile: float) -> float:
+    q = float(np.clip(quantile, 0.0, 1.0 - 1e-12))
+    return float(-2.0 * np.log1p(-q))
+
+
+def mcd_consistency_scale_df2(keep_fraction: float) -> float:
+    h = float(np.clip(keep_fraction, 1e-6, 1.0 - 1e-6))
+    cutoff = chi2_quantile_df2(h)
+    truncated_variance = 1.0 - cutoff * (1.0 - h) / (2.0 * h)
+    return 1.0 / truncated_variance if truncated_variance > 1e-6 else 1.0
+
+
+def smooth_histogram2d(hist: np.ndarray, radius: int) -> np.ndarray:
+    """Triangular-kernel smoothing without a scipy dependency."""
+    radius = max(0, int(radius))
+    if radius == 0:
+        return hist.astype(float, copy=True)
+    one_d = np.arange(1, radius + 2, dtype=float)
+    one_d = np.concatenate((one_d, one_d[-2::-1]))
+    kernel = np.outer(one_d, one_d)
+    padded = np.pad(hist, radius, mode="constant")
+    padded_valid = np.pad(np.ones_like(hist, dtype=float), radius, mode="constant")
+    out = np.zeros_like(hist, dtype=float)
+    norm = np.zeros_like(hist, dtype=float)
+    for ix, kx in enumerate(range(-radius, radius + 1)):
+        for iy, ky in enumerate(range(-radius, radius + 1)):
+            weight = kernel[ix, iy]
+            out += weight * padded[
+                radius + kx:radius + kx + hist.shape[0],
+                radius + ky:radius + ky + hist.shape[1],
+            ]
+            norm += weight * padded_valid[
+                radius + kx:radius + kx + hist.shape[0],
+                radius + ky:radius + ky + hist.shape[1],
+            ]
+    return np.divide(out, norm, out=np.zeros_like(out), where=norm > 0.0)
 
 
 def covariance_d2(model: Dict[str, float], x: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -772,34 +847,45 @@ def add_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
     point_y = y_centers[occupied[:, 1]]
     point_w = h2[occupied[:, 0], occupied[:, 1]]
 
+    density = smooth_histogram2d(h2, int(cfg["smoothing_radius_bins"]))
+    seed_mpi0 = float(cfg["seed_mpi0"])
+    seed_mpi0_half_width = float(cfg["seed_mpi0_half_width"])
     seed_mmiss = float(cfg["seed_mmiss"])
     seed_mmiss_half_width = float(cfg["seed_mmiss_half_width"])
+    seed_x_bins = np.flatnonzero(np.abs(x_centers - seed_mpi0) <= seed_mpi0_half_width)
     seed_y_bins = np.flatnonzero(np.abs(y_centers - seed_mmiss) <= seed_mmiss_half_width)
-    if len(seed_y_bins) == 0:
+    if len(seed_x_bins) == 0 or len(seed_y_bins) == 0:
         print(
-            f"[WARN] No mmiss bins lie within {seed_mmiss_half_width:.3f} GeV "
-            f"of the requested seed at {seed_mmiss:.3f} GeV."
+            "[WARN] No bins lie inside configured 2D mass-cut seed window "
+            f"({seed_mpi0:.5f} +/- {seed_mpi0_half_width:.5f}, "
+            f"{seed_mmiss:.3f} +/- {seed_mmiss_half_width:.3f}) GeV."
         )
         df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
         df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
         return None
 
-    seed_window = h2[:, seed_y_bins]
-    peak_flat = int(np.argmax(seed_window))
-    peak_ix, seed_iy_local = np.unravel_index(peak_flat, seed_window.shape)
-    peak_iy = int(seed_y_bins[seed_iy_local])
+    seed_window = density[np.ix_(seed_x_bins, seed_y_bins)]
+    max_density = float(np.max(seed_window))
+    tied = np.argwhere(np.isclose(seed_window, max_density, rtol=1e-9, atol=1e-12))
+    tied_x = x_centers[seed_x_bins[tied[:, 0]]]
+    tied_y = y_centers[seed_y_bins[tied[:, 1]]]
+    anchor_d2 = ((tied_x - seed_mpi0) / seed_mpi0_half_width) ** 2
+    anchor_d2 += ((tied_y - seed_mmiss) / seed_mmiss_half_width) ** 2
+    chosen_tie = tied[int(np.argmin(anchor_d2))]
+    peak_ix = int(seed_x_bins[chosen_tie[0]])
+    peak_iy = int(seed_y_bins[chosen_tie[1]])
+    smoothed_peak_weight = float(density[peak_ix, peak_iy])
     peak_weight = float(h2[peak_ix, peak_iy])
-    if peak_weight <= 0.0:
+    if smoothed_peak_weight <= 0.0:
         print(
-            f"[WARN] No occupied 2D mass-cut seed bin lies within "
-            f"{seed_mmiss_half_width:.3f} GeV of mmiss={seed_mmiss:.3f} GeV."
+            "[WARN] No positive density lies inside configured 2D mass-cut seed window."
         )
         df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
         df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
         return None
 
     def build_core(candidate_peak_fraction: float) -> Tuple[np.ndarray, Dict[str, float]]:
-        threshold_weight = candidate_peak_fraction * peak_weight
+        threshold_weight = candidate_peak_fraction * smoothed_peak_weight
         mask = np.zeros_like(h2, dtype=bool)
         frontier = deque([(peak_ix, peak_iy)])
         mask[peak_ix, peak_iy] = True
@@ -816,28 +902,39 @@ def add_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
                         continue
                     if mask[jx, jy]:
                         continue
-                    if h2[jx, jy] + 1e-12 < threshold_weight:
+                    if density[jx, jy] + 1e-12 < threshold_weight:
                         continue
                     mask[jx, jy] = True
                     frontier.append((jx, jy))
 
-        weight = float(np.sum(h2[mask]))
-        bins = int(np.count_nonzero(mask))
+        occupied_mask = mask & (h2 > 0.0)
+        weight = float(np.sum(h2[occupied_mask]))
+        bins = int(np.count_nonzero(occupied_mask))
+        mean_x = 0.0
+        mean_y = 0.0
+        if weight > 0.0:
+            mean_x = float(np.sum(h2 * occupied_mask * x_centers[:, None]) / weight)
+            mean_y = float(np.sum(h2 * occupied_mask * y_centers[None, :]) / weight)
         stats = {
             "peak_fraction": float(candidate_peak_fraction),
             "weight": weight,
             "total_fraction": weight / total_weight if total_weight > 0.0 else 0.0,
             "bins": bins,
+            "mean_x": mean_x,
+            "mean_y": mean_y,
         }
         return mask, stats
 
     scan_rows = []
     peak_fraction = float(cfg["peak_fraction"])
     auto_jump_ratio = 1.0
+    core_leak_rejected = False
     if peak_fraction <= 0.0:
         best_jump = 0.0
-        chosen_peak_fraction = float(cfg["auto_peak_max"])
+        chosen_peak_fraction = None
         previous = None
+        last_safe_fraction = None
+        last_qualified_fraction = None
         n_scan = int(np.floor((cfg["auto_peak_max"] - cfg["auto_peak_min"]) / cfg["auto_peak_step"] + 0.5)) + 1
         for i in range(n_scan):
             candidate = max(cfg["auto_peak_min"], cfg["auto_peak_max"] - i * cfg["auto_peak_step"])
@@ -848,55 +945,138 @@ def add_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
                 weight_ratio = current["weight"] / previous["weight"]
                 bin_ratio = current["bins"] / previous["bins"]
                 jump = max(weight_ratio, bin_ratio)
-                previous_core_is_real = (
-                    previous["bins"] >= cfg["auto_min_core_bins"] and
-                    previous["total_fraction"] >= cfg["auto_min_core_total_fraction"]
-                )
-                if previous_core_is_real and jump > best_jump:
-                    best_jump = jump
-                    chosen_peak_fraction = previous["peak_fraction"]
+                best_jump = max(best_jump, jump)
+            anchored = (
+                abs(current["mean_x"] - seed_mpi0) <= cfg["max_model_mpi0_offset"]
+                and abs(current["mean_y"] - seed_mmiss) <= cfg["max_model_mmiss_offset"]
+            )
+            safe = (
+                current["bins"] >= 3 and current["weight"] > 0.0 and anchored
+                and current["total_fraction"] <= cfg["auto_max_core_total_fraction"]
+            )
+            qualified = (
+                safe and current["bins"] >= cfg["auto_min_core_bins"]
+                and current["total_fraction"] >= cfg["auto_min_core_total_fraction"]
+            )
+            if safe:
+                last_safe_fraction = float(current["peak_fraction"])
+                if qualified:
+                    last_qualified_fraction = float(current["peak_fraction"])
+            elif last_safe_fraction is not None and (
+                current["total_fraction"] > cfg["auto_max_core_total_fraction"] or not anchored
+            ):
+                core_leak_rejected = True
             scan_rows.append({
                 **current,
                 "weight_ratio_to_previous": float(weight_ratio),
                 "bin_ratio_to_previous": float(bin_ratio),
+                "anchored": float(anchored),
+                "safe": float(safe),
+                "qualified": float(qualified),
             })
+            if core_leak_rejected:
+                break
             previous = current
+        chosen_peak_fraction = (
+            last_qualified_fraction if last_qualified_fraction is not None else last_safe_fraction
+        )
+        if chosen_peak_fraction is None:
+            print("[WARN] Combined 2D mass cut found no safe anchored core.")
+            df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
+            df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
+            return None
         peak_fraction = chosen_peak_fraction
         auto_jump_ratio = best_jump
 
     core_mask, core_stats = build_core(peak_fraction)
+    core_safe = (
+        core_stats["bins"] >= 3 and core_stats["weight"] > 0.0
+        and core_stats["total_fraction"] <= cfg["auto_max_core_total_fraction"]
+        and abs(core_stats["mean_x"] - seed_mpi0) <= cfg["max_model_mpi0_offset"]
+        and abs(core_stats["mean_y"] - seed_mmiss) <= cfg["max_model_mmiss_offset"]
+    )
     core_idx = np.argwhere(core_mask & (h2 > 0.0))
-    if len(core_idx) < 3:
-        print("[WARN] Combined 2D mass cut found too few core bins.")
+    if len(core_idx) < 3 or not core_safe:
+        print("[WARN] Combined 2D mass cut core failed anchoring/leak validation.")
         df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
         df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
         return None
 
+    regularization_x = cfg["covariance_regularization_bins"] * (x_edges[1] - x_edges[0])
+    regularization_y = cfg["covariance_regularization_bins"] * (y_edges[1] - y_edges[0])
     core_model = compute_cov_model(
         x_centers[core_idx[:, 0]],
         y_centers[core_idx[:, 1]],
         h2[core_idx[:, 0], core_idx[:, 1]],
+        regularization_x,
+        regularization_y,
     )
-    if core_model is None:
-        print("[WARN] Combined 2D mass cut covariance is singular.")
+    if core_model is None or not model_is_anchored(core_model, cfg):
+        print("[WARN] Combined 2D mass cut covariance is singular or displaced from seed.")
         df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
         df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
         return None
+    seed_core_model = core_model.copy()
+    seed_core_stats = core_stats.copy()
 
-    core_d2 = covariance_d2(core_model, x_centers[core_idx[:, 0]], y_centers[core_idx[:, 1]])
-    core_w = h2[core_idx[:, 0], core_idx[:, 1]]
-    ellipse_d2_cut = weighted_quantile(core_d2, core_w, cfg["ellipse_core_quantile"])
+    candidate_mask = (
+        (np.abs(point_x - seed_mpi0) <= cfg["mcd_candidate_mpi0_half_width"])
+        & (np.abs(point_y - seed_mmiss) <= cfg["mcd_candidate_mmiss_half_width"])
+    )
+    candidate_indices = np.flatnonzero(candidate_mask)
+    candidate_weight = float(np.sum(point_w[candidate_indices]))
+    keep_fraction = float(np.clip(cfg["mcd_keep_candidate_fraction"], 0.05, 0.95))
+
+    expanded_core_indices = np.flatnonzero(core_mask[occupied[:, 0], occupied[:, 1]])
+    ellipse_grow_d2 = chi2_quantile_df2(cfg["ellipse_quantile"])
+    ellipse_growth_steps = 0
+    for _ in range(int(cfg["ellipse_grow_iterations"])):
+        if len(point_x) < 3:
+            break
+        all_d2 = covariance_d2(core_model, point_x, point_y)
+        grown_indices = np.flatnonzero(all_d2 <= ellipse_grow_d2)
+        grown_model = compute_cov_model(
+            point_x[grown_indices], point_y[grown_indices], point_w[grown_indices],
+            regularization_x, regularization_y,
+        )
+        grown_weight = float(np.sum(point_w[grown_indices]))
+        if (
+            grown_model is None or not model_is_anchored(grown_model, cfg)
+            or grown_weight / total_weight > cfg["auto_max_core_total_fraction"]
+        ):
+            break
+        converged = np.array_equal(grown_indices, expanded_core_indices)
+        expanded_core_indices = grown_indices
+        core_model = grown_model
+        ellipse_growth_steps += 1
+        if converged:
+            break
+
+    fit_subset_mask = np.zeros_like(h2, dtype=bool)
+    fit_subset_mask[
+        occupied[expanded_core_indices, 0], occupied[expanded_core_indices, 1]
+    ] = True
+    fit_subset_stats = {
+        "weight": float(np.sum(point_w[expanded_core_indices])),
+        "total_fraction": float(np.sum(point_w[expanded_core_indices])) / total_weight,
+        "bins": int(len(expanded_core_indices)),
+        "mean_x": core_model["mean_x"],
+        "mean_y": core_model["mean_y"],
+    }
+    ellipse_d2_cut = chi2_quantile_df2(cfg["ellipse_quantile"])
     ellipse_d2_cut *= cfg["ellipse_padding"] * cfg["ellipse_padding"]
 
-    mcd_model = core_model
+    mcd_model = seed_core_model
     best_mcd_model = None
     best_mcd_subset = None
     best_mcd_det = np.inf
-    mcd_target_weight = cfg["mcd_keep_total_fraction"] * total_weight
+    mcd_target_weight = keep_fraction * candidate_weight
 
     for _ in range(int(cfg["mcd_iterations"])):
-        d2 = covariance_d2(mcd_model, point_x, point_y)
-        order = np.argsort(d2)
+        if len(candidate_indices) < 3 or candidate_weight <= 0.0:
+            break
+        d2 = covariance_d2(mcd_model, point_x[candidate_indices], point_y[candidate_indices])
+        order = candidate_indices[np.argsort(d2)]
         running = 0.0
         keep_indices = []
         for idx in order:
@@ -905,8 +1085,11 @@ def add_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
             if running >= mcd_target_weight:
                 break
         keep_indices = np.asarray(keep_indices, dtype=int)
-        candidate_model = compute_cov_model(point_x[keep_indices], point_y[keep_indices], point_w[keep_indices])
-        if candidate_model is None:
+        candidate_model = compute_cov_model(
+            point_x[keep_indices], point_y[keep_indices], point_w[keep_indices],
+            regularization_x, regularization_y,
+        )
+        if candidate_model is None or not model_is_anchored(candidate_model, cfg):
             break
         mcd_model = candidate_model
         if candidate_model["det"] < best_mcd_det:
@@ -914,32 +1097,55 @@ def add_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
             best_mcd_model = candidate_model
             best_mcd_subset = keep_indices
 
-    if best_mcd_model is None or best_mcd_subset is None:
-        best_mcd_model = core_model
-        best_mcd_subset = np.arange(len(point_x), dtype=int)
-
-    mcd_subset_d2 = covariance_d2(best_mcd_model, point_x[best_mcd_subset], point_y[best_mcd_subset])
-    mcd_subset_w = point_w[best_mcd_subset]
-    mcd_d2_cut = weighted_quantile(mcd_subset_d2, mcd_subset_w, cfg["mcd_ellipse_quantile"])
+    mcd_valid = best_mcd_model is not None and best_mcd_subset is not None and len(best_mcd_subset) >= 3
+    if mcd_valid:
+        consistency_scale = mcd_consistency_scale_df2(keep_fraction)
+        best_mcd_model["cov_xx"] *= consistency_scale
+        best_mcd_model["cov_xy"] *= consistency_scale
+        best_mcd_model["cov_yy"] *= consistency_scale
+        best_mcd_model["det"] = (
+            best_mcd_model["cov_xx"] * best_mcd_model["cov_yy"]
+            - best_mcd_model["cov_xy"] * best_mcd_model["cov_xy"]
+        )
+        mcd_subset_w = point_w[best_mcd_subset]
+    else:
+        best_mcd_model = core_model.copy()
+        best_mcd_subset = np.asarray([], dtype=int)
+        mcd_subset_w = np.asarray([], dtype=float)
+    mcd_d2_cut = chi2_quantile_df2(cfg["mcd_ellipse_quantile"])
     mcd_d2_cut *= cfg["mcd_padding"] * cfg["mcd_padding"]
 
     ellipse_flags = np.zeros(len(df), dtype=np.int32)
     mcd_flags = np.zeros(len(df), dtype=np.int32)
     valid_idx = np.where(valid)[0]
     event_ellipse_d2 = covariance_d2(core_model, x_all[valid], y_all[valid])
-    event_mcd_d2 = covariance_d2(best_mcd_model, x_all[valid], y_all[valid])
     ellipse_flags[valid_idx[event_ellipse_d2 <= ellipse_d2_cut]] = 1
-    mcd_flags[valid_idx[event_mcd_d2 <= mcd_d2_cut]] = 1
+    if mcd_valid:
+        event_mcd_d2 = covariance_d2(best_mcd_model, x_all[valid], y_all[valid])
+        mcd_flags[valid_idx[event_mcd_d2 <= mcd_d2_cut]] = 1
 
     df["is_exclusive_ellipse_combined"] = ellipse_flags
     df["is_exclusive_mcd_combined"] = mcd_flags
 
     xx, yy = np.meshgrid(x_centers, y_centers, indexing="ij")
+    core_d2_cut = chi2_quantile_df2(cfg["core_quantile"])
+    core_mask = covariance_d2(core_model, xx, yy) <= core_d2_cut
     bin_ellipse_mask = covariance_d2(core_model, xx, yy) <= ellipse_d2_cut
-    bin_mcd_mask = covariance_d2(best_mcd_model, xx, yy) <= mcd_d2_cut
+    bin_mcd_mask = (
+        covariance_d2(best_mcd_model, xx, yy) <= mcd_d2_cut
+        if mcd_valid else np.zeros_like(h2, dtype=bool)
+    )
 
     ellipse_weight = float(np.sum(event_w[ellipse_flags == 1]))
     mcd_weight = float(np.sum(event_w[mcd_flags == 1]))
+    core_weight = float(np.sum(h2[core_mask]))
+    core_stats = {
+        "weight": core_weight,
+        "total_fraction": core_weight / total_weight,
+        "bins": int(np.count_nonzero(core_mask & (h2 > 0.0))),
+        "mean_x": core_model["mean_x"],
+        "mean_y": core_model["mean_y"],
+    }
     legacy_exclusive_weight = 0.0
     h_legacy_exclusive = np.zeros_like(h2)
     if "is_exclusive" in df.columns:
@@ -954,20 +1160,35 @@ def add_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
             )
     params = {
         "valid": 1.0,
+        "ellipse_valid": 1.0,
+        "mcd_valid": float(mcd_valid),
+        "core_leak_rejected": float(core_leak_rejected),
         "peak_fraction": float(peak_fraction),
         "auto_jump_ratio": float(auto_jump_ratio),
         "peak_weight": peak_weight,
-        "threshold_weight": float(peak_fraction * peak_weight),
+        "smoothed_peak_weight": smoothed_peak_weight,
+        "threshold_weight": float(peak_fraction * smoothed_peak_weight),
         "total_weight": total_weight,
         "peak_ix": float(peak_ix + 1),
         "peak_iy": float(peak_iy + 1),
         "peak_mpi0": float(x_centers[peak_ix]),
         "peak_mmiss": float(y_centers[peak_iy]),
+        "seed_mpi0": seed_mpi0,
+        "seed_mpi0_half_width": seed_mpi0_half_width,
         "seed_mmiss": seed_mmiss,
         "seed_mmiss_half_width": seed_mmiss_half_width,
         "core_bins": float(core_stats["bins"]),
         "core_weight": float(core_stats["weight"]),
         "core_total_fraction": float(core_stats["total_fraction"]),
+        "core_quantile": float(cfg["core_quantile"]),
+        "fit_subset_bins": float(fit_subset_stats["bins"]),
+        "fit_subset_weight": float(fit_subset_stats["weight"]),
+        "fit_subset_total_fraction": float(fit_subset_stats["total_fraction"]),
+        "seed_core_bins": float(seed_core_stats["bins"]),
+        "seed_core_weight": float(seed_core_stats["weight"]),
+        "seed_core_total_fraction": float(seed_core_stats["total_fraction"]),
+        "ellipse_growth_steps": float(ellipse_growth_steps),
+        "auto_max_core_total_fraction": float(cfg["auto_max_core_total_fraction"]),
         "mean_mpi0": core_model["mean_x"],
         "mean_mmiss": core_model["mean_y"],
         "cov_mpi0_mpi0": core_model["cov_xx"],
@@ -986,6 +1207,9 @@ def add_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
         "mcd_d2_cut": float(mcd_d2_cut),
         "mcd_subset_weight": float(np.sum(mcd_subset_w)),
         "mcd_subset_bins": float(len(best_mcd_subset)),
+        "mcd_candidate_weight": candidate_weight,
+        "mcd_candidate_bins": float(len(candidate_indices)),
+        "mcd_keep_candidate_fraction": keep_fraction,
         "mcd_weight": mcd_weight,
         "mcd_total_fraction": mcd_weight / float(np.sum(event_w[valid])),
         "legacy_is_exclusive_weight": legacy_exclusive_weight,
@@ -1001,12 +1225,16 @@ def add_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
     print(f"       ellipse={int(np.sum(ellipse_flags))} events, MCD={int(np.sum(mcd_flags))} events")
 
     ellipse_x, ellipse_y = ellipse_points(core_model, ellipse_d2_cut)
-    mcd_x, mcd_y = ellipse_points(best_mcd_model, mcd_d2_cut)
+    if mcd_valid:
+        mcd_x, mcd_y = ellipse_points(best_mcd_model, mcd_d2_cut)
+    else:
+        mcd_x, mcd_y = None, None
 
     return {
         "histograms": {
             f"{COMBINED_MASS_CUT_TAG}_h_mmiss_vs_mpi0_weighted": (h2, x_edges, y_edges),
             f"{COMBINED_MASS_CUT_TAG}_h_core_selected": (np.where(core_mask, h2, 0.0), x_edges, y_edges),
+            f"{COMBINED_MASS_CUT_TAG}_h_ellipse_fit_subset": (np.where(fit_subset_mask, h2, 0.0), x_edges, y_edges),
             f"{COMBINED_MASS_CUT_TAG}_h_legacy_is_exclusive_selected": (h_legacy_exclusive, x_edges, y_edges),
             f"{COMBINED_MASS_CUT_TAG}_h_ellipse_selected": (np.where(bin_ellipse_mask, h2, 0.0), x_edges, y_edges),
             f"{COMBINED_MASS_CUT_TAG}_h_mcd_selected": (np.where(bin_mcd_mask, h2, 0.0), x_edges, y_edges),
@@ -1131,14 +1359,22 @@ def write_combined_mass_cut_debug_text(mass_cut_debug: Optional[Dict[str, Any]],
 
     debug_path = output_root.with_name(f"{output_root.stem}_{COMBINED_MASS_CUT_TAG}_debug.txt")
     keys = [
+        "valid", "ellipse_valid", "mcd_valid", "core_leak_rejected",
         "peak_fraction", "auto_jump_ratio",
-        "peak_mpi0", "peak_mmiss", "seed_mmiss", "seed_mmiss_half_width",
-        "peak_weight", "threshold_weight",
+        "peak_mpi0", "peak_mmiss", "seed_mpi0", "seed_mpi0_half_width",
+        "seed_mmiss", "seed_mmiss_half_width",
+        "peak_weight", "smoothed_peak_weight", "threshold_weight",
         "core_bins", "core_weight", "core_total_fraction",
+        "core_quantile",
+        "fit_subset_bins", "fit_subset_weight", "fit_subset_total_fraction",
+        "seed_core_bins", "seed_core_weight", "seed_core_total_fraction",
+        "ellipse_growth_steps",
+        "auto_max_core_total_fraction",
         "mean_mpi0", "mean_mmiss", "ellipse_d2_cut",
         "ellipse_weight", "ellipse_total_fraction",
         "mcd_mean_mpi0", "mcd_mean_mmiss", "mcd_d2_cut",
         "mcd_subset_bins", "mcd_subset_weight",
+        "mcd_candidate_bins", "mcd_candidate_weight", "mcd_keep_candidate_fraction",
         "mcd_weight", "mcd_total_fraction",
         "legacy_is_exclusive_weight", "legacy_is_exclusive_total_fraction",
     ]
@@ -1233,7 +1469,7 @@ def write_combined_mass_cut_canvas(mass_cut_debug: Optional[Dict[str, Any]], out
         x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
         y_centers = 0.5 * (y_edges[:-1] + y_edges[1:])
         ax.scatter(x_centers[core_idx[:, 0]], y_centers[core_idx[:, 1]],
-                   s=6, color="red", alpha=0.6, label="core bins")
+                   s=6, color="red", alpha=0.6, label="68.27% core")
     ax.set_title("MCD-selected weighted events")
     ax.set_xlabel("mpi0_all [GeV]")
     ax.set_ylabel("mmiss_all [GeV]")

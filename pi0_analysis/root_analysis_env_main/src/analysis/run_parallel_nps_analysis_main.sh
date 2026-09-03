@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
+# ./src/analysis/run_parallel_nps_analysis_main.sh --source updated --mode hcana --no-combine --types production --kin KinC_x25_1 --run 5903 5904 5905 5906 5907 5908 5909 5910 5911 5912 5913 5914 5915 5916 5917 5938 5939 5940 5963 5964 5965 5966 5967 5968 5969 5970 5971 5972 5973 5974 5975 5918 5919 5920 5921 5922
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
@@ -9,6 +9,7 @@ ACCEPTANCE_CUTS_IMPL="${SCRIPT_DIR}/acceptance_cuts.cpp"
 COMBINE_SCRIPT="${SCRIPT_DIR}/combine_analysis_branches.py"
 CONFIG_CSV="${REPO_ROOT}/config/nps_dvcs_all_kins_main.csv"
 OUTPUT_BASE="${REPO_ROOT}/output"
+LOG_BASE=""
 ACCEPTANCE_CUTS_CONFIG="${NPS_ACCEPTANCE_CUTS_CONFIG:-${REPO_ROOT}/config/acceptance_cuts.conf}"
 
 UPDATED_DIR="/lustre24/expphy/cache/hallc/c-nps/analysis/pass2/replays/updated"
@@ -27,7 +28,9 @@ RUN_FILTER=""
 RUN_FILTERS=()
 USE_GEVNUM_CUT="${NPS_USE_GEVNUM_CUT:-ask}"
 COMBINE_AFTER_RUN="yes"
-COMBINE_TARGET="LH2"
+COMBINE_TARGET=""
+RUN_ONLY="no"
+FINALIZE_ONLY="no"
 
 RUN_SMEARING_STAGE="no"
 SMEAR_SCRIPT="${REPO_ROOT}/src/simulation_smearing/run_smearing_pipeline.sh"
@@ -68,6 +71,7 @@ XSEC_ALL_PLOTS_PDF=""
 
 ALL_KINS=0
 KIN_LIST=()
+TARGET_LIST=()
 SMEAR_KINS=()
 XSEC_KINS=()
 
@@ -82,6 +86,7 @@ Options:
   --acceptance-config <path>
                             Acceptance-cuts config used by analysis/smearing stages
   --output-base <path>      Canonical output base directory
+  --log-base <path>         Persistent log base (default: output base)
   --updated-dir <path>      Updated HCANA ROOT directory
   --production-dir <path>   Production HCANA ROOT directory
   --waveform-dir <path>     Waveform ROOT directory
@@ -91,12 +96,16 @@ Options:
   --mode <auto|hcana|waveform>
                             Analysis mode (default: auto)
   --types <a,b,c>           Allowed Type values from config CSV
+  --target <name...>        LH2, LD2, Dummy, or all; comma/space lists accepted
+                            (default: all; matching is case-insensitive)
   --no-combine              Skip post-processing combine step
-  --combine-target <name>   Target to combine (default: LH2)
+  --run-only                Run selected ROOT analyses; skip all finalization
+  --finalize-only           Rebuild summaries/post-processing; run no ROOT analyses
+  --combine-target <name>   Restrict combine stage to one selected target
   --run-smearing            Run simulation smearing stage after combine
   --smearing-kin <Kin_old>  Restrict smearing to one Kin_old (repeatable)
   --smearing-script <path>  Smearing pipeline script path
-  --smearing-target <name>  Smearing target token (default: combine target)
+  --smearing-target <name>  Smearing target (required if multiple targets selected)
   --smearing-mode <mode>    Mode hint passed to smearing SIM producer (default: analysis --mode)
   --smearing-root-dir <path>            Override smearing root directory
   --smearing-combined-file <path>       Override smearing combined ROOT path
@@ -121,7 +130,7 @@ Options:
   --run-xsec                Run xsec extraction stage after combine/smearing
   --xsec-kin <Kin_old>      Restrict xsec stage to one Kin_old (repeatable)
   --xsec-script <path>      Xsec pipeline script path
-  --xsec-target <name>      Xsec target token (default: combine target)
+  --xsec-target <name>      Xsec target (required if multiple targets selected)
   --xsec-root-dir <path>    Override xsec root directory
   --xsec-data-file <path>   Override xsec data ROOT input path
   --xsec-sim-file <path>    Override xsec simulation ROOT input path
@@ -132,7 +141,7 @@ Options:
                             Override xsec output slice CSV path
   --xsec-all-plots-pdf <path>
                             Override xsec combined plots PDF path
-  --kin <Kin_old>           Restrict to one kinematic setting (repeatable)
+  --kin <Kin_old...>        One/more settings; comma/space lists accepted
   --all-kins                Process all kinematic settings
   --run <run_number...>     Restrict to one or more runs (space- or comma-separated)
   --gevnum-cut <ask|yes|no> Use optional g.evnum event cut (default: ask)
@@ -151,6 +160,15 @@ trim_ws() {
 
 sanitize_name() {
   echo "$1" | sed 's/[^[:alnum:]_-]/_/g'
+}
+
+canonical_target() {
+  case "${1,,}" in
+    lh2) echo "LH2" ;;
+    ld2) echo "LD2" ;;
+    dummy) echo "Dummy" ;;
+    *) return 1 ;;
+  esac
 }
 
 combine_cut_debug_pdfs() {
@@ -186,7 +204,10 @@ join_by_pipe() {
 }
 
 get_all_kins() {
-  awk -F',' '
+  local target_pattern run_pattern
+  target_pattern="$(join_by_pipe "${TARGET_LIST[@]}")"
+  run_pattern="$(join_by_pipe "${RUN_FILTERS[@]}")"
+  awk -F',' -v target_pattern="${target_pattern}" -v types_csv="${TYPES_CSV}" -v run_pattern="${run_pattern}" '
     function trim(s) {
       gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
       return s
@@ -195,12 +216,27 @@ get_all_kins() {
       for (i=1; i<=NF; ++i) {
         h = trim($i)
         if (h == "Kin_old") kin_col=i
+        if (tolower(h) == "target") target_col=i
+        if (h == "Type") type_col=i
+        if (h == "run_number") run_col=i
       }
       next
     }
-    NR>1 && kin_col > 0 {
+    BEGIN {
+      n=split(target_pattern,a,"|")
+      for(i=1;i<=n;i++) wanted[tolower(trim(a[i]))]=1
+      n=split(types_csv,a,",")
+      for(i=1;i<=n;i++) wanted_type[tolower(trim(a[i]))]=1
+      n=split(run_pattern,a,"|")
+      for(i=1;i<=n;i++) if(trim(a[i]) != "") wanted_run[trim(a[i])]=1
+      use_run_filter=(length(run_pattern)>0)
+    }
+    NR>1 && kin_col > 0 && target_col > 0 && type_col > 0 && run_col > 0 {
       v = trim($kin_col)
-      if (v != "") seen[v]=1
+      t = tolower(trim($target_col))
+      y = tolower(trim($type_col))
+      r = trim($run_col)
+      if (v != "" && t in wanted && y in wanted_type && (!use_run_filter || r in wanted_run)) seen[v]=1
     }
     END {
       for (k in seen) print k
@@ -209,7 +245,9 @@ get_all_kins() {
 
 get_kins_for_run() {
   local run="$1"
-  awk -F',' -v run="${run}" '
+  local target_pattern
+  target_pattern="$(join_by_pipe "${TARGET_LIST[@]}")"
+  awk -F',' -v run="${run}" -v target_pattern="${target_pattern}" -v types_csv="${TYPES_CSV}" '
     function trim(s) {
       gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
       return s
@@ -219,14 +257,22 @@ get_kins_for_run() {
         h = trim($i)
         if (h == "run_number") run_col=i
         if (h == "Kin_old") kin_col=i
+        if (tolower(h) == "target") target_col=i
+        if (h == "Type") type_col=i
       }
       next
     }
     NR > 1 {
-      if (!(run_col > 0 && kin_col > 0)) next
+      if (!(run_col > 0 && kin_col > 0 && target_col > 0 && type_col > 0)) next
       rv = trim($run_col)
       kv = trim($kin_col)
-      if (rv == run && kv != "") seen[kv] = 1
+      tv = tolower(trim($target_col))
+      yv = tolower(trim($type_col))
+      n=split(target_pattern,a,"|")
+      for(i=1;i<=n;i++) wanted[tolower(trim(a[i]))]=1
+      n=split(types_csv,a,",")
+      for(i=1;i<=n;i++) wanted_type[tolower(trim(a[i]))]=1
+      if (rv == run && kv != "" && tv in wanted && yv in wanted_type) seen[kv] = 1
     }
     END {
       for (k in seen) print k
@@ -382,6 +428,10 @@ while [[ $# -gt 0 ]]; do
       OUTPUT_BASE="$2"
       shift 2
       ;;
+    --log-base)
+      LOG_BASE="$2"
+      shift 2
+      ;;
     --updated-dir)
       UPDATED_DIR="$2"
       shift 2
@@ -410,8 +460,28 @@ while [[ $# -gt 0 ]]; do
       TYPES_CSV="$2"
       shift 2
       ;;
+    --target)
+      shift
+      if [[ $# -eq 0 || "$1" == --* ]]; then
+        echo "--target requires LH2, LD2, Dummy, or all." >&2
+        exit 1
+      fi
+      while [[ $# -gt 0 && "$1" != --* ]]; do
+        IFS=',' read -r -a TARGET_TOKENS <<< "$1"
+        TARGET_LIST+=("${TARGET_TOKENS[@]}")
+        shift
+      done
+      ;;
     --no-combine)
       COMBINE_AFTER_RUN="no"
+      shift
+      ;;
+    --run-only)
+      RUN_ONLY="yes"
+      shift
+      ;;
+    --finalize-only)
+      FINALIZE_ONLY="yes"
       shift
       ;;
     --combine-target)
@@ -602,8 +672,16 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --kin)
-      KIN_LIST+=("$2")
-      shift 2
+      shift
+      if [[ $# -eq 0 || "$1" == --* ]]; then
+        echo "--kin requires one or more Kin_old values." >&2
+        exit 1
+      fi
+      while [[ $# -gt 0 && "$1" != --* ]]; do
+        IFS=',' read -r -a KIN_TOKENS <<< "$1"
+        KIN_LIST+=("${KIN_TOKENS[@]}")
+        shift
+      done
       ;;
     --all-kins)
       ALL_KINS=1
@@ -653,6 +731,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [[ "${RUN_ONLY}" == "yes" && "${FINALIZE_ONLY}" == "yes" ]]; then
+  echo "--run-only and --finalize-only are mutually exclusive." >&2
+  exit 1
+fi
+
 if [[ ${#RUN_FILTERS[@]} -gt 0 ]]; then
   UNIQUE_RUN_FILTERS=()
   declare -A RUN_FILTER_SEEN=()
@@ -666,9 +749,61 @@ if [[ ${#RUN_FILTERS[@]} -gt 0 ]]; then
   RUN_FILTER="${RUN_FILTERS[*]}"
 fi
 
+# Normalize target selection once; config matching below is case-insensitive.
+if [[ ${#TARGET_LIST[@]} -eq 0 ]]; then
+  TARGET_LIST=(LH2 LD2 Dummy)
+else
+  NORMALIZED_TARGETS=()
+  declare -A TARGET_SEEN=()
+  SELECT_ALL_TARGETS=0
+  for raw_target in "${TARGET_LIST[@]}"; do
+    raw_target="$(trim_ws "${raw_target}")"
+    [[ -z "${raw_target}" ]] && continue
+    if [[ "${raw_target,,}" == all ]]; then
+      SELECT_ALL_TARGETS=1
+      continue
+    fi
+    if ! target="$(canonical_target "${raw_target}")"; then
+      echo "Invalid --target value: ${raw_target}. Use LH2, LD2, Dummy, or all." >&2
+      exit 1
+    fi
+    if [[ -z "${TARGET_SEEN[${target}]+x}" ]]; then
+      TARGET_SEEN["${target}"]=1
+      NORMALIZED_TARGETS+=("${target}")
+    fi
+  done
+  if [[ ${SELECT_ALL_TARGETS} -eq 1 ]]; then
+    TARGET_LIST=(LH2 LD2 Dummy)
+  else
+    TARGET_LIST=("${NORMALIZED_TARGETS[@]}")
+  fi
+fi
+if [[ ${#TARGET_LIST[@]} -eq 0 ]]; then
+  echo "No targets selected." >&2
+  exit 1
+fi
+
+COMBINE_TARGETS=()
+if [[ -n "${COMBINE_TARGET}" ]]; then
+  RAW_COMBINE_TARGET="${COMBINE_TARGET}"
+  if ! COMBINE_TARGET="$(canonical_target "${RAW_COMBINE_TARGET}")"; then
+    echo "Invalid --combine-target: ${RAW_COMBINE_TARGET}" >&2
+    exit 1
+  fi
+  if [[ " ${TARGET_LIST[*]} " != *" ${COMBINE_TARGET} "* ]]; then
+    echo "--combine-target ${COMBINE_TARGET} is outside --target selection: ${TARGET_LIST[*]}" >&2
+    exit 1
+  fi
+  COMBINE_TARGETS=("${COMBINE_TARGET}")
+else
+  COMBINE_TARGETS=("${TARGET_LIST[@]}")
+fi
+
 if [[ "${ACCEPTANCE_CUTS_CONFIG}" != /* ]]; then
   ACCEPTANCE_CUTS_CONFIG="${REPO_ROOT}/${ACCEPTANCE_CUTS_CONFIG}"
 fi
+
+LOG_BASE="${LOG_BASE:-${OUTPUT_BASE}}"
 
 if [[ ! -f "${CONFIG_CSV}" ]]; then
   echo "Config CSV not found: ${CONFIG_CSV}" >&2
@@ -686,7 +821,7 @@ if [[ ! -f "${ACCEPTANCE_CUTS_CONFIG}" ]]; then
   echo "Acceptance-cuts config not found: ${ACCEPTANCE_CUTS_CONFIG}" >&2
   exit 1
 fi
-if ! command -v "${ROOT_CMD}" >/dev/null 2>&1; then
+if [[ "${FINALIZE_ONLY}" != "yes" ]] && ! command -v "${ROOT_CMD}" >/dev/null 2>&1; then
   echo "ROOT executable not found in PATH (${ROOT_CMD})." >&2
   exit 1
 fi
@@ -773,7 +908,14 @@ fi
 SMEAR_SELECTED_KINS=()
 if [[ "${RUN_SMEARING_STAGE}" == "yes" ]]; then
   if [[ -z "${SMEAR_TARGET}" ]]; then
-    SMEAR_TARGET="${COMBINE_TARGET}"
+    if [[ ${#TARGET_LIST[@]} -ne 1 ]]; then
+      echo "Multiple analysis targets selected; specify --smearing-target." >&2
+      exit 1
+    fi
+    SMEAR_TARGET="${TARGET_LIST[0]}"
+  elif ! SMEAR_TARGET="$(canonical_target "${SMEAR_TARGET}")"; then
+    echo "Invalid --smearing-target." >&2
+    exit 1
   fi
   if [[ -z "${SMEAR_MODE_HINT}" ]]; then
     SMEAR_MODE_HINT="${MODE}"
@@ -788,7 +930,14 @@ fi
 XSEC_SELECTED_KINS=()
 if [[ "${RUN_XSEC_STAGE}" == "yes" ]]; then
   if [[ -z "${XSEC_TARGET}" ]]; then
-    XSEC_TARGET="${COMBINE_TARGET}"
+    if [[ ${#TARGET_LIST[@]} -ne 1 ]]; then
+      echo "Multiple analysis targets selected; specify --xsec-target." >&2
+      exit 1
+    fi
+    XSEC_TARGET="${TARGET_LIST[0]}"
+  elif ! XSEC_TARGET="$(canonical_target "${XSEC_TARGET}")"; then
+    echo "Invalid --xsec-target." >&2
+    exit 1
   fi
   if [[ ${#XSEC_KINS[@]} -gt 0 ]]; then
     XSEC_SELECTED_KINS=("${XSEC_KINS[@]}")
@@ -883,6 +1032,7 @@ TYPE_ITEMS=()
 IFS=',' read -r -a TYPE_ITEMS <<< "${TYPES_CSV}"
 TYPE_PATTERN="$(join_by_pipe "${TYPE_ITEMS[@]}")"
 RUN_PATTERN="$(join_by_pipe "${RUN_FILTERS[@]}")"
+TARGET_PATTERN="$(join_by_pipe "${TARGET_LIST[@]}")"
 
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TMP_DIR}"' EXIT
@@ -890,7 +1040,7 @@ mkdir -p "${TMP_DIR}/jobs"
 
 JOB_LIST="${TMP_DIR}/jobs.txt"
 
-awk -F',' -v kin_pattern="${KIN_PATTERN}" -v type_pattern="${TYPE_PATTERN}" -v run_pattern="${RUN_PATTERN}" '
+awk -F',' -v kin_pattern="${KIN_PATTERN}" -v type_pattern="${TYPE_PATTERN}" -v run_pattern="${RUN_PATTERN}" -v target_pattern="${TARGET_PATTERN}" '
   function trim(s) {
     gsub(/\r/, "", s)
     sub(/^[[:space:]]+/, "", s)
@@ -918,6 +1068,12 @@ awk -F',' -v kin_pattern="${KIN_PATTERN}" -v type_pattern="${TYPE_PATTERN}" -v r
       if (run != "") wanted_run[run] = 1
     }
     use_run_filter = (length(run_pattern) > 0)
+
+    n_target = split(target_pattern, target_parts, "|")
+    for (i=1; i<=n_target; ++i) {
+      target = tolower(trim(target_parts[i]))
+      if (target != "") wanted_target[target] = 1
+    }
   }
 
   NR == 1 {
@@ -926,25 +1082,29 @@ awk -F',' -v kin_pattern="${KIN_PATTERN}" -v type_pattern="${TYPE_PATTERN}" -v r
       if (h == "run_number") run_col = i
       if (h == "Kin_old") kin_col = i
       if (h == "Type") type_col = i
+      if (tolower(h) == "target") target_col = i
     }
     next
   }
 
   NR > 1 {
-    if (!(kin_col > 0 && run_col > 0 && type_col > 0)) next
+    if (!(kin_col > 0 && run_col > 0 && type_col > 0 && target_col > 0)) next
 
     kin  = trim($kin_col)
     run  = trim($run_col)
     type = tolower(trim($type_col))
+    target_name = trim($target_col)
+    target = tolower(target_name)
 
     if (!(kin in wanted_kin)) next
     if (!(type in wanted_type)) next
+    if (!(target in wanted_target)) next
     if (run !~ /^[0-9]+$/) next
     if (use_run_filter && !(run in wanted_run)) next
 
     key = kin "," run
     if (!(key in seen)) {
-      print key
+      print key "," target_name
       seen[key] = 1
     }
   }
@@ -974,7 +1134,9 @@ echo "Mode:            ${MODE}"
 echo "Acceptance cuts: ${ACCEPTANCE_CUTS_CONFIG}"
 echo "g.evnum cut:      ${USE_GEVNUM_CUT}"
 echo "Type filter:     ${TYPES_CSV}"
-echo "Combine step:    ${COMBINE_AFTER_RUN} (target=${COMBINE_TARGET})"
+echo "Targets:         ${TARGET_LIST[*]}"
+echo "Execution:       $([[ "${RUN_ONLY}" == yes ]] && echo run-only || { [[ "${FINALIZE_ONLY}" == yes ]] && echo finalize-only || echo complete; })"
+echo "Combine step:    ${COMBINE_AFTER_RUN} (targets=${COMBINE_TARGETS[*]})"
 if [[ "${RUN_SMEARING_STAGE}" == "yes" ]]; then
   echo "Smearing stage:  yes (target=${SMEAR_TARGET})"
   echo "Smearing mode:   ${SMEAR_MODE_HINT}"
@@ -993,28 +1155,32 @@ fi
 echo "Run filter:      ${RUN_FILTER:-<none>}"
 echo "Parallel jobs:   ${EFFECTIVE_JOBS}/${TOTAL_JOBS}"
 echo "Output base:     ${OUTPUT_BASE}"
+echo "Log base:        ${LOG_BASE}"
 echo "==========================================================================="
 
 PROGRESS_FILE="${TMP_DIR}/progress.done"
 : > "${PROGRESS_FILE}"
 
-export ROOT_CMD ROOT_MACRO ACCEPTANCE_CUTS_IMPL CONFIG_CSV OUTPUT_BASE INPUT_DIR MODE TYPES_CSV TIMEOUT_SEC TMP_DIR PROGRESS_FILE CSV_HEADER USE_GEVNUM_CUT
+export ROOT_CMD ROOT_MACRO ACCEPTANCE_CUTS_IMPL CONFIG_CSV OUTPUT_BASE LOG_BASE INPUT_DIR MODE TYPES_CSV TIMEOUT_SEC TMP_DIR PROGRESS_FILE CSV_HEADER USE_GEVNUM_CUT
 export UPDATED_DIR PRODUCTION_DIR WAVEFORM_DIR SOURCE
 export ACCEPTANCE_CUTS_CONFIG
 
+if [[ "${FINALIZE_ONLY}" != "yes" ]]; then
 xargs -P "${EFFECTIVE_JOBS}" -I {} bash -c '
   line="$1"
-  IFS="," read -r kin run <<< "${line}"
+  IFS="," read -r kin run target <<< "${line}"
   safe_kin="$(echo "${kin}" | sed "s/[^[:alnum:]_-]/_/g")"
 
   job_dir="${TMP_DIR}/jobs/${safe_kin}"
-  mkdir -p "${job_dir}"
-  run_log_dir="${OUTPUT_BASE}/${safe_kin}/logs"
+  summary_dir="${OUTPUT_BASE}/${safe_kin}/summary"
+  mkdir -p "${job_dir}" "${summary_dir}"
+  run_log_dir="${LOG_BASE}/${safe_kin}/logs"
   mkdir -p "${run_log_dir}"
 
   run_log="${run_log_dir}/analysis_main_run${run}.log"
   status_file="${job_dir}/status_${run}.txt"
-  row_csv_copy="${job_dir}/run_${run}.csv"
+  row_csv_copy="${summary_dir}/summary_run${run}.csv"
+  rm -f "${row_csv_copy}"
   resolved_input_dir="${INPUT_DIR}"
   resolved_mode="${MODE}"
 
@@ -1078,11 +1244,12 @@ xargs -P "${EFFECTIVE_JOBS}" -I {} bash -c '
   export NPS_INPUT_DIR="${resolved_input_dir}"
   export NPS_TYPES="${TYPES_CSV}"
   export NPS_RUN="${run}"
+  export NPS_TARGET="${target}"
   export NPS_USE_GEVNUM_CUT="${USE_GEVNUM_CUT}"
 
   status=0
   {
-    echo "[INFO] run=${run} kin=${kin} input_dir=${resolved_input_dir} mode=${resolved_mode} gevnum_cut=${USE_GEVNUM_CUT}"
+    echo "[INFO] run=${run} kin=${kin} target=${target} input_dir=${resolved_input_dir} mode=${resolved_mode} gevnum_cut=${USE_GEVNUM_CUT}"
     if [[ "${TIMEOUT_SEC}" -gt 0 ]]; then
       timeout "${TIMEOUT_SEC}" "${ROOT_CMD}" -l -b -e ".L ${ACCEPTANCE_CUTS_IMPL}+" -q "${ROOT_MACRO}()"
     else
@@ -1111,6 +1278,7 @@ xargs -P "${EFFECTIVE_JOBS}" -I {} bash -c '
   echo "${kin},${run},${status}" >> "${PROGRESS_FILE}"
   exit "${status}"
 ' _ {} < "${JOB_LIST}" || true
+fi
 
 FAILED=0
 
@@ -1137,6 +1305,15 @@ while IFS= read -r status_file; do
   fi
 done < <(find "${TMP_DIR}/jobs" -type f -name 'status_*.txt' | sort)
 
+if [[ "${RUN_ONLY}" == "yes" ]]; then
+  echo "==========================================================================="
+  echo "Run-only analysis complete at $(date)"
+  echo "Total jobs: ${TOTAL_JOBS}, failed: ${FAILED}"
+  echo "==========================================================================="
+  [[ "${FAILED}" -eq 0 ]] || exit 1
+  exit 0
+fi
+
 for kin in "${SELECTED_KINS[@]}"; do
   safe_kin="$(sanitize_name "${kin}")"
   summary_dir="${OUTPUT_BASE}/${safe_kin}/summary"
@@ -1144,7 +1321,7 @@ for kin in "${SELECTED_KINS[@]}"; do
   summary_csv="${summary_dir}/summary_all_runs.csv"
 
   echo "${CSV_HEADER}" > "${summary_csv}"
-  mapfile -t rows < <(find "${TMP_DIR}/jobs/${safe_kin}" -type f -name 'run_*.csv' | sort)
+  mapfile -t rows < <(find "${summary_dir}" -maxdepth 1 -type f -name 'summary_run*.csv' | sort -V)
   for row_file in "${rows[@]}"; do
     tail -n 1 "${row_file}" >> "${summary_csv}"
   done
@@ -1161,29 +1338,38 @@ for kin in "${SELECTED_KINS[@]}"; do
 
   if [[ "${COMBINE_AFTER_RUN}" == "yes" ]]; then
     kin_root_dir="${OUTPUT_BASE}/${safe_kin}/root"
-    combine_log="${OUTPUT_BASE}/${safe_kin}/logs/combine_${safe_kin}.log"
-    echo "[combine] Running combine stage for kin=${kin} (target=${COMBINE_TARGET}, root_dir=${kin_root_dir})"
-    status=0
-    "${PYTHON_CMD}" "${COMBINE_SCRIPT}" \
-      --kin "${kin}" \
-      --config "${CONFIG_CSV}" \
-      --output-base "${OUTPUT_BASE}" \
-      --root-dir "${kin_root_dir}" \
-      --target "${COMBINE_TARGET}" \
-      --types "${TYPES_CSV}" \
-      # --fp-debug-plots \
-      > "${combine_log}" 2>&1 || status=$?
+    for combine_target in "${COMBINE_TARGETS[@]}"; do
+      if ! awk -F',' -v kin="${kin}" -v target="${combine_target}" '
+        tolower($1)==tolower(kin) && tolower($3)==tolower(target) { found=1 }
+        END { exit(found ? 0 : 1) }
+      ' "${JOB_LIST}"; then
+        echo "[combine] Skipping kin=${kin} target=${combine_target}: no selected runs"
+        continue
+      fi
+      safe_target="$(sanitize_name "${combine_target}")"
+      combine_log="${LOG_BASE}/${safe_kin}/logs/combine_${safe_kin}_${safe_target}.log"
+      echo "[combine] Running combine stage for kin=${kin} (target=${combine_target}, root_dir=${kin_root_dir})"
+      status=0
+      "${PYTHON_CMD}" "${COMBINE_SCRIPT}" \
+        --kin "${kin}" \
+        --config "${CONFIG_CSV}" \
+        --output-base "${OUTPUT_BASE}" \
+        --root-dir "${kin_root_dir}" \
+        --target "${combine_target}" \
+        --types "${TYPES_CSV}" \
+        > "${combine_log}" 2>&1 || status=$?
 
-    if [[ "${status}" -ne 0 ]]; then
-      echo "[fail] combine step failed for kin=${kin} status=${status}; see ${combine_log}" >&2
-      FAILED=$((FAILED + 1))
-    else
-      echo "[combine] Completed kin=${kin}; log=${combine_log}"
-    fi
+      if [[ "${status}" -ne 0 ]]; then
+        echo "[fail] combine step failed for kin=${kin} target=${combine_target} status=${status}; see ${combine_log}" >&2
+        FAILED=$((FAILED + 1))
+      else
+        echo "[combine] Completed kin=${kin} target=${combine_target}; log=${combine_log}"
+      fi
+    done
   fi
 
   if [[ "${RUN_SMEARING_STAGE}" == "yes" && -n "${SMEAR_KIN_SET[${kin}]+x}" ]]; then
-    smear_log="${OUTPUT_BASE}/${safe_kin}/logs/smearing_${safe_kin}.log"
+    smear_log="${LOG_BASE}/${safe_kin}/logs/smearing_${safe_kin}.log"
     echo "[smear] Running simulation smearing for kin=${kin} (target=${SMEAR_TARGET})"
 
     smear_cmd=("${SMEAR_SCRIPT}"
@@ -1225,7 +1411,7 @@ for kin in "${SELECTED_KINS[@]}"; do
   fi
 
   if [[ "${RUN_XSEC_STAGE}" == "yes" && -n "${XSEC_KIN_SET[${kin}]+x}" ]]; then
-    xsec_log="${OUTPUT_BASE}/${safe_kin}/logs/xsec_${safe_kin}.log"
+    xsec_log="${LOG_BASE}/${safe_kin}/logs/xsec_${safe_kin}.log"
     echo "[xsec] Running xsec extraction for kin=${kin} (target=${XSEC_TARGET})"
 
     xsec_cmd=("${XSEC_SCRIPT}"
@@ -1259,7 +1445,7 @@ echo "Total jobs: ${TOTAL_JOBS}, failed: ${FAILED}"
 echo "==========================================================================="
 
 if [[ "${FAILED}" -ne 0 ]]; then
-  echo "Some runs failed. Check per-run logs under ${OUTPUT_BASE}/<kin>/logs" >&2
+  echo "Some runs failed. Check per-run logs under ${LOG_BASE}/<kin>/logs" >&2
   exit 1
 fi
 

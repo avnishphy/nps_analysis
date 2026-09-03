@@ -91,6 +91,7 @@ using namespace std;
 // Configuration Constants
 // ============================================================================
 constexpr int MAX_CLUS = 20;
+constexpr int MAX_CLUS_INPUT = 1080;  // NPS block count; ROOT I/O buffer only
 constexpr double EBEAM_DEFAULT = 10.538;
 constexpr double HMS_MOM_OFFSET_SCALE = 1.0;
 constexpr Long64_t MIN_PRINT_EVERY = 1000;
@@ -998,7 +999,8 @@ inline void normalize_event_ranges(std::vector<EventRange>& ranges)
     for (size_t i = 1; i < ranges.size(); ++i) {
         EventRange& last = merged.back();
         const EventRange& cur = ranges[i];
-        if (cur.low <= (last.high + 1)) {
+        // Selection-report event ranges are half-open: [low, high).
+        if (cur.low <= last.high) {
             if (cur.high > last.high) last.high = cur.high;
         } else {
             merged.push_back(cur);
@@ -1241,7 +1243,7 @@ inline bool passes_good_event_cut(Double_t event_number,
     const Long64_t evnum = static_cast<Long64_t>(std::llround(event_number));
     for (const auto& range : *ranges) {
         if (evnum < range.low) return false;
-        if (evnum <= range.high) return true;
+        if (evnum < range.high) return true;
     }
     return false;
 }
@@ -1858,7 +1860,10 @@ void nps_analysis_main(const TString &kinematic_in = "",
             // -------------------------
             // Branch variables (no static arrays)
             // -------------------------
-            Double_t HgtrX=0, HgtrY=0, HgtrTh=0, HgtrPh=0, hdelta=0, HgtrP=0, hreactz=0, hcernpeSum=0, hcaletotnorm=0;
+            Double_t HgtrX=0, HgtrY=0, HgtrTh=0, HgtrPh=0, hdelta=0, HgtrP=0;
+            Double_t hreactx=0, hreacty=0, hreactz=0;
+            Double_t hfastRasterXA=0, hfastRasterXB=0, hfastRasterYA=0, hfastRasterYB=0;
+            Double_t hcernpeSum=0, hcaletotnorm=0;
             Double_t HgtrPx=0, HgtrPy=0, HgtrPz=0;
             Double_t edtmtdc=0;
             Double_t g_evnum=std::numeric_limits<double>::quiet_NaN();
@@ -1869,8 +1874,9 @@ void nps_analysis_main(const TString &kinematic_in = "",
             // HMS focal plane variables
             Double_t hxfp=0, hyfp=0, hxpfp=0, hypfp=0;
 
-            // local fixed arrays for convenience (fresh per run)
-            Double_t clusE[MAX_CLUS] = {0}, clusX[MAX_CLUS] = {0}, clusY[MAX_CLUS] = {0}, clusT[MAX_CLUS] = {0};
+            // ROOT fills variable-length arrays before analysis clips to MAX_CLUS.
+            Double_t clusE[MAX_CLUS_INPUT] = {0}, clusX[MAX_CLUS_INPUT] = {0};
+            Double_t clusY[MAX_CLUS_INPUT] = {0}, clusT[MAX_CLUS_INPUT] = {0};
 
             // vector bindings (safe if branches are stored as vectors)
             std::vector<double>* clusE_vec = nullptr;
@@ -1886,6 +1892,23 @@ void nps_analysis_main(const TString &kinematic_in = "",
                 if (br) { T->SetBranchStatus(b,1); T->SetBranchAddress(b, addr); }
             };
 
+            auto has_branch = [&](const char* b) {
+                return T->GetBranch(b) != nullptr;
+            };
+
+            const bool has_react_x = has_branch("H.react.x");
+            const bool has_react_y = has_branch("H.react.y");
+            const bool has_fast_raster_xa = has_branch("H.rb.raster.fr_xa");
+            const bool has_fast_raster_xb = has_branch("H.rb.raster.fr_xb");
+            const bool has_fast_raster_ya = has_branch("H.rb.raster.fr_ya");
+            const bool has_fast_raster_yb = has_branch("H.rb.raster.fr_yb");
+            const bool has_gtr_x = has_branch("H.gtr.x");
+            const bool has_gtr_y = has_branch("H.gtr.y");
+            const bool has_fp_x = has_branch("H.dc.x_fp");
+            const bool has_fp_y = has_branch("H.dc.y_fp");
+            const bool has_fp_xp = has_branch("H.dc.xp_fp");
+            const bool has_fp_yp = has_branch("H.dc.yp_fp");
+
             // set scalar branches
             enable_scalar("H.gtr.x", &HgtrX);
             enable_scalar("H.gtr.y", &HgtrY);
@@ -1896,7 +1919,13 @@ void nps_analysis_main(const TString &kinematic_in = "",
             enable_scalar("H.gtr.dp", &hdelta);
             enable_scalar("H.gtr.th", &HgtrTh);
             enable_scalar("H.gtr.ph", &HgtrPh);
+            enable_scalar("H.react.x", &hreactx);
+            enable_scalar("H.react.y", &hreacty);
             enable_scalar("H.react.z", &hreactz);
+            enable_scalar("H.rb.raster.fr_xa", &hfastRasterXA);
+            enable_scalar("H.rb.raster.fr_xb", &hfastRasterXB);
+            enable_scalar("H.rb.raster.fr_ya", &hfastRasterYA);
+            enable_scalar("H.rb.raster.fr_yb", &hfastRasterYB);
             enable_scalar("H.cer.npeSum", &hcernpeSum);
             enable_scalar("H.cal.etotnorm", &hcaletotnorm);
             enable_scalar("T.hms.hEDTM_tdcTimeRaw", &edtmtdc);
@@ -1967,10 +1996,12 @@ void nps_analysis_main(const TString &kinematic_in = "",
             }
 
             std::vector<HelicityInterval> helicity_intervals;
-            std::string helicity_error;
-            if (!build_helicity_intervals_from_chain(chain.get(), helicity_intervals, helicity_error)) {
-                logmsg(WARN, Form("Run %d: helicity branch will be filled with 0 because mapping failed: %s",
-                                  run, helicity_error.c_str()));
+            if (!has_t_helicity_branch) {
+                std::string helicity_error;
+                if (!build_helicity_intervals_from_chain(chain.get(), helicity_intervals, helicity_error)) {
+                    logmsg(WARN, Form("Run %d: helicity branch will be filled with 0 because mapping failed: %s",
+                                      run, helicity_error.c_str()));
+                }
             }
 
             cout << "Run " << run << " entries: " << nentries << endl;
@@ -2134,6 +2165,13 @@ void nps_analysis_main(const TString &kinematic_in = "",
             double min_value = 0.0;
             bool has_max = false;
             double max_value = 0.0;
+            bool available = true;
+        };
+
+        struct Debug2DPlot {
+            TH2D* hist = nullptr;
+            TString label;
+            bool available = true;
         };
 
         auto makeCut1D = [&](const char* base, const char* title, int nb, double xlo, double xhi)->TH1D* {
@@ -2149,28 +2187,65 @@ void nps_analysis_main(const TString &kinematic_in = "",
         if (h && std::isfinite(value) && std::isfinite(weight)) h->Fill(value, weight);
         };
 
+        auto fill_debug_hist_2d = [](TH2D* h, double x, double y, double weight = 1.0) {
+        if (h && std::isfinite(x) && std::isfinite(y) && std::isfinite(weight)) h->Fill(x, y, weight);
+        };
+
         const HMSDataCuts& hms_debug_cuts = acceptance_cuts->hms_data();
         const NPSClusterCuts& nps_debug_cuts = acceptance_cuts->nps_cluster();
         const WeightedCuts& weighted_debug_cuts = acceptance_cuts->weighted();
 
         TH1D *h_cut_edtm_tdc = makeCut1D("h_cut_edtm_tdc", "HMS EDTM TDC;EDTM TDC;Events", 220, -5.0, 5.0);
+        TH1D *h_cut_react_x = makeCut1D("h_cut_react_x", "HMS reaction x;hreactx [cm];Events", 220, -2.0, 2.0);
+        TH1D *h_cut_react_y = makeCut1D("h_cut_react_y", "HMS reaction y;hreacty [cm];Events", 220, -2.0, 2.0);
         TH1D *h_cut_react_z = makeCut1D("h_cut_react_z", "HMS reaction z;hreactz [cm];Events", 220, -12.0, 12.0);
+        TH1D *h_cut_fast_raster_xa = makeCut1D("h_cut_fast_raster_xa", "Fast raster xA;fr_{xA} [cm];Events", 220, -0.5, 0.5);
+        TH1D *h_cut_fast_raster_xb = makeCut1D("h_cut_fast_raster_xb", "Fast raster xB;fr_{xB} [cm];Events", 220, -0.5, 0.5);
+        TH1D *h_cut_fast_raster_ya = makeCut1D("h_cut_fast_raster_ya", "Fast raster yA;fr_{yA} [cm];Events", 220, -0.5, 0.5);
+        TH1D *h_cut_fast_raster_yb = makeCut1D("h_cut_fast_raster_yb", "Fast raster yB;fr_{yB} [cm];Events", 220, -0.5, 0.5);
+        TH1D *h_cut_fp_x = makeCut1D("h_cut_fp_x", "HMS focal-plane x;x_{fp} [cm];Events", 220, -60.0, 60.0);
+        TH1D *h_cut_fp_y = makeCut1D("h_cut_fp_y", "HMS focal-plane y;y_{fp} [cm];Events", 220, -40.0, 40.0);
+        TH1D *h_cut_fp_xp = makeCut1D("h_cut_fp_xp", "HMS focal-plane x';x'_{fp} [rad];Events", 220, -0.15, 0.15);
+        TH1D *h_cut_fp_yp = makeCut1D("h_cut_fp_yp", "HMS focal-plane y';y'_{fp} [rad];Events", 220, -0.08, 0.08);
+        TH1D *h_cut_gtr_x = makeCut1D("h_cut_gtr_x", "HMS target x;h.gtr.x [cm];Events", 220, -5.0, 5.0);
+        TH1D *h_cut_gtr_y = makeCut1D("h_cut_gtr_y", "HMS target y;h.gtr.y [cm];Events", 220, -5.0, 5.0);
         TH1D *h_cut_delta = makeCut1D("h_cut_delta", "HMS #delta;#delta [%];Events", 220, -25.0, 25.0);
         TH1D *h_cut_gtr_th = makeCut1D("h_cut_gtr_th", "HMS x' target;h.gtr.th [rad];Events", 220, -0.16, 0.16);
         TH1D *h_cut_gtr_ph = makeCut1D("h_cut_gtr_ph", "HMS y' target;h.gtr.ph [rad];Events", 220, -0.08, 0.08);
-        TH1D *h_cut_cer_npe = makeCut1D("h_cut_cer_npe", "HMS Cherenkov npe sum;NPE sum;Events", 220, 0.0, 20.0);
+        TH1D *h_cut_cer_npe = makeCut1D("h_cut_cer_npe", "HMS Cherenkov npe sum;NPE sum;Events", 220, 0.1, 20.0);
         TH1D *h_cut_cal_etotnorm = makeCut1D("h_cut_cal_etotnorm", "HMS calorimeter E/p;E_{tot}/p;Events", 220, 0.0, 2.0);
-        TH1D *h_cut_cluster_e = makeCut1D("h_cut_cluster_e", "NPS cluster energy;E_{clus} [GeV];Clusters", 220, 0.0, 8.0);
-        TH1D *h_cut_cluster_x = makeCut1D("h_cut_cluster_x", "NPS cluster x;x [cm];Clusters", 220, -60.0, 60.0);
-        TH1D *h_cut_cluster_y = makeCut1D("h_cut_cluster_y", "NPS cluster y;y [cm];Clusters", 220, -60.0, 60.0);
+        TH1D *h_cut_cluster_e = makeCut1D("h_cut_cluster_e", "NPS cluster energy;E_{clus} [GeV];Clusters", 220, 0.1, 8.0);
+        TH1D *h_cut_cluster_x = makeCut1D("h_cut_cluster_x", "NPS cluster x;x [cm];Clusters", 120, -34.0, 34.0);
+        TH1D *h_cut_cluster_y = makeCut1D("h_cut_cluster_y", "NPS cluster y;y [cm];Clusters", 120, -40.0, 40.0);
         TH1D *h_cut_cluster_t = makeCut1D("h_cut_cluster_t", "NPS cluster time;t [ns];Clusters", 220, 120.0, 180.0);
         TH1D *h_cut_pair_dt = makeCut1D("h_cut_pair_dt", "Photon pair time difference;t_{1}-t_{2} [ns];Pairs", 220, -35.0, 35.0);
         TH1D *h_cut_mmiss_corr = makeCut1D("h_cut_mmiss_corr", "Corrected missing mass;M_{miss}^{corr} [GeV];Events", 220, 0.0, 2.0);
 
+        TH2D *h_debug_react_xy = make2D("h_debug_react_xy", "HMS reaction vertex;x [cm];y [cm]", 180, -2.0, 2.0, 180, -2.0, 2.0);
+        TH2D *h_debug_fast_raster_a_xy = make2D("h_debug_fast_raster_a_xy", "Fast raster A;fr_{xA} [cm];fr_{yA} [cm]", 240, -0.5, 0.5, 240, -0.5, 0.5);
+        TH2D *h_debug_fast_raster_b_xy = make2D("h_debug_fast_raster_b_xy", "Fast raster B;fr_{xB} [cm];fr_{yB} [cm]", 240, -0.5, 0.5, 240, -0.5, 0.5);
+        TH2D *h_debug_fp_xy = make2D("h_debug_fp_xy", "HMS focal-plane position;x_{fp} [cm];y_{fp} [cm]", 220, -60.0, 60.0, 180, -40.0, 40.0);
+        TH2D *h_debug_fp_slopes = make2D("h_debug_fp_slopes", "HMS focal-plane slopes;x'_{fp} [rad];y'_{fp} [rad]", 180, -0.15, 0.15, 180, -0.08, 0.08);
+        TH2D *h_debug_target_xy = make2D("h_debug_target_xy", "HMS target position;h.gtr.x [cm];h.gtr.y [cm]", 180, -5.0, 5.0, 180, -5.0, 5.0);
+        TH2D *h_debug_target_slopes = make2D("h_debug_target_slopes", "HMS target slopes;h.gtr.th [rad];h.gtr.ph [rad]", 180, -0.16, 0.16, 180, -0.08, 0.08);
+        TH2D *h_debug_cluster_xy = make2D("h_debug_cluster_xy", "NPS cluster position;x [cm];y [cm]", 120, -34.0, 34.0, 120, -40.0, 40.0);
+
         const double cluster_time_center_ns = nps_debug_cuts.time_center_ns;
         std::vector<CutDebugPlot> cut_debug_plots = {
             {h_cut_edtm_tdc, "HMS EDTM veto", false, 0.0, true, hms_debug_cuts.edtm_tdc_max},
+            {h_cut_react_x, "HMS reaction x", false, 0.0, false, 0.0, has_react_x},
+            {h_cut_react_y, "HMS reaction y", false, 0.0, false, 0.0, has_react_y},
             {h_cut_react_z, "HMS reaction z", true, hms_debug_cuts.react_z_min, true, hms_debug_cuts.react_z_max},
+            {h_cut_fast_raster_xa, "Fast raster xA", false, 0.0, false, 0.0, has_fast_raster_xa},
+            {h_cut_fast_raster_xb, "Fast raster xB", false, 0.0, false, 0.0, has_fast_raster_xb},
+            {h_cut_fast_raster_ya, "Fast raster yA", false, 0.0, false, 0.0, has_fast_raster_ya},
+            {h_cut_fast_raster_yb, "Fast raster yB", false, 0.0, false, 0.0, has_fast_raster_yb},
+            {h_cut_fp_x, "HMS focal-plane x", false, 0.0, false, 0.0, has_fp_x},
+            {h_cut_fp_y, "HMS focal-plane y", false, 0.0, false, 0.0, has_fp_y},
+            {h_cut_fp_xp, "HMS focal-plane x'", false, 0.0, false, 0.0, has_fp_xp},
+            {h_cut_fp_yp, "HMS focal-plane y'", false, 0.0, false, 0.0, has_fp_yp},
+            {h_cut_gtr_x, "HMS target x", false, 0.0, false, 0.0, has_gtr_x},
+            {h_cut_gtr_y, "HMS target y", false, 0.0, false, 0.0, has_gtr_y},
             {h_cut_delta, "HMS delta", true, hms_debug_cuts.delta_min, true, hms_debug_cuts.delta_max},
             {h_cut_gtr_th, "HMS x' target", true, hms_debug_cuts.gtr_th_min, true, hms_debug_cuts.gtr_th_max},
             {h_cut_gtr_ph, "HMS y' target", true, hms_debug_cuts.gtr_ph_min, true, hms_debug_cuts.gtr_ph_max},
@@ -2184,7 +2259,20 @@ void nps_analysis_main(const TString &kinematic_in = "",
             {h_cut_mmiss_corr, "Weighted exclusivity", true, weighted_debug_cuts.mmiss_corr_min, true, weighted_debug_cuts.mmiss_corr_max}
         };
 
-        auto write_cut_debug_pdf = [&](const TString& pdf_path, const std::vector<CutDebugPlot>& plots) {
+        std::vector<Debug2DPlot> cut_debug_2d_plots = {
+            {h_debug_react_xy, "HMS reaction x vs y", has_react_x && has_react_y},
+            {h_debug_fast_raster_a_xy, "Fast raster A: x vs y", has_fast_raster_xa && has_fast_raster_ya},
+            {h_debug_fast_raster_b_xy, "Fast raster B: x vs y", has_fast_raster_xb && has_fast_raster_yb},
+            {h_debug_fp_xy, "HMS focal-plane x vs y", has_fp_x && has_fp_y},
+            {h_debug_fp_slopes, "HMS focal-plane x' vs y'", has_fp_xp && has_fp_yp},
+            {h_debug_target_xy, "HMS target x vs y", has_gtr_x && has_gtr_y},
+            {h_debug_target_slopes, "HMS target x' vs y'", true},
+            {h_debug_cluster_xy, "NPS cluster x vs y", true}
+        };
+
+        auto write_cut_debug_pdf = [&](const TString& pdf_path,
+                                       const std::vector<CutDebugPlot>& plots,
+                                       const std::vector<Debug2DPlot>& plots_2d) {
         if (plots.empty()) return;
         TCanvas *c_cut_debug = new TCanvas(name("c_cut_debug"), Form("Cut Debug Run %d", run), 1600, 1000);
         c_cut_debug->Print(Form("%s[", pdf_path.Data()));
@@ -2204,8 +2292,48 @@ void nps_analysis_main(const TString &kinematic_in = "",
                 gPad->SetRightMargin(0.05);
                 gPad->SetTicks(1, 1);
                 if (!plot.hist) continue;
-                const double ymax = std::max(1.0, plot.hist->GetMaximum());
-                plot.hist->SetMaximum(1.20 * ymax);
+
+                latex.SetTextSize(0.040);
+                if (!plot.available) {
+                    plot.hist->Draw("AXIS");
+                    latex.DrawLatex(0.15, 0.93, Form("Run %d  %s", run, plot.label.Data()));
+                    latex.SetTextColor(kRed + 1);
+                    latex.DrawLatex(0.33, 0.50, "Branch unavailable");
+                    latex.SetTextColor(kBlack);
+                    continue;
+                }
+
+                // Crop display to populated structure while retaining configured cut lines.
+                // Histogram contents, underflow/overflow, and event selection remain unchanged.
+                const int nbins = plot.hist->GetNbinsX();
+                const double peak = plot.hist->GetMaximum();
+                const double visible_threshold = std::max(1.0, 1.0e-3 * peak);
+                int first_bin = 1;
+                int last_bin = nbins;
+                while (first_bin <= nbins && plot.hist->GetBinContent(first_bin) < visible_threshold) ++first_bin;
+                while (last_bin >= 1 && plot.hist->GetBinContent(last_bin) < visible_threshold) --last_bin;
+                if (first_bin > last_bin) {
+                    first_bin = 1;
+                    last_bin = nbins;
+                }
+                auto include_cut_bin = [&](double x) {
+                    if (x < plot.hist->GetXaxis()->GetXmin() || x > plot.hist->GetXaxis()->GetXmax()) return;
+                    const int cut_bin = std::max(1, std::min(nbins, plot.hist->GetXaxis()->FindFixBin(x)));
+                    first_bin = std::min(first_bin, cut_bin);
+                    last_bin = std::max(last_bin, cut_bin);
+                };
+                if (plot.has_min) include_cut_bin(plot.min_value);
+                if (plot.has_max) include_cut_bin(plot.max_value);
+                const int pad_bins = std::max(2, (last_bin - first_bin + 1) / 20);
+                first_bin = std::max(1, first_bin - pad_bins);
+                last_bin = std::min(nbins, last_bin + pad_bins);
+                plot.hist->GetXaxis()->SetRange(first_bin, last_bin);
+
+                double visible_ymax = 0.0;
+                for (int b = first_bin; b <= last_bin; ++b) {
+                    visible_ymax = std::max(visible_ymax, plot.hist->GetBinContent(b));
+                }
+                plot.hist->SetMaximum(1.20 * std::max(1.0, visible_ymax));
                 plot.hist->SetMinimum(0.0);
                 plot.hist->Draw("HIST");
 
@@ -2220,7 +2348,6 @@ void nps_analysis_main(const TString &kinematic_in = "",
                 if (plot.has_min) draw_cut_line(plot.min_value, 2);
                 if (plot.has_max) draw_cut_line(plot.max_value, 2);
 
-                latex.SetTextSize(0.040);
                 latex.DrawLatex(0.15, 0.93, Form("Run %d  %s", run, plot.label.Data()));
                 latex.SetTextSize(0.030);
                 TString cut_text;
@@ -2234,9 +2361,70 @@ void nps_analysis_main(const TString &kinematic_in = "",
                     cut_text = "Cut: none";
                 }
                 latex.DrawLatex(0.15, 0.87, cut_text.Data());
+                latex.DrawLatex(0.56, 0.87,
+                                Form("Entries %.0f  UF %.0f  OF %.0f",
+                                     plot.hist->GetEntries(),
+                                     plot.hist->GetBinContent(0),
+                                     plot.hist->GetBinContent(nbins + 1)));
             }
             c_cut_debug->Print(pdf_path.Data());
         }
+
+        for (std::size_t i = 0; i < plots_2d.size(); i += 4) {
+            c_cut_debug->Clear();
+            c_cut_debug->Divide(2, 2);
+            for (std::size_t j = 0; j < 4 && (i + j) < plots_2d.size(); ++j) {
+                const Debug2DPlot& plot = plots_2d[i + j];
+                c_cut_debug->cd(static_cast<int>(j + 1));
+                gPad->SetLeftMargin(0.12);
+                gPad->SetBottomMargin(0.12);
+                gPad->SetTopMargin(0.10);
+                gPad->SetRightMargin(0.15);
+                gPad->SetTicks(1, 1);
+                if (!plot.hist) continue;
+
+                latex.SetTextSize(0.040);
+                if (!plot.available) {
+                    plot.hist->Draw("AXIS");
+                    latex.DrawLatex(0.15, 0.93, Form("Run %d  %s", run, plot.label.Data()));
+                    latex.SetTextColor(kRed + 1);
+                    latex.DrawLatex(0.33, 0.50, "Branch unavailable");
+                    latex.SetTextColor(kBlack);
+                    continue;
+                }
+
+                const int nbins_x = plot.hist->GetNbinsX();
+                const int nbins_y = plot.hist->GetNbinsY();
+                const double threshold = std::max(1.0, 1.0e-3 * plot.hist->GetMaximum());
+                int first_x = nbins_x;
+                int last_x = 1;
+                int first_y = nbins_y;
+                int last_y = 1;
+                bool found = false;
+                for (int bx = 1; bx <= nbins_x; ++bx) {
+                    for (int by = 1; by <= nbins_y; ++by) {
+                        if (plot.hist->GetBinContent(bx, by) < threshold) continue;
+                        found = true;
+                        first_x = std::min(first_x, bx);
+                        last_x = std::max(last_x, bx);
+                        first_y = std::min(first_y, by);
+                        last_y = std::max(last_y, by);
+                    }
+                }
+                if (found) {
+                    const int pad_x = std::max(2, (last_x - first_x + 1) / 20);
+                    const int pad_y = std::max(2, (last_y - first_y + 1) / 20);
+                    plot.hist->GetXaxis()->SetRange(std::max(1, first_x - pad_x), std::min(nbins_x, last_x + pad_x));
+                    plot.hist->GetYaxis()->SetRange(std::max(1, first_y - pad_y), std::min(nbins_y, last_y + pad_y));
+                }
+                plot.hist->Draw("COLZ");
+                latex.DrawLatex(0.15, 0.93, Form("Run %d  %s", run, plot.label.Data()));
+                latex.SetTextSize(0.030);
+                latex.DrawLatex(0.70, 0.93, Form("Entries %.0f", plot.hist->GetEntries()));
+            }
+            c_cut_debug->Print(pdf_path.Data());
+        }
+
         c_cut_debug->Clear();
         c_cut_debug->Divide(1, 1);
         c_cut_debug->cd(1);
@@ -2495,12 +2683,31 @@ void nps_analysis_main(const TString &kinematic_in = "",
                 }
 
                 fill_cut_hist(h_cut_edtm_tdc, edtmtdc);
+                if (has_react_x) fill_cut_hist(h_cut_react_x, hreactx);
+                if (has_react_y) fill_cut_hist(h_cut_react_y, hreacty);
                 fill_cut_hist(h_cut_react_z, hreactz);
+                if (has_fast_raster_xa) fill_cut_hist(h_cut_fast_raster_xa, hfastRasterXA);
+                if (has_fast_raster_xb) fill_cut_hist(h_cut_fast_raster_xb, hfastRasterXB);
+                if (has_fast_raster_ya) fill_cut_hist(h_cut_fast_raster_ya, hfastRasterYA);
+                if (has_fast_raster_yb) fill_cut_hist(h_cut_fast_raster_yb, hfastRasterYB);
+                if (has_fp_x) fill_cut_hist(h_cut_fp_x, hxfp);
+                if (has_fp_y) fill_cut_hist(h_cut_fp_y, hyfp);
+                if (has_fp_xp) fill_cut_hist(h_cut_fp_xp, hxpfp);
+                if (has_fp_yp) fill_cut_hist(h_cut_fp_yp, hypfp);
+                if (has_gtr_x) fill_cut_hist(h_cut_gtr_x, HgtrX);
+                if (has_gtr_y) fill_cut_hist(h_cut_gtr_y, HgtrY);
                 fill_cut_hist(h_cut_delta, hdelta);
                 fill_cut_hist(h_cut_gtr_th, HgtrTh);
                 fill_cut_hist(h_cut_gtr_ph, HgtrPh);
                 fill_cut_hist(h_cut_cer_npe, hcernpeSum);
                 fill_cut_hist(h_cut_cal_etotnorm, hcaletotnorm);
+                if (has_react_x && has_react_y) fill_debug_hist_2d(h_debug_react_xy, hreactx, hreacty);
+                if (has_fast_raster_xa && has_fast_raster_ya) fill_debug_hist_2d(h_debug_fast_raster_a_xy, hfastRasterXA, hfastRasterYA);
+                if (has_fast_raster_xb && has_fast_raster_yb) fill_debug_hist_2d(h_debug_fast_raster_b_xy, hfastRasterXB, hfastRasterYB);
+                if (has_fp_x && has_fp_y) fill_debug_hist_2d(h_debug_fp_xy, hxfp, hyfp);
+                if (has_fp_xp && has_fp_yp) fill_debug_hist_2d(h_debug_fp_slopes, hxpfp, hypfp);
+                if (has_gtr_x && has_gtr_y) fill_debug_hist_2d(h_debug_target_xy, HgtrX, HgtrY);
+                fill_debug_hist_2d(h_debug_target_slopes, HgtrTh, HgtrPh);
 
                 // DEBUG: Print cluster info for first few events
                 static int debug_count = 0;
@@ -2576,6 +2783,7 @@ void nps_analysis_main(const TString &kinematic_in = "",
                     fill_cut_hist(h_cut_cluster_e, clusE[i]);
                     fill_cut_hist(h_cut_cluster_x, clusX[i]);
                     fill_cut_hist(h_cut_cluster_y, clusY[i]);
+                    fill_debug_hist_2d(h_debug_cluster_xy, clusX[i], clusY[i]);
                     fill_cut_hist(h_cut_cluster_t, clusT[i]);
                 }
 
@@ -3174,7 +3382,7 @@ void nps_analysis_main(const TString &kinematic_in = "",
         };
 
         TString cut_debug_pdf = Form("%s/cut_debug_run%d.pdf", outPlotDir.Data(), run);
-        write_cut_debug_pdf(cut_debug_pdf, cut_debug_plots);
+        write_cut_debug_pdf(cut_debug_pdf, cut_debug_plots, cut_debug_2d_plots);
 
         TCanvas *c_Q2_overlay = draw_overlay_triplet(Form("c_Q2_overlay_run%d", run), "Q^{2} Overlay",
                                                      h_Q2, h_Q2_weighted, h_Q2_excl_weighted, "Q2");
@@ -3462,6 +3670,9 @@ void nps_analysis_main(const TString &kinematic_in = "",
         h_mmiss_vs_t1->Write(); h_mmiss_vs_t2->Write();
 
         for (const auto& plot : cut_debug_plots) {
+            if (plot.hist) plot.hist->Write();
+        }
+        for (const auto& plot : cut_debug_2d_plots) {
             if (plot.hist) plot.hist->Write();
         }
 
@@ -3822,6 +4033,9 @@ void nps_analysis_main(const TString &kinematic_in = "",
         for (auto *h: h_mgg_ver) if (h) safe_delete(h);
 
         for (auto& plot : cut_debug_plots) {
+            if (plot.hist) safe_delete(plot.hist);
+        }
+        for (auto& plot : cut_debug_2d_plots) {
             if (plot.hist) safe_delete(plot.hist);
         }
 

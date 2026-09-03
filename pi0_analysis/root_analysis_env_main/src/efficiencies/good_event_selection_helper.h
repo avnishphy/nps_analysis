@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "efficiency_types.h"
-#include "nps_hel_select.h"
+#include "NPS_selection_helper.h"
 
 namespace effstuff {
 
@@ -39,14 +39,29 @@ inline SelectionSettings make_default_selection_settings() {
   return settings;
 }
 
-inline bool value_in_ranges(long long value,
-                            const std::vector<EventRange>& ranges) {
+inline bool event_value_in_ranges(long long value,
+                                  const std::vector<EventRange>& ranges) {
   if (ranges.empty()) {
     return true;
   }
 
   for (const auto& range : ranges) {
-    if (value >= range.lo && value <= range.hi) {
+    if (value >= range.lo && value < range.hi) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+inline bool evcount_value_in_ranges(long long value,
+                                    const std::vector<EventRange>& ranges) {
+  if (ranges.empty()) {
+    return true;
+  }
+
+  for (const auto& range : ranges) {
+    if (value > range.lo && value <= range.hi) {
       return true;
     }
   }
@@ -169,7 +184,7 @@ inline GoodSelectionSummary build_good_selection_summary(
       }
 
       const long long evcount = std::llround(evcount_raw);
-      if (!value_in_ranges(evcount, summary.accepted_evcount_ranges)) {
+      if (!evcount_value_in_ranges(evcount, summary.accepted_evcount_ranges)) {
         continue;
       }
 

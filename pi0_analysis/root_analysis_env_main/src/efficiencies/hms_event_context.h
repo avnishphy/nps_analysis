@@ -15,6 +15,7 @@ struct HMSEventContext {
   double hms_dp = std::numeric_limits<double>::quiet_NaN();
   double hms_th = std::numeric_limits<double>::quiet_NaN();
   double hms_ph = std::numeric_limits<double>::quiet_NaN();
+  double hms_react_z = std::numeric_limits<double>::quiet_NaN();
 
   double hod_goodscinhit = std::numeric_limits<double>::quiet_NaN();
   double hod_notrack = std::numeric_limits<double>::quiet_NaN();

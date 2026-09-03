@@ -8,14 +8,16 @@ import csv
 import math
 import re
 from collections import defaultdict
+from contextlib import ExitStack
 from pathlib import Path
 from statistics import mean, stdev
-from typing import Iterable
+from typing import Callable, Iterable
 
 import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 
 DEFAULT_METRICS = [
@@ -45,6 +47,8 @@ PS_GROUP_COLORS = {
     "ps5": "#f4efff",
     "ps6": "#eef8ee",
 }
+
+TARGETS = ("LH2", "LD2", "dummy")
 
 
 def clean_cell(value: str | None) -> str:
@@ -88,6 +92,44 @@ def selection_report_path_for(efficiency_csv: Path) -> Path:
     return efficiency_csv.with_name("selection_report_" + name)
 
 
+def normalize_target(value: str | None) -> str:
+    target = clean_cell(value).lower().strip("_ ")
+    if target.startswith("lh2"):
+        return "LH2"
+    if target.startswith("ld2"):
+        return "LD2"
+    if target.startswith("dummy"):
+        return "dummy"
+    return ""
+
+
+def read_targets_by_run(path: Path) -> dict[int, str]:
+    if not path.exists():
+        raise FileNotFoundError(f"Target configuration CSV not found: {path}")
+
+    targets: dict[int, set[str]] = defaultdict(set)
+    with path.open("r", newline="") as f:
+        reader = csv.reader(f)
+        try:
+            header = next(reader)
+        except StopIteration:
+            return {}
+
+        names = [clean_cell(h) for h in header]
+        for raw in reader:
+            row = {name: clean_cell(raw[i]) if i < len(raw) else "" for i, name in enumerate(names)}
+            run = to_int(row.get("run_number"))
+            target = normalize_target(row.get("target"))
+            if run is not None and target:
+                targets[run].add(target)
+
+    ambiguous = {run: values for run, values in targets.items() if len(values) > 1}
+    if ambiguous:
+        examples = ", ".join(str(run) for run in sorted(ambiguous)[:8])
+        raise RuntimeError(f"Runs have conflicting target assignments in {path}: {examples}")
+    return {run: next(iter(values)) for run, values in targets.items()}
+
+
 def read_selection_mean_currents(path: Path) -> dict[int, float]:
     if not path.exists():
         return {}
@@ -113,7 +155,7 @@ def read_selection_mean_currents(path: Path) -> dict[int, float]:
     return {run: mean(values) for run, values in by_run.items() if values}
 
 
-def read_efficiency_csv(path: Path) -> list[dict[str, str]]:
+def read_efficiency_csv(path: Path, targets_by_run: dict[int, str]) -> list[dict[str, str]]:
     selection_currents = read_selection_mean_currents(selection_report_path_for(path))
     with path.open("r", newline="") as f:
         reader = csv.reader(f)
@@ -130,6 +172,8 @@ def read_efficiency_csv(path: Path) -> list[dict[str, str]]:
             row = {name: clean_cell(raw[i]) if i < len(raw) else "" for i, name in enumerate(names)}
             row["_source_csv"] = str(path)
             run = to_int(row.get("run_number"))
+            if run is not None:
+                row["_target"] = targets_by_run.get(run, "")
             if run is not None and run in selection_currents:
                 row["_current_uA"] = str(selection_currents[run])
             elif "kinematic_setting" in row:
@@ -191,6 +235,37 @@ def prescale_group(row: dict[str, str]) -> str:
         return f"ps_factor {ps_factor}"
 
     return "unknown"
+
+
+def write_multiple_enabled_trigger_runs(
+    rows: list[dict[str, str]], path: Path
+) -> None:
+    found: set[tuple[int, str, str, str]] = set()
+    assignment_re = re.compile(r"ps\s*(\d+)\s*=\s*(-?\d+)", re.IGNORECASE)
+    for row in rows:
+        run = to_int(row.get("run_number"))
+        token = clean_cell(row.get("prescale_token"))
+        enabled = [
+            f"ps{trigger}={setting}"
+            for trigger, setting in assignment_re.findall(token)
+            if int(setting) >= 0
+        ]
+        if run is not None and len(enabled) > 1:
+            found.add(
+                (
+                    run,
+                    clean_cell(row.get("kinematic_setting")),
+                    token,
+                    ";".join(enabled),
+                )
+            )
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["run_number", "kinematic_setting", "prescale_token", "enabled_triggers"])
+        writer.writerows(sorted(found))
+    print(f"Wrote {path} ({len(found)} run(s))")
 
 
 def run_positions(rows: list[dict[str, str]]) -> dict[int, int]:
@@ -572,6 +647,9 @@ def plot_vs_run(
     formats: list[str],
     dpi: int,
     use_errorbars: bool,
+    output_name: str,
+    target: str,
+    pdf_outputs: Iterable[PdfPages] = (),
 ) -> None:
     rows = sorted(rows, key=lambda r: (to_int(r.get("run_number")) or -1))
     if not rows:
@@ -597,7 +675,7 @@ def plot_vs_run(
     )
 
     overlay_ax = fig.add_subplot(grid[0, :])
-    setup_axes(overlay_ax, f"{kin}: efficiencies vs run", "")
+    setup_axes(overlay_ax, f"{kin} ({target}): efficiencies vs run", "")
 
     overlay_series: list[tuple[str, list[tuple[int, float, float]]]] = []
     for idx, (name, label) in enumerate(metrics):
@@ -659,7 +737,10 @@ def plot_vs_run(
         wspace=0.20,
     )
     safe_kin = re.sub(r"[^A-Za-z0-9_.-]+", "_", kin)
-    save_figure(fig, out_dir / f"efficiency_multipanel_vs_run_{safe_kin}", formats, dpi)
+    target_suffix = target.lower()
+    save_figure(fig, out_dir / f"{output_name}_vs_run_{safe_kin}_{target_suffix}", formats, dpi)
+    for pdf_output in pdf_outputs:
+        pdf_output.savefig(fig, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -687,11 +768,21 @@ def metric_points_by_current(
     return points
 
 
-def setup_current_axis(ax: plt.Axes, xlabel: bool) -> None:
-    ax.set_xlabel("Current (uA)" if xlabel else "")
+def metric_points_by_s1x(
+    rows: list[dict[str, str]],
+    metric_name: str,
+) -> list[tuple[float, float, float]]:
+    points: list[tuple[float, float, float]] = []
+    for row in rows:
+        rate = to_float(row.get("HMS_S1X_rate_Hz"))
+        value = to_float(row.get(metric_name))
+        error = to_float(row.get(f"{metric_name}_err"))
+        if finite(rate) and rate >= 0.0 and finite(value):
+            points.append((rate, value, error if finite(error) and error >= 0.0 else 0.0))
+    return sorted(points)
 
 
-def plot_vs_current_multipanel(
+def plot_vs_scalar_multipanel(
     rows: list[dict[str, str]],
     metrics: list[tuple[str, str]],
     out_dir: Path,
@@ -700,6 +791,12 @@ def plot_vs_current_multipanel(
     use_errorbars: bool,
     title: str,
     output_name: str,
+    axis_title: str,
+    axis_label: str,
+    point_builder: Callable[
+        [list[dict[str, str]], str], list[tuple[float, float, float]]
+    ],
+    pdf_outputs: Iterable[PdfPages] = (),
 ) -> None:
     if not rows:
         return
@@ -717,12 +814,12 @@ def plot_vs_current_multipanel(
     )
 
     overlay_ax = fig.add_subplot(grid[0, :])
-    setup_axes(overlay_ax, f"{title}: efficiencies vs current", "")
+    setup_axes(overlay_ax, f"{title}: efficiencies vs {axis_title}", "")
 
     overlay_series: list[tuple[str, list[tuple[float, float, float]]]] = []
     current_by_x: dict[float, float] = {}
     for idx, (name, label) in enumerate(metrics):
-        points = metric_points_by_current(rows, name)
+        points = point_builder(rows, name)
         overlay_series.append((label, points))
         current_by_x.update({x: x for x, _, _ in points})
         color = COLORS[idx % len(COLORS)]
@@ -730,13 +827,12 @@ def plot_vs_current_multipanel(
         draw_metric_series(overlay_ax, points, label, color, marker, use_errorbars, markersize=5.0)
 
     apply_robust_y_limits(overlay_ax, overlay_series, current_by_x, annotate=False)
-    setup_current_axis(overlay_ax, xlabel=False)
     overlay_ax.legend(frameon=False, fontsize=8.8, ncols=3, loc="best")
 
     for idx, (name, label) in enumerate(metrics):
         panel_ax = fig.add_subplot(grid[idx // ncols + 1, idx % ncols])
         setup_axes(panel_ax, label, "")
-        points = metric_points_by_current(rows, name)
+        points = point_builder(rows, name)
         current_by_x = {x: x for x, _, _ in points}
         color = COLORS[idx % len(COLORS)]
         marker = MARKERS[idx % len(MARKERS)]
@@ -751,7 +847,7 @@ def plot_vs_current_multipanel(
             markersize=4.5,
         )
         apply_robust_y_limits(panel_ax, [(label, points)], current_by_x, annotate=True)
-        setup_current_axis(panel_ax, xlabel=(idx // ncols == metric_rows - 1))
+        panel_ax.set_xlabel(axis_label if idx // ncols == metric_rows - 1 else "")
 
     total_slots = metric_rows * ncols
     for empty_idx in range(len(metrics), total_slots):
@@ -760,12 +856,51 @@ def plot_vs_current_multipanel(
 
     fig.subplots_adjust(left=0.07, right=0.98, top=0.96, bottom=0.07, hspace=0.58, wspace=0.20)
     save_figure(fig, out_dir / output_name, formats, dpi)
+    for pdf_output in pdf_outputs:
+        pdf_output.savefig(fig, bbox_inches="tight")
     plt.close(fig)
+
+
+def plot_vs_current_multipanel(
+    rows: list[dict[str, str]],
+    metrics: list[tuple[str, str]],
+    out_dir: Path,
+    formats: list[str],
+    dpi: int,
+    use_errorbars: bool,
+    title: str,
+    output_name: str,
+    pdf_outputs: Iterable[PdfPages] = (),
+) -> None:
+    plot_vs_scalar_multipanel(
+        rows, metrics, out_dir, formats, dpi, use_errorbars, title, output_name,
+        "current", "Current (uA)", metric_points_by_current, pdf_outputs,
+    )
+
+
+def plot_vs_s1x_multipanel(
+    rows: list[dict[str, str]],
+    metrics: list[tuple[str, str]],
+    out_dir: Path,
+    formats: list[str],
+    dpi: int,
+    use_errorbars: bool,
+    title: str,
+    output_name: str,
+    pdf_outputs: Iterable[PdfPages] = (),
+) -> None:
+    if not any(finite(to_float(row.get("HMS_S1X_rate_Hz"))) for row in rows):
+        return
+    plot_vs_scalar_multipanel(
+        rows, metrics, out_dir, formats, dpi, use_errorbars, title, output_name,
+        "HMS S1X rate", "HMS S1X rate (Hz)", metric_points_by_s1x, pdf_outputs,
+    )
 
 
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
     default_input_dir = repo_root / "output" / "efficiency_stuff"
+    default_config = repo_root / "config" / "nps_dvcs_all_kins_main.csv"
 
     parser = argparse.ArgumentParser(
         description="Create high-quality overlay plots from efficiency CSV files."
@@ -784,10 +919,33 @@ def main() -> int:
         help="Explicit efficiency CSV files to plot. Overrides --input-dir discovery.",
     )
     parser.add_argument(
+        "--config",
+        type=Path,
+        default=default_config,
+        help="Run configuration CSV used to map run numbers to targets.",
+    )
+    parser.add_argument(
         "--out-dir",
         type=Path,
         default=None,
         help="Output directory for plots. Default: <input-dir>/plots.",
+    )
+    parser.add_argument(
+        "--run",
+        type=int,
+        nargs="+",
+        action="extend",
+        default=None,
+        metavar="RUN",
+        help="Plot only these exact run numbers. May be repeated.",
+    )
+    parser.add_argument(
+        "--output-name",
+        default="efficiency_multipanel",
+        help=(
+            "Base name for output plot files; plot type and kinematic are appended. "
+            "Default: efficiency_multipanel."
+        ),
     )
     parser.add_argument(
         "--formats",
@@ -814,45 +972,133 @@ def main() -> int:
     formats = [fmt.strip().lstrip(".") for fmt in args.formats.split(",") if fmt.strip()]
     out_dir = (args.out_dir.resolve() if args.out_dir else args.input_dir.resolve() / "plots")
 
+    targets_by_run = read_targets_by_run(args.config.resolve())
     rows_by_csv: dict[Path, list[dict[str, str]]] = {}
     all_rows: list[dict[str, str]] = []
+    skipped_target_rows = 0
     for csv_path in csvs:
-        rows = read_efficiency_csv(csv_path)
+        rows = read_efficiency_csv(csv_path, targets_by_run)
+        if args.run:
+            requested_runs = set(args.run)
+            rows = [row for row in rows if to_int(row.get("run_number")) in requested_runs]
+        skipped_target_rows += sum(row.get("_target") not in TARGETS for row in rows)
+        rows = [row for row in rows if row.get("_target") in TARGETS]
         if not rows:
-            print(f"Skipping empty CSV: {csv_path}")
+            print(f"Skipping CSV with no selected rows: {csv_path}")
             continue
         rows_by_csv[csv_path] = rows
         all_rows.extend(rows)
+
+    if args.run:
+        found_runs = {to_int(row.get("run_number")) for row in all_rows}
+        missing_runs = sorted(set(args.run) - found_runs)
+        if missing_runs:
+            print("Warning: requested run(s) not found: " + ", ".join(map(str, missing_runs)))
+
+    if not all_rows:
+        selection = f" for run(s) {', '.join(map(str, args.run))}" if args.run else ""
+        raise RuntimeError(f"No efficiency rows found{selection}.")
+    if skipped_target_rows:
+        print(f"Warning: skipped {skipped_target_rows} row(s) without an LH2/LD2/dummy target mapping.")
 
     metrics = selected_metrics(all_rows, args.metrics)
     if not metrics:
         raise RuntimeError("None of the requested/default efficiency metrics were found.")
 
-    for csv_path, rows in rows_by_csv.items():
-        plot_vs_run(rows, metrics, out_dir, formats, args.dpi, not args.no_errorbars)
-        kin = clean_cell(rows[0].get("kinematic_setting")) or csv_path.stem.replace("efficiency_", "")
-        safe_kin = re.sub(r"[^A-Za-z0-9_.-]+", "_", kin)
-        plot_vs_current_multipanel(
-            rows,
-            metrics,
-            out_dir,
-            formats,
-            args.dpi,
-            not args.no_errorbars,
-            kin,
-            f"efficiency_multipanel_vs_current_{safe_kin}",
-        )
+    output_name = re.sub(r"[^A-Za-z0-9_.-]+", "_", args.output_name).strip("_")
+    if not output_name:
+        raise ValueError("--output-name must contain at least one filename-safe character.")
 
-    plot_vs_current_multipanel(
-        all_rows,
-        metrics,
-        out_dir,
-        formats,
-        args.dpi,
-        not args.no_errorbars,
-        "All kinematics",
-        "efficiency_multipanel_vs_current_all",
+    out_dir.mkdir(parents=True, exist_ok=True)
+    write_multiple_enabled_trigger_runs(
+        all_rows, out_dir / f"{output_name}_multiple_enabled_trigger_runs.csv"
     )
+    non_pdf_formats = [fmt for fmt in formats if fmt.lower() != "pdf"]
+    write_per_kin_pdf = any(fmt.lower() == "pdf" for fmt in formats)
+    merged_pdf_paths = {
+        target: out_dir / f"{output_name}_all_kinematics_{target}.pdf"
+        for target in TARGETS
+    }
+
+    with ExitStack() as merged_stack:
+        merged_pdfs = {
+            target: merged_stack.enter_context(PdfPages(path))
+            for target, path in merged_pdf_paths.items()
+        }
+        for csv_path, rows in rows_by_csv.items():
+            kin = clean_cell(rows[0].get("kinematic_setting")) or csv_path.stem.replace("efficiency_", "")
+            safe_kin = re.sub(r"[^A-Za-z0-9_.-]+", "_", kin)
+            rows_by_target = {
+                target: [row for row in rows if row.get("_target") == target]
+                for target in TARGETS
+            }
+            present_targets = [target for target in TARGETS if rows_by_target[target]]
+            has_s1x = any(
+                finite(to_float(row.get("HMS_S1X_rate_Hz")))
+                for row in rows
+            )
+
+            with ExitStack() as kin_stack:
+                kin_run_pdf = kin_stack.enter_context(
+                    PdfPages(out_dir / f"{output_name}_vs_run_{safe_kin}.pdf")
+                ) if write_per_kin_pdf else None
+                kin_current_pdf = kin_stack.enter_context(
+                    PdfPages(out_dir / f"{output_name}_vs_current_{safe_kin}.pdf")
+                ) if write_per_kin_pdf else None
+                kin_s1x_pdf = kin_stack.enter_context(
+                    PdfPages(out_dir / f"{output_name}_vs_s1x_{safe_kin}.pdf")
+                ) if write_per_kin_pdf and has_s1x else None
+
+                for target in present_targets:
+                    target_rows = rows_by_target[target]
+                    run_outputs = tuple(
+                        output for output in (kin_run_pdf, merged_pdfs[target]) if output is not None
+                    )
+                    current_outputs = tuple(
+                        output for output in (kin_current_pdf, merged_pdfs[target]) if output is not None
+                    )
+                    s1x_outputs = tuple(
+                        output for output in (kin_s1x_pdf, merged_pdfs[target]) if output is not None
+                    )
+                    target_slug = target.lower()
+
+                    plot_vs_run(
+                        target_rows, metrics, out_dir, non_pdf_formats, args.dpi,
+                        not args.no_errorbars, output_name, target, run_outputs,
+                    )
+                    plot_vs_current_multipanel(
+                        target_rows, metrics, out_dir, non_pdf_formats, args.dpi,
+                        not args.no_errorbars, f"{kin} ({target})",
+                        f"{output_name}_vs_current_{safe_kin}_{target_slug}",
+                        current_outputs,
+                    )
+                    plot_vs_s1x_multipanel(
+                        target_rows, metrics, out_dir, non_pdf_formats, args.dpi,
+                        not args.no_errorbars, f"{kin} ({target})",
+                        f"{output_name}_vs_s1x_{safe_kin}_{target_slug}",
+                        s1x_outputs,
+                    )
+
+        for target in TARGETS:
+            target_rows = [row for row in all_rows if row.get("_target") == target]
+            if not target_rows:
+                continue
+            target_slug = target.lower()
+            plot_vs_current_multipanel(
+                target_rows, metrics, out_dir, formats, args.dpi,
+                not args.no_errorbars, f"All kinematics ({target})",
+                f"{output_name}_vs_current_all_{target_slug}",
+                (merged_pdfs[target],),
+            )
+            plot_vs_s1x_multipanel(
+                target_rows, metrics, out_dir, formats, args.dpi,
+                not args.no_errorbars, f"All kinematics ({target})",
+                f"{output_name}_vs_s1x_all_{target_slug}",
+                (merged_pdfs[target],),
+            )
+
+    for merged_pdf_path in merged_pdf_paths.values():
+        print(f"Wrote {merged_pdf_path}")
     print(f"Plotted {len(metrics)} metrics from {len(rows_by_csv)} CSV file(s).")
     return 0
 

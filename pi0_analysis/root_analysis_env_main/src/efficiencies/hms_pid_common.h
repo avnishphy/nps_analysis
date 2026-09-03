@@ -21,10 +21,11 @@ struct HMSPidCuts {
   double edtm_tdc_max = 0.1;
   double hdc_ntrack_min = 0.5;
 
-  // HMS acceptance cuts for PID-style denominators.
-  double hms_dp_abs_max = 15.0;
+  // Reconstructed-track acceptance used by PID and hodoscope denominators.
+  double hms_dp_abs_max = 10.0;
   double hms_th_abs_max = 0.1;
   double hms_ph_abs_max = 0.04;
+  double hms_react_z_abs_max = 8.0;
 
   // Tracking-efficiency should-track tag. H.hod.betanotrack is deliberately
   // independent of the drift-chamber track count being measured.
@@ -66,10 +67,12 @@ inline bool hms_cal_pass(const HMSEventContext& evt,
 
 inline bool hms_pid_kinematics_pass(const HMSEventContext& evt,
                                     const HMSPidCuts& cuts) {
-  return std::isfinite(evt.hms_dp) && std::isfinite(evt.hms_th) && std::isfinite(evt.hms_ph) &&
+  return std::isfinite(evt.hms_dp) && std::isfinite(evt.hms_th) &&
+         std::isfinite(evt.hms_ph) && std::isfinite(evt.hms_react_z) &&
          (std::fabs(evt.hms_dp) <= cuts.hms_dp_abs_max) &&
          (std::fabs(evt.hms_th) <= cuts.hms_th_abs_max) &&
-         (std::fabs(evt.hms_ph) <= cuts.hms_ph_abs_max);
+         (std::fabs(evt.hms_ph) <= cuts.hms_ph_abs_max) &&
+         (std::fabs(evt.hms_react_z) <= cuts.hms_react_z_abs_max);
 }
 
 inline bool hms_good_scin_pass(const HMSEventContext& evt,

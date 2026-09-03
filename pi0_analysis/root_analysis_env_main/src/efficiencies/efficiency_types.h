@@ -93,7 +93,12 @@ struct RunProcessingRow {
   std::string prescale_token;
   double ps_factor = std::numeric_limits<double>::quiet_NaN();
   std::string which_TRIG;
+  bool prescale_valid = false;
+  bool prescale_multiple_enabled = false;
+  std::string prescale_message;
   double beam_time = std::numeric_limits<double>::quiet_NaN();
+  double HMS_S1X_rate_Hz = std::numeric_limits<double>::quiet_NaN();
+  double HMS_S1X_rate_rms_Hz = std::numeric_limits<double>::quiet_NaN();
 
   std::string file_source_used;
   int segment_count_found = 0;
@@ -104,6 +109,7 @@ struct RunProcessingRow {
   int selection_failed_segments = 0;
   int negative_dt_intervals = 0;
   int non_monotonic_scaler_steps = 0;
+  int missing_s1x_segments = 0;
 };
 
 struct SelectionReportRow {

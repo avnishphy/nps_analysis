@@ -60,10 +60,10 @@ If a run exists in both `updated` and `production`, the code always uses `update
 
 ### Selection and filtering
 
-- `nps_hel_select.h`
-  - Existing hel selection engine reused by this pipeline
+- `NPS_selection_helper.h`
+  - Canonical hel selection engine used by this pipeline
 - `good_event_selection_helper.h`
-  - Wraps `nps_hel_select.h`
+  - Wraps `NPS_selection_helper.h`
   - Produces `GoodSelectionSummary` with:
     - cut strings
     - accepted ranges
@@ -131,7 +131,8 @@ If a run exists in both `updated` and `production`, the code always uses `update
 
 - `compute_luminosity_scaler.cxx`
 - `compute_luminosity_scaler_josh.cxx`
-- `nps_hel_good_events.C`
+- `nps_hel_select.h` (retained legacy implementation; not used by the active pipeline)
+- `nps_hel_good_events.C` (standalone diagnostic/snapshot wrapper using `NPS_selection_helper.h`)
 
 ## 4. End-to-End Algorithm
 
@@ -142,7 +143,7 @@ For each selected `Kin_old`:
 3. For each selected run:
    1. Locate all segments in `updated` first, else `production`.
    2. For each segment:
-      1. Build good-event selection using hel logic from `nps_hel_select.h`.
+      1. Build good-event selection using the canonical hel logic from `NPS_selection_helper.h`.
       2. Store accepted `evcount` and `g.evnum` ranges.
       3. Accumulate HEL charge before/after cuts.
       4. Accumulate beam time and EDTM scaler diagnostics from `TSH`, gated by:
@@ -201,10 +202,11 @@ From `hms_pid_common.h`:
 - Selected event (as above)
 - `edtm_tdc < 0.1`
 - Optional track requirement (`H.dc.ntrack > 0.5`, enabled by default)
-- Kinematic validity and cuts:
-  - `|H.gtr.dp| <= 15.0`
+- Reconstructed-track acceptance cuts:
+  - `|H.gtr.dp| <= 10.0`
   - `|H.gtr.th| <= 0.1`
   - `|H.gtr.ph| <= 0.04`
+  - `|H.react.z| <= 8.0`
 
 PID thresholds:
 
@@ -268,6 +270,8 @@ Denominator condition:
 - selected event
 - `edtm_tdc < 0.1`
 - `H.dc.ntrack > 0.5`
+- reconstructed-track acceptance cuts listed in Section 7.1, including
+  `|H.gtr.dp| <= 10.0` and `|H.react.z| <= 8.0`
 
 Per-plane good-hit condition:
 
@@ -320,8 +324,13 @@ Uncertainty model used in code (first-order propagation, Poisson-like counts):
 
 From `prescale_beamtime_helper.h`:
 
-- Token parsing supports patterns like `ps4=0`, `ps3=2`, etc.
-- `trig_number` extracted from `psN`
+- Token parsing supports one or several `psN=setting` assignments.
+- `setting = -1` means disabled.
+- Example: `ps6=-1,ps3=1` selects PS3, factor 2, and `H.hTRIG3.scaler`.
+- Temporary multi-trigger policy: use the first enabled assignment in token
+  order, set `prescale_multiple_enabled=1`, warn, and list the run in the plot
+  audit CSV for manual review.
+- `trig_number` and `ps_factor` come from the same enabled assignment.
 - `which_TRIG` formed as `H.hTRIG<TrigNumber>.scaler`
 
 Prescale factor rule:
@@ -347,6 +356,8 @@ Per scaler step:
 - reject negative/non-finite `dt`, count as `negative_dt_intervals`
 - `dEDTM = max(0, EDTM_i - EDTM_{i-1})`
 - count negative raw deltas as `non_monotonic_scaler_steps`
+- accumulate a time-weighted `H.S1X.scalerRate` mean and RMS over the same
+  current-window and accepted-`evcount` exposure used for beam time
 
 If in current-window:
 
@@ -432,7 +443,11 @@ The script writes PNG and PDF plots to `output/efficiency_stuff/plots`:
 
 - one multipanel compact-axis plot vs run for each `efficiency_*.csv`
 - one multipanel plot vs current for each `efficiency_*.csv`
+- one multipanel plot vs time-weighted HMS S1X rate for each `efficiency_*.csv`
 - one combined multipanel plot vs current across all discovered efficiency CSVs
+- one combined multipanel plot vs HMS S1X rate across all discovered efficiency CSVs
+- `efficiency_multipanel_multiple_enabled_trigger_runs.csv`, listing plotted runs
+  with more than one enabled `psN` assignment (header-only when none are found)
 - run overlays label prescale trigger groups such as `ps4` and `ps6`; exact values like `ps6=0` and `ps6=3` are intentionally grouped together
 - extreme low outliers are clipped at the panel edge and listed with run number/value so they do not collapse the useful y-axis range
 

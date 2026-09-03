@@ -93,9 +93,17 @@ if [[ ${ALL_KINS} -eq 1 && ${#KIN_LIST[@]} -gt 0 ]]; then
   exit 1
 fi
 
+SRC="${SCRIPT_DIR}/compute_efficiencies_stuff.cxx"
+NEEDS_BUILD=0
 if [[ ! -x "${EXE}" ]]; then
+  NEEDS_BUILD=1
+elif find "${SCRIPT_DIR}" -maxdepth 1 -type f \( -name '*.h' -o -name '*.cxx' \) \
+    -newer "${EXE}" -print -quit | grep -q .; then
+  NEEDS_BUILD=1
+fi
+
+if [[ ${NEEDS_BUILD} -eq 1 ]]; then
   if command -v root-config >/dev/null 2>&1; then
-    SRC="${SCRIPT_DIR}/compute_efficiencies_stuff.cxx"
     echo "[build] Building executable: ${EXE}"
     g++ -O3 -march=native -std=c++17 "${SRC}" -o "${EXE}" $(root-config --cflags --libs)
   else
@@ -424,10 +432,20 @@ else
   echo "[progress] started ${STARTED_JOBS}, completed ${DONE_JOBS}/${TOTAL_JOBS} jobs"
 fi
 
+FAILED_JOBS="$(awk -F',' '$3 != 0 { c++ } END { print (c+0) }' "${PROGRESS_FILE}")"
+FAILED_JOBS_CSV="${OUTPUT_DIR}/efficiency_failed_jobs.csv"
+{
+  echo "kinematic_setting,run_number,exit_status,run_log"
+  while IFS=',' read -r kin run status; do
+    if [[ "${status}" != "0" ]]; then
+      safe_kin="$(sanitize_name "${kin}")"
+      echo "\"${kin}\",${run},${status},\"${RUN_LOG_DIR}/${safe_kin}_run${run}.log\""
+    fi
+  done < "${PROGRESS_FILE}"
+} > "${FAILED_JOBS_CSV}"
+
 if [[ "${XARGS_STATUS}" -ne 0 ]]; then
-  FAILED_JOBS="$(awk -F',' '$3 != 0 { c++ } END { print (c+0) }' "${PROGRESS_FILE}")"
-  echo "[error] ${FAILED_JOBS} run job(s) failed. Check per-run logs under ${RUN_LOG_DIR}." >&2
-  exit "${XARGS_STATUS}"
+  echo "[warn] ${FAILED_JOBS} run job(s) failed; merging successful jobs. See ${FAILED_JOBS_CSV}." >&2
 fi
 
 for kin in "${SELECTED_KINS[@]}"; do
@@ -598,3 +616,8 @@ for kin in "${SELECTED_KINS[@]}"; do
 done
 
 echo "[done] Summary written to ${SUMMARY_CSV}"
+
+if [[ "${XARGS_STATUS}" -ne 0 ]]; then
+  echo "[done with errors] Successful results were saved; ${FAILED_JOBS} run job(s) failed." >&2
+  exit "${XARGS_STATUS}"
+fi

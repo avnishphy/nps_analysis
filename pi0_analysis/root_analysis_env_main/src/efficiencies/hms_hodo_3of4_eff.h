@@ -12,14 +12,15 @@ struct HMSHodo3of4EffAccumulator {
   long long numerator_events = 0;
 };
 
-// Hodoscope 3/4 efficiency uses clean selected, non-EDTM HMS events with a DC
-// track as the denominator. The numerator requires at least N good hodo planes,
-// where all hodo thresholds live in HMSPidCuts.
+// Hodoscope 3/4 efficiency uses clean selected, non-EDTM HMS events inside the
+// reconstructed-track acceptance as the denominator. The numerator requires at
+// least N good hodo planes, where all thresholds live in HMSPidCuts.
 inline void accumulate_HMS_hodo_3of4_eff(HMSHodo3of4EffAccumulator& acc,
                                          const HMSEventContext& evt,
                                          const HMSPidCuts& cuts) {
   const bool den_sel = evt.selected && hms_edtm_pass(evt, cuts) &&
-                       hms_track_pass(evt, cuts);
+                       hms_track_pass(evt, cuts) &&
+                       hms_pid_kinematics_pass(evt, cuts);
   if (!den_sel) {
     return;
   }

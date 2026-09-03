@@ -1,11 +1,9 @@
-#ifndef NPS_HEL_SELECT_H
-#define NPS_HEL_SELECT_H
+#ifndef NPS_SELECTION_HELPER_H
+#define NPS_SELECTION_HELPER_H
 
 /*
-The code is taken from Christine's original code; https://github.com/cploen/CHARGE_ACCT/tree/main
-Some modifications, though not necessary, might be made to fit into our framework.
 ===============================================================================
-nps_hel_select.h
+NPS_selection_helper.h
 -------------------------------------------------------------------------------
 Purpose:
   Self-contained reusable helper for beam-stability / helicity-aware event
@@ -18,7 +16,7 @@ What it returns:
   - ready-to-use cut strings for TSHelH and T
 
 Usage:
-  #include "nps_hel_select.h"
+  #include "NPS_selection_helper.h"
 
   SelectionSettings sel;
   sel.helicity_mode = HelicityMode::QuartetPM;   // or QuartetAll / IgnoreHelicity
@@ -31,33 +29,30 @@ Usage:
     std::cerr << pick.message << std::endl;
     return;
   }
-  
+
   ROOT::RDataFrame dT("T", rootfile);
   auto d_good_T = dT.Filter(pick.gevnum_cut);
-  
+
   ROOT::RDataFrame dH("TSHelH", rootfile);
   auto d_good_H = dH.Filter(pick.evcount_cut);
-    
+
 Notes:
   - QuartetPM    : keep only helicity != 0 and quartet-snap accepted ranges
   - QuartetAll   : keep all helicity states and quartet-snap accepted ranges
   - IgnoreHelicity: ignore helicity entirely and do NOT quartet-snap
   - Rolling charge stability is always part of the helper.
     Set stable_window_N = 1 to make it effectively off.
-  - evcount ranges are mapped through TSHelH evNumber, and those same
-    event-number bounds are applied to T g.evnum.
+  - This helper preserves the original evcount -> event-number indexing convention.
 ===============================================================================
 */
 
-#include <TFile.h>
-#include <TTree.h>
+#include <ROOT/RDataFrame.hxx>
 #include <TString.h>
 
 #include <algorithm>
 #include <cmath>
 #include <deque>
 #include <iostream>
-#include <limits>
 #include <numeric>
 #include <string>
 #include <vector>
@@ -129,7 +124,7 @@ struct SelectionResult {
   // accepted regions
   vector<RangeI> evcount_ranges;   // accepted evcount ranges
   vector<RangeI> evNumber_ranges;  // mapped from TSHelH evNumber
-  vector<RangeI> gevnum_ranges;    // same mapped event-number bounds, applied to T g.evnum
+  vector<RangeI> gevnum_ranges;    // mapped from T g.evnum
 
   // ready-to-use filter strings
   string evcount_cut;
@@ -204,8 +199,11 @@ static inline string build_event_cut_string(const vector<RangeI>& ranges,
   return out;
 }
 
-static inline bool tree_has_named_branch(TTree* tree, const string& branch_name) {
-  return tree != nullptr && tree->GetBranch(branch_name.c_str()) != nullptr;
+static inline vector<int> take_int_sorted(ROOT::RDataFrame& df, const string& branch) {
+  auto valsD = df.Take<double>(branch).GetValue();
+  vector<int> vals(valsD.begin(), valsD.end());
+  std::sort(vals.begin(), vals.end());
+  return vals;
 }
 
 // =================================================================================
@@ -270,10 +268,9 @@ static inline vector<vector<int>> mergeOverlappingRanges(const vector<vector<int
   return merged;
 }
 
-static inline vector<vector<int>> trimQuartetRangesToValidBounds(
-    const vector<vector<int>>& ranges,
-    int index_min_valid,
-    int index_max_valid)
+static inline vector<vector<int>> trimQuartetRangesToValidBounds(const vector<vector<int>>& ranges,
+                                                                 int index_min_valid,
+                                                                 int index_max_valid)
 {
   vector<vector<int>> trimmed;
 
@@ -283,6 +280,7 @@ static inline vector<vector<int>> trimQuartetRangesToValidBounds(
     int lo = r[0];
     int hi = r[1];
 
+    // Move inward in full-quartet steps until the range is mappable
     while (lo < index_min_valid && lo <= hi) lo += 4;
     while (hi > index_max_valid && lo <= hi) hi -= 4;
 
@@ -366,128 +364,26 @@ static inline SelectionResult build_event_selection(const string& rootfile, cons
   res.helicity_mode = sel.helicity_mode;
   res.quartet_snap_applied = helicity_requires_quartet_snap(sel.helicity_mode);
 
+  ROOT::RDataFrame d_shelp("TSHelH", rootfile);
+  ROOT::RDataFrame d_T("T", rootfile);
+
   // ---------------------------------------------------------
   // Stable window sanity check
   // ---------------------------------------------------------
-  
+
   if (sel.stable_window_N < 1) {
     res.ok = false;
     res.message = "Invalid stable_window_N: must be >= 1.";
     return res;
   }
 
-  TFile file(rootfile.c_str(), "READ");
-  if (file.IsZombie()) {
-    res.ok = false;
-    res.message = Form("Could not open ROOT file: %s", rootfile.c_str());
-    return res;
-  }
-
-  auto* d_shelp = dynamic_cast<TTree*>(file.Get("TSHelH"));
-  auto* d_T = dynamic_cast<TTree*>(file.Get("T"));
-  if (d_shelp == nullptr || d_T == nullptr) {
-    res.ok = false;
-    res.message = "Missing required tree(s): TSHelH and/or T.";
-    return res;
-  }
-
-  const bool needs_helicity = (sel.helicity_mode == HelicityMode::QuartetPM);
-
-  if (!tree_has_named_branch(d_shelp, sel.branch_scaler_current) ||
-      !tree_has_named_branch(d_shelp, sel.branch_scaler_charge) ||
-      !tree_has_named_branch(d_shelp, sel.branch_evcount) ||
-      !tree_has_named_branch(d_shelp, sel.branch_evNumber) ||
-      (needs_helicity && !tree_has_named_branch(d_shelp, sel.branch_helicity))) {
-    res.ok = false;
-    res.message = "Missing one or more required TSHelH branches for selection.";
-    return res;
-  }
-
-  if (!tree_has_named_branch(d_T, sel.branch_evnum_T)) {
-    res.ok = false;
-    res.message = "Missing required T branch for g.evnum mapping.";
-    return res;
-  }
-
-  d_shelp->SetBranchStatus("*", 0);
-  d_shelp->SetBranchStatus(sel.branch_scaler_current.c_str(), 1);
-  d_shelp->SetBranchStatus(sel.branch_scaler_charge.c_str(), 1);
-  d_shelp->SetBranchStatus(sel.branch_evcount.c_str(), 1);
-  d_shelp->SetBranchStatus(sel.branch_evNumber.c_str(), 1);
-  if (needs_helicity) {
-    d_shelp->SetBranchStatus(sel.branch_helicity.c_str(), 1);
-  }
-
-  double scaler_current = 0.0;
-  double scaler_charge = 0.0;
-  double helicity_raw = 0.0;
-  double evcount_raw = 0.0;
-  double evnumber_raw = 0.0;
-
-  d_shelp->SetBranchAddress(sel.branch_scaler_current.c_str(), &scaler_current);
-  d_shelp->SetBranchAddress(sel.branch_scaler_charge.c_str(), &scaler_charge);
-  d_shelp->SetBranchAddress(sel.branch_evcount.c_str(), &evcount_raw);
-  d_shelp->SetBranchAddress(sel.branch_evNumber.c_str(), &evnumber_raw);
-  if (needs_helicity) {
-    d_shelp->SetBranchAddress(sel.branch_helicity.c_str(), &helicity_raw);
-  }
-
-  struct ScalerRow {
-    double current = 0.0;
-    double charge = 0.0;
-    int helicity_int = 0;
-    int evcount_int = 0;
-    int evnumber_int = 0;
-  };
-
-  vector<ScalerRow> scaler_rows;
-  vector<int> evN_arr;
-  const Long64_t n_shelp = d_shelp->GetEntries();
-  if (n_shelp > 0) {
-    scaler_rows.reserve(static_cast<size_t>(n_shelp));
-    evN_arr.reserve(static_cast<size_t>(n_shelp));
-  }
-
-  constexpr int kI0Bins = 120;
-  constexpr double kI0Min = 0.0;
-  constexpr double kI0Max = 60.0;
-  const double i0_bin_width = (kI0Max - kI0Min) / static_cast<double>(kI0Bins);
-  int i0_hist[kI0Bins] = {0};
-
-  double mean_current_sum = 0.0;
-  long long mean_current_count = 0;
-
-  for (Long64_t i = 0; i < n_shelp; ++i) {
-    d_shelp->GetEntry(i);
-
-    const int hel_int = needs_helicity ? static_cast<int>(std::llround(helicity_raw)) : 1;
-    const int evcount_int = static_cast<int>(evcount_raw);
-    const int evnumber_int = static_cast<int>(evnumber_raw);
-
-    scaler_rows.push_back({scaler_current, scaler_charge, hel_int, evcount_int, evnumber_int});
-    evN_arr.push_back(evnumber_int);
-
-    if (scaler_current > sel.mean_current_calc_min) {
-      mean_current_sum += scaler_current;
-      ++mean_current_count;
-    }
-
-    if (sel.use_current_window && sel.i0_mode == I0Mode::Peak && scaler_current > sel.junk_floor_uA) {
-      const int bin = static_cast<int>((scaler_current - kI0Min) / i0_bin_width);
-      if (bin >= 0 && bin < kI0Bins) {
-        ++i0_hist[bin];
-      }
-    }
-  }
-
   // ---------------------------------------------------------
   // Mean current sanity check
   // ---------------------------------------------------------
-  if (mean_current_count > 0) {
-    res.mean_current_uA = mean_current_sum / static_cast<double>(mean_current_count);
-  } else {
-    res.mean_current_uA = std::numeric_limits<double>::quiet_NaN();
-  }
+  res.mean_current_uA = d_shelp
+    .Filter(Form("%s > %f", sel.branch_scaler_current.c_str(), sel.mean_current_calc_min))
+    .Mean(sel.branch_scaler_current)
+    .GetValue();
 
   if (res.mean_current_uA < sel.mean_current_min) {
     res.ok = false;
@@ -503,15 +399,15 @@ static inline SelectionResult build_event_selection(const string& rootfile, cons
     if (sel.i0_mode == I0Mode::Fixed) {
       res.i0_used_uA = sel.i0_fixed_uA;
     } else {
-      int max_bin = 0;
-      int max_count = -1;
-      for (int b = 0; b < kI0Bins; ++b) {
-        if (i0_hist[b] > max_count) {
-          max_count = i0_hist[b];
-          max_bin = b;
-        }
-      }
-      res.i0_used_uA = kI0Min + (static_cast<double>(max_bin) + 0.5) * i0_bin_width;
+      auto d_Ivalid = d_shelp.Filter(
+        Form("%s > %f", sel.branch_scaler_current.c_str(), sel.junk_floor_uA)
+      );
+
+      auto hI = d_Ivalid.Histo1D(
+        {"hI_helper","BCM current;I [uA];counts", 120, 0.0, 60.0},
+        sel.branch_scaler_current
+      );
+      res.i0_used_uA = hI->GetXaxis()->GetBinCenter(hI->GetMaximumBin());
     }
 
     if (!(res.i0_used_uA > 0.0)) {
@@ -527,27 +423,34 @@ static inline SelectionResult build_event_selection(const string& rootfile, cons
   // ---------------------------------------------------------
   // Preselection on TSHelH
   // ---------------------------------------------------------
-  vector<int> evC_arr;
-  vector<double> Q_arr;
-  evC_arr.reserve(scaler_rows.size());
-  Q_arr.reserve(scaler_rows.size());
+  auto d_sel = d_shelp.Filter(
+    Form("%s > %f", sel.branch_scaler_current.c_str(), sel.junk_floor_uA)
+  );
 
-  for (const auto& row : scaler_rows) {
-    if (!(row.current > sel.junk_floor_uA)) {
-      continue;
-    }
-    if (needs_helicity && row.helicity_int == 0) {
-      continue;
-    }
-    if (sel.use_current_window &&
-        (row.current < res.current_min_uA || row.current > res.current_max_uA)) {
-      continue;
-    }
-    evC_arr.push_back(row.evcount_int);
-    Q_arr.push_back(row.charge);
+  const string hel_expr = build_helicity_filter_expr(sel);
+  if (!hel_expr.empty()) d_sel = d_sel.Filter(hel_expr);
+
+  if (sel.use_current_window) {
+    d_sel = d_sel.Filter(
+      Form("(%s >= %f) && (%s <= %f)",
+           sel.branch_scaler_current.c_str(), res.current_min_uA,
+           sel.branch_scaler_current.c_str(), res.current_max_uA)
+    );
   }
 
-  res.n_scaler_reads_pre = static_cast<int>(evC_arr.size());
+  {
+    auto evC_pre_D = d_sel.Take<double>(sel.branch_evcount).GetValue();
+    res.n_scaler_reads_pre = (int)evC_pre_D.size();
+  }
+
+  // ---------------------------------------------------------
+  // Extract evcount + charge arrays and sort by evcount
+  // ---------------------------------------------------------
+  auto evC_arr_D = d_sel.Take<double>(sel.branch_evcount).GetValue();
+  auto Q_arr_D   = d_sel.Take<double>(sel.branch_scaler_charge).GetValue();
+
+  vector<int> evC_arr(evC_arr_D.begin(), evC_arr_D.end());
+  vector<double> Q_arr(Q_arr_D.begin(), Q_arr_D.end());
 
   vector<int> idx(evC_arr.size());
   std::iota(idx.begin(), idx.end(), 0);
@@ -568,7 +471,7 @@ static inline SelectionResult build_event_selection(const string& rootfile, cons
 
   // ---------------------------------------------------------
   // Rolling charge stability
-  // N=1 bypasses the rolling requirement, as in the original helper.
+  // N=1 means bypass the rolling stability requirement
   // ---------------------------------------------------------
   if (sel.stable_window_N > 1) {
     evC_arr = stableEvcountsFromChargeWindow(
@@ -588,12 +491,27 @@ static inline SelectionResult build_event_selection(const string& rootfile, cons
   }
 
   // ---------------------------------------------------------
+  // Build mapping array from TSHelH evNumber
+  // Valid ordinal index domain for evcount -> evNumber mapping is [1, evN_arr.size()]
+  // ---------------------------------------------------------
+  vector<int> evN_arr = take_int_sorted(d_shelp, sel.branch_evNumber);
+  const int map_index_min_valid = 1;
+  const int map_index_max_valid = (int)evN_arr.size();
+
+  if (map_index_max_valid < 1) {
+    res.ok = false;
+    res.message = "No evNumber entries available for mapping.";
+    return res;
+  }
+
+
+  // ---------------------------------------------------------
   // Build accepted evcount ranges
   // ---------------------------------------------------------
   vector<vector<int>> evtCRanges_raw;
 
   if (helicity_requires_quartet_snap(sel.helicity_mode)) {
-    evtCRanges_raw = buildQuartetAlignedRanges(evC_arr, 0);
+    evtCRanges_raw = buildQuartetAlignedRanges(evC_arr, d_sel);
   } else {
     size_t run_start_idx = 0;
     for (size_t i = 1; i <= evC_arr.size(); ++i) {
@@ -606,16 +524,6 @@ static inline SelectionResult build_event_selection(const string& rootfile, cons
   }
 
   auto evtCRanges_merged_vv = mergeOverlappingRanges(evtCRanges_raw);
-
-  std::sort(evN_arr.begin(), evN_arr.end());
-  const int map_index_min_valid = 1;
-  const int map_index_max_valid = static_cast<int>(evN_arr.size());
-
-  if (map_index_max_valid < 1) {
-    res.ok = false;
-    res.message = "No evNumber entries available for mapping.";
-    return res;
-  }
 
   vector<vector<int>> evtCRanges_final_vv;
   if (helicity_requires_quartet_snap(sel.helicity_mode)) {
@@ -637,25 +545,19 @@ static inline SelectionResult build_event_selection(const string& rootfile, cons
   }
 
   // ---------------------------------------------------------
-  // Map evcount ranges through TSHelH evNumber, then use those same bounds
-  // for T g.evnum, matching the original selection helper.
+  // Map evcount ranges -> evNumber ranges
+  // Then use the same event-number ranges for g.evnum in T
   // ---------------------------------------------------------
   for (const auto& r : res.evcount_ranges) {
     if (r.lo < map_index_min_valid || r.hi < map_index_min_valid) continue;
     if (r.lo > map_index_max_valid || r.hi > map_index_max_valid) continue;
 
-    const int event_lo = evN_arr[r.lo - 1];
-    const int event_hi = evN_arr[r.hi - 1];
-    res.evNumber_ranges.push_back({event_lo, event_hi});
-    res.gevnum_ranges.push_back({event_lo, event_hi});
-  }
+    const int ev_lo = evN_arr[r.lo - 1];
+    const int ev_hi = evN_arr[r.hi - 1];
 
-  if (res.evNumber_ranges.empty() || res.gevnum_ranges.empty()) {
-    res.ok = false;
-    res.message = "Could not map accepted TSHelH evcount ranges onto T g.evnum.";
-    return res;
+    res.evNumber_ranges.push_back({ev_lo, ev_hi});
+    res.gevnum_ranges.push_back({ev_lo, ev_hi});
   }
-
   // ---------------------------------------------------------
   // Build cut strings
   // ---------------------------------------------------------

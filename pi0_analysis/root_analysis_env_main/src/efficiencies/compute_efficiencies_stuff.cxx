@@ -283,7 +283,7 @@ std::vector<std::string> choose_kinematics(const ProgramConfig& cfg, const std::
 bool event_is_selected(unsigned int evt_type, double gevnum, const effstuff::GoodSelectionSummary& selection) {
 
 	const bool is_physics_evt = (evt_type == 1);
-	const bool in_range = effstuff::value_in_ranges(
+	const bool in_range = effstuff::event_value_in_ranges(
 			static_cast<long long>(std::llround(gevnum)), selection.accepted_gevnum_ranges);
 	return is_physics_evt && in_range;
 }
@@ -401,13 +401,17 @@ void accumulate_segment_histogram_and_metrics(
 		return;
 	}
 
-	const bool have_pid_branches =
-			effstuff::tree_has_branch(t, "H.cer.npeSum") &&
-			effstuff::tree_has_branch(t, "H.cal.etotnorm") &&
+	const bool have_track_acceptance_branches =
 			effstuff::tree_has_branch(t, "H.dc.ntrack") &&
 			effstuff::tree_has_branch(t, "H.gtr.dp") &&
 			effstuff::tree_has_branch(t, "H.gtr.th") &&
-			effstuff::tree_has_branch(t, "H.gtr.ph");
+			effstuff::tree_has_branch(t, "H.gtr.ph") &&
+			effstuff::tree_has_branch(t, "H.react.z");
+
+	const bool have_pid_branches =
+			have_track_acceptance_branches &&
+			effstuff::tree_has_branch(t, "H.cer.npeSum") &&
+			effstuff::tree_has_branch(t, "H.cal.etotnorm");
 
 	const bool have_tracking_branches =
 			have_pid_branches &&
@@ -415,7 +419,7 @@ void accumulate_segment_histogram_and_metrics(
 			effstuff::tree_has_branch(t, "H.hod.betanotrack");
 
 	const bool have_hodo_branches =
-			effstuff::tree_has_branch(t, "H.dc.ntrack") &&
+			have_track_acceptance_branches &&
 			effstuff::tree_has_branch(t, "H.hod.1x.nhits") &&
 			effstuff::tree_has_branch(t, "H.hod.1y.nhits") &&
 			effstuff::tree_has_branch(t, "H.hod.2x.nhits") &&
@@ -435,15 +439,17 @@ void accumulate_segment_histogram_and_metrics(
 		t->SetBranchStatus("H.BCM4A.scalerCurrent", 1);
 	}
 
-	if (have_pid_branches) {
-		t->SetBranchStatus("H.cer.npeSum", 1);
-		t->SetBranchStatus("H.cal.etotnorm", 1);
+	if (have_track_acceptance_branches) {
 		t->SetBranchStatus("H.dc.ntrack", 1);
 		t->SetBranchStatus("H.gtr.dp", 1);
 		t->SetBranchStatus("H.gtr.th", 1);
 		t->SetBranchStatus("H.gtr.ph", 1);
-	} else if (have_hodo_branches) {
-		t->SetBranchStatus("H.dc.ntrack", 1);
+		t->SetBranchStatus("H.react.z", 1);
+	}
+
+	if (have_pid_branches) {
+		t->SetBranchStatus("H.cer.npeSum", 1);
+		t->SetBranchStatus("H.cal.etotnorm", 1);
 	}
 
 	if (have_tracking_branches) {
@@ -470,6 +476,7 @@ void accumulate_segment_histogram_and_metrics(
 	double hms_dp = std::numeric_limits<double>::quiet_NaN();
 	double hms_th = std::numeric_limits<double>::quiet_NaN();
 	double hms_ph = std::numeric_limits<double>::quiet_NaN();
+	double hms_react_z = std::numeric_limits<double>::quiet_NaN();
 	double good_scin = std::numeric_limits<double>::quiet_NaN();
 	double hod_notrack = std::numeric_limits<double>::quiet_NaN();
 	double hodo_1x = std::numeric_limits<double>::quiet_NaN();
@@ -485,15 +492,17 @@ void accumulate_segment_histogram_and_metrics(
 		t->SetBranchAddress("H.BCM4A.scalerCurrent", &event_current);
 	}
 
-	if (have_pid_branches) {
-		t->SetBranchAddress("H.cer.npeSum", &cer_npe);
-		t->SetBranchAddress("H.cal.etotnorm", &cal_etotnorm);
+	if (have_track_acceptance_branches) {
 		t->SetBranchAddress("H.dc.ntrack", &ntrack);
 		t->SetBranchAddress("H.gtr.dp", &hms_dp);
 		t->SetBranchAddress("H.gtr.th", &hms_th);
 		t->SetBranchAddress("H.gtr.ph", &hms_ph);
-	} else if (have_hodo_branches) {
-		t->SetBranchAddress("H.dc.ntrack", &ntrack);
+		t->SetBranchAddress("H.react.z", &hms_react_z);
+	}
+
+	if (have_pid_branches) {
+		t->SetBranchAddress("H.cer.npeSum", &cer_npe);
+		t->SetBranchAddress("H.cal.etotnorm", &cal_etotnorm);
 	}
 
 	if (have_tracking_branches) {
@@ -540,6 +549,7 @@ void accumulate_segment_histogram_and_metrics(
 		evt.hms_dp = hms_dp;
 		evt.hms_th = hms_th;
 		evt.hms_ph = hms_ph;
+		evt.hms_react_z = hms_react_z;
 		evt.hod_goodscinhit = good_scin;
 		evt.hod_notrack = hod_notrack;
 		evt.hod_1x_nhits = hodo_1x;
@@ -588,6 +598,19 @@ effstuff::RunProcessingRow process_run(
 	out.prescale_token = prescale.prescale_token;
 	out.ps_factor = prescale.ps_factor;
 	out.which_TRIG = prescale.which_TRIG;
+	out.prescale_valid = prescale.valid;
+	out.prescale_multiple_enabled = prescale.multiple_enabled;
+	out.prescale_message = prescale.message;
+	if (!prescale.valid) {
+		log_warn("  [warn run " + std::to_string(run_cfg.run_number) +
+		         "] Invalid prescale token '" + run_cfg.prescale_token +
+		         "': " + prescale.message);
+	}
+	if (prescale.multiple_enabled) {
+		log_warn("  [warn run " + std::to_string(run_cfg.run_number) +
+		         "] " + prescale.message + " from token '" +
+		         run_cfg.prescale_token + "'");
+	}
 
 	const effstuff::LocatedRunFiles located = effstuff::locate_run_files_prefer_updated(
 			run_cfg.run_number, cfg.updated_root_dir, cfg.production_root_dir);
@@ -691,6 +714,13 @@ effstuff::RunProcessingRow process_run(
 	out.non_monotonic_scaler_steps = beam_acc.non_monotonic_scaler_steps;
 	out.missing_branch_segments += beam_acc.missing_branch_segments;
 	out.beam_time = beam_acc.beam_time;
+	out.missing_s1x_segments = beam_acc.missing_s1x_segments;
+	if (beam_acc.s1x_sample_time > 0.0) {
+		out.HMS_S1X_rate_Hz = beam_acc.s1x_rate_time_sum / beam_acc.s1x_sample_time;
+		const double mean_square = beam_acc.s1x_rate2_time_sum / beam_acc.s1x_sample_time;
+		out.HMS_S1X_rate_rms_Hz = std::sqrt(std::max(
+				0.0, mean_square - out.HMS_S1X_rate_Hz * out.HMS_S1X_rate_Hz));
+	}
 	out.NewGen_EDTM_den_evcount_gated_value = beam_acc.scaler_edtm_total_evcount_gated;
 	out.NewGen_EDTM_den_evcount_gated = beam_acc.used_evcount_range_gate;
 
@@ -753,8 +783,10 @@ effstuff::RunProcessingRow process_run(
 	effstuff::NewGenEdtmAccumulator livetime_acc;
 	livetime_acc.numerator_events = newgen_edtm_num;
 	livetime_acc.denominator_scaler_edtm = beam_acc.scaler_edtm_total;
-	out.NewGen_EDTM_livetime = effstuff::NewGen_EDTM_livetime(livetime_acc, out.ps_factor);
-	out.NewGen_EDTM_livetime_err = effstuff::NewGen_EDTM_livetime_err(livetime_acc, out.ps_factor);
+	if (out.prescale_valid) {
+		out.NewGen_EDTM_livetime = effstuff::NewGen_EDTM_livetime(livetime_acc, out.ps_factor);
+		out.NewGen_EDTM_livetime_err = effstuff::NewGen_EDTM_livetime_err(livetime_acc, out.ps_factor);
+	}
 
 	if (beam_acc.scaler_edtm_total <= 0.0) {
 		log_warn("  [warn run " + std::to_string(run_cfg.run_number) +
@@ -783,7 +815,7 @@ effstuff::RunProcessingRow process_run(
 		log_debug(dbg.str());
 	}
 
-	if (out.missing_branch_segments > 0 || out.selection_failed_segments > 0) {
+	if (!out.prescale_valid || out.missing_branch_segments > 0 || out.selection_failed_segments > 0) {
 		out.run_processing_status = "processed_partial";
 	} else {
 		out.run_processing_status = "processed";
@@ -809,9 +841,12 @@ void write_kinematic_csv(const std::string& output_dir,
 			<< "HMS_pid_eff,HMS_cal_eff_tag_cer,HMS_cer_eff_tag_cal,HMS_tracking_eff,HMS_hodo_3of4_eff,"
 			<< "NewGen_EDTM_livetime,NewGen_EDTM_num,NewGen_EDTM_den,NewGen_EDTM_peak,"
 			<< "NewGen_EDTM_num_good_event_gated,NewGen_EDTM_den_evcount_gated_value,"
-			<< "NewGen_EDTM_den_evcount_gated,prescale_token,ps_factor,which_TRIG,beam_time,"
+			<< "NewGen_EDTM_den_evcount_gated,prescale_token,ps_factor,which_TRIG,"
+			<< "prescale_valid,prescale_multiple_enabled,prescale_message,"
+			<< "beam_time,HMS_S1X_rate_Hz,HMS_S1X_rate_rms_Hz,"
 			<< "file_source_used,segment_count_found,n_segments,run_processing_status,"
 			<< "missing_branch_segments,selection_failed_segments,negative_dt_intervals,non_monotonic_scaler_steps,"
+			<< "missing_s1x_segments,"
 			<< "HMS_pid_eff_err,HMS_cal_eff_tag_cer_err,HMS_cer_eff_tag_cal_err,"
 			<< "HMS_tracking_eff_err,HMS_hodo_3of4_eff_err,NewGen_EDTM_livetime_err\n";
 
@@ -841,7 +876,12 @@ void write_kinematic_csv(const std::string& output_dir,
 				<< effstuff::csv_quote(row.prescale_token) << ','
 				<< row.ps_factor << ','
 				<< effstuff::csv_quote(row.which_TRIG) << ','
+				<< (row.prescale_valid ? 1 : 0) << ','
+				<< (row.prescale_multiple_enabled ? 1 : 0) << ','
+				<< effstuff::csv_quote(row.prescale_message) << ','
 				<< row.beam_time << ','
+				<< row.HMS_S1X_rate_Hz << ','
+				<< row.HMS_S1X_rate_rms_Hz << ','
 				<< effstuff::csv_quote(row.file_source_used) << ','
 				<< row.segment_count_found << ','
 				<< row.n_segments << ','
@@ -850,6 +890,7 @@ void write_kinematic_csv(const std::string& output_dir,
 				<< row.selection_failed_segments << ','
 				<< row.negative_dt_intervals << ','
 				<< row.non_monotonic_scaler_steps << ','
+				<< row.missing_s1x_segments << ','
 				<< row.HMS_pid_eff_err << ','
 				<< row.HMS_cal_eff_tag_cer_err << ','
 				<< row.HMS_cer_eff_tag_cal_err << ','

@@ -5,10 +5,10 @@ Some modifications, though not necessary, might be made to fit into our framewor
 nps_hel_good_events.C
 -------------------------------------------------------------------------------
 Purpose:
-  Standalone wrapper around nps_hel_select.h for Hall C NPS analysis.
+  Standalone wrapper around NPS_selection_helper.h for Hall C NPS analysis.
 
 Design:
-  - Core event-selection logic lives in nps_hel_select.h
+  - Core event-selection logic lives in NPS_selection_helper.h
   - This wrapper adds:
       * CLI parsing
       * optional physics cuts on T
@@ -46,7 +46,7 @@ Default behavior:
 #include <TF1.h>
 #include <TSystem.h>
 
-#include "nps_hel_select.h"
+#include "NPS_selection_helper.h"
 
 using namespace std;
 using namespace ROOT;

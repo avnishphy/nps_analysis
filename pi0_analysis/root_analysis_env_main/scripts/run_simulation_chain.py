@@ -27,9 +27,17 @@ REQUIRED_COLUMNS = [
     "hms_theta_deg",
     "nps_theta_deg",
     "nps_target_distance_cm",
-    "simc_spec_e_p_offset",
-    "simc_spec_e_theta_offset",
-    "simc_hms_pointing_offset",
+    "simc_spec_p_p_gev",
+    "simc_ngen",
+    "simc_target_x_offset_cm",
+    "simc_target_y_offset_cm",
+    "simc_target_z_offset_cm",
+    "simc_spec_e_p_offset_gev",
+    "simc_spec_e_theta_offset_deg",
+    "simc_hms_xptar_offset_mrad",
+    "simc_spec_p_x_offset_cm",
+    "simc_spec_p_y_offset_cm",
+    "simc_spec_p_z_offset_cm",
     "geant4_nps_x_offset_cm",
     "geant4_nps_y_offset_cm",
     "geant4_nps_z_offset_cm",
@@ -187,7 +195,12 @@ def main() -> int:
     if args.run_geant4:
         required_placeholders(
             args.geant4_cmd_template,
-            ["kin_old", "geant4_output_dir"],
+            [
+                "kin_old", "simc_output_file", "geant4_output_dir",
+                "nps_theta_deg", "nps_target_distance_cm",
+                "geant4_nps_x_offset_cm", "geant4_nps_y_offset_cm",
+                "geant4_nps_z_offset_cm",
+            ],
             "Geant4",
         )
 
@@ -214,7 +227,7 @@ def main() -> int:
         kin_old = row.kin_old
         kin_tag = row.kin_tag
         simc_infile = simc_infile_dir / f"{args.simc_file_prefix}{kin_tag}.inp"
-        if not simc_infile.exists():
+        if args.run_simc and not simc_infile.exists():
             raise FileNotFoundError(
                 f"Required SIMC infile missing for {kin_old}: {simc_infile}"
             )
@@ -223,6 +236,11 @@ def main() -> int:
         simc_output_dir = output_dir / "simc"
         geant4_output_dir = output_dir / "geant4"
         simc_output_file = simc_output_dir / f"simc_{kin_tag}.root"
+
+        if args.run_geant4 and not args.run_simc and not simc_output_file.exists():
+            raise FileNotFoundError(
+                f"Geant4 input missing for {kin_old}: {simc_output_file}"
+            )
 
         simc_output_dir.mkdir(parents=True, exist_ok=True)
         geant4_output_dir.mkdir(parents=True, exist_ok=True)
@@ -245,6 +263,10 @@ def main() -> int:
         if args.run_simc:
             simc_cmd = args.simc_cmd_template.format(**fmt)
             run_command(simc_cmd, args.dry_run)
+            if not args.dry_run and not simc_output_file.exists():
+                raise RuntimeError(
+                    f"SIMC command completed without expected output: {simc_output_file}"
+                )
         if args.run_geant4:
             geant4_cmd = args.geant4_cmd_template.format(**fmt)
             run_command(geant4_cmd, args.dry_run)
@@ -260,9 +282,17 @@ def main() -> int:
                 "geant4_command": geant4_cmd,
                 "simc_output_file": str(simc_output_file),
                 "geant4_output_dir": str(geant4_output_dir),
-                "simc_spec_e_p_offset": row.values.get("simc_spec_e_p_offset", ""),
-                "simc_spec_e_theta_offset": row.values.get("simc_spec_e_theta_offset", ""),
-                "simc_hms_pointing_offset": row.values.get("simc_hms_pointing_offset", ""),
+                "simc_spec_p_p_gev": row.values.get("simc_spec_p_p_gev", ""),
+                "simc_ngen": row.values.get("simc_ngen", ""),
+                "simc_target_x_offset_cm": row.values.get("simc_target_x_offset_cm", ""),
+                "simc_target_y_offset_cm": row.values.get("simc_target_y_offset_cm", ""),
+                "simc_target_z_offset_cm": row.values.get("simc_target_z_offset_cm", ""),
+                "simc_spec_e_p_offset_gev": row.values.get("simc_spec_e_p_offset_gev", ""),
+                "simc_spec_e_theta_offset_deg": row.values.get("simc_spec_e_theta_offset_deg", ""),
+                "simc_hms_xptar_offset_mrad": row.values.get("simc_hms_xptar_offset_mrad", ""),
+                "simc_spec_p_x_offset_cm": row.values.get("simc_spec_p_x_offset_cm", ""),
+                "simc_spec_p_y_offset_cm": row.values.get("simc_spec_p_y_offset_cm", ""),
+                "simc_spec_p_z_offset_cm": row.values.get("simc_spec_p_z_offset_cm", ""),
                 "geant4_nps_x_offset_cm": row.values.get("geant4_nps_x_offset_cm", ""),
                 "geant4_nps_y_offset_cm": row.values.get("geant4_nps_y_offset_cm", ""),
                 "geant4_nps_z_offset_cm": row.values.get("geant4_nps_z_offset_cm", ""),

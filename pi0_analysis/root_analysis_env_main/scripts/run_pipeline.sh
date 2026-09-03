@@ -5,8 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 ANALYSIS_DRIVER="${REPO_ROOT}/src/analysis/run_parallel_nps_analysis_main.sh"
-SIMCFG_GEN="${REPO_ROOT}/scripts/generate_simulation_kinematics_csv.py"
-SIMC_INFILE_GEN="${REPO_ROOT}/scripts/generate_simc_infiles.py"
+SIM_GENERATOR="${REPO_ROOT}/scripts/generate_simc_infiles.py"
 SIM_CHAIN_WRAPPER="${REPO_ROOT}/scripts/run_simulation_chain.py"
 DIAG_INDEX_GEN="${REPO_ROOT}/scripts/generate_diagnostics_index.py"
 DIAG_COVERAGE_GEN="${REPO_ROOT}/scripts/generate_diagnostics_coverage.py"
@@ -44,7 +43,7 @@ BUILD_DIAGNOSTICS_REPORTS="no"
 DIAG_HMS_OUT=""
 DIAG_NPS_OUT=""
 DIAG_EXPERIMENT_OUT=""
-SELECTION_RULE="per Kin_old choose minimum run_number among allowed Type rows"
+SELECTION_RULE=""
 
 ANALYSIS_ARGS=()
 
@@ -58,7 +57,7 @@ High-level options:
   --output-base <path>       Output base path (default: ${OUTPUT_BASE_DEFAULT})
   --generate-sim-config      Generate/update simulation config CSV before running analysis (default)
   --no-generate-sim-config   Skip simulation config generation
-  --generate-simc-infiles    Generate per-kin SIMC infiles from simulation CSV
+  --generate-simc-infiles    Generate infiles from reviewed CSV; skips CSV regeneration
   --no-generate-simc-infiles Skip SIMC infile generation (default)
   --simc-template <path>     Template SIMC infile used for generation
   --simc-outdir <path>       Output directory for generated SIMC infiles
@@ -108,12 +107,8 @@ if [[ ! -f "${ANALYSIS_DRIVER}" ]]; then
   echo "Analysis driver not found: ${ANALYSIS_DRIVER}" >&2
   exit 1
 fi
-if [[ ! -f "${SIMCFG_GEN}" ]]; then
-  echo "Simulation config generator not found: ${SIMCFG_GEN}" >&2
-  exit 1
-fi
-if [[ ! -f "${SIMC_INFILE_GEN}" ]]; then
-  echo "SIMC infile generator not found: ${SIMC_INFILE_GEN}" >&2
+if [[ ! -f "${SIM_GENERATOR}" ]]; then
+  echo "Simulation input generator not found: ${SIM_GENERATOR}" >&2
   exit 1
 fi
 if [[ ! -f "${SIM_CHAIN_WRAPPER}" ]]; then
@@ -157,6 +152,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --generate-simc-infiles)
       GENERATE_SIMC_INFILES="yes"
+      GENERATE_SIM_CONFIG="no"
       shift
       ;;
     --no-generate-simc-infiles)
@@ -278,14 +274,6 @@ if [[ ! -f "${CONFIG_CSV}" ]]; then
   exit 1
 fi
 
-if [[ "${GENERATE_SIM_CONFIG}" == "yes" ]]; then
-  echo "[pipeline] Generating simulation kinematics CSV"
-  python3 "${SIMCFG_GEN}" \
-    --config "${CONFIG_CSV}" \
-    --output "${SIM_CONFIG_CSV}" \
-    --selection-rule "${SELECTION_RULE}"
-fi
-
 if [[ "${GENERATE_SIMC_INFILES}" == "yes" ]]; then
   if [[ ! -f "${SIMC_TEMPLATE}" ]]; then
     echo "SIMC template not found: ${SIMC_TEMPLATE}" >&2
@@ -315,11 +303,25 @@ if [[ "${GENERATE_SIMC_INFILES}" == "yes" ]]; then
     SIMC_KIN_ARGS+=(--kin "${kin}")
   done
 
-  echo "[pipeline] Generating SIMC infiles from simulation kinematics CSV"
-  python3 "${SIMC_INFILE_GEN}" \
+fi
+
+if [[ "${GENERATE_SIM_CONFIG}" == "yes" ]]; then
+  echo "[pipeline] Generating simulation kinematics CSV"
+  python3 "${SIM_GENERATOR}" \
+    --config "${CONFIG_CSV}" \
+    --sim-config "${SIM_CONFIG_CSV}" \
+    --source-simc-infile "${SIMC_TEMPLATE}" \
+    --selection-rule "${SELECTION_RULE}"
+fi
+
+if [[ "${GENERATE_SIMC_INFILES}" == "yes" ]]; then
+  echo "[pipeline] Generating SIMC infiles from reviewed CSV"
+  python3 "${SIM_GENERATOR}" \
+    --gen_infile \
     --sim-config "${SIM_CONFIG_CSV}" \
     --template "${SIMC_TEMPLATE}" \
     --out-dir "${SIMC_OUTDIR}" \
+    --channel all \
     --file-prefix "${SIMC_INFILE_PREFIX}" \
     "${SIMC_KIN_ARGS[@]}"
 fi

@@ -404,6 +404,17 @@ Make the smearing stage physics-driven, non-redundant, and easy to inspect.
 6. Keep random-number usage reproducible by controlling the seed or seed strategy.
 7. Preserve the existing smearing outputs unless a change is explicitly documented.
 
+### Optimizer performance safeguards
+- Parameter-dependent photon response terms are prepared outside the `Nsmear` loop; only stochastic pulls vary inside it.
+- Immutable event quantities (`E_safe`, `log(E_safe)`, directions, static normalization-bin membership, and weight/`Nsmear`) are cached once per fit context.
+- When position smearing is inactive, cached directions remove repeated geometry square roots. One opening-angle calculation supplies both `M_gg` and `(p_target+gamma gamma)^2`.
+- Gaussian pulls retain the deterministic seed and call ordering and may be cached as doubles under a bounded memory budget.
+- Optimizer histograms use equivalent weighted bin/sumw2 accumulation; final diagnostics and persisted ROOT histograms retain the ROOT path.
+- Sobol candidates are processed in fixed-size batches without changing candidate ordering, pulls, histogram fill order, or the objective; uncached/Landau modes use the scalar evaluator.
+- Global-prefit Sobol batches and retained MIGRAD starts may run in parallel with independent Minuit2 instances. Section fits use their existing outer OpenMP parallelism and keep inner work serial.
+- Scalar-fast, batched-fast, and legacy objectives are compared at three parameter points before each fit, with automatic legacy fallback on disagreement.
+- Event selection, weights, normalization windows, chi2 definition, Sobol/MIGRAD settings, coupled sweeps, and final diagnostics remain unchanged.
+
 ### Physics requirements
 - Smearing must not be applied twice to the same quantity.
 - Smearing must be documented in terms of what physical effect it is approximating.
@@ -551,9 +562,10 @@ If any difference appears, determine whether it is:
 - [x] Phase 0 x60_4b baseline snapshot package created at `output_phase0_baseline/phase0_x60_4b_20260602/`.
 - [x] README authored or updated (`README.md` now documents run workflow, outputs, and debug caveats).
 - [x] Contract definitions locked (output paths/names and stage contracts documented in `plan.md` and `README.md`).
-- [x] Pipeline orchestration scripts added/updated (`scripts/run_pipeline.sh` and `scripts/generate_simulation_kinematics_csv.py`).
+- [x] Pipeline orchestration scripts added/updated (`scripts/run_pipeline.sh` and consolidated `scripts/generate_simc_infiles.py`).
 - [x] `config/nps_simulation_kinematics.csv` created and validated (offset columns initialized to `0.0`, includes `KinC_x60_4b`).
-- [x] SIMC infile generator integrated (`scripts/generate_simc_infiles.py`) and wired into `scripts/run_pipeline.sh` via `--generate-simc-infiles`.
+- [x] Canonical CSV and SIMC infile generation consolidated in `scripts/generate_simc_infiles.py` and wired into `scripts/run_pipeline.sh`.
+- [x] Consolidated generator separates review stages: default writes CSV; `--gen_infile` consumes reviewed CSV.
 - [x] SIMC infile generation validated for representative kinematics (`KinC_x60_4b`, `KinC_x36_1`) with CSV-driven `Ebeam`, `spec%e%P`, `spec%e%theta`, and explicit offset fields.
 - [x] Phase 2 end-to-end smoke run passed via `scripts/run_pipeline.sh` (`KinC_x60_4b`, run `4253`, `--gevnum-cut no`, `--no-combine`, output base `output_phase2_smoke`).
 - [x] Pipeline SIMC generation now mirrors forwarded `--kin` selection by default (and supports explicit `--simc-kin` override), avoiding unnecessary all-kin infile emission.
@@ -571,9 +583,14 @@ If any difference appears, determine whether it is:
 - [x] Phase 4 linkage/build correctness validated in runtime smoke (`KinC_x60_4b`, run `4253`): no unresolved symbol errors and successful end-to-end analysis execution.
 - [x] Smearing cleanup complete for current scope: deterministic smearing-seed control added (`NPS_SMEAR_RANDOM_SEED`, `--smear-seed`) and wired through `run_smearing_pipeline.sh` to `simc_pi0_analysis.C`.
 - [x] SIMC/Geant4 wrappers integrated for current scope: added `scripts/run_simulation_chain.py` and `scripts/run_pipeline.sh --run-sim-chain` stage to consume canonical simulation CSV + generated SIMC infiles and launch explicit user-provided SIMC/Geant4 command templates.
+- [x] SWIF2 SIMC submission added via `scripts/submit_simc_swif2.sh` (one isolated job per infile; persists normal `worksim`, `runout`, and `outfiles` products).
 - [x] Phase 6 interface validation completed (dry-run): wrapper help/options validated; `KinC_x60_4b` dry-run generated command traces and provenance manifest (`output/simulation_chain_manifest_dryrun.csv`) with predictable simulation output paths under `<output-base>/<kin_tag>/simulation/`.
+- [x] Whole-production-kinematics simulation inputs hardened: malformed master-CSV comment rows repaired deterministically; LH2/good production rows and physical ranges validated; calibrated offsets preserved; SIMC NPS angle/distance/pion scale and separate SIMC/Geant4 offsets propagated explicitly.
+- [x] Per-kin SIMC generation emits exclusive, SIDIS, and delta channels with explicit `doing_semi`/`which_pion` channel settings.
 - [x] Diagnostics expanded and organized for current scope: added searchable diagnostics index (`scripts/generate_diagnostics_index.py`) and modular detector/experiment reports (`scripts/generate_modular_diagnostics_reports.py`) with pipeline toggles for HMS (`--build-hms-diagnostics`), NPS (`--build-nps-diagnostics`), and whole-experiment (`--build-experiment-diagnostics`) outputs.
 - [x] HMS, NPS, and whole-experiment diagnostics validated on smoke outputs (`output_phase3_smoke`): modular reports confirm detector-side coverage (`has_hms_diagnostics=yes`, `has_nps_diagnostics=yes`) and experiment-level readiness for `KinC_x60_4b`.
+- [x] Post-analysis publication plotting consumes combined data plus raw exclusive/SIDIS/delta Geant4 trees; absolute normalization uses charge-weighted combined-data `scale*pi0_weight` and `.hist`-derived `normfac*Weight/Ngen`, with pre-exclusive missing mass and JSON provenance. Default execution also retains all run/current/rate stability, normalized-yield, fit, efficiency, and beam-trend plots under `post_analysis/run_stability/`.
+- [x] Post-analysis plot contract: 30 individual PNG/PDF comparisons, `post_analysis_<kin>_<normalization>.pdf`, and `post_analysis_<kin>_<normalization>_metadata.json` under `<kin>/plots/post_analysis/`; synthetic ROOT smoke passed for all branches and plots.
 - [x] Redundant temporary update artifacts cleaned: removed non-canonical dry-run directory `output_phase3_smoke/x60_4b/` and transient script cache directory `scripts/__pycache__/`.
 - [ ] Validation matrix passed
 - [x] Baseline comparison references recorded (existing snapshot checksums + new phase-0 run checksums in `output_phase0_baseline/phase0_x60_4b_20260602/repro_attempt/meta/`).

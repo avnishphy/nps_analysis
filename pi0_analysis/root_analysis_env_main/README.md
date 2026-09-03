@@ -29,8 +29,7 @@ The workflow is organized so that analysis remains physics-preserving while allo
   - `run_xsec_pipeline.sh`: xsec stage driver
 - `scripts/`
   - `run_pipeline.sh`: top-level orchestration entrypoint
-  - `generate_simulation_kinematics_csv.py`: canonical simulation CSV generator
-  - `generate_simc_infiles.py`: per-kin SIMC infile generator from simulation CSV
+  - `generate_simc_infiles.py`: CSV generator by default; `--gen_infile` generates SIMC infiles after review
 - `output/`
   - canonical production outputs by kinematic setting
 - `output_phase0_baseline/`
@@ -72,7 +71,8 @@ Expected tools in environment:
 
 What this entrypoint does:
 - Generates or refreshes `config/nps_simulation_kinematics.csv` (unless `--no-generate-sim-config` is used).
-- Initializes all simulation offset columns to `0.0`.
+- Initializes new simulation offset columns to `0.0`.
+- Preserves existing calibrated offsets unless `--reset-offsets` is requested directly.
 - Optionally generates per-kin SIMC infiles from the simulation CSV (`--generate-simc-infiles`).
 - Optionally runs analysis-side SIMC/Geant4 wrapper commands from CSV + generated infiles (`--run-sim-chain`).
 - Runs the existing analysis driver with forwarded arguments.
@@ -104,7 +104,7 @@ To run simulation wrappers from canonical CSV values (Phase 6 integration):
   --sim-chain-run-simc \
   --sim-chain-simc-cmd "run_simc --kin {kin_old} --input {simc_infile} --output {simc_output_file}" \
   --sim-chain-run-geant4 \
-  --sim-chain-geant4-cmd "run_geant4 --kin {kin_old} --outdir {geant4_output_dir}" \
+  --sim-chain-geant4-cmd "run_geant4 --kin {kin_old} --input {simc_output_file} --theta {nps_theta_deg} --distance {nps_target_distance_cm} --x-offset {geant4_nps_x_offset_cm} --y-offset {geant4_nps_y_offset_cm} --z-offset {geant4_nps_z_offset_cm} --outdir {geant4_output_dir}" \
   -- --kin KinC_x60_4b --source waveform --gevnum-cut no --jobs 3 --no-combine
 ```
 
@@ -199,6 +199,13 @@ bash src/analysis/run_parallel_nps_analysis_main.sh \
 Smearing reproducibility:
 - `src/simulation_smearing/run_smearing_pipeline.sh` supports `--smear-seed <int>`.
 - The same value is forwarded as `NPS_SMEAR_RANDOM_SEED` to `simc_pi0_analysis.C` so photon smearing draws are deterministic across reruns for fixed inputs.
+- The fitter caches Gaussian pulls as `double` values without changing seed or draw order, precomputes immutable event quantities (`E_safe`, `log(E_safe)`, directions, normalization membership, and weight/`Nsmear`), and uses lightweight weighted-bin accumulators during optimization.
+- Zero-position-smearing evaluations reuse event directions. Shared opening-angle kinematics computes `M_gg` and `(p_target+gamma gamma)^2` together; final ROOT diagnostics retain the established path.
+- Sobol points are evaluated in batches of eight while preserving each candidate's event/smear order and objective. Landau or uncached evaluations automatically retain the scalar path.
+- Every fit compares scalar-fast, batched-fast, and legacy ROOT-histogram objectives at three parameter points. A mismatch automatically selects the legacy evaluator for that fit.
+- Pull caching has a 1 GiB process-wide budget shared by concurrent section fits; oversized fits retain the deterministic streaming-RNG path.
+- Global-prefit Sobol batches and the eight retained MIGRAD starts run in parallel with independent Minuit2 instances. Per-section fits retain outer section parallelism, so their internal Sobol/MIGRAD work remains serial to avoid nested oversubscription.
+- Production compilation uses `-O3 -march=native`; `-ffast-math` is intentionally excluded to preserve floating-point/physics semantics.
 
 ### Enable xsec stage
 ```bash
@@ -240,11 +247,45 @@ Xsec outputs:
 
 Simulation kinematics config output:
 - `config/nps_simulation_kinematics.csv`
-- One row per `Kin_old`, with offsets explicitly present and initialized to zero in the current phase.
+- One row per production/LH2 `Kin_old`; malformed comment fields and physics ranges are validated.
+- Existing offsets are preserved. SIMC and Geant4 offsets use separate, unit-labelled columns.
+- `simc_spec_p_p_gev` defaults explicitly to `Ebeam-HMS_P` and remains user-overridable.
+- SIMC event count and target offsets are explicit CSV fields, preventing template drift.
 
 SIMC infile generation output:
 - `config/simc_infiles/nps_excl_pi0_<kin_tag>.inp`
+- `config/simc_infiles/nps_sidis_pi0_<kin_tag>.inp`
+- `config/simc_infiles/nps_delta_pi0_<kin_tag>.inp`
 - `kin_tag` is derived from `Kin_old` (for example `KinC_x60_4b -> x60_4b`).
+
+Post-analysis data/SIMC plots:
+
+```bash
+python3 scripts/plot_publication_quality.py \
+  --combined-root output/KinC_x25_3/root/combined_branches_LH2.root \
+  --kin KinC_x25_3
+```
+
+- Reads combined data tree `physics` and matching exclusive, SIDIS, and delta
+  Geant4 trees from the newest complete production under
+  `/volatile/hallc/nps/singhav/geant4_simc/`.
+- Reads each channel's `normfac` and `Ngen` from matching SIMC `.hist` file.
+- Data weight is `scale*pi0_weight*(charge_uC/total_unique_run_charge_uC)`;
+  simulation weight is `normfac*Weight/Ngen`. Absolute plots therefore show
+  corrected yield per 1 mC while preserving channel-relative normalization.
+- Missing mass is always plotted before any exclusive cut over 0--3 GeV.
+- Writes 30 individual PNG/PDF comparisons, one multipage PDF, and one JSON
+  normalization/selection audit under `<kin>/plots/post_analysis/`.
+- By default also reads `<kin>/summary/summary_all_runs.csv` plus
+  `output/efficiency_stuff/efficiency_<kin>.csv` and writes 35 stability plots
+  under `<kin>/plots/post_analysis/run_stability/`: run and current trends,
+  rate comparisons, normalized yield, pi0 peak/width and fit stability,
+  efficiencies, beam quantities, and key quantities versus corrected rate.
+- Use `--summary-csv` or `--efficiency-csv` for nonstandard layouts;
+  `--ignore-runs` filters stability plots noninteractively. Use
+  `--skip-run-stability` only when those inputs are intentionally unavailable.
+- Use `--normalization shape` only for per-variable shape checks. Previous
+  summary/efficiency run-QA plots remain available with `--legacy-run-qa`.
 
 ## How to Interpret Key Outputs
 - `diagnostics_run<run>.root`:

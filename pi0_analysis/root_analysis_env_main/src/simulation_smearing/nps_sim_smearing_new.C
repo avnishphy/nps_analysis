@@ -21,7 +21,7 @@
     //   - Outputs: discrete section parameters (CSV) + interpolated 2D maps (ROOT)
     //
     // Compile:
-    //   g++ nps_sim_smearing_new.C `root-config --cflags --libs` -lMathMore -O2 -std=c++17 -fopenmp -I../src -o nps_sim_smearing_new
+    //   g++ nps_sim_smearing_new.C `root-config --cflags --libs` -lMathMore -O3 -march=native -std=c++17 -fopenmp -I../src -o nps_sim_smearing_new
     //
     // Usage example: 
     //   ./nps_sim_smearing_new /w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/output/plots/x60_4b/combined_branches_LH2.root physics /w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env/output/plots/x60_4b/simc_pi0_analysis_output.root simulation out_smear.root 11 16 -24 28 -34 34 0.2 50 --z-nps-cm 407 --nps-angle-deg 17.51
@@ -52,6 +52,7 @@
     #include <chrono>
     #include <cstdlib>
     #include <memory>
+    #include <new>
     #include <array>
     #include <map>
     #include <cctype>
@@ -240,8 +241,8 @@
         //   - Higher W_MPI0: If M_γγ has better statistics or precision
         //
         const double W_MPI0 = 1.0;   // Weight for invariant mass chi2 (M_γγ)
-        const double W_MMISS = 1.3;  // Weight for missing mass chi2 (M_miss)
-        const double W_MPGG2 = 0.0;  // Weight for (p_target + γγ)^2 chi2
+        const double W_MMISS = 0.0;  // Weight for missing mass chi2 (M_miss)
+        const double W_MPGG2 = 1.0;  // Weight for (p_target + γγ)^2 chi2
         const double W_MPGG2_ENERGY = 1.0;  // Energy scaling factor for mpgg2 calculation: E -> w_mpgg2_energy * E
         
         // ========================================================================
@@ -504,6 +505,14 @@
         // full simulation event buffers; no event thinning is applied.
         const int OPTIMIZATION_NSMEAR = 80;
 
+        // Fast-objective safeguards. Gaussian pulls are cached as doubles and
+        // reused without changing their seed, order, or values. In parallel
+        // section fits, each active fitter receives an equal share of this
+        // process-wide cache budget; oversized fits use the legacy RNG stream.
+        const size_t FAST_PULL_CACHE_TOTAL_BUDGET_BYTES = 1024ull * 1024ull * 1024ull;
+        const bool VALIDATE_FAST_OBJECTIVE = true;
+        const int FAST_SOBOL_BATCH_SIZE = 8;
+
         // Section fit orchestration.
         // Iterative coupled sweep model:
         //   prefit: fit one global all-calorimeter response with no section split.
@@ -627,6 +636,12 @@
                  << " cm, theta(NPS->Hall)=" << NPS_THETA_NPS_DEG << " deg\n";
             cout << "Optimizer acceleration: Nsmear <= " << OPTIMIZATION_NSMEAR
                  << ", optimizer uses full simulation event buffers\n";
+            cout << "Fast objective: prepared response + weighted-bin accumulators"
+                 << ", Gaussian pull-cache budget="
+                 << (FAST_PULL_CACHE_TOTAL_BUDGET_BYTES / (1024ull * 1024ull)) << " MiB"
+                 << ", Sobol batch=" << FAST_SOBOL_BATCH_SIZE
+                 << ", global retained-start MIGRAD=parallel"
+                 << ", legacy validation=" << (VALIDATE_FAST_OBJECTIVE ? "on" : "off") << "\n";
             cout << "Position smearing fit: "
                 << (ENABLE_POSITION_SMEARING ? "enabled" : "disabled") << "\n";
             if (ENABLE_POSITION_SMEARING) {
@@ -781,6 +796,16 @@
         return out_file + Config::INTERPOLATED_SUFFIX + ".root";
     }
 
+    static string basenameForPath(const string &path) {
+        size_t slash = path.find_last_of('/');
+        return (slash == string::npos) ? path : path.substr(slash + 1);
+    }
+
+    static string outputDirectoryForPath(const string &path) {
+        size_t slash = path.find_last_of('/');
+        return (slash == string::npos) ? string() : path.substr(0, slash + 1);
+    }
+
     static void copyFileIfDifferent(const string &src, const string &dst, const char *label) {
         if (src.empty() || dst.empty() || src == dst) return;
         int rc = gSystem->CopyFile(src.c_str(), dst.c_str(), true);
@@ -824,6 +849,7 @@
     static void writeSmearingManifest(const string &filename,
                                       const string &run_tag,
                                       const string &created_at,
+                                      const string &run_directory,
                                       const string &data_file,
                                       const string &sim_file,
                                       const string &out_file,
@@ -842,6 +868,7 @@
         meta << "{\n";
         meta << "  \"run_tag\": \"" << run_tag << "\",\n";
         meta << "  \"created_at_local\": \"" << created_at << "\",\n";
+        meta << "  \"run_directory\": \"" << run_directory << "\",\n";
         meta << "  \"data_file\": \"" << data_file << "\",\n";
         meta << "  \"sim_file\": \"" << sim_file << "\",\n";
         meta << "  \"out_file\": \"" << out_file << "\",\n";
@@ -851,6 +878,28 @@
         meta << "  \"chi2_pdf\": \"" << pdf_file << "\",\n";
         meta << "  \"canonical_chi2_pdf\": \"" << canonical_pdf_file << "\",\n";
         meta << "  \"chi2_progress_dir\": \"" << progress_pdf_dir << "\",\n";
+        meta << "  \"supporting_artifacts\": [\n";
+        meta << "    \"section_map.csv\",\n";
+        meta << "    \"smearing_optimizer_summary.csv\",\n";
+        meta << "    \"smearing_optimizer_seeds.csv\",\n";
+        meta << "    \"smearing_optimizer_profiles.csv\",\n";
+        meta << "    \"smearing_sweep_history.csv\",\n";
+        meta << "    \"smearing_closure_summary.csv\",\n";
+        meta << "    \"smearing_objective_breakdown.csv\",\n";
+        meta << "    \"smearing_config_fingerprint.txt\",\n";
+        meta << "    \"simc_pi0_analysis_output.root\",\n";
+        meta << "    \"simc_pi0_analysis_output_smeared.root\",\n";
+        meta << "    \"simc_unsmeared_2d_mass_cut.pdf\",\n";
+        meta << "    \"simc_unsmeared_2d_mass_cut.png\",\n";
+        meta << "    \"simc_unsmeared_2d_mass_cut.root\",\n";
+        meta << "    \"simc_unsmeared_2d_mass_cut_params.csv\",\n";
+        meta << "    \"simc_unsmeared_2d_mass_cut_peak_scan.csv\",\n";
+        meta << "    \"simc_smeared_2d_mass_cut.pdf\",\n";
+        meta << "    \"simc_smeared_2d_mass_cut.png\",\n";
+        meta << "    \"simc_smeared_2d_mass_cut.root\",\n";
+        meta << "    \"simc_smeared_2d_mass_cut_params.csv\",\n";
+        meta << "    \"simc_smeared_2d_mass_cut_peak_scan.csv\"\n";
+        meta << "  ],\n";
         meta << "  \"cache_fingerprint\": ";
         meta << "\"";
         for (char ch : current_cache_fingerprint) {
@@ -1085,26 +1134,100 @@
     //
     // An energy floor (Config::MU_ENERGY_MIN_GEV) is applied before ln(E) to prevent
     // log singularities at very low energies.
-    inline void smearPhoton(double E, double x, double y,
-                            double mu_a, double mu_b, double mu_c,
-                            double sigma, double sigma_pos,
-                            double res_A, double res_B, double res_C,
-                            TRandom3 &rng,
-                            double &E_out, double &x_out, double &y_out) {
-	        PhotonSmearingParameters photon_params;
-	        photon_params.energy_mean_a = mu_a;
-	        photon_params.energy_mean_b = mu_b;
-	        photon_params.energy_mean_c = mu_c;
-	        photon_params.energy_sigma = sigma;
-	        photon_params.position_sigma = sigma_pos;
-	        photon_params.res_A = res_A;
-	        photon_params.res_B = res_B;
-	        photon_params.res_C = res_C;
-	        PhotonSmearingModel photon_model(photon_params);
+    struct PreparedPhotonSmear {
+        double E_sc = Config::NONPOSITIVE_CLAMP;
+        double sigma_E = 0.0;
+        double sigma_pos_eff = 0.0;
+        double landau_scale = 0.0;
+        double landau_max = Config::NONPOSITIVE_CLAMP;
+        double x = 0.0;
+        double y = 0.0;
+        bool smear_energy = false;
+        bool smear_position = false;
+    };
 
-	        // Single active energy-response convention:
-	        // E_mean(E) = a + b*E_safe + c*ln(E_safe), in GeV.
-	        double E_sc = photon_model.meanEnergy(E);
+    struct GaussianPhotonPulls {
+        double energy = 0.0;
+        double x = 0.0;
+        double y = 0.0;
+    };
+
+    struct GaussianPairPulls {
+        GaussianPhotonPulls photon1;
+        GaussianPhotonPulls photon2;
+    };
+
+    // Prepare all parameter-dependent response terms once per event/photon and
+    // objective evaluation. Smear draws then change only the stochastic pulls.
+    // This is algebraically identical to PhotonSmearingModel, but avoids building
+    // vectors and strings in the event x Nsmear hot loop.
+    inline PreparedPhotonSmear preparePhotonSmearCached(double E_safe, double log_E_safe,
+                                                         double x, double y,
+                                                         double mu_a, double mu_b, double mu_c,
+                                                         double sigma, double sigma_pos,
+                                                         double res_A, double res_B, double res_C) {
+        PreparedPhotonSmear out;
+        out.x = x;
+        out.y = y;
+
+        double E_sc = mu_a + mu_b * E_safe + mu_c * log_E_safe;
+        if (!std::isfinite(E_sc) || E_sc <= 0.0) E_sc = Config::NONPOSITIVE_CLAMP;
+        out.E_sc = E_sc;
+
+        out.smear_energy = sigma > 0.0 && std::isfinite(sigma);
+        if (out.smear_energy) {
+            out.sigma_E = computeEnergyResolution(E_sc, sigma, res_A, res_B, res_C);
+        }
+
+        out.smear_position = sigma_pos > 0.0 && std::isfinite(sigma_pos);
+        if (out.smear_position) {
+            if (Config::ENABLE_ENERGY_DEPENDENT_SIGMA_POS) {
+                const double E_for_pos = std::max(E_sc, Config::SIGMA_POS_ENERGY_MIN_GEV);
+                out.sigma_pos_eff = sigma_pos * sqrt(Config::SIGMA_POS_ENERGY_E0_GEV / E_for_pos);
+            } else {
+                out.sigma_pos_eff = sigma_pos;
+            }
+        }
+
+        if (Config::ENERGY_SMEAR_SHAPE == Config::SMEAR_SHAPE_LANDAU) {
+            out.landau_scale = out.sigma_E / max(Config::LANDAU_FWHM_TO_SCALE, 1e-9);
+            out.landau_max = max(E_sc + Config::LANDAU_MAX_FWHM_ABOVE_MPV * out.sigma_E,
+                                 Config::NONPOSITIVE_CLAMP);
+        }
+        return out;
+    }
+
+    inline PreparedPhotonSmear preparePhotonSmear(double E, double x, double y,
+                                                   double mu_a, double mu_b, double mu_c,
+                                                   double sigma, double sigma_pos,
+                                                   double res_A, double res_B, double res_C) {
+        const double E_safe = std::max(E, Config::MU_ENERGY_MIN_GEV);
+        return preparePhotonSmearCached(E_safe, std::log(E_safe), x, y,
+                                        mu_a, mu_b, mu_c, sigma, sigma_pos,
+                                        res_A, res_B, res_C);
+    }
+
+    inline void applyGaussianPhotonPulls(const PreparedPhotonSmear &prepared,
+                                         const GaussianPhotonPulls &pulls,
+                                         double &E_out, double &x_out, double &y_out) {
+        if (prepared.smear_energy) {
+            E_out = prepared.E_sc + prepared.sigma_E * pulls.energy;
+            if (E_out <= 0.0) E_out = Config::NONPOSITIVE_CLAMP;
+        } else {
+            E_out = prepared.E_sc;
+        }
+        if (prepared.smear_position) {
+            x_out = prepared.x + prepared.sigma_pos_eff * pulls.x;
+            y_out = prepared.y + prepared.sigma_pos_eff * pulls.y;
+        } else {
+            x_out = prepared.x;
+            y_out = prepared.y;
+        }
+    }
+
+    inline void smearPreparedPhoton(const PreparedPhotonSmear &prepared,
+                                    TRandom3 &rng,
+                                    double &E_out, double &x_out, double &y_out) {
 
         // --- Deterministic-draw block ------------------------------------------------
         // Always consume a FIXED number of RNG values per photon regardless of the
@@ -1120,58 +1243,71 @@
             // Always consume exactly LANDAU_MAX_REDRAWS Landau draws for energy.
             // Only the first accepted draw is used; the rest keep the RNG state
             // deterministic across parameter evaluations.
-	            double fwhmE = photon_model.sigmaEnergy(E_sc);
-            double landau_scale = fwhmE / max(Config::LANDAU_FWHM_TO_SCALE, 1e-9);
-            double e_max_allowed = E_sc + Config::LANDAU_MAX_FWHM_ABOVE_MPV * fwhmE;
-            e_max_allowed = max(e_max_allowed, Config::NONPOSITIVE_CLAMP);
-
             bool accepted = false;
-            double draw = E_sc;
+            double draw = prepared.E_sc;
             int n_try = max(1, Config::LANDAU_MAX_REDRAWS);
             for (int itry = 0; itry < n_try; ++itry) {
-                double this_draw = rng.Landau(E_sc, landau_scale);
-                if (!accepted && sigma > 0.0) {
+                double this_draw = rng.Landau(prepared.E_sc, prepared.landau_scale);
+                if (!accepted && prepared.smear_energy) {
                     if (this_draw > Config::NONPOSITIVE_CLAMP &&
-                        (!Config::ENABLE_TRUNCATED_LANDAU || this_draw <= e_max_allowed)) {
+                        (!Config::ENABLE_TRUNCATED_LANDAU || this_draw <= prepared.landau_max)) {
                         accepted = true;
                         draw = this_draw;
                     }
                 }
                 // Continue drawing even after acceptance to consume all RNG values
             }
-            E_out = (sigma > 0.0 && accepted) ? draw : E_sc;
+            E_out = (prepared.smear_energy && accepted) ? draw : prepared.E_sc;
             if (E_out <= 0.0) E_out = Config::NONPOSITIVE_CLAMP;
         } else {
             // Gaussian mode — always draw exactly 1 unit-Gaussian pull, even if
             // sigma == 0 (in which case the pull is unused).
             double pull_e = rng.Gaus(0.0, 1.0);
-            if (sigma > 0.0) {
-	                double sigE = photon_model.sigmaEnergy(E_sc);
-	                E_out = E_sc + sigE * pull_e;
-                if (E_out <= 0.0) E_out = Config::NONPOSITIVE_CLAMP;
-            } else {
-                E_out = E_sc;
-            }
+            GaussianPhotonPulls pulls;
+            pulls.energy = pull_e;
+            pulls.x = rng.Gaus(0.0, 1.0);
+            pulls.y = rng.Gaus(0.0, 1.0);
+            applyGaussianPhotonPulls(prepared, pulls, E_out, x_out, y_out);
+            return;
         }
 
         // Position smearing — always draw 2 unit-Gaussian pulls to keep the RNG
         // state independent of sigma_pos.
         double pull_x = rng.Gaus(0.0, 1.0);
         double pull_y = rng.Gaus(0.0, 1.0);
-        if (sigma_pos > 0.0) {
-	            double sigma_pos_eff = photon_model.sigmaPosition(E_sc);
-	            x_out = x + sigma_pos_eff * pull_x;
-            y_out = y + sigma_pos_eff * pull_y;
+        if (prepared.smear_position) {
+            x_out = prepared.x + prepared.sigma_pos_eff * pull_x;
+            y_out = prepared.y + prepared.sigma_pos_eff * pull_y;
         } else {
-            x_out = x;
-            y_out = y;
+            x_out = prepared.x;
+            y_out = prepared.y;
         }
+    }
+
+    inline void smearPhoton(double E, double x, double y,
+                            double mu_a, double mu_b, double mu_c,
+                            double sigma, double sigma_pos,
+                            double res_A, double res_B, double res_C,
+                            TRandom3 &rng,
+                            double &E_out, double &x_out, double &y_out) {
+        const PreparedPhotonSmear prepared = preparePhotonSmear(
+            E, x, y, mu_a, mu_b, mu_c, sigma, sigma_pos, res_A, res_B, res_C);
+        smearPreparedPhoton(prepared, rng, E_out, x_out, y_out);
     }
 
     // Calculate photon direction vector and momentum components
     // Given energy and position, returns (px, py, pz) components
     struct PhotonMomentum {
         double px, py, pz;
+    };
+
+    struct PhotonDirection {
+        double ux, uy, uz;
+    };
+
+    struct SharedDiphotonKinematics {
+        double mgg = 0.0;
+        double mpgg2 = 0.0;
     };
 
     struct ElectronKinematics {
@@ -1181,10 +1317,36 @@
         double pz;
     };
 
-    inline PhotonMomentum computePhotonMomentum(double E, double x, double y, double z) {
+    inline PhotonDirection computePhotonDirection(double x, double y, double z) {
         double r_sq = x*x + y*y + z*z;
         double r_inv = 1.0 / sqrt(r_sq);
-        return {E * x * r_inv, E * y * r_inv, E * z * r_inv};
+        return {x * r_inv, y * r_inv, z * r_inv};
+    }
+
+    inline PhotonMomentum computePhotonMomentum(double E, const PhotonDirection &direction) {
+        return {E * direction.ux, E * direction.uy, E * direction.uz};
+    }
+
+    inline PhotonMomentum computePhotonMomentum(double E, double x, double y, double z) {
+        return computePhotonMomentum(E, computePhotonDirection(x, y, z));
+    }
+
+    inline SharedDiphotonKinematics computeSharedDiphotonKinematics(
+            double E1, double E2,
+            const PhotonDirection &direction1,
+            const PhotonDirection &direction2,
+            double mpgg2_energy_scale) {
+        constexpr double kProtonMassGeV = 0.9382720813;
+        double cos_theta = direction1.ux * direction2.ux +
+                           direction1.uy * direction2.uy +
+                           direction1.uz * direction2.uz;
+        cos_theta = max(-1.0, min(1.0, cos_theta));
+        const double mgg2 = max(0.0, 2.0 * E1 * E2 * (1.0 - cos_theta));
+        const double scaled_mgg2 = mpgg2_energy_scale * mpgg2_energy_scale * mgg2;
+        const double scaled_energy_sum = mpgg2_energy_scale * (E1 + E2);
+        return {sqrt(mgg2),
+                kProtonMassGeV * kProtonMassGeV + scaled_mgg2 +
+                2.0 * kProtonMassGeV * scaled_energy_sum};
     }
 
     inline ElectronKinematics scaleElectronKinematicsFromMomentum(double px_e, double py_e, double pz_e,
@@ -1368,6 +1530,109 @@
         return max(1, n);
     }
 
+    // Minimal weighted histogram used only by optimizer objectives. Bin contents,
+    // sumw2, fill order, scaling, and under/overflow exclusion match TH1D, without
+    // ROOT object allocation/registration costs in every function evaluation.
+    struct FastHistogram1D {
+        static constexpr int kMaxBins = 128;
+        int nbins = 0;
+        double xmin = 0.0;
+        double xmax = 0.0;
+        double bins_per_unit = 0.0;
+        array<double, kMaxBins> content{};
+        array<double, kMaxBins> error2{};
+
+        FastHistogram1D() = default;
+
+        FastHistogram1D(int n, double lo, double hi)
+            : nbins((n > 0 && n <= kMaxBins && hi > lo) ? n : 0),
+              xmin(lo), xmax(hi),
+              bins_per_unit((n > 0 && n <= kMaxBins && hi > lo) ? n / (hi - lo) : 0.0) {}
+
+        explicit FastHistogram1D(const TH1D &source)
+            : FastHistogram1D(source.GetNbinsX(),
+                              source.GetXaxis()->GetXmin(),
+                              source.GetXaxis()->GetXmax()) {
+            for (int i = 0; i < nbins; ++i) {
+                content[i] = source.GetBinContent(i + 1);
+                const double err = source.GetBinError(i + 1);
+                error2[i] = err * err;
+            }
+        }
+
+        int binIndex(double x) const {
+            if (!(x >= xmin) || !(x < xmax)) return -1;
+            int bin = static_cast<int>((x - xmin) * bins_per_unit);
+            if (bin < 0 || bin >= nbins) return -1;
+            return bin;
+        }
+
+        bool contains(double x) const { return binIndex(x) >= 0; }
+
+        void fill(double x, double weight) {
+            const int bin = binIndex(x);
+            if (bin < 0) return;
+            content[bin] += weight;
+            error2[bin] += weight * weight;
+        }
+
+        double integral() const {
+            double sum = 0.0;
+            for (double value : content) sum += value;
+            return sum;
+        }
+
+        void scale(double factor) {
+            const double factor2 = factor * factor;
+            for (int i = 0; i < nbins; ++i) {
+                content[i] *= factor;
+                error2[i] *= factor2;
+            }
+        }
+    };
+
+    HistObjectiveMetrics computeChi2MetricsFast(const FastHistogram1D &hsim,
+                                                const FastHistogram1D &hdata) {
+        HistObjectiveMetrics metrics;
+        metrics.data_integral = hdata.integral();
+        metrics.sim_integral = hsim.integral();
+        if (hsim.nbins != hdata.nbins || hsim.xmin != hdata.xmin || hsim.xmax != hdata.xmax) {
+            cerr << "Fast histogram binning mismatch in computeChi2MetricsFast" << endl;
+            return metrics;
+        }
+
+        double chi2 = 0.0;
+        const double empty_sim_floor = std::max(Config::BAKER_COUSINS_EMPTY_SIM_FLOOR_ABS,
+                                                Config::BAKER_COUSINS_EMPTY_SIM_FLOOR_FRAC *
+                                                std::max(1.0, metrics.data_integral));
+        for (int i = 0; i < hsim.nbins; ++i) {
+            const double s = hsim.content[i];
+            const double d = hdata.content[i];
+            if (d > 0.0) ++metrics.informative_bins;
+            if (Config::USE_BAKER_COUSINS_CHI2) {
+                if (d > 0.0) {
+                    double s_eval = s;
+                    if (!(s_eval > 0.0)) {
+                        s_eval = empty_sim_floor;
+                        ++metrics.empty_sim_data_positive_bins;
+                    }
+                    chi2 += 2.0 * (s_eval - d + d * log(d / s_eval));
+                } else if (s > 0.0) {
+                    chi2 += 2.0 * s;
+                }
+            } else {
+                if (d > 0.0 && !(s > 0.0)) ++metrics.empty_sim_data_positive_bins;
+                double denom = hsim.error2[i] + hdata.error2[i];
+                if (denom <= 0.0 && (s > 0.0 || d > 0.0)) denom = max(1.0, s + d);
+                if (denom <= 0.0) continue;
+                const double diff = s - d;
+                chi2 += diff * diff / denom;
+            }
+        }
+        metrics.chi2 = chi2;
+        return metrics;
+    }
+
     inline void fillUnsmearedHistogramsForNormalization(const vector<ClusterPair> &simEvents,
                                                         TH1D &hmpi0,
                                                         TH1D &hmmiss,
@@ -1408,6 +1673,418 @@
             }
         }
     }
+
+    // Optimizer-only evaluator. It preserves legacy event/RNG ordering while
+    // replacing repeated ROOT histogram construction and repeated response-model
+    // setup with flat accumulators and prepared per-event response terms.
+    class FastObjectiveEvaluator {
+    public:
+        FastObjectiveEvaluator(const vector<ClusterPair> &events,
+                               const TH1D &hdata_mpi0,
+                               const TH1D &hdata_mmiss,
+                               const TH1D &hdata_mpgg2,
+                               int nsmear,
+                               double res_A, double res_B, double res_C)
+            : events_(events),
+              data_mpi0_(hdata_mpi0),
+              data_mmiss_(hdata_mmiss),
+              data_mpgg2_(hdata_mpgg2),
+              nsmear_(max(1, nsmear)),
+              res_A_(res_A), res_B_(res_B), res_C_(res_C) {
+            selectActiveHistograms();
+            precomputeEventInvariants();
+            buildGaussianPullCache();
+        }
+
+        bool usesPullCache() const { return use_pull_cache_; }
+
+        ObjectiveBreakdown evaluateBreakdown(double mu_a, double mu_b, double mu_c,
+                                             double sigma, double sigma_pos,
+                                             double p_e_scale) const {
+            ObjectiveBreakdown out;
+            FastHistogram1D sim_mpi0(data_mpi0_.nbins, data_mpi0_.xmin, data_mpi0_.xmax);
+            FastHistogram1D sim_mmiss(data_mmiss_.nbins, data_mmiss_.xmin, data_mmiss_.xmax);
+            FastHistogram1D sim_mpgg2(data_mpgg2_.nbins, data_mpgg2_.xmin, data_mpgg2_.xmax);
+            double norm_mmiss = 0.0;
+
+            TRandom3 rng(Config::SMEAR_DETERMINISTIC_SEED);
+            const double z_nps = Config::NPS_Z_NPS_CM;
+            for (size_t ievent = 0; ievent < events_.size(); ++ievent) {
+                const ClusterPair &ev = events_[ievent];
+                const EventInvariant &invariant = invariants_[ievent];
+                if (!invariant.valid) continue;
+
+                const double ma1   = ev.photon1_in_section ? mu_a      : ev.mu_a1_ext;
+                const double mb1   = ev.photon1_in_section ? mu_b      : ev.mu1_ext;
+                const double mc1   = ev.photon1_in_section ? mu_c      : ev.mu_c1_ext;
+                const double sig1  = ev.photon1_in_section ? sigma     : ev.sigma1_ext;
+                const double spos1 = ev.photon1_in_section ? sigma_pos : ev.sigma_pos1_ext;
+                const double ma2   = ev.photon2_in_section ? mu_a      : ev.mu_a2_ext;
+                const double mb2   = ev.photon2_in_section ? mu_b      : ev.mu2_ext;
+                const double mc2   = ev.photon2_in_section ? mu_c      : ev.mu_c2_ext;
+                const double sig2  = ev.photon2_in_section ? sigma     : ev.sigma2_ext;
+                const double spos2 = ev.photon2_in_section ? sigma_pos : ev.sigma_pos2_ext;
+
+                const PreparedPhotonSmear prepared1 = preparePhotonSmearCached(
+                    invariant.e1_safe, invariant.log_e1_safe, ev.x1, ev.y1,
+                    ma1, mb1, mc1, sig1, spos1,
+                    res_A_, res_B_, res_C_);
+                const PreparedPhotonSmear prepared2 = preparePhotonSmearCached(
+                    invariant.e2_safe, invariant.log_e2_safe, ev.x2, ev.y2,
+                    ma2, mb2, mc2, sig2, spos2,
+                    res_A_, res_B_, res_C_);
+
+                ElectronKinematics e_kin;
+                if (fill_mmiss_) {
+                    e_kin = scaleElectronKinematicsFromMomentum(
+                        ev.px_e, ev.py_e, ev.pz_e, p_e_scale);
+                    const double mmiss_u = nps::missing_mass_proton_pi0(
+                        Config::BEAM_ENERGY,
+                        e_kin.Ee, e_kin.px, e_kin.py, e_kin.pz,
+                        ev.e1, ev.e2, ev.x1, ev.y1, ev.x2, ev.y2,
+                        Config::NPS_Z_NPS_CM, Config::NPS_THETA_NPS_DEG);
+                    if (data_mmiss_.contains(mmiss_u)) norm_mmiss += ev.weight;
+                }
+
+                for (int k = 0; k < nsmear_; ++k) {
+                    double E1_sm, x1_sm, y1_sm, E2_sm, x2_sm, y2_sm;
+                    if (use_pull_cache_) {
+                        const GaussianPairPulls &pulls = pull_cache_[ievent * nsmear_ + k];
+                        applyGaussianPhotonPulls(prepared1, pulls.photon1,
+                                                 E1_sm, x1_sm, y1_sm);
+                        applyGaussianPhotonPulls(prepared2, pulls.photon2,
+                                                 E2_sm, x2_sm, y2_sm);
+                    } else {
+                        smearPreparedPhoton(prepared1, rng, E1_sm, x1_sm, y1_sm);
+                        smearPreparedPhoton(prepared2, rng, E2_sm, x2_sm, y2_sm);
+                    }
+                    apply_mgg_linear_pair_energy_correction(
+                        E1_sm, E2_sm, x1_sm, y1_sm, x2_sm, y2_sm);
+
+                    SharedDiphotonKinematics diphoton;
+                    if (fill_mpi0_ || fill_mpgg2_) {
+                        const PhotonDirection direction1 = prepared1.smear_position
+                            ? computePhotonDirection(x1_sm, y1_sm, z_nps)
+                            : invariant.direction1;
+                        const PhotonDirection direction2 = prepared2.smear_position
+                            ? computePhotonDirection(x2_sm, y2_sm, z_nps)
+                            : invariant.direction2;
+                        diphoton = computeSharedDiphotonKinematics(
+                            E1_sm, E2_sm, direction1, direction2,
+                            Config::W_MPGG2_ENERGY);
+                    }
+
+                    if (fill_mpi0_) {
+                        sim_mpi0.fill(diphoton.mgg, invariant.weight_per_smear);
+                    }
+                    if (fill_mmiss_) {
+                        const double mmiss = nps::missing_mass_proton_pi0(
+                            Config::BEAM_ENERGY,
+                            e_kin.Ee, e_kin.px, e_kin.py, e_kin.pz,
+                            E1_sm, E2_sm, x1_sm, y1_sm, x2_sm, y2_sm,
+                            Config::NPS_Z_NPS_CM, Config::NPS_THETA_NPS_DEG);
+                        sim_mmiss.fill(mmiss, invariant.weight_per_smear);
+                    }
+                    if (fill_mpgg2_) {
+                        sim_mpgg2.fill(diphoton.mpgg2, invariant.weight_per_smear);
+                    }
+                }
+            }
+            return finalizeBreakdown(sim_mpi0, sim_mmiss, sim_mpgg2, norm_mmiss);
+        }
+
+        double evaluateSelected(double mu_a, double mu_b, double mu_c,
+                                double sigma, double sigma_pos,
+                                double p_e_scale) const {
+            const ObjectiveBreakdown breakdown = evaluateBreakdown(
+                mu_a, mu_b, mu_c, sigma, sigma_pos, p_e_scale);
+            return selectObjective(breakdown);
+        }
+
+        // Evaluate Sobol candidates in small cache-friendly groups. Each candidate
+        // still accumulates in event -> smear order and sees the identical cached
+        // Gaussian pull. Landau/uncached modes deliberately use the scalar path.
+        vector<double> evaluateSelectedBatch(const vector<array<double, 6>> &points) const {
+            vector<double> values(points.size(), 0.0);
+            if (points.empty()) return values;
+            if (!use_pull_cache_ || Config::FAST_SOBOL_BATCH_SIZE < 2) {
+                for (size_t i = 0; i < points.size(); ++i) {
+                    const auto &p = points[i];
+                    values[i] = evaluateSelected(p[0], p[1], p[2], p[3], p[4], p[5]);
+                }
+                return values;
+            }
+
+            const size_t batch_limit = static_cast<size_t>(
+                max(1, min(Config::FAST_SOBOL_BATCH_SIZE, 32)));
+            for (size_t begin = 0; begin < points.size(); begin += batch_limit) {
+                const size_t count = min(batch_limit, points.size() - begin);
+                vector<BatchAccumulator> states;
+                states.reserve(count);
+                for (size_t j = 0; j < count; ++j) {
+                    states.emplace_back(data_mpi0_, data_mmiss_, data_mpgg2_);
+                }
+
+                vector<PreparedPhotonSmear> prepared1(count);
+                vector<PreparedPhotonSmear> prepared2(count);
+                vector<ElectronKinematics> electron(count);
+                const double z_nps = Config::NPS_Z_NPS_CM;
+
+                for (size_t ievent = 0; ievent < events_.size(); ++ievent) {
+                    const ClusterPair &ev = events_[ievent];
+                    const EventInvariant &invariant = invariants_[ievent];
+                    if (!invariant.valid) continue;
+
+                    for (size_t j = 0; j < count; ++j) {
+                        const auto &p = points[begin + j];
+                        const double ma1 = ev.photon1_in_section ? p[0] : ev.mu_a1_ext;
+                        const double mb1 = ev.photon1_in_section ? p[1] : ev.mu1_ext;
+                        const double mc1 = ev.photon1_in_section ? p[2] : ev.mu_c1_ext;
+                        const double sg1 = ev.photon1_in_section ? p[3] : ev.sigma1_ext;
+                        const double sp1 = ev.photon1_in_section ? p[4] : ev.sigma_pos1_ext;
+                        const double ma2 = ev.photon2_in_section ? p[0] : ev.mu_a2_ext;
+                        const double mb2 = ev.photon2_in_section ? p[1] : ev.mu2_ext;
+                        const double mc2 = ev.photon2_in_section ? p[2] : ev.mu_c2_ext;
+                        const double sg2 = ev.photon2_in_section ? p[3] : ev.sigma2_ext;
+                        const double sp2 = ev.photon2_in_section ? p[4] : ev.sigma_pos2_ext;
+                        prepared1[j] = preparePhotonSmearCached(
+                            invariant.e1_safe, invariant.log_e1_safe, ev.x1, ev.y1,
+                            ma1, mb1, mc1, sg1, sp1, res_A_, res_B_, res_C_);
+                        prepared2[j] = preparePhotonSmearCached(
+                            invariant.e2_safe, invariant.log_e2_safe, ev.x2, ev.y2,
+                            ma2, mb2, mc2, sg2, sp2, res_A_, res_B_, res_C_);
+
+                        if (fill_mmiss_) {
+                            electron[j] = scaleElectronKinematicsFromMomentum(
+                                ev.px_e, ev.py_e, ev.pz_e, p[5]);
+                            const double mmiss_u = nps::missing_mass_proton_pi0(
+                                Config::BEAM_ENERGY,
+                                electron[j].Ee, electron[j].px, electron[j].py, electron[j].pz,
+                                ev.e1, ev.e2, ev.x1, ev.y1, ev.x2, ev.y2,
+                                Config::NPS_Z_NPS_CM, Config::NPS_THETA_NPS_DEG);
+                            if (data_mmiss_.contains(mmiss_u)) states[j].norm_mmiss += ev.weight;
+                        }
+                    }
+
+                    for (int k = 0; k < nsmear_; ++k) {
+                        const GaussianPairPulls &pulls = pull_cache_[ievent * nsmear_ + k];
+                        for (size_t j = 0; j < count; ++j) {
+                            double E1_sm, x1_sm, y1_sm, E2_sm, x2_sm, y2_sm;
+                            applyGaussianPhotonPulls(prepared1[j], pulls.photon1,
+                                                     E1_sm, x1_sm, y1_sm);
+                            applyGaussianPhotonPulls(prepared2[j], pulls.photon2,
+                                                     E2_sm, x2_sm, y2_sm);
+                            apply_mgg_linear_pair_energy_correction(
+                                E1_sm, E2_sm, x1_sm, y1_sm, x2_sm, y2_sm);
+
+                            SharedDiphotonKinematics diphoton;
+                            if (fill_mpi0_ || fill_mpgg2_) {
+                                const PhotonDirection direction1 = prepared1[j].smear_position
+                                    ? computePhotonDirection(x1_sm, y1_sm, z_nps)
+                                    : invariant.direction1;
+                                const PhotonDirection direction2 = prepared2[j].smear_position
+                                    ? computePhotonDirection(x2_sm, y2_sm, z_nps)
+                                    : invariant.direction2;
+                                diphoton = computeSharedDiphotonKinematics(
+                                    E1_sm, E2_sm, direction1, direction2,
+                                    Config::W_MPGG2_ENERGY);
+                            }
+                            if (fill_mpi0_) {
+                                states[j].mpi0.fill(diphoton.mgg, invariant.weight_per_smear);
+                            }
+                            if (fill_mmiss_) {
+                                const double mmiss = nps::missing_mass_proton_pi0(
+                                    Config::BEAM_ENERGY,
+                                    electron[j].Ee, electron[j].px, electron[j].py, electron[j].pz,
+                                    E1_sm, E2_sm, x1_sm, y1_sm, x2_sm, y2_sm,
+                                    Config::NPS_Z_NPS_CM, Config::NPS_THETA_NPS_DEG);
+                                states[j].mmiss.fill(mmiss, invariant.weight_per_smear);
+                            }
+                            if (fill_mpgg2_) {
+                                states[j].mpgg2.fill(diphoton.mpgg2, invariant.weight_per_smear);
+                            }
+                        }
+                    }
+                }
+
+                for (size_t j = 0; j < count; ++j) {
+                    values[begin + j] = selectObjective(finalizeBreakdown(
+                        states[j].mpi0, states[j].mmiss, states[j].mpgg2,
+                        states[j].norm_mmiss));
+                }
+            }
+            return values;
+        }
+
+    private:
+        struct EventInvariant {
+            bool valid = false;
+            double e1_safe = Config::MU_ENERGY_MIN_GEV;
+            double e2_safe = Config::MU_ENERGY_MIN_GEV;
+            double log_e1_safe = 0.0;
+            double log_e2_safe = 0.0;
+            double weight_per_smear = 0.0;
+            PhotonDirection direction1{0.0, 0.0, 1.0};
+            PhotonDirection direction2{0.0, 0.0, 1.0};
+            bool mpi0_norm_bin = false;
+            bool mpgg2_norm_bin = false;
+        };
+
+        struct BatchAccumulator {
+            FastHistogram1D mpi0;
+            FastHistogram1D mmiss;
+            FastHistogram1D mpgg2;
+            double norm_mmiss = 0.0;
+
+            BatchAccumulator(const FastHistogram1D &data_mpi0,
+                             const FastHistogram1D &data_mmiss,
+                             const FastHistogram1D &data_mpgg2)
+                : mpi0(data_mpi0.nbins, data_mpi0.xmin, data_mpi0.xmax),
+                  mmiss(data_mmiss.nbins, data_mmiss.xmin, data_mmiss.xmax),
+                  mpgg2(data_mpgg2.nbins, data_mpgg2.xmin, data_mpgg2.xmax) {}
+        };
+
+        const vector<ClusterPair> &events_;
+        vector<EventInvariant> invariants_;
+        FastHistogram1D data_mpi0_;
+        FastHistogram1D data_mmiss_;
+        FastHistogram1D data_mpgg2_;
+        int nsmear_ = 1;
+        double res_A_ = 0.0, res_B_ = 0.0, res_C_ = 0.0;
+        bool fill_mpi0_ = false;
+        bool fill_mmiss_ = false;
+        bool fill_mpgg2_ = false;
+        double norm_mpi0_ = 0.0;
+        double norm_mpgg2_ = 0.0;
+        bool use_pull_cache_ = false;
+        vector<GaussianPairPulls> pull_cache_;
+
+        void selectActiveHistograms() {
+            if (Config::ENERGY_SMEARING_HISTOGRAM == Config::HIST_MPI0_ONLY) {
+                fill_mpi0_ = Config::use_mpi0_histogram();
+            } else if (Config::ENERGY_SMEARING_HISTOGRAM == Config::HIST_MMISS_ONLY) {
+                fill_mmiss_ = Config::use_mmiss_histogram();
+            } else if (Config::ENERGY_SMEARING_HISTOGRAM == Config::HIST_MPGG2_ONLY) {
+                fill_mpgg2_ = Config::use_mpgg2_histogram();
+            } else {
+                fill_mpi0_ = Config::use_mpi0_histogram();
+                fill_mmiss_ = Config::use_mmiss_histogram();
+                fill_mpgg2_ = Config::use_mpgg2_histogram();
+            }
+        }
+
+        double selectObjective(const ObjectiveBreakdown &breakdown) const {
+            if (Config::ENERGY_SMEARING_HISTOGRAM == Config::HIST_MPI0_ONLY) {
+                return fill_mpi0_ ? breakdown.mpi0.chi2 : 0.0;
+            }
+            if (Config::ENERGY_SMEARING_HISTOGRAM == Config::HIST_MMISS_ONLY) {
+                return fill_mmiss_ ? breakdown.mmiss.chi2 : 0.0;
+            }
+            if (Config::ENERGY_SMEARING_HISTOGRAM == Config::HIST_MPGG2_ONLY) {
+                return fill_mpgg2_ ? breakdown.mpgg2.chi2 : 0.0;
+            }
+            return breakdown.total(Config::W_MPI0, Config::W_MMISS, Config::W_MPGG2);
+        }
+
+        ObjectiveBreakdown finalizeBreakdown(FastHistogram1D &sim_mpi0,
+                                             FastHistogram1D &sim_mmiss,
+                                             FastHistogram1D &sim_mpgg2,
+                                             double norm_mmiss) const {
+            ObjectiveBreakdown out;
+            if ((fill_mpi0_ && !(norm_mpi0_ > 0.0)) ||
+                (fill_mmiss_ && !(norm_mmiss > 0.0)) ||
+                (fill_mpgg2_ && !(norm_mpgg2_ > 0.0)) ||
+                (fill_mpi0_ && !(data_mpi0_.integral() > 0.0)) ||
+                (fill_mmiss_ && !(data_mmiss_.integral() > 0.0)) ||
+                (fill_mpgg2_ && !(data_mpgg2_.integral() > 0.0))) {
+                return out;
+            }
+            if (fill_mpi0_) {
+                sim_mpi0.scale(data_mpi0_.integral() / norm_mpi0_);
+                out.mpi0 = computeChi2MetricsFast(sim_mpi0, data_mpi0_);
+            }
+            if (fill_mmiss_) {
+                sim_mmiss.scale(data_mmiss_.integral() / norm_mmiss);
+                out.mmiss = computeChi2MetricsFast(sim_mmiss, data_mmiss_);
+            }
+            if (fill_mpgg2_) {
+                sim_mpgg2.scale(data_mpgg2_.integral() / norm_mpgg2_);
+                out.mpgg2 = computeChi2MetricsFast(sim_mpgg2, data_mpgg2_);
+            }
+            return out;
+        }
+
+        void precomputeEventInvariants() {
+            invariants_.resize(events_.size());
+            const double z_nps = Config::NPS_Z_NPS_CM;
+            for (size_t ievent = 0; ievent < events_.size(); ++ievent) {
+                const ClusterPair &ev = events_[ievent];
+                EventInvariant &invariant = invariants_[ievent];
+                if (ev.e1 <= 0.0 || ev.e2 <= 0.0) continue;
+                invariant.valid = true;
+                invariant.e1_safe = max(ev.e1, Config::MU_ENERGY_MIN_GEV);
+                invariant.e2_safe = max(ev.e2, Config::MU_ENERGY_MIN_GEV);
+                invariant.log_e1_safe = log(invariant.e1_safe);
+                invariant.log_e2_safe = log(invariant.e2_safe);
+                invariant.weight_per_smear = ev.weight / nsmear_;
+                invariant.direction1 = computePhotonDirection(ev.x1, ev.y1, z_nps);
+                invariant.direction2 = computePhotonDirection(ev.x2, ev.y2, z_nps);
+                if (fill_mpi0_) {
+                    const PhotonMomentum p1 = computePhotonMomentum(ev.e1, invariant.direction1);
+                    const PhotonMomentum p2 = computePhotonMomentum(ev.e2, invariant.direction2);
+                    const double mass = computeInvariantMass(
+                        ev.e1, p1.px, p1.py, p1.pz,
+                        ev.e2, p2.px, p2.py, p2.pz);
+                    invariant.mpi0_norm_bin = data_mpi0_.contains(mass);
+                    if (invariant.mpi0_norm_bin) norm_mpi0_ += ev.weight;
+                }
+                if (fill_mpgg2_) {
+                    const double E1 = Config::W_MPGG2_ENERGY * ev.e1;
+                    const double E2 = Config::W_MPGG2_ENERGY * ev.e2;
+                    const PhotonMomentum p1 = computePhotonMomentum(E1, invariant.direction1);
+                    const PhotonMomentum p2 = computePhotonMomentum(E2, invariant.direction2);
+                    const double mpgg2 = computeTargetPlusDiphotonMass2(E1, p1, E2, p2);
+                    invariant.mpgg2_norm_bin = data_mpgg2_.contains(mpgg2);
+                    if (invariant.mpgg2_norm_bin) norm_mpgg2_ += ev.weight;
+                }
+            }
+        }
+
+        void buildGaussianPullCache() {
+            if (Config::ENERGY_SMEAR_SHAPE != Config::SMEAR_SHAPE_GAUSSIAN || events_.empty()) return;
+            if (events_.size() > std::numeric_limits<size_t>::max() / static_cast<size_t>(nsmear_)) return;
+            const size_t count = events_.size() * static_cast<size_t>(nsmear_);
+            if (count > std::numeric_limits<size_t>::max() / sizeof(GaussianPairPulls)) return;
+            const size_t bytes = count * sizeof(GaussianPairPulls);
+            const int workers = omp_in_parallel() ? max(1, omp_get_num_threads()) : 1;
+            const size_t budget = Config::FAST_PULL_CACHE_TOTAL_BUDGET_BYTES /
+                                  static_cast<size_t>(workers);
+            if (bytes > budget) return;
+
+            try {
+                pull_cache_.resize(count);
+            } catch (const std::bad_alloc &) {
+                pull_cache_.clear();
+                return;
+            }
+
+            TRandom3 rng(Config::SMEAR_DETERMINISTIC_SEED);
+            for (size_t ievent = 0; ievent < events_.size(); ++ievent) {
+                const ClusterPair &ev = events_[ievent];
+                if (ev.e1 <= 0.0 || ev.e2 <= 0.0) continue;
+                for (int k = 0; k < nsmear_; ++k) {
+                    GaussianPairPulls &pulls = pull_cache_[ievent * nsmear_ + k];
+                    pulls.photon1.energy = rng.Gaus(0.0, 1.0);
+                    pulls.photon1.x = rng.Gaus(0.0, 1.0);
+                    pulls.photon1.y = rng.Gaus(0.0, 1.0);
+                    pulls.photon2.energy = rng.Gaus(0.0, 1.0);
+                    pulls.photon2.x = rng.Gaus(0.0, 1.0);
+                    pulls.photon2.y = rng.Gaus(0.0, 1.0);
+                }
+            }
+            use_pull_cache_ = true;
+        }
+    };
 
     inline bool scaleSmearedFromUnsmearedIntegral(TH1D &hsmeared,
                                                   const TH1D &hunsmeared,
@@ -1552,13 +2229,18 @@
             double sig2  = ev.photon2_in_section ? sigma     : ev.sigma2_ext;
             double spos2 = ev.photon2_in_section ? sigma_pos : ev.sigma_pos2_ext;
 
+            const PreparedPhotonSmear prepared1 = preparePhotonSmear(
+                ev.e1, ev.x1, ev.y1, ma1, mb1, mc1, sig1, spos1,
+                res_A, res_B, res_C);
+            const PreparedPhotonSmear prepared2 = preparePhotonSmear(
+                ev.e2, ev.x2, ev.y2, ma2, mb2, mc2, sig2, spos2,
+                res_A, res_B, res_C);
+
             double event_weight = ev.weight / Nsmear;
             for (int k = 0; k < Nsmear; ++k) {
                 double E1_sm, x1_sm, y1_sm, E2_sm, x2_sm, y2_sm;
-                smearPhoton(ev.e1, ev.x1, ev.y1, ma1, mb1, mc1, sig1, spos1,
-                            res_A, res_B, res_C, rng, E1_sm, x1_sm, y1_sm);
-                smearPhoton(ev.e2, ev.x2, ev.y2, ma2, mb2, mc2, sig2, spos2,
-                            res_A, res_B, res_C, rng, E2_sm, x2_sm, y2_sm);
+                smearPreparedPhoton(prepared1, rng, E1_sm, x1_sm, y1_sm);
+                smearPreparedPhoton(prepared2, rng, E2_sm, x2_sm, y2_sm);
                 apply_mgg_linear_pair_energy_correction(E1_sm, E2_sm, x1_sm, y1_sm, x2_sm, y2_sm);
                 PhotonMomentum p1 = computePhotonMomentum(E1_sm, x1_sm, y1_sm, z_nps);
                 PhotonMomentum p2 = computePhotonMomentum(E2_sm, x2_sm, y2_sm, z_nps);
@@ -1621,19 +2303,22 @@
             double sig2  = ev.photon2_in_section ? sigma     : ev.sigma2_ext;
             double spos2 = ev.photon2_in_section ? sigma_pos : ev.sigma_pos2_ext;
 
+            const PreparedPhotonSmear prepared1 = preparePhotonSmear(
+                ev.e1, ev.x1, ev.y1, ma1, mb1, mc1, sig1, spos1,
+                res_A, res_B, res_C);
+            const PreparedPhotonSmear prepared2 = preparePhotonSmear(
+                ev.e2, ev.x2, ev.y2, ma2, mb2, mc2, sig2, spos2,
+                res_A, res_B, res_C);
+
             double event_weight = ev.weight / Nsmear;
             for (int k = 0; k < Nsmear; ++k) {
                 double E1_sm, x1_sm, y1_sm, E2_sm, x2_sm, y2_sm;
-                smearPhoton(ev.e1, ev.x1, ev.y1, ma1, mb1, mc1, sig1, spos1,
-                            res_A, res_B, res_C, rng, E1_sm, x1_sm, y1_sm);
-                smearPhoton(ev.e2, ev.x2, ev.y2, ma2, mb2, mc2, sig2, spos2,
-                            res_A, res_B, res_C, rng, E2_sm, x2_sm, y2_sm);
+                smearPreparedPhoton(prepared1, rng, E1_sm, x1_sm, y1_sm);
+                smearPreparedPhoton(prepared2, rng, E2_sm, x2_sm, y2_sm);
                 apply_mgg_linear_pair_energy_correction(E1_sm, E2_sm, x1_sm, y1_sm, x2_sm, y2_sm);
-                ElectronKinematics e_kin = scaleElectronKinematicsFromMomentum(
-                    ev.px_e, ev.py_e, ev.pz_e, p_e_scale);
                 double mmiss = nps::missing_mass_proton_pi0(
                     Config::BEAM_ENERGY,
-                    e_kin.Ee, e_kin.px, e_kin.py, e_kin.pz,
+                    e_kin_u.Ee, e_kin_u.px, e_kin_u.py, e_kin_u.pz,
                     E1_sm, E2_sm, x1_sm, y1_sm, x2_sm, y2_sm,
                     Config::NPS_Z_NPS_CM, Config::NPS_THETA_NPS_DEG
                 );
@@ -1692,13 +2377,18 @@
             double sig2  = ev.photon2_in_section ? sigma     : ev.sigma2_ext;
             double spos2 = ev.photon2_in_section ? sigma_pos : ev.sigma_pos2_ext;
 
+            const PreparedPhotonSmear prepared1 = preparePhotonSmear(
+                ev.e1, ev.x1, ev.y1, ma1, mb1, mc1, sig1, spos1,
+                res_A, res_B, res_C);
+            const PreparedPhotonSmear prepared2 = preparePhotonSmear(
+                ev.e2, ev.x2, ev.y2, ma2, mb2, mc2, sig2, spos2,
+                res_A, res_B, res_C);
+
             double event_weight = ev.weight / Nsmear;
             for (int k = 0; k < Nsmear; ++k) {
                 double E1_sm, x1_sm, y1_sm, E2_sm, x2_sm, y2_sm;
-                smearPhoton(ev.e1, ev.x1, ev.y1, ma1, mb1, mc1, sig1, spos1,
-                            res_A, res_B, res_C, rng, E1_sm, x1_sm, y1_sm);
-                smearPhoton(ev.e2, ev.x2, ev.y2, ma2, mb2, mc2, sig2, spos2,
-                            res_A, res_B, res_C, rng, E2_sm, x2_sm, y2_sm);
+                smearPreparedPhoton(prepared1, rng, E1_sm, x1_sm, y1_sm);
+                smearPreparedPhoton(prepared2, rng, E2_sm, x2_sm, y2_sm);
                 apply_mgg_linear_pair_energy_correction(E1_sm, E2_sm, x1_sm, y1_sm, x2_sm, y2_sm);
                 double E1_mpgg2 = Config::W_MPGG2_ENERGY * E1_sm;
                 double E2_mpgg2 = Config::W_MPGG2_ENERGY * E2_sm;
@@ -1790,26 +2480,38 @@
             double sig2  = ev.photon2_in_section ? sigma     : ev.sigma2_ext;
             double spos2 = ev.photon2_in_section ? sigma_pos : ev.sigma_pos2_ext;
 
+            const PreparedPhotonSmear prepared1 = preparePhotonSmear(
+                ev.e1, ev.x1, ev.y1, ma1, mb1, mc1, sig1, spos1,
+                res_A, res_B, res_C);
+            const PreparedPhotonSmear prepared2 = preparePhotonSmear(
+                ev.e2, ev.x2, ev.y2, ma2, mb2, mc2, sig2, spos2,
+                res_A, res_B, res_C);
+            ElectronKinematics e_kin;
+            if (fill_mmiss) {
+                e_kin = scaleElectronKinematicsFromMomentum(
+                    ev.px_e, ev.py_e, ev.pz_e, p_e_scale);
+            }
+
             double event_weight = ev.weight / Nsmear;
             for (int k = 0; k < Nsmear; ++k) {
                 double E1_sm, x1_sm, y1_sm, E2_sm, x2_sm, y2_sm;
-                smearPhoton(ev.e1, ev.x1, ev.y1, ma1, mb1, mc1, sig1, spos1,
-                            res_A, res_B, res_C, rng, E1_sm, x1_sm, y1_sm);
-                smearPhoton(ev.e2, ev.x2, ev.y2, ma2, mb2, mc2, sig2, spos2,
-                            res_A, res_B, res_C, rng, E2_sm, x2_sm, y2_sm);
+                smearPreparedPhoton(prepared1, rng, E1_sm, x1_sm, y1_sm);
+                smearPreparedPhoton(prepared2, rng, E2_sm, x2_sm, y2_sm);
                 apply_mgg_linear_pair_energy_correction(E1_sm, E2_sm, x1_sm, y1_sm, x2_sm, y2_sm);
 
+                PhotonMomentum p1, p2;
+                if (fill_mpi0 || fill_mpgg2) {
+                    p1 = computePhotonMomentum(E1_sm, x1_sm, y1_sm, z_nps);
+                    p2 = computePhotonMomentum(E2_sm, x2_sm, y2_sm, z_nps);
+                }
+
                 if (fill_mpi0) {
-                    PhotonMomentum p1 = computePhotonMomentum(E1_sm, x1_sm, y1_sm, z_nps);
-                    PhotonMomentum p2 = computePhotonMomentum(E2_sm, x2_sm, y2_sm, z_nps);
                     double mass = computeInvariantMass(E1_sm, p1.px, p1.py, p1.pz,
                                                     E2_sm, p2.px, p2.py, p2.pz);
                     hsim_mpi0.Fill(mass, event_weight);
                 }
 
                 if (fill_mmiss) {
-                    ElectronKinematics e_kin = scaleElectronKinematicsFromMomentum(
-                        ev.px_e, ev.py_e, ev.pz_e, p_e_scale);
                     double mmiss = nps::missing_mass_proton_pi0(
                         Config::BEAM_ENERGY,
                         e_kin.Ee, e_kin.px, e_kin.py, e_kin.pz,
@@ -1822,8 +2524,14 @@
                 if (fill_mpgg2) {
                     double E1_mpgg2 = Config::W_MPGG2_ENERGY * E1_sm;
                     double E2_mpgg2 = Config::W_MPGG2_ENERGY * E2_sm;
-                    PhotonMomentum p1_mpgg2 = computePhotonMomentum(E1_mpgg2, x1_sm, y1_sm, z_nps);
-                    PhotonMomentum p2_mpgg2 = computePhotonMomentum(E2_mpgg2, x2_sm, y2_sm, z_nps);
+                    PhotonMomentum p1_mpgg2, p2_mpgg2;
+                    if (Config::W_MPGG2_ENERGY == 1.0) {
+                        p1_mpgg2 = p1;
+                        p2_mpgg2 = p2;
+                    } else {
+                        p1_mpgg2 = computePhotonMomentum(E1_mpgg2, x1_sm, y1_sm, z_nps);
+                        p2_mpgg2 = computePhotonMomentum(E2_mpgg2, x2_sm, y2_sm, z_nps);
+                    }
                     double mpgg2 = computeTargetPlusDiphotonMass2(E1_mpgg2, p1_mpgg2, E2_mpgg2, p2_mpgg2);
                     hsim_mpgg2.Fill(mpgg2, event_weight);
                 }
@@ -2674,12 +3382,14 @@
         if (done >= total) cout << endl;
     }
 
-    template <typename Chi2Fn>
+    template <typename Chi2Fn, typename BatchChi2Fn>
     MigradRefineResult run_global_multistart_refinement(Chi2Fn chi2_fn,
+                                                        BatchChi2Fn batch_chi2_fn,
                                                         const ParamPoint &center,
                                                         const FitFlags &flags,
                                                         vector<SeedDiagnostic> *seed_debug,
-                                                        const string &progress_label = "") {
+                                                        const string &progress_label = "",
+                                                        bool parallel_seed_scan = false) {
         int ndim = 0;
         if (flags.mu_a) ++ndim;
         if (flags.mu) ++ndim;
@@ -2705,8 +3415,8 @@
             }
         }
 
-        vector<SeedDiagnostic> candidates;
-        candidates.reserve(Config::GLOBAL_MULTISTART_SEEDS + 1);
+        vector<SeedDiagnostic> candidates(n_seeds + 1);
+        vector<array<double, 6>> candidate_points(n_seeds + 1);
 
         auto make_point = [&](int seed_index) {
             ParamPoint p = center;
@@ -2750,8 +3460,10 @@
             return p;
         };
 
-        for (int iseed = 0; iseed <= n_seeds; ++iseed) {
+        auto initialize_seed = [&](int iseed) {
             ParamPoint p = make_point(iseed);
+            candidate_points[iseed] = {{p.mu_a, p.mu, p.mu_c,
+                                        p.sigma, p.sigma_pos, p.p_e_scale}};
             SeedDiagnostic d;
             d.seed_index = iseed;
             d.mu_a = p.mu_a;
@@ -2760,11 +3472,49 @@
             d.sigma = p.sigma;
             d.sigma_pos = p.sigma_pos;
             d.p_e_scale = p.p_e_scale;
-            d.seed_chi2 = chi2_fn(p.mu_a, p.mu, p.mu_c, p.sigma, p.sigma_pos, p.p_e_scale);
-            d.migrad_chi2 = d.seed_chi2;
-            candidates.push_back(d);
+            candidates[iseed] = d;
+        };
+
+        for (int iseed = 0; iseed <= n_seeds; ++iseed) initialize_seed(iseed);
+
+        const int scan_batch_size = max(1, Config::FAST_SOBOL_BATCH_SIZE);
+        const int n_scan_points = n_seeds + 1;
+        const int n_batches = (n_scan_points + scan_batch_size - 1) / scan_batch_size;
+        auto evaluate_batch = [&](int ibatch) {
+            const int first = ibatch * scan_batch_size;
+            const int last = min(n_scan_points, first + scan_batch_size);
+            vector<array<double, 6>> points(candidate_points.begin() + first,
+                                             candidate_points.begin() + last);
+            vector<double> batch_values = batch_chi2_fn(points);
+            if (batch_values.size() != points.size()) {
+                batch_values.resize(points.size());
+                for (size_t j = 0; j < points.size(); ++j) {
+                    const auto &p = points[j];
+                    batch_values[j] = chi2_fn(p[0], p[1], p[2], p[3], p[4], p[5]);
+                }
+            }
+            for (int iseed = first; iseed < last; ++iseed) {
+                const double value = batch_values[iseed - first];
+                candidates[iseed].seed_chi2 = value;
+                candidates[iseed].migrad_chi2 = value;
+            }
+        };
+
+        const bool run_seed_scan_parallel = parallel_seed_scan && !omp_in_parallel();
+        if (run_seed_scan_parallel) {
+            #pragma omp parallel for schedule(dynamic)
+            for (int ibatch = 0; ibatch < n_batches; ++ibatch) evaluate_batch(ibatch);
             if (!progress_label.empty()) {
-                print_progress_bar(progress_label + " Sobol seed scan", iseed + 1, n_seeds + 1);
+                print_progress_bar(progress_label + " Sobol seed scan", n_scan_points, n_scan_points);
+            }
+        } else {
+            for (int ibatch = 0; ibatch < n_batches; ++ibatch) {
+                evaluate_batch(ibatch);
+                if (!progress_label.empty()) {
+                    print_progress_bar(progress_label + " Sobol seed scan",
+                                       min(n_scan_points, (ibatch + 1) * scan_batch_size),
+                                       n_scan_points);
+                }
             }
         }
 
@@ -2782,17 +3532,36 @@
                                 candidates[0].p_e_scale, candidates[0].seed_chi2, false};
         best.n_starts = keep;
 
-        for (int i = 0; i < keep; ++i) {
-            if (!progress_label.empty()) {
-                print_progress_bar(progress_label + " MIGRAD retained seeds", i, keep);
+        vector<MigradRefineResult> refinements(keep);
+        auto refine_seed = [&](int i) {
+            const SeedDiagnostic &d = candidates[i];
+            refinements[i] = run_migrad_refinement(chi2_fn,
+                                                    d.mu_a, d.mu, d.mu_c,
+                                                    d.sigma, d.sigma_pos, d.p_e_scale,
+                                                    flags.mu_a, flags.mu, flags.mu_c,
+                                                    flags.sigma, flags.sigma_pos, flags.p_e_scale);
+        };
+
+        // Factory/plugin initialization is done before entering OpenMP. Minuit2
+        // instances and objective accumulators are otherwise independent.
+        if (run_seed_scan_parallel) {
+            unique_ptr<ROOT::Math::Minimizer> minuit_warmup(
+                ROOT::Math::Factory::CreateMinimizer("Minuit2", "Migrad"));
+            #pragma omp parallel for schedule(static)
+            for (int i = 0; i < keep; ++i) refine_seed(i);
+        } else {
+            for (int i = 0; i < keep; ++i) {
+                if (!progress_label.empty()) {
+                    print_progress_bar(progress_label + " MIGRAD retained seeds", i, keep);
+                }
+                refine_seed(i);
             }
+        }
+
+        for (int i = 0; i < keep; ++i) {
             SeedDiagnostic &d = candidates[i];
             d.rank = i + 1;
-            MigradRefineResult mr = run_migrad_refinement(chi2_fn,
-                                                          d.mu_a, d.mu, d.mu_c,
-                                                          d.sigma, d.sigma_pos, d.p_e_scale,
-                                                          flags.mu_a, flags.mu, flags.mu_c,
-                                                          flags.sigma, flags.sigma_pos, flags.p_e_scale);
+            const MigradRefineResult &mr = refinements[i];
             d.migrad_chi2 = mr.chi2;
             d.mu_a = mr.mu_a;
             d.mu = mr.mu;
@@ -2805,9 +3574,12 @@
             d.max_abs_corr = mr.max_abs_corr;
             d.max_corr_pair = mr.max_corr_pair;
             if (mr.chi2 < best.chi2) best = mr;
-            if (!progress_label.empty()) {
+            if (!run_seed_scan_parallel && !progress_label.empty()) {
                 print_progress_bar(progress_label + " MIGRAD retained seeds", i + 1, keep);
             }
+        }
+        if (run_seed_scan_parallel && !progress_label.empty()) {
+            print_progress_bar(progress_label + " MIGRAD retained seeds", keep, keep);
         }
 
         if (seed_debug) *seed_debug = candidates;
@@ -3456,12 +4228,13 @@
         }
         const string run_tag = getRunTag();
         const string created_at_local = currentTimestampTag();
-        const string timestamped_out_file = insertTagBeforeExtension(out_file, run_tag);
+        const string run_archive_dir = outputDirectoryForPath(out_file) + "smearing_runs/" + run_tag;
+        gSystem->mkdir(run_archive_dir.c_str(), true);
+        const string timestamped_out_file = run_archive_dir + "/" + basenameForPath(out_file);
         cout << "Output file: " << out_file << endl;
         cout << "Diagnostic run tag: " << run_tag << endl;
-        if (timestamped_out_file != out_file) {
-            cout << "Timestamped output copy: " << timestamped_out_file << endl;
-        }
+        cout << "Run archive directory: " << run_archive_dir << endl;
+        cout << "Archived output copy: " << timestamped_out_file << endl;
 
         // open data and sim files
         TFile fdata(data_file.c_str(), "READ");
@@ -4154,6 +4927,23 @@
         string sweep_history_csv_file = sibling_output_path(Config::SWEEP_HISTORY_CSV_FILENAME);
         string objective_breakdown_csv_file = sibling_output_path(Config::OBJECTIVE_BREAKDOWN_CSV_FILENAME);
         string cache_fingerprint_file = sibling_output_path(Config::CACHE_FINGERPRINT_FILENAME);
+        auto archive_supporting_outputs = [&]() {
+            const vector<string> sources = {
+                csv_file,
+                optimizer_summary_csv_file,
+                optimizer_seeds_csv_file,
+                optimizer_profile_csv_file,
+                closure_summary_csv_file,
+                sweep_history_csv_file,
+                objective_breakdown_csv_file,
+                cache_fingerprint_file
+            };
+            for (const string &src : sources) {
+                copyFileIfDifferent(src,
+                                    run_archive_dir + "/" + basenameForPath(src),
+                                    "run artifact");
+            }
+        };
         auto fnv1a_update = [](unsigned long long h, const char *data, size_t n) {
             const unsigned long long prime = 1099511628211ull;
             for (size_t i = 0; i < n; ++i) {
@@ -4362,16 +5152,16 @@
 
         // Create canvas and PDF for chi^2 plots
         string canonical_pdf_file = sibling_output_path(Config::CHI2_PDF_FILENAME);
-        string pdf_file = insertTagBeforeExtension(canonical_pdf_file, run_tag);
+        string pdf_file = run_archive_dir + "/" + Config::CHI2_PDF_FILENAME;
         TCanvas *c_chi2 = new TCanvas("c_chi2", "Section Smearing Diagnostics", 1600, 1100);
         string pdf_open = pdf_file + "[";
         c_chi2->Print(pdf_open.c_str());
         int page_count = 0;
-        string progress_pdf_dir = sibling_output_path("chi2_scans_progress_" + run_tag);
+        string progress_pdf_dir = run_archive_dir + "/progress";
         gSystem->mkdir(progress_pdf_dir.c_str(), true);
-        string metadata_manifest_file = sibling_output_path("smearing_artifacts_" + run_tag + ".json");
+        string metadata_manifest_file = run_archive_dir + "/manifest.json";
         string interp_file = interpolatedPathForOutput(out_file);
-        string timestamped_interp_file = interpolatedPathForOutput(timestamped_out_file);
+        string timestamped_interp_file = run_archive_dir + "/" + basenameForPath(interp_file);
         fout.cd();
         TNamed("chi2_pdf_file", pdf_file.c_str()).Write();
         TNamed("canonical_chi2_pdf_file", canonical_pdf_file.c_str()).Write();
@@ -4984,7 +5774,8 @@
                                     : 0.0;
             double p_e0 = pe_seed;
 
-            auto chi2_eval = [&](double mu_a, double mu_b, double mu_c, double sigma, double sigma_pos, double p_e_scale) {
+            auto legacy_chi2_eval = [&](double mu_a, double mu_b, double mu_c,
+                                        double sigma, double sigma_pos, double p_e_scale) {
                 TRandom3 rng_eval(97531);
                 return eval_chi2_selected(mu_a, mu_b, mu_c, sigma, sigma_pos, p_e_scale,
                                         simEvents,
@@ -4994,6 +5785,86 @@
                                         Config::RESOLUTION_B_DEFAULT,
                                         Config::RESOLUTION_C_DEFAULT,
                                         Config::W_MPI0, Config::W_MMISS, Config::W_MPGG2);
+            };
+
+            FastObjectiveEvaluator fast_objective(simEvents,
+                                                   hdata_mpi0, hdata_mmiss, hdata_mpgg2,
+                                                   nsmear_local,
+                                                   Config::RESOLUTION_A_DEFAULT,
+                                                   Config::RESOLUTION_B_DEFAULT,
+                                                   Config::RESOLUTION_C_DEFAULT);
+            bool use_fast_objective = true;
+            if (Config::VALIDATE_FAST_OBJECTIVE) {
+                const double clamp_a_plus = min(Config::MU_A_MAX, mu_a0 + 0.031);
+                const double clamp_a_minus = max(Config::MU_A_MIN, mu_a0 - 0.027);
+                const double clamp_b_plus = min(Config::MU_MAX, mu0 + 0.017);
+                const double clamp_b_minus = max(Config::MU_MIN, mu0 - 0.013);
+                const double clamp_c_plus = min(Config::MU_C_MAX, mu_c0 + 0.023);
+                const double clamp_c_minus = max(Config::MU_C_MIN, mu_c0 - 0.019);
+                const double clamp_sigma_plus = min(Config::SIGMA_MAX, sigma0 + 0.007);
+                const double clamp_sigma_minus = max(Config::SIGMA_MIN, sigma0 - 0.005);
+                const double clamp_pos_plus = Config::ENABLE_POSITION_SMEARING
+                    ? min(Config::SIGMA_POS_MAX, sigma_pos0 + 0.07) : sigma_pos0;
+                const double clamp_pos_minus = Config::ENABLE_POSITION_SMEARING
+                    ? max(Config::SIGMA_POS_MIN, sigma_pos0 - 0.05) : sigma_pos0;
+                const array<array<double, 6>, 3> validation_points = {{
+                    {{mu_a0, mu0, mu_c0, sigma0, sigma_pos0, p_e0}},
+                    {{clamp_a_plus, clamp_b_minus, clamp_c_plus,
+                      clamp_sigma_plus, clamp_pos_plus, p_e0}},
+                    {{clamp_a_minus, clamp_b_plus, clamp_c_minus,
+                      clamp_sigma_minus, clamp_pos_minus, p_e0}}
+                }};
+                vector<array<double, 6>> validation_batch(validation_points.begin(),
+                                                           validation_points.end());
+                const vector<double> batch_checks =
+                    fast_objective.evaluateSelectedBatch(validation_batch);
+                size_t validation_index = 0;
+                for (const auto &point : validation_points) {
+                    const double fast_check = fast_objective.evaluateSelected(
+                        point[0], point[1], point[2], point[3], point[4], point[5]);
+                    const double legacy_check = legacy_chi2_eval(
+                        point[0], point[1], point[2], point[3], point[4], point[5]);
+                    const double tolerance = 1e-9 +
+                        1e-10 * std::max(1.0, std::fabs(legacy_check));
+                    use_fast_objective = std::isfinite(fast_check) &&
+                                         std::isfinite(legacy_check) &&
+                                         std::fabs(fast_check - legacy_check) <= tolerance &&
+                                         batch_checks.size() == validation_points.size() &&
+                                         std::isfinite(batch_checks[validation_index]) &&
+                                         std::fabs(batch_checks[validation_index] - legacy_check) <= tolerance;
+                    if (!use_fast_objective) {
+                        #pragma omp critical(console)
+                        {
+                            cerr << "[WARN] Fast objective validation failed: fast=" << fast_check
+                                 << " batch=" << (batch_checks.size() == validation_points.size()
+                                                     ? batch_checks[validation_index] : -1.0)
+                                 << " legacy=" << legacy_check
+                                 << " tolerance=" << tolerance
+                                 << "; using legacy evaluator for this fit." << endl;
+                        }
+                        break;
+                    }
+                    ++validation_index;
+                }
+            }
+
+            auto chi2_eval = [&](double mu_a, double mu_b, double mu_c,
+                                 double sigma, double sigma_pos, double p_e_scale) {
+                if (use_fast_objective) {
+                    return fast_objective.evaluateSelected(
+                        mu_a, mu_b, mu_c, sigma, sigma_pos, p_e_scale);
+                }
+                return legacy_chi2_eval(mu_a, mu_b, mu_c, sigma, sigma_pos, p_e_scale);
+            };
+
+            auto batch_chi2_eval = [&](const vector<array<double, 6>> &points) {
+                if (use_fast_objective) return fast_objective.evaluateSelectedBatch(points);
+                vector<double> values(points.size(), 0.0);
+                for (size_t i = 0; i < points.size(); ++i) {
+                    const auto &p = points[i];
+                    values[i] = legacy_chi2_eval(p[0], p[1], p[2], p[3], p[4], p[5]);
+                }
+                return values;
             };
 
             ParamPoint center;
@@ -5021,8 +5892,9 @@
 
                 vector<SeedDiagnostic> energy_debug;
                 MigradRefineResult energy_mr = run_global_multistart_refinement(
-                    chi2_eval, center, energy_flags, &energy_debug,
-                    progress_label.empty() ? "" : progress_label + " energy+sigma");
+                    chi2_eval, batch_chi2_eval, center, energy_flags, &energy_debug,
+                    progress_label.empty() ? "" : progress_label + " energy+sigma",
+                    use_fast_objective && !omp_in_parallel());
                 append_seed_debug(energy_debug);
 
                 ParamPoint pos_center;
@@ -5038,8 +5910,9 @@
 
                 vector<SeedDiagnostic> pos_debug;
                 MigradRefineResult pos_mr = run_global_multistart_refinement(
-                    chi2_eval, pos_center, pos_flags, &pos_debug,
-                    progress_label.empty() ? "" : progress_label + " sigma_pos");
+                    chi2_eval, batch_chi2_eval, pos_center, pos_flags, &pos_debug,
+                    progress_label.empty() ? "" : progress_label + " sigma_pos",
+                    use_fast_objective && !omp_in_parallel());
                 append_seed_debug(pos_debug);
 
                 final_mr = pos_mr;
@@ -5062,10 +5935,12 @@
 
                 vector<SeedDiagnostic> joint_debug;
                 final_mr = run_global_multistart_refinement(chi2_eval,
+                                                            batch_chi2_eval,
                                                             center,
                                                             joint_flags,
                                                             &joint_debug,
-                                                            progress_label);
+                                                            progress_label,
+                                                            use_fast_objective && !omp_in_parallel());
                 append_seed_debug(joint_debug);
                 final_flags = joint_flags;
                 out.optimizer_mode = "sobol_multistart";
@@ -5367,9 +6242,12 @@
                 fout.Close();
                 copyFileIfDifferent(pdf_file, canonical_pdf_file, "latest chi2 PDF");
                 copyFileIfDifferent(out_file, timestamped_out_file, "fitter ROOT output");
+                copyFileIfDifferent(interp_file, timestamped_interp_file, "interpolated ROOT output");
+                archive_supporting_outputs();
                 writeSmearingManifest(metadata_manifest_file,
                                       run_tag,
                                       created_at_local,
+                                      run_archive_dir,
                                       data_file,
                                       sim_file,
                                       out_file,
@@ -7179,9 +8057,11 @@
         // Save 2D interpolated maps for visualization
         calMap.saveAsHistogram(interp_file, run_tag, created_at_local);
         copyFileIfDifferent(interp_file, timestamped_interp_file, "interpolated ROOT output");
+        archive_supporting_outputs();
         writeSmearingManifest(metadata_manifest_file,
                               run_tag,
                               created_at_local,
+                              run_archive_dir,
                               data_file,
                               sim_file,
                               out_file,

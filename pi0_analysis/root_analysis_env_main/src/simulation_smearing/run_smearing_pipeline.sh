@@ -16,6 +16,8 @@ cd "${REPO_ROOT}"
 
 ROOT_CMD="${ROOT_CMD:-root}"
 CXX_CMD="${CXX:-g++}"
+RUN_TAG="${RUN_TAG:-$(date +%Y%m%d_%H%M%S)}"
+export RUN_TAG
 
 SMEAR_SRC="${SCRIPT_DIR}/nps_sim_smearing_new.C"
 SIMC_MACRO="${SCRIPT_DIR}/simc_pi0_analysis.C"
@@ -523,7 +525,7 @@ echo ""
 echo "============================================================================"
 echo "Step 2/4: Compiling nps_sim_smearing_new.C"
 echo "============================================================================"
-"${CXX_CMD}" "${SMEAR_SRC}" $(root-config --cflags --libs) -lMathMore -O2 -std=c++17 -fopenmp -I"${REPO_ROOT}/src" -o "${SMEAR_BIN}"
+"${CXX_CMD}" "${SMEAR_SRC}" $(root-config --cflags --libs) -lMathMore -O3 -march=native -std=c++17 -fopenmp -I"${REPO_ROOT}/src" -o "${SMEAR_BIN}"
 
 echo ""
 echo "============================================================================"
@@ -570,6 +572,34 @@ fi
 
 run_simc_analysis "Step 4/4: Regenerating smeared simulation ROOT output" "section"
 
+RUN_ARCHIVE_DIR="$(dirname "${OUT_FILE}")/smearing_runs/${RUN_TAG}"
+mkdir -p "${RUN_ARCHIVE_DIR}"
+
+archive_postfit_file() {
+  local src="$1"
+  local archive_name="$2"
+  local dst="${RUN_ARCHIVE_DIR}/${archive_name}"
+  if [[ ! -f "${src}" ]]; then
+    echo "[WARN] Post-fit artifact not found; not archived: ${src}" >&2
+    return
+  fi
+  if [[ "${src}" != "${dst}" ]]; then
+    cp -p "${src}" "${dst}"
+  fi
+}
+
+archive_postfit_file "${SIM_FILE}" "simc_pi0_analysis_output.root"
+archive_postfit_file "${SIM_SMEARED_FILE}" "simc_pi0_analysis_output_smeared.root"
+
+SIM_UNSMEARED_DIR="$(dirname "${SIM_FILE}")"
+SIM_SMEARED_DIR="$(dirname "${SIM_SMEARED_FILE}")"
+for ending in .pdf .png .root _params.csv _peak_scan.csv; do
+  archive_postfit_file "${SIM_UNSMEARED_DIR}/simc_unsmeared_2d_mass_cut${ending}" \
+                       "simc_unsmeared_2d_mass_cut${ending}"
+  archive_postfit_file "${SIM_SMEARED_DIR}/simc_smeared_2d_mass_cut${ending}" \
+                       "simc_smeared_2d_mass_cut${ending}"
+done
+
 echo ""
 echo "============================================================================"
 echo "Pipeline complete"
@@ -592,4 +622,5 @@ echo "  section map:     ${SECTION_MAP_FILE}"
 echo "  interp map:      ${INTERP_FILE}"
 echo "  input preview:   ${INPUT_PREVIEW_PDF}"
 echo "  sim smeared out: ${SIM_SMEARED_FILE}"
+echo "  run archive:     ${RUN_ARCHIVE_DIR}"
 echo "============================================================================"

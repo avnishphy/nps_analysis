@@ -249,6 +249,12 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
   and the current fixed-weight alternatives. It proposes a bounded, opt-in
   one-setting prototype with predeclared invariants and coverage tests. It is
   not approved and no candidate algorithm or schema change has been installed.
+- Documentation-only evidence commit:
+  `fccfc73297924c8947226eb8dfdaf2801e06f813` (`docs: map uncertainty architecture`).
+- After that commit, `sha256sum --quiet --check` passed all 31,047 frozen MAIN
+  files; an independently regenerated `%m\t%y\t%s\t%P\t%l` entry manifest
+  compared exactly, with 847 directories and zero symlinks. The audit SHA-256
+  again matched the recorded value.
 - No production ROOT/data/SIMC file was processed. A six-segment waveform input
   for run 4398 was located externally but not opened; therefore no real-data
   impact is claimed.

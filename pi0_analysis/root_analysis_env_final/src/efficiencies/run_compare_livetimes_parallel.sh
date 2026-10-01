@@ -5,10 +5,10 @@ set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 exe="${here}/compare_livetimes"
-config="/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/config/nps_dvcs_all_kins_main.csv"
+config="/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final/config/nps_dvcs_all_kins_main.csv"
 updated="/lustre24/expphy/cache/hallc/c-nps/analysis/pass2/replays/updated"
 production="/lustre24/expphy/cache/hallc/c-nps/analysis/pass2/replays/production"
-output="/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/efficiency_stuff"
+output="/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final/output/efficiency_stuff"
 plots_dir=""              # Defaults to <output>/plots after --output-dir is parsed.
 jobs="$(nproc)"
 retries=2                  # Retry only workers killed by SIGKILL/OOM (status 137).

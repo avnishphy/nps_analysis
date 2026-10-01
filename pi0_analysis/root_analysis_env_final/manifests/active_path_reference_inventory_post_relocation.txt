@@ -1,0 +1,8 @@
+# Active MAIN-path reference inventory after relocation
+# Generated 2026-10-01 after PATH-001 through PATH-018.
+# Search scope excludes docs, manifests, recovery, validation, generated SIMC
+# input comments, notebooks, and preserved historical efficiency evidence.
+#
+# The sole remaining active-code match is an intentional safety guard. It
+# refuses to initialize runtime directories if setup is invoked from MAIN.
+scripts/setup_final_workspace.sh:7:if [[ "${workspace}" == */root_analysis_env_main ]]; then

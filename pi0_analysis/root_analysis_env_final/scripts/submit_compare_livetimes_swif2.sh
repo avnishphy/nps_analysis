@@ -5,7 +5,7 @@
 set -euo pipefail
 
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
-DEFAULT_ROOT="/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main"
+DEFAULT_ROOT="/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final"
 CONFIG_REL="config/nps_dvcs_all_kins_main.csv"
 EFF_REL="src/efficiencies"
 EXE_REL="${EFF_REL}/compare_livetimes"

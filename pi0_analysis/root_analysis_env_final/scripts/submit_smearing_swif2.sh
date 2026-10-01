@@ -6,7 +6,7 @@
 # data ROOT file, exclusive/SIDIS/delta Geant ROOT files, and the matching
 # three SIMC .hist files that provide normfac and Ngen.
 #
-# Example interactive preview followed by approved submission (run from root_analysis_env_main):
+# Example interactive preview followed by approved submission (run from root_analysis_env_final):
 #   ./scripts/submit_smearing_swif2.sh --kin KinC_x60_4b --target LH2 --combined-file output/KinC_x60_4b/root/combined_branches_LH2.root --nx 7 --ny 8 --x-min -26 --x-max 26 --y-min -32 --y-max 32 --cores 8 --omp-threads 8 --workflow smear_x60_4b_test
 # The script first runs the pipeline on the interactive farm only far enough
 # to write the preview PDF. It submits the approved fit to SWIF2 only after y.
@@ -22,7 +22,7 @@
 set -euo pipefail
 
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
-DEFAULT_ROOT="/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main"
+DEFAULT_ROOT="/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final"
 PIPELINE_REL="src/simulation_smearing/run_smearing_pipeline.sh"
 METADATA_REL="config/nps_simulation_kinematics.csv"
 

@@ -101,10 +101,10 @@ void log_warn(const std::string& msg) {
 namespace {
 
 struct ProgramConfig {
-	std::string config_csv_path = "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/config/nps_dvcs_all_kins_main.csv";
+	std::string config_csv_path = "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final/config/nps_dvcs_all_kins_main.csv";
 	std::string updated_root_dir = "/lustre24/expphy/cache/hallc/c-nps/analysis/pass2/replays/updated";
 	std::string production_root_dir = "/lustre24/expphy/cache/hallc/c-nps/analysis/pass2/replays/production";
-	std::string output_dir = "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/efficiency_stuff";
+	std::string output_dir = "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final/output/efficiency_stuff";
 
 	std::vector<std::string> requested_kinematics;
 	bool all_kinematics = false;

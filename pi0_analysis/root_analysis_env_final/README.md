@@ -16,10 +16,11 @@ cd /w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_
 ```
 
 The migrated source is not yet a production or publication candidate. Active
-launchers still require path-isolation review, and the extraction/statistical
-architecture requires explicit approval before algorithmic changes. Until the
-worklog records those gates as passed, use only documented bounded diagnostics
-whose outputs remain under `validation/runtime/` or `scratch/`.
+defaults have been relocated into `FINAL`, but launcher preflight and bounded
+behavior-preservation checks must pass before execution. The extraction and
+statistical architecture requires explicit approval before algorithmic changes.
+Until the worklog records those gates as passed, use only documented bounded
+diagnostics whose outputs remain under `validation/runtime/` or `scratch/`.
 
 See [the final-workspace operating procedure](docs/final_workspace_operating_procedure.md)
 for the current stage order, write policy, and stop conditions.

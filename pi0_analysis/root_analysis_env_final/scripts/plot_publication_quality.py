@@ -29,11 +29,11 @@ warnings.filterwarnings("ignore")
 
 DEFAULT_SUMMARY_CSV = (
     "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/"
-    "root_analysis_env_main/output/KinC_x60_4b/summary/summary_all_runs.csv"
+    "root_analysis_env_final/output/KinC_x60_4b/summary/summary_all_runs.csv"
 )
 DEFAULT_EFFICIENCY_CSV = (
     "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/"
-    "root_analysis_env_main/output/efficiency_stuff/efficiency_KinC_x60_4b.csv"
+    "root_analysis_env_final/output/efficiency_stuff/efficiency_KinC_x60_4b.csv"
 )
 
 FIGURE_DPI = 300
@@ -1232,7 +1232,7 @@ import uproot
 POST_DEFAULT_SIM_BASE = Path("/volatile/hallc/nps/singhav/geant4_simc")
 POST_DEFAULT_HIST_DIR = Path(
     "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/"
-    "root_analysis_env_main/output/simc/nps_simc_20260824_135058/"
+    "root_analysis_env_final/output/simc/nps_simc_20260824_135058/"
     "outfiles/simc_gfortran_updated/outfiles"
 )
 POST_DEFAULT_KIN_CONFIG = Path(__file__).resolve().parents[1] / "config/nps_simulation_kinematics.csv"

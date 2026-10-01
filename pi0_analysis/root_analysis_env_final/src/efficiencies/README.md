@@ -34,13 +34,13 @@ Outputs:
 Default paths in `compute_efficiencies_stuff.cxx`:
 
 - Config CSV:
-  - `/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/config/nps_dvcs_all_kins_main.csv`
+  - `/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final/config/nps_dvcs_all_kins_main.csv`
 - Updated replay directory:
   - `/lustre24/expphy/cache/hallc/c-nps/analysis/pass2/replays/updated`
 - Production replay directory:
   - `/lustre24/expphy/cache/hallc/c-nps/analysis/pass2/replays/production`
 - Output directory:
-  - `/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/efficiency_stuff`
+  - `/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final/output/efficiency_stuff`
 
 Replay file naming convention:
 

@@ -1,7 +1,7 @@
 {
   "configured_kinematic": "KinC_x36_4",
   "simc_file": "/lustre24/expphy/volatile/hallc/nps/singhav/nps_smearing/smear_x36_4/smearing_output/KinC_x36_4/root/simc_pi0_analysis_output_smeared.root",
-  "data_file": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/KinC_x36_4/root/combined_branches_LH2.root",
+  "data_file": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final/output/KinC_x36_4/root/combined_branches_LH2.root",
   "simc_tree": "simulation",
   "data_tree": "physics",
   "out_root": "excl_xsec_pi0_analysis_no_simc_model_output.root",

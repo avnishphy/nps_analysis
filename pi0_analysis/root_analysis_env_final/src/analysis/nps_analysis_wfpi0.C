@@ -9,7 +9,7 @@
 #include <iostream>
 
 void nps_analysis_wfpi0(const TString &skimDir_in = "/lustre24/expphy/volatile/hallc/nps/hhuang/farmFile/Production/DVCS",
-                        const TString &outBase_in = "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output",
+                        const TString &outBase_in = "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final/output",
                         const TString &runlistFile = "",
                         const double Ebeam = -1.0)
 {

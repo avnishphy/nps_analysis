@@ -1,0 +1,19 @@
+id	class	file	old_prefix	new_prefix	relative_contract	status
+PATH-001	launcher-root	scripts/submit_nps_analysis_swif2.sh	root_analysis_env_main	root_analysis_env_final	config and analysis runner suffixes unchanged	implemented
+PATH-002	launcher-root	scripts/submit_compare_livetimes_swif2.sh	root_analysis_env_main	root_analysis_env_final	config and efficiency suffixes unchanged	implemented
+PATH-003	launcher-root	scripts/submit_smearing_swif2.sh	root_analysis_env_main	root_analysis_env_final	smearing pipeline and metadata suffixes unchanged	implemented
+PATH-004	plot-input-output	scripts/collect_kinematic_plots.py	root_analysis_env_main	root_analysis_env_final	output and plots_misc suffixes unchanged	implemented
+PATH-005	plot-input	scripts/plot_pi0_energy_run_multipanel.py	root_analysis_env_main	root_analysis_env_final	output suffix unchanged	implemented
+PATH-006	plot-input	scripts/plot_publication_quality.py	root_analysis_env_main	root_analysis_env_final	summary, efficiency, and SIMC hist suffixes unchanged	implemented
+PATH-007	analysis-output	src/analysis/nps_analysis.C	root_analysis_env_main	root_analysis_env_final	output suffix unchanged	implemented
+PATH-008	analysis-output	src/analysis/nps_analysis_wfpi0.C	root_analysis_env_main	root_analysis_env_final	output suffix unchanged	implemented
+PATH-009	analysis-config-output	src/analysis/nps_analysis_main.C	root_analysis_env_main	root_analysis_env_final	output, config, charge, cut, dead-block, efficiency suffixes unchanged	implemented
+PATH-010	efficiency-config-output	src/efficiencies/run_efficiencies_stuff_parallel.sh	root_analysis_env_main	root_analysis_env_final	master config and efficiency output suffixes unchanged	implemented
+PATH-011	efficiency-config-output	src/efficiencies/run_compare_livetimes_parallel.sh	root_analysis_env_main	root_analysis_env_final	master config and efficiency output suffixes unchanged	implemented
+PATH-012	efficiency-config-output	src/efficiencies/compute_efficiencies_stuff.cxx	root_analysis_env_main	root_analysis_env_final	master config and efficiency output suffixes unchanged	implemented
+PATH-013	efficiency-config-output	src/efficiencies/compare_livetimes.cxx	root_analysis_env_main	root_analysis_env_final	master config and efficiency output suffixes unchanged	implemented
+PATH-014	efficiency-documentation	src/efficiencies/README.md	root_analysis_env_main	root_analysis_env_final	documented defaults match implementation	implemented
+PATH-015	simulation-stage-input	src/simulation_smearing/simc_pi0_analysis.C	root_analysis_env_main	root_analysis_env_final	SIMC production suffix unchanged	implemented
+PATH-016	extraction-stage-input	src/xsec_extract/xsec_config/xsec_config_x36_4.json	root_analysis_env_main	root_analysis_env_final	combined-data suffix unchanged	implemented
+PATH-017	extraction-stage-input	src/xsec_extract/xsec_config/xsec_config_x36_5_407.json	root_analysis_env_main	root_analysis_env_final	combined-data suffix unchanged	implemented
+PATH-018	test-fixture-input	tests/run_xsec_tests.sh	root_analysis_env_main	root_analysis_env_final	event-closure fixture suffixes unchanged	implemented

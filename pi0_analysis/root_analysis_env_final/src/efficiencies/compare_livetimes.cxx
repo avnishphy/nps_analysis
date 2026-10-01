@@ -194,9 +194,9 @@ int main(int argc, char** argv) {
     const int run = std::stoi(argv[1]);
     // Defaults mirror compute_efficiencies_stuff.cxx; options support isolated workers.
     std::string config_path =
-        "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/config/nps_dvcs_all_kins_main.csv";
+        "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final/config/nps_dvcs_all_kins_main.csv";
     std::string output_dir =
-        "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/efficiency_stuff";
+        "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final/output/efficiency_stuff";
     std::string updated_dir = "/lustre24/expphy/cache/hallc/c-nps/analysis/pass2/replays/updated";
     std::string production_dir = "/lustre24/expphy/cache/hallc/c-nps/analysis/pass2/replays/production";
     std::string explicit_source;

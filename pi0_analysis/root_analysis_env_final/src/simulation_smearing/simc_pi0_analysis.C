@@ -78,7 +78,7 @@ double ACTIVE_BEAM_ENERGY = std::numeric_limits<double>::quiet_NaN();
 // Geant input has no cluster-time branch, so timing cuts are explicitly bypassed below.
 const double Y_MISPOINT = 0.0;      // Y mispointing offset (cm); default 0.0 for Geant simulation, should update this later.
 const char* DEFAULT_SIMC_PRODUCTION_DIR =
-    "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/simc/nps_simc_20260824_135058";
+    "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final/output/simc/nps_simc_20260824_135058";
 const char* DEFAULT_GEANT_PRODUCTION_DIR =
     "/lustre24/expphy/volatile/hallc/nps/singhav/geant4_simc/nps_geant4_20260824_221705";
 const char* DEFAULT_ACCEPTANCE_CONFIG = "config/acceptance_cuts.conf";

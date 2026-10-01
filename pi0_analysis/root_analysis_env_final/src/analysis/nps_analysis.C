@@ -9,7 +9,7 @@
 #include <iostream>
 
 void nps_analysis(const TString &skimDir_in = "/lustre24/expphy/cache/hallc/c-nps/analysis/pass2/replays/updated",
-                  const TString &outBase_in = "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output",
+                  const TString &outBase_in = "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final/output",
                   const TString &runlistFile = "",
                   const double Ebeam = -1.0)
 {

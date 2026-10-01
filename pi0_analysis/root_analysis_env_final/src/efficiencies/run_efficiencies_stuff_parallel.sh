@@ -4,10 +4,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 EXE="${SCRIPT_DIR}/compute_efficiencies_stuff"
-CONFIG_CSV="/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/config/nps_dvcs_all_kins_main.csv"
+CONFIG_CSV="/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final/config/nps_dvcs_all_kins_main.csv"
 UPDATED_DIR="/lustre24/expphy/cache/hallc/c-nps/analysis/pass2/replays/updated"
 PRODUCTION_DIR="/lustre24/expphy/cache/hallc/c-nps/analysis/pass2/replays/production"
-OUTPUT_DIR="/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/efficiency_stuff"
+OUTPUT_DIR="/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final/output/efficiency_stuff"
 TYPES_CSV="production,Production"
 JOBS="$(nproc)"
 

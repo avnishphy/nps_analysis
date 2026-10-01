@@ -20,11 +20,11 @@ from reportlab.pdfgen import canvas
 
 
 SOURCE_DIR = Path(
-    "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/"
+    "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final/output/"
 )
 OUTPUT_DIR = Path(
     "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/"
-    "root_analysis_env_main/output/plots_misc"
+    "root_analysis_env_final/output/plots_misc"
 )
 PLOT_SUFFIXES = {".png", ".jpg", ".jpeg", ".pdf"}
 RUN_RE = re.compile(r"run_?(\d+)", re.IGNORECASE)

@@ -19,7 +19,7 @@ import pandas as pd
 
 BASE_DIR = Path(
     "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/"
-    "root_analysis_env_main/output"
+    "root_analysis_env_final/output"
 )
 KINEMATIC = "KinC_x36_5"
 DEFAULT_OUTDIR = Path("output/plots_misc/pi0_energy_comparison")

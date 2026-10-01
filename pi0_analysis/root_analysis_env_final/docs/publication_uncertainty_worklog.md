@@ -90,7 +90,7 @@ Current documented output contracts include per-run diagnostics `output/<kin>/ro
 |---|---|---|---|---|---|
 | WF-001 | source-confirmed | Broad parent ignore rules hide small calibration ROOT and curated PNG assets; exact local re-inclusions are required. | checkpoint/migration | high | implemented (engineering) |
 | WF-002 | source-confirmed | Ten tracked ROOT/ACLiC/native build products were regenerable but `.gitignore` alone could not untrack them. Exact copies/checksums were retained before index removal. | checkpoint/build | medium | implemented (engineering) |
-| WF-003 | source-confirmed | Active migrated source/configuration/launchers still contain defaults that read or write `root_analysis_env_main`; running them could violate the freeze or mix workspaces. | all operational stages | critical | investigating |
+| WF-003 | source-confirmed | Active migrated source/configuration/launchers contained defaults that read or write `root_analysis_env_main`; running them could violate the freeze or mix workspaces. | all operational stages | critical | validated (engineering) |
 | STAT-001 | source-confirmed | Current extraction errors condition on fitted background weights, run corrections, and smearing map. | all extraction paths | critical | investigating |
 | BKG-001 | source-confirmed | Timing subtraction clipping/nonpositive-weight rejection changes the estimator. | combine, smearing, extraction | critical | awaiting-approval (no patch proposed yet) |
 | BKG-002 | source-confirmed | Full-box timing areas do not universally match post-pair-selection acceptance. | background templates | critical | awaiting-approval (no patch proposed yet) |
@@ -179,3 +179,35 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
   baseline-copy paths plus 14 provenance/setup/operating files. No sibling,
   runtime/recovery path, symlink, or high-risk secret signature entered the
   index.
+- Final-workspace stage-one commit:
+  `a0dad6ab835b0e9a695d46b17fc45f66e175bd76` (`chore: establish final pi0 workspace`).
+- The path-isolation patch changes only the workspace prefix in 17 active
+  code/config/test files and the current efficiency README. Relative configuration,
+  output, and stage-product suffixes remain unchanged. Generated SIMC comments,
+  historical audits/evidence, and the setup script's `MAIN` refusal guard are
+  intentionally preserved.
+
+### 2026-10-01 — FINAL path isolation validation
+
+- `manifests/path_relocation_map.tsv` records 18 exact relocations. Comparison
+  against the recoverable pre-edit copies proved that every target differs only
+  by `root_analysis_env_main` to `root_analysis_env_final`; all relative suffixes
+  and surrounding behavior are byte-identical.
+- A broader post-edit scan found one initially omitted operational default in
+  `tests/run_xsec_tests.sh`; it was backed up separately, relocated by the same
+  exact substitution, and added as `PATH-018`. Remaining MAIN references are
+  governance guards, historical/generated evidence, or documentation and are
+  not active production defaults.
+- `bash -n` passed for the affected shell files; Python byte-compilation passed
+  with its cache under `scratch/`; both edited JSON files parsed successfully;
+  and `g++ -fsyntax-only` passed for the two affected efficiency sources.
+- With ROOT 6.30.04 loaded through the required Hall C setup, ACLiC compiled
+  `nps_analysis.C`, `nps_analysis_wfpi0.C`, `nps_analysis_main.C`, and
+  `simc_pi0_analysis.C`. All products were confined to
+  `build/path_isolation/`. Before/after source-entry manifests were identical,
+  and all four source SHA-256 values remained unchanged. Inherited ABI and
+  signed/unsigned warnings were recorded; no compile error occurred.
+- `validation/path_isolation_20261001.md` records the commands, scope, results,
+  and runtime-log locations. No launcher, analysis event loop, simulation,
+  extraction, or production job was executed. No selection, weight, estimator,
+  RNG, efficiency, or output schema changed.

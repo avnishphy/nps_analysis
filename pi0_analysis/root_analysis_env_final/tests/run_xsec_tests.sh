@@ -5,7 +5,7 @@
 set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 test_output="${1:-$(mktemp -d /tmp/nps_xsec_validation.XXXXXX)}"
-fixture_root="${2:-/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main}"
+fixture_root="${2:-/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final}"
 mkdir -p "${test_output}"
 read -r -a root_flags <<< "$(root-config --cflags --libs)"
 

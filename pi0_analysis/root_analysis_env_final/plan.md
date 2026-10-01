@@ -208,7 +208,7 @@ Status: Phase 0 and Phase 1 completed; Phase 2 complete; Phases 3, 4, 5, 6, and 
 
 This document defines the staged refactor and workflow hardening plan for the NPS neutral-pion analysis framework located at:
 
-`/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main`
+`/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final`
 
 The goal is to preserve validated physics behavior while improving:
 - code organization,

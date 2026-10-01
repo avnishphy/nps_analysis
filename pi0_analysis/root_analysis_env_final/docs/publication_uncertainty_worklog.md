@@ -91,12 +91,23 @@ Current documented output contracts include per-run diagnostics `output/<kin>/ro
 | WF-001 | source-confirmed | Broad parent ignore rules hide small calibration ROOT and curated PNG assets; exact local re-inclusions are required. | checkpoint/migration | high | implemented (engineering) |
 | WF-002 | source-confirmed | Ten tracked ROOT/ACLiC/native build products were regenerable but `.gitignore` alone could not untrack them. Exact copies/checksums were retained before index removal. | checkpoint/build | medium | implemented (engineering) |
 | WF-003 | source-confirmed | Active migrated source/configuration/launchers contained defaults that read or write `root_analysis_env_main`; running them could violate the freeze or mix workspaces. | all operational stages | critical | validated (engineering) |
-| STAT-001 | source-confirmed | Current extraction errors condition on fitted background weights, run corrections, and smearing map. | all extraction paths | critical | investigating |
-| BKG-001 | source-confirmed | Timing subtraction clipping/nonpositive-weight rejection changes the estimator. | combine, smearing, extraction | critical | awaiting-approval (no patch proposed yet) |
-| BKG-002 | source-confirmed | Full-box timing areas do not universally match post-pair-selection acceptance. | background templates | critical | awaiting-approval (no patch proposed yet) |
-| EXP-001 | unresolved | Valid zero-candidate and partially processed runs may not be represented correctly in exposure. No affected production run is yet established. | combine/extraction | high | investigating |
-| SMEAR-001 | source-confirmed | Ordinary Poisson deviance is applied to weighted normalized observations and its scale is unit-dependent. | smearing calibration | critical | awaiting-approval (no patch proposed yet) |
-| SMEAR-002 | source-confirmed | Repeated detector smears are accumulated copy-wise for finite-MC moments rather than grouped by original generator event. | smearing/extraction covariance | high | awaiting-approval (no patch proposed yet) |
+| STAT-001 | source-confirmed | Current extraction errors condition on fitted background weights, run corrections, and smearing map. | all extraction paths | critical | architecture proposal ALG-001 awaiting approval |
+| BKG-001 | source-confirmed | Timing subtraction clips negative subtracted mass bins; later event processing rejects nonpositive purity weights. | combine, smearing, extraction | critical | ALG-001 addresses architecture; detailed model still unproposed |
+| BKG-002 | source-confirmed + synthetic-check-only | Multiplicity-dependent pair selection leaves 8 or 4.5 ns2 of a nominal 36 ns2 full box for >=3-cluster defaults, while the two-cluster bypass leaves 36 ns2. | background templates | critical | ALG-001 stratifies observations; detailed transfer model still unproposed |
+| BKG-003 | source-confirmed | Control-count errors enter the scalar accidental estimate and then related template-bin and normalization errors are added without a full shared covariance. | background templates/extraction | high | investigating |
+| BKG-004 | source-confirmed | Shifted waveform sidebands reach 139 and 161 ns while the timing histogram spans only 140--160 ns. | waveform background | high | production impact unresolved |
+| BKG-005 | source-confirmed | An invalid combinatorial-background fit can continue with current parameters and zero covariance. | purity weights/extraction | high | production frequency unresolved |
+| EXP-001 | source-confirmed mechanism; production impact unresolved | Exposure is inferred from combined event rows, so valid zero-candidate runs cannot be represented. | combine/extraction | high | ALG-001 proposes a run ledger |
+| EXP-002 | source-confirmed | Partial efficiency processing status and segment coverage are not required by the combiner. | combine/extraction | high | affected production runs unresolved |
+| EFF-001 | source-confirmed | Main correction CSV lacks tracking/hodoscope auxiliary numerator/denominator counts needed for a generative nuisance treatment. | combine/extraction | high | efficiency behavior remains frozen; later proposal required |
+| SMEAR-001 | source-confirmed + synthetic-check-only | Ordinary Poisson deviance is applied to weighted normalized observations and changes under a pure unit rescaling. | smearing calibration | critical | later proposal required |
+| SMEAR-002 | source-confirmed + synthetic-check-only | Repeated detector smears are accumulated copy-wise for finite-MC moments rather than grouped by original generator event. | smearing/extraction covariance | high | ALG-001 reserves grouped-event interface; later model required |
+| SMEAR-003 | source-confirmed | One event can enter multiple section objectives, but the exported section map lacks a full joint covariance. | smearing/extraction covariance | high | later proposal required |
+| SMEAR-004 | source-confirmed | Time-based seeds remain active and the requested producer seed is recorded but not applied by the legacy producer. | reproducibility | high | later proposal required |
+| XSEC-001 | source-confirmed | Gaussian extraction excludes MC-supported rows with nonpositive data variance and can adaptively drop fit groups after failures. | no-SIMC-model extraction | high | production support change unresolved |
+| XSEC-002 | source-confirmed | Scaled-Poisson extraction conditions on inferred positive weights, fixes the MC response in the objective, and has boundary-sensitive intervals. | no-SIMC-model extraction | high | conditional diagnostic only |
+| XSEC-003 | source-confirmed | Forward bootstrap resamples accepted weighted events/MC but cannot vary discarded upstream raw controls; source marks it not publication-ready. | forward extraction | high | diagnostic only |
+| XSEC-004 | source-confirmed | Joint multi-setting solver is Gaussian, uses a nominal setting epsilon for separation, and omits target uncertainty. | multi-setting extraction | high | publication use unresolved |
 
 Audit findings are hypotheses/proposals until revalidated against this checkpoint. `source-confirmed` does not mean a repair is approved or that its production impact has been measured.
 
@@ -104,7 +115,7 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
 
 | Proposal | Exact scope | User decision/date | Conditions | Implementation commit | Validation |
 |---|---|---|---|---|---|
-| None yet | Evidence gathering only | No algorithm approval requested or granted | Prepare concrete dependency-ordered package in `FINAL` | n/a | n/a |
+| ALG-001 | Parallel raw-observation forward-inference prototype for one setting; passive exports and run ledger; legacy defaults unchanged | Awaiting user decision; not approved as of 2026-10-01 | No implementation before explicit approval; later approvals still required for background, efficiency, smearing, production default, and publication use | n/a | Prospective criteria in proposal |
 
 ## Chronological change record
 
@@ -211,3 +222,40 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
   and runtime-log locations. No launcher, analysis event loop, simulation,
   extraction, or production job was executed. No selection, weight, estimator,
   RNG, efficiency, or output schema changed.
+- Path-isolation commit:
+  `9428615ebe235804758253ac17e93abe33152bab` (`chore: isolate final workspace paths`).
+
+### 2026-10-01 — source evidence map and first approval package
+
+- Rechecked the complete `MAIN` freeze after path isolation: all 31,047 file
+  hashes passed, the tree still has 847 directories and zero symlinks, and the
+  directory-entry manifest compared byte-for-byte when generated with
+  `%m\t%y\t%s\t%P\t%l`. The read-only audit checksum is unchanged.
+- An initial directory comparison mistakenly used find format `%n` (hard-link
+  count) where the frozen manifest used `%s` (size), producing a false report of
+  31,811 differences. Source inspection found the format mismatch; no frozen
+  file discrepancy existed. The corrected command passed exactly.
+- Traced the executable call graph and active/default modes through per-run
+  analysis, combination, efficiency inputs, smearing, and all supported
+  extraction paths. `docs/workflow_evidence_map.md` records the stage contract,
+  equations, units, shared dependencies, uncertainty treatment, and unresolved
+  production evidence.
+- Ran only deterministic algebra and a fixed-seed synthetic Poisson check.
+  `validation/formula_checks_20261001.md` records the exact commands, one syntax
+  failure, one superseded incorrect hand formula, corrected results, and their
+  non-production interpretation.
+- Prepared `ALG-001_raw_observation_forward_architecture.md`. It compares a
+  simultaneous raw-category likelihood with signed subtraction/full covariance
+  and the current fixed-weight alternatives. It proposes a bounded, opt-in
+  one-setting prototype with predeclared invariants and coverage tests. It is
+  not approved and no candidate algorithm or schema change has been installed.
+- No production ROOT/data/SIMC file was processed. A six-segment waveform input
+  for run 4398 was located externally but not opened; therefore no real-data
+  impact is claimed.
+
+## Current approval gate
+
+- Publication readiness: not established.
+- Operational production readiness: not established.
+- Algorithm implementation is blocked pending the user's answer to the exact
+  request: **Approve ALG-001 as described?**

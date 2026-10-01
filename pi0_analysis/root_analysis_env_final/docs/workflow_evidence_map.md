@@ -221,4 +221,6 @@ explicit approval record for every physics-sensitive change.
    become a publication default.
 
 The first approval package, `docs/proposals/ALG-001_raw_observation_forward_architecture.md`,
-addresses step 1 only. No part of it is implemented.
+addresses step 1. It was approved with efficiency work explicitly deferred. Its
+opt-in passive-export/run-ledger foundation is implemented and synthetic-tested;
+no real-data shadow run or replacement likelihood is yet validated.

@@ -115,7 +115,7 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
 
 | Proposal | Exact scope | User decision/date | Conditions | Implementation commit | Validation |
 |---|---|---|---|---|---|
-| ALG-001 | Parallel raw-observation forward-inference prototype for one setting; passive exports and run ledger; legacy defaults unchanged | Awaiting user decision; not approved as of 2026-10-01 | No implementation before explicit approval; later approvals still required for background, efficiency, smearing, production default, and publication use | n/a | Prospective criteria in proposal |
+| ALG-001 | Parallel raw-observation forward-inference prototype for one setting; passive exports and run ledger; legacy defaults unchanged | Approved 2026-10-01 with explicit condition: do not touch efficiency calculations; defer them | Efficiency sources/definitions/models frozen; later approvals still required for detailed background, smearing, production default, and publication use | pending phase-one commit | Synthetic/passive-export checks pass; real-data shadow unresolved |
 
 ## Chronological change record
 
@@ -263,5 +263,32 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
 
 - Publication readiness: not established.
 - Operational production readiness: not established.
-- Algorithm implementation is blocked pending the user's answer to the exact
-  request: **Approve ALG-001 as described?**
+- ALG-001 is approved with efficiency work deferred. Phase-one passive export
+  is implemented and synthetic-validated; no real-data shadow run has occurred.
+- Efficiency calculations remain frozen by explicit user direction.
+- The next physics decision is the detailed timing-accidental model. It requires
+  a separate concrete proposal before its likelihood or transfer parameters are
+  implemented.
+
+### 2026-10-01 — conditional ALG-001 approval and phase-one foundation
+
+- User direction: do not touch efficiency calculations now; examine everything
+  else in detail. Recorded as conditional ALG-001 approval.
+- Preserved and checksum-verified pre-edit copies under ignored
+  `recovery/pre_alg001_phase1_20261001/`.
+- Added opt-in raw observations and segment mapping to
+  `nps_analysis_main.C`. The default is off, the legacy `physics` tree is
+  unchanged, and the event loop consumes no additional RNG.
+- Added an opt-in combined raw tree plus fail-closed run/segment ledgers. The
+  ledger copies existing efficiency/livetime central fields only; no efficiency
+  source, formula, configuration, or uncertainty treatment changed.
+- Added a pure C++ timing classifier and synthetic bundle tests. C++ unit,
+  Python bundle/default-invariance, shell/Python syntax, six existing diagnostic
+  tests, ROOT string-branch round trip, and ROOT 6.30.04 ACLiC compilation pass.
+- Existing `tests/test_2d_mass_cut.py` remains red: background acceptance
+  `0.1696444` exceeds its `<0.15` threshold. The identical test against the
+  verified pre-edit combiner gives the identical failure, so this is not an
+  ALG-001 regression. It remains a separate unresolved baseline issue.
+- No experimental event or SIMC production file was processed. Real-data
+  default-off/default-on equivalence and category reconciliation remain pending
+  a user-selected one-run/one-setting shadow validation.

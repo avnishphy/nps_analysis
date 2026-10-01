@@ -9,6 +9,7 @@ ACCEPTANCE_CUTS_IMPL="${SCRIPT_DIR}/acceptance_cuts.cpp"
 COMBINE_SCRIPT="${SCRIPT_DIR}/combine_analysis_branches.py"
 CONFIG_CSV="${REPO_ROOT}/config/nps_dvcs_all_kins_main.csv"
 OUTPUT_BASE="${REPO_ROOT}/output"
+OUTPUT_BASE_EXPLICIT="no"
 LOG_BASE=""
 ACCEPTANCE_CUTS_CONFIG="${NPS_ACCEPTANCE_CUTS_CONFIG:-${REPO_ROOT}/config/acceptance_cuts.conf}"
 
@@ -29,6 +30,8 @@ RUN_FILTERS=()
 USE_GEVNUM_CUT="${NPS_USE_GEVNUM_CUT:-ask}"
 COMBINE_AFTER_RUN="yes"
 COMBINE_TARGET=""
+COMBINE_EFFICIENCY_CSV=""
+RAW_OBSERVATION_EXPORT="${NPS_RAW_OBSERVATION_EXPORT:-no}"
 RUN_ONLY="no"
 FINALIZE_ONLY="no"
 
@@ -86,6 +89,7 @@ Options:
   --acceptance-config <path>
                             Acceptance-cuts config used by analysis/smearing stages
   --output-base <path>      Canonical output base directory
+  --efficiency-csv <path>   Existing per-setting correction CSV used by combine
   --log-base <path>         Persistent log base (default: output base)
   --updated-dir <path>      Updated HCANA ROOT directory
   --production-dir <path>   Production HCANA ROOT directory
@@ -102,6 +106,7 @@ Options:
   --run-only                Run selected ROOT analyses; skip all finalization
   --finalize-only           Rebuild summaries/post-processing; run no ROOT analyses
   --combine-target <name>   Restrict combine stage to one selected target
+  --raw-observation-export  ALG-001 opt-in raw tree and complete run/segment ledgers
   --run-smearing            Run simulation smearing stage after combine
   --smearing-kin <Kin_old>  Restrict smearing to one Kin_old (repeatable)
   --smearing-script <path>  Smearing pipeline script path
@@ -426,6 +431,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     --output-base)
       OUTPUT_BASE="$2"
+      OUTPUT_BASE_EXPLICIT="yes"
+      shift 2
+      ;;
+    --efficiency-csv)
+      COMBINE_EFFICIENCY_CSV="$2"
       shift 2
       ;;
     --log-base)
@@ -487,6 +497,10 @@ while [[ $# -gt 0 ]]; do
     --combine-target)
       COMBINE_TARGET="$2"
       shift 2
+      ;;
+    --raw-observation-export)
+      RAW_OBSERVATION_EXPORT="yes"
+      shift
       ;;
     --run-smearing)
       RUN_SMEARING_STAGE="yes"
@@ -1027,6 +1041,21 @@ if [[ "${USE_GEVNUM_CUT}" == "ask" ]]; then
   fi
 fi
 
+case "${RAW_OBSERVATION_EXPORT,,}" in
+  1|true|yes|y|on) RAW_OBSERVATION_EXPORT="yes" ;;
+  0|false|no|n|off|"") RAW_OBSERVATION_EXPORT="no" ;;
+  *)
+    echo "Invalid NPS_RAW_OBSERVATION_EXPORT=${RAW_OBSERVATION_EXPORT}; use yes or no." >&2
+    exit 1
+    ;;
+esac
+if [[ "${RAW_OBSERVATION_EXPORT}" == "yes" ]]; then
+  if [[ "${OUTPUT_BASE_EXPLICIT}" != "yes" || "${OUTPUT_BASE}" == "${REPO_ROOT}/output" ]]; then
+    echo "--raw-observation-export requires an explicit noncanonical --output-base to prevent overwriting legacy outputs." >&2
+    exit 1
+  fi
+fi
+
 KIN_PATTERN="$(join_by_pipe "${SELECTED_KINS[@]}")"
 TYPE_ITEMS=()
 IFS=',' read -r -a TYPE_ITEMS <<< "${TYPES_CSV}"
@@ -1137,6 +1166,9 @@ echo "Type filter:     ${TYPES_CSV}"
 echo "Targets:         ${TARGET_LIST[*]}"
 echo "Execution:       $([[ "${RUN_ONLY}" == yes ]] && echo run-only || { [[ "${FINALIZE_ONLY}" == yes ]] && echo finalize-only || echo complete; })"
 echo "Combine step:    ${COMBINE_AFTER_RUN} (targets=${COMBINE_TARGETS[*]})"
+if [[ "${RAW_OBSERVATION_EXPORT}" == "yes" ]]; then
+  echo "Raw observations:yes (ALG-001 opt-in)"
+fi
 if [[ "${RUN_SMEARING_STAGE}" == "yes" ]]; then
   echo "Smearing stage:  yes (target=${SMEAR_TARGET})"
   echo "Smearing mode:   ${SMEAR_MODE_HINT}"
@@ -1161,7 +1193,7 @@ echo "==========================================================================
 PROGRESS_FILE="${TMP_DIR}/progress.done"
 : > "${PROGRESS_FILE}"
 
-export ROOT_CMD ROOT_MACRO ACCEPTANCE_CUTS_IMPL CONFIG_CSV OUTPUT_BASE LOG_BASE INPUT_DIR MODE TYPES_CSV TIMEOUT_SEC TMP_DIR PROGRESS_FILE CSV_HEADER USE_GEVNUM_CUT
+export ROOT_CMD ROOT_MACRO ACCEPTANCE_CUTS_IMPL CONFIG_CSV OUTPUT_BASE LOG_BASE INPUT_DIR MODE TYPES_CSV TIMEOUT_SEC TMP_DIR PROGRESS_FILE CSV_HEADER USE_GEVNUM_CUT RAW_OBSERVATION_EXPORT
 export UPDATED_DIR PRODUCTION_DIR WAVEFORM_DIR SOURCE
 export ACCEPTANCE_CUTS_CONFIG
 
@@ -1246,6 +1278,7 @@ xargs -P "${EFFECTIVE_JOBS}" -I {} bash -c '
   export NPS_RUN="${run}"
   export NPS_TARGET="${target}"
   export NPS_USE_GEVNUM_CUT="${USE_GEVNUM_CUT}"
+  export NPS_RAW_OBSERVATION_EXPORT="${RAW_OBSERVATION_EXPORT}"
 
   status=0
   {
@@ -1350,6 +1383,13 @@ for kin in "${SELECTED_KINS[@]}"; do
       combine_log="${LOG_BASE}/${safe_kin}/logs/combine_${safe_kin}_${safe_target}.log"
       echo "[combine] Running combine stage for kin=${kin} (target=${combine_target}, root_dir=${kin_root_dir})"
       status=0
+      raw_combine_args=()
+      if [[ "${RAW_OBSERVATION_EXPORT}" == "yes" ]]; then
+        raw_combine_args+=(--raw-observation-export)
+      fi
+      if [[ -n "${COMBINE_EFFICIENCY_CSV}" ]]; then
+        raw_combine_args+=(--efficiency-csv "${COMBINE_EFFICIENCY_CSV}")
+      fi
       "${PYTHON_CMD}" "${COMBINE_SCRIPT}" \
         --kin "${kin}" \
         --config "${CONFIG_CSV}" \
@@ -1357,6 +1397,7 @@ for kin in "${SELECTED_KINS[@]}"; do
         --root-dir "${kin_root_dir}" \
         --target "${combine_target}" \
         --types "${TYPES_CSV}" \
+        "${raw_combine_args[@]}" \
         > "${combine_log}" 2>&1 || status=$?
 
       if [[ "${status}" -ne 0 ]]; then

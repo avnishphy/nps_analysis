@@ -1,8 +1,12 @@
 # ALG-001: raw-observation forward-inference architecture
 
-Status: **awaiting explicit user approval; not implemented**
+Status: **approved with an efficiency deferral on 2026-10-01; phase-one foundation implemented but not production-validated**
 
-Decision requested: **Approve ALG-001 as described?**
+Approval record: the user directed, "we'll not touch the efficiency calculations
+now, keep those for later. Except that, we'll look in detail everything else."
+This is recorded as approval of ALG-001 subject to the binding condition that
+efficiency calculations, definitions, inputs, and uncertainty models remain
+unchanged until a later explicit proposal.
 
 ## Decision and bounded scope
 
@@ -17,8 +21,8 @@ Approval would authorize only:
    changing event selection, loop order, random-number consumption, legacy
    branches, or default outputs;
 2. an explicit run/segment ledger containing charge, prescale, processing
-   status, correction central values, auxiliary counts when already available,
-   and zero-candidate runs;
+   status, existing correction central values copied without recalculation, and
+   zero-candidate runs;
 3. a new, non-default likelihood prototype under a separate output namespace;
 4. synthetic closure/coverage tests and a one-setting shadow comparison that
    cannot overwrite existing outputs.
@@ -68,12 +72,14 @@ parameters. Mass sidebands/control regions constrain combinatorial nuisance
 parameters. No category count is negative, no subtracted bin is clipped, and
 no inferred purity is treated as an observed event weight.
 
-The first prototype keeps the current efficiency and livetime central values
-unchanged. It carries the available auxiliary values and correlations as
-metadata; a specific likelihood/constraint model for those quantities requires
-a later proposal. Likewise, it reads the current smearing map only to reproduce
-a baseline shadow prediction. Making smearing parameters joint nuisance
-parameters requires a later proposal.
+The first prototype keeps the current efficiency and livetime calculations and
+central values unchanged. Phase one merely records whether their existing CSV
+row is available and copies its published central fields into the run ledger.
+No auxiliary-count expansion or efficiency likelihood is in scope. A specific
+efficiency/constraint model requires a later user-approved proposal. Likewise,
+the prototype may read the current smearing map only to reproduce a baseline
+shadow prediction. Making smearing parameters joint nuisance parameters
+requires a later proposal.
 
 ## Exposure and response contract
 
@@ -227,6 +233,30 @@ also unresolved; profiling will be reported before any campaign proposal.
   smearing likelihood, response statistics, or publication default requires a
   new explicit proposal and approval.
 
-## Approval request
+## Phase-one implementation status
+
+The approved passive-export foundation is implemented behind
+`--raw-observation-export` / `NPS_RAW_OBSERVATION_EXPORT=yes`. Default behavior
+remains off, and the launcher requires an explicit noncanonical output base so
+the opt-in run cannot overwrite legacy products. The implementation adds:
+
+- a per-run `raw_observation` tree with unweighted timing category, stable
+  run/chain/segment keys, multiplicity, existing observables, and the existing
+  missing-mass cut result;
+- a per-run `raw_observation_segments` mapping;
+- combined run and segment CSV ledgers, including zero-candidate and missing
+  statuses;
+- fail-closed schema, identifier, category, and segment checks;
+- pure C++ category tests and synthetic uproot bundle/default-invariance tests.
+
+ROOT compilation and synthetic tests pass. The existing 2D mass-cut regression
+still fails its pre-existing background-fraction threshold identically against
+the recoverable pre-ALG-001 combiner. No real-data run or one-setting shadow
+comparison has been performed, so phase one is not production-validated.
+
+Schema and reproduction commands are in `docs/raw_observation_schema.md` and
+`validation/ALG001_phase1_validation_20261001.md`.
+
+## Original approval request
 
 **Approve ALG-001 as described?**

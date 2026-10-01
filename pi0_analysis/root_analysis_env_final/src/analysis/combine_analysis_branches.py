@@ -37,6 +37,31 @@ from matplotlib.backends.backend_pdf import PdfPages
 DEFAULT_TARGET = "LH2"
 DEFAULT_CONFIG = "nps_dvcs_all_kins_main.csv"
 BRANCHES_TO_EXCLUDE = {"event_id"}
+RAW_OBSERVATION_REQUIRED_COLUMNS = {
+    "run_number",
+    "event_id",
+    "source_tree_number",
+    "source_entry",
+    "event_number",
+    "t1_ns",
+    "t2_ns",
+    "pair_dt_ns",
+    "timing_region_mask",
+    "timing_category",
+    "acquisition_mode",
+    "shifted_sidebands",
+    "pair_time_diff_max_ns",
+    "nclust_selected",
+    "passes_mmiss_exclusive_cut",
+    "mpi0_all",
+    "mmiss_all_corr",
+    "Q2",
+    "W",
+    "t",
+    "tmin",
+    "phi",
+    "xB",
+}
 REQUIRED_EFFICIENCY_COLUMNS = (
     "run_number",
     "kinematic_setting",
@@ -110,6 +135,9 @@ class WorkflowConfig:
     run_filter: Tuple[int, ...]
     create_analysis_plots: bool
     create_fp_debug_plots: bool
+    raw_observation_export: bool
+    run_ledger_csv: Path
+    segment_ledger_csv: Path
 
 
 @dataclass(frozen=True)
@@ -291,6 +319,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
                         help="Skip creation of analysis plot PDF.")
     parser.add_argument("--fp-debug-plots", action="store_true",
                         help="Enable focal-plane debug PDF.")
+    parser.add_argument(
+        "--raw-observation-export",
+        action="store_true",
+        help=("ALG-001 opt-in: preserve event IDs, collect the raw_observation tree, "
+              "and write complete run/segment ledgers. Legacy default is off."),
+    )
     return parser
 
 
@@ -334,6 +368,10 @@ def resolve_workflow_config(args: argparse.Namespace) -> WorkflowConfig:
     plots_dir = infer_plots_dir(args, output_base, kin_safe, root_dir, out_combined_root)
     analysis_plots_pdf = plots_dir / f"{out_combined_root.stem}_plots.pdf"
     fp_debug_pdf = plots_dir / f"{out_combined_root.stem}_focal_plane_debug.pdf"
+    run_ledger_csv = out_combined_root.with_name(f"{out_combined_root.stem}_run_ledger.csv")
+    segment_ledger_csv = out_combined_root.with_name(
+        f"{out_combined_root.stem}_segment_ledger.csv"
+    )
 
     allowed_types = parse_types_csv(args.types)
     if not allowed_types:
@@ -371,6 +409,9 @@ def resolve_workflow_config(args: argparse.Namespace) -> WorkflowConfig:
         run_filter=run_filter,
         create_analysis_plots=(not args.no_analysis_plots),
         create_fp_debug_plots=bool(args.fp_debug_plots),
+        raw_observation_export=bool(args.raw_observation_export),
+        run_ledger_csv=run_ledger_csv,
+        segment_ledger_csv=segment_ledger_csv,
     )
 
 
@@ -566,7 +607,8 @@ def combine_branches(lookup: Dict[int, RunConfig],
                      root_dir: Path,
                      target_to_combine: str,
                      efficiency_map: Dict[int, RunEfficiencyMeta],
-                     run_filter: Optional[Set[int]] = None) -> pd.DataFrame:
+                     run_filter: Optional[Set[int]] = None,
+                     preserve_event_id: bool = False) -> pd.DataFrame:
     combined_data: List[pd.DataFrame] = []
     seen_runs: List[int] = []
     total_events = 0
@@ -618,7 +660,10 @@ def combine_branches(lookup: Dict[int, RunConfig],
                     continue
 
                 physics = uf["physics"]
-                branch_names = [b.name for b in physics.branches if b.name not in BRANCHES_TO_EXCLUDE]
+                branch_names = [
+                    b.name for b in physics.branches
+                    if preserve_event_id or b.name not in BRANCHES_TO_EXCLUDE
+                ]
                 if not branch_names:
                     print(f"[WARN] No branches available for run {run}")
                     continue
@@ -679,6 +724,191 @@ def combine_branches(lookup: Dict[int, RunConfig],
         f"events={total_events}; shape={df_combined.shape}"
     )
     return df_combined
+
+
+def read_tree_dataframe(tree: Any) -> pd.DataFrame:
+    """Read every branch with explicit length checks; preserve integer IDs."""
+    data: Dict[str, np.ndarray] = {}
+    reference_len: Optional[int] = None
+    for branch in tree.branches:
+        name = branch.name
+        array = tree[name].array(library="np")
+        if reference_len is None:
+            reference_len = len(array)
+        if len(array) != reference_len:
+            raise ValueError(
+                f"branch '{name}' length {len(array)} != {reference_len}"
+            )
+        data[name] = array
+    if reference_len is None:
+        return pd.DataFrame()
+    return pd.DataFrame(data)
+
+
+def collect_raw_observation_bundle(
+    lookup: Dict[int, RunConfig],
+    root_dir: Path,
+    target_to_combine: str,
+    efficiency_map: Dict[int, RunEfficiencyMeta],
+    run_filter: Optional[Set[int]] = None,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Collect ALG-001 observations and complete run/segment ledgers.
+
+    This function reads existing efficiency central values only to report whether
+    the legacy correction metadata are available. It does not recalculate or
+    change any efficiency or livetime definition.
+    """
+    raw_frames: List[pd.DataFrame] = []
+    segment_frames: List[pd.DataFrame] = []
+    ledger_rows: List[Dict[str, Any]] = []
+
+    for run in sorted(lookup.keys()):
+        if run_filter and run not in run_filter:
+            continue
+
+        cfg = lookup[run]
+        if target_to_combine and cfg.target and cfg.target.lower() != target_to_combine.lower():
+            continue
+
+        fpath = root_dir / f"diagnostics_run{run}.root"
+        eff = efficiency_map.get(run)
+        row: Dict[str, Any] = {
+            "run_number": run,
+            "target": cfg.target,
+            "prescale_token": cfg.prescale_token,
+            "prescale_value": cfg.prescale_value,
+            "diagnostics_root": str(fpath),
+            "diagnostics_exists": int(fpath.exists()),
+            "efficiency_metadata_available": int(eff is not None),
+            "charge_uC": eff.charge_uC if eff else np.nan,
+            "tracking_eff": eff.tracking_eff if eff else np.nan,
+            "hodo_3of4_eff": eff.hodo_3of4_eff if eff else np.nan,
+            "livetime": eff.livetime if eff else np.nan,
+            "physics_entries": 0,
+            "raw_observation_entries": 0,
+            "segment_entries": 0,
+            "outside_entries": 0,
+            "ambiguous_entries": 0,
+            "status": "unprocessed",
+            "detail": "",
+        }
+
+        if run == 4349:
+            row["status"] = "excluded_known_bad"
+            row["detail"] = "known bad focal-plane data"
+            ledger_rows.append(row)
+            continue
+        if not fpath.exists():
+            row["status"] = "missing_diagnostics"
+            ledger_rows.append(row)
+            continue
+
+        try:
+            with uproot.open(fpath) as root_file:
+                missing_trees = [
+                    name for name in ("physics", "raw_observation", "raw_observation_segments")
+                    if name not in root_file
+                ]
+                if missing_trees:
+                    row["status"] = "missing_raw_export_tree"
+                    row["detail"] = ";".join(missing_trees)
+                    ledger_rows.append(row)
+                    continue
+
+                physics_ids = root_file["physics"]["event_id"].array(library="np")
+                raw = read_tree_dataframe(root_file["raw_observation"])
+                segments = read_tree_dataframe(root_file["raw_observation_segments"])
+                row["physics_entries"] = len(physics_ids)
+                row["raw_observation_entries"] = len(raw)
+                row["segment_entries"] = len(segments)
+
+                missing_columns = sorted(RAW_OBSERVATION_REQUIRED_COLUMNS - set(raw.columns))
+                if missing_columns:
+                    row["status"] = "invalid_raw_schema"
+                    row["detail"] = "missing:" + ";".join(missing_columns)
+                    ledger_rows.append(row)
+                    continue
+                if len(raw) != len(physics_ids):
+                    row["status"] = "event_count_mismatch"
+                    row["detail"] = f"physics={len(physics_ids)} raw={len(raw)}"
+                    ledger_rows.append(row)
+                    continue
+                if len(raw) and not np.array_equal(
+                    raw["event_id"].to_numpy(dtype=np.int64),
+                    np.asarray(physics_ids, dtype=np.int64),
+                ):
+                    row["status"] = "event_id_mismatch"
+                    ledger_rows.append(row)
+                    continue
+                if len(raw) and not np.all(raw["run_number"].to_numpy(dtype=np.int64) == run):
+                    row["status"] = "run_number_mismatch"
+                    ledger_rows.append(row)
+                    continue
+
+                valid_category = raw["timing_category"].isin(range(8))
+                valid_mask = (raw["timing_region_mask"].to_numpy(dtype=np.uint64) & ~np.uint64(63)) == 0
+                dt_matches = np.isclose(
+                    raw["pair_dt_ns"].to_numpy(dtype=float),
+                    raw["t1_ns"].to_numpy(dtype=float) - raw["t2_ns"].to_numpy(dtype=float),
+                    rtol=0.0,
+                    atol=1e-12,
+                )
+                if not bool(valid_category.all()) or not bool(valid_mask.all()) or not bool(dt_matches.all()):
+                    row["status"] = "invalid_raw_values"
+                    row["detail"] = (
+                        f"category={bool(valid_category.all())};"
+                        f"mask={bool(valid_mask.all())};dt={bool(dt_matches.all())}"
+                    )
+                    ledger_rows.append(row)
+                    continue
+
+                row["outside_entries"] = int((raw["timing_category"] == 0).sum())
+                row["ambiguous_entries"] = int((raw["timing_category"] == 7).sum())
+                if row["ambiguous_entries"]:
+                    row["status"] = "ambiguous_timing_category"
+                    ledger_rows.append(row)
+                    continue
+
+                segment_numbers = set(
+                    segments["source_tree_number"].to_numpy(dtype=np.int64).tolist()
+                ) if "source_tree_number" in segments else set()
+                used_segments = set(
+                    raw["source_tree_number"].to_numpy(dtype=np.int64).tolist()
+                )
+                if not used_segments.issubset(segment_numbers):
+                    row["status"] = "segment_mapping_incomplete"
+                    row["detail"] = f"unmapped={sorted(used_segments - segment_numbers)}"
+                    ledger_rows.append(row)
+                    continue
+
+                if eff is None:
+                    row["status"] = "missing_efficiency_metadata"
+                    row["detail"] = "frozen legacy correction row unavailable"
+                else:
+                    row["status"] = "zero_candidate" if len(raw) == 0 else "ready"
+
+                raw_frames.append(raw)
+                segment_frames.append(segments)
+                ledger_rows.append(row)
+        except Exception as ex:
+            row["status"] = "read_error"
+            row["detail"] = str(ex)
+            ledger_rows.append(row)
+
+    raw_combined = pd.concat(raw_frames, ignore_index=True) if raw_frames else pd.DataFrame()
+    segment_combined = (
+        pd.concat(segment_frames, ignore_index=True) if segment_frames else pd.DataFrame()
+    )
+    ledger = pd.DataFrame(ledger_rows)
+
+    if not raw_combined.empty and raw_combined.duplicated(["run_number", "event_id"]).any():
+        raise ValueError("Duplicate (run_number,event_id) key in raw observations")
+    if not segment_combined.empty and segment_combined.duplicated(
+        ["run_number", "source_tree_number"]
+    ).any():
+        raise ValueError("Duplicate (run_number,source_tree_number) key in segment ledger")
+
+    return raw_combined, segment_combined, ledger
 
 
 def weighted_quantile(values: np.ndarray, weights: np.ndarray, quantile: float) -> float:
@@ -1429,7 +1659,12 @@ def add_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
     return debug
 
 
-def save_to_root(df: pd.DataFrame, output_path: Path, mass_cut_debug: Optional[Dict[str, Any]] = None) -> None:
+def save_to_root(
+    df: pd.DataFrame,
+    output_path: Path,
+    mass_cut_debug: Optional[Dict[str, Any]] = None,
+    raw_observations: Optional[pd.DataFrame] = None,
+) -> None:
     print(f"[INFO] Writing combined ROOT tree to {output_path}")
     payload: Dict[str, np.ndarray] = {}
     for col in df.columns:
@@ -1439,6 +1674,16 @@ def save_to_root(df: pd.DataFrame, output_path: Path, mass_cut_debug: Optional[D
         branch_types = {name: arr.dtype for name, arr in payload.items()}
         tree = out_file.mktree("physics", branch_types)
         tree.extend(payload)
+        if raw_observations is not None:
+            raw_payload = {
+                column: raw_observations[column].to_numpy()
+                for column in raw_observations.columns
+            }
+            if not raw_payload:
+                raise ValueError("Raw-observation export requested with no schema")
+            raw_types = {name: array.dtype for name, array in raw_payload.items()}
+            raw_tree = out_file.mktree("raw_observation", raw_types)
+            raw_tree.extend(raw_payload)
         if mass_cut_debug:
             for name, hist_tuple in mass_cut_debug.get("histograms", {}).items():
                 out_file[name] = hist_tuple
@@ -1457,6 +1702,11 @@ def save_to_root(df: pd.DataFrame, output_path: Path, mass_cut_debug: Optional[D
                     }
 
     print(f"[INFO] Wrote {len(df)} events with {len(payload)} branches")
+    if raw_observations is not None:
+        print(
+            f"[INFO] Wrote {len(raw_observations)} ALG-001 raw observations "
+            f"with {len(raw_observations.columns)} branches"
+        )
     if mass_cut_debug:
         print(f"[INFO] Wrote combined 2D mass-cut debug objects with tag '{COMBINED_MASS_CUT_TAG}'")
 
@@ -1984,18 +2234,50 @@ def run(argv: Optional[Sequence[str]] = None) -> int:
     print(f"[INFO] KIN_SETTING={cfg.kin_setting}")
     print(f"[INFO] EFFICIENCY_CSV={cfg.efficiency_csv}")
     print(f"[INFO] TARGET={cfg.target_to_combine}")
+    if cfg.raw_observation_export:
+        print("[INFO] RAW_OBSERVATION_EXPORT=True")
 
     df_cfg = load_config(cfg.cfg_path)
     lookup = build_lookup(df_cfg, cfg.kin_setting, cfg.allowed_types)
     eff_map = load_efficiency_metadata(cfg.efficiency_csv, cfg.kin_setting)
 
     run_filter_set = set(cfg.run_filter) if cfg.run_filter else None
+    raw_observations: Optional[pd.DataFrame] = None
+    if cfg.raw_observation_export:
+        raw_observations, segment_ledger, run_ledger = collect_raw_observation_bundle(
+            lookup=lookup,
+            root_dir=cfg.root_dir,
+            target_to_combine=cfg.target_to_combine,
+            efficiency_map=eff_map,
+            run_filter=run_filter_set,
+        )
+        run_ledger.to_csv(cfg.run_ledger_csv, index=False)
+        segment_ledger.to_csv(cfg.segment_ledger_csv, index=False)
+        print(f"[INFO] ALG-001 run ledger: {cfg.run_ledger_csv}")
+        print(f"[INFO] ALG-001 segment ledger: {cfg.segment_ledger_csv}")
+
+        if run_ledger.empty:
+            print("[ERROR] ALG-001 run ledger is empty", file=sys.stderr)
+            return 3
+        allowed_status = {"ready", "zero_candidate", "excluded_known_bad"}
+        blocking = run_ledger[~run_ledger["status"].isin(allowed_status)]
+        if not blocking.empty:
+            summary = ", ".join(
+                f"{int(row.run_number)}:{row.status}" for row in blocking.itertuples()
+            )
+            print(
+                f"[ERROR] ALG-001 raw-observation bundle is incomplete: {summary}",
+                file=sys.stderr,
+            )
+            return 3
+
     df_combined = combine_branches(
         lookup=lookup,
         root_dir=cfg.root_dir,
         target_to_combine=cfg.target_to_combine,
         efficiency_map=eff_map,
         run_filter=run_filter_set,
+        preserve_event_id=cfg.raw_observation_export,
     )
 
     if df_combined.empty:
@@ -2009,7 +2291,12 @@ def run(argv: Optional[Sequence[str]] = None) -> int:
     print_summary_statistics(df_combined)
     write_combined_mass_cut_debug_text(mass_cut_debug, cfg.out_combined_root)
     write_combined_mass_cut_canvas(mass_cut_debug, cfg.out_combined_root)
-    save_to_root(df_combined, cfg.out_combined_root, mass_cut_debug)
+    save_to_root(
+        df_combined,
+        cfg.out_combined_root,
+        mass_cut_debug,
+        raw_observations=raw_observations,
+    )
 
     if cfg.create_fp_debug_plots:
         create_focal_plane_debug_plots(df_combined, cfg.fp_debug_pdf)

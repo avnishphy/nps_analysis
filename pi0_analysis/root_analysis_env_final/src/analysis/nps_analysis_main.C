@@ -36,6 +36,7 @@
 #include "nps_2d_mass_cut.h"
 #include "nps_plot_diagnostics.h"
 #include "nps_dead_block.h"
+#include "nps_raw_observation.h"
 
 // Suppress empty-body warning in physics_var.h
 #pragma GCC diagnostic push
@@ -47,6 +48,7 @@
 #include <TFile.h>
 #include <TApplication.h>
 #include <TChain.h>
+#include <TChainElement.h>
 #include <TTree.h>
 #include <TString.h>
 #include <TStopwatch.h>
@@ -250,6 +252,19 @@ struct TreeEntry {
     Double_t yfp = 0.0;
     Double_t xpfp = 0.0;
     Double_t ypfp = 0.0;
+    Long64_t raw_chain_entry = -1;
+    Long64_t raw_source_entry = -1;
+    Int_t raw_source_tree_number = -1;
+    Double_t raw_event_number = std::numeric_limits<double>::quiet_NaN();
+    Double_t raw_t1_ns = std::numeric_limits<double>::quiet_NaN();
+    Double_t raw_t2_ns = std::numeric_limits<double>::quiet_NaN();
+    Double_t raw_pair_dt_ns = std::numeric_limits<double>::quiet_NaN();
+    UInt_t raw_timing_region_mask = 0;
+    Int_t raw_timing_category = nps_raw_observation::kOutside;
+    Int_t raw_mode = 0;
+    Int_t raw_shifted_sidebands = 0;
+    Double_t raw_pair_time_diff_max_ns = std::numeric_limits<double>::quiet_NaN();
+    Int_t raw_passes_mmiss_exclusive_cut = 0;
 };
 
 inline void write_event_physics_tree(TFile* fout,
@@ -362,6 +377,129 @@ inline void write_event_physics_tree(TFile* fout,
 
     treeOut->Write();
     safe_delete(treeOut);
+}
+
+inline void write_raw_observation_trees(TFile* fout,
+                                        int run,
+                                        const std::map<Long64_t, TreeEntry>& tree_data,
+                                        const TChain* chain)
+{
+    if (!fout || !chain) return;
+    fout->cd();
+
+    TTree* raw_tree = new TTree(
+        "raw_observation",
+        "ALG-001 selected raw observations before background subtraction or purity weighting");
+
+    Int_t run_number = run;
+    Long64_t event_id = -1;
+    Long64_t source_entry = -1;
+    Int_t source_tree_number = -1;
+    Double_t event_number = std::numeric_limits<double>::quiet_NaN();
+    Double_t t1_ns = std::numeric_limits<double>::quiet_NaN();
+    Double_t t2_ns = std::numeric_limits<double>::quiet_NaN();
+    Double_t pair_dt_ns = std::numeric_limits<double>::quiet_NaN();
+    UInt_t timing_region_mask = 0;
+    Int_t timing_category = nps_raw_observation::kOutside;
+    Int_t acquisition_mode = 0;
+    Int_t shifted_sidebands = 0;
+    Double_t pair_time_diff_max_ns = std::numeric_limits<double>::quiet_NaN();
+    Int_t nclust_selected = 0;
+    Int_t passes_mmiss_exclusive_cut = 0;
+    Int_t helicity = 0;
+    Double_t mpi0_all = 0.0;
+    Double_t mmiss_all = 0.0;
+    Double_t mmiss_all_corr = 0.0;
+    Double_t Q2 = 0.0;
+    Double_t W = 0.0;
+    Double_t t = 0.0;
+    Double_t tmin = 0.0;
+    Double_t phi = 0.0;
+    Double_t xB = 0.0;
+
+    raw_tree->Branch("run_number", &run_number, "run_number/I");
+    raw_tree->Branch("event_id", &event_id, "event_id/L");
+    raw_tree->Branch("source_tree_number", &source_tree_number, "source_tree_number/I");
+    raw_tree->Branch("source_entry", &source_entry, "source_entry/L");
+    raw_tree->Branch("event_number", &event_number, "event_number/D");
+    raw_tree->Branch("t1_ns", &t1_ns, "t1_ns/D");
+    raw_tree->Branch("t2_ns", &t2_ns, "t2_ns/D");
+    raw_tree->Branch("pair_dt_ns", &pair_dt_ns, "pair_dt_ns/D");
+    raw_tree->Branch("timing_region_mask", &timing_region_mask, "timing_region_mask/i");
+    raw_tree->Branch("timing_category", &timing_category, "timing_category/I");
+    raw_tree->Branch("acquisition_mode", &acquisition_mode, "acquisition_mode/I");
+    raw_tree->Branch("shifted_sidebands", &shifted_sidebands, "shifted_sidebands/I");
+    raw_tree->Branch("pair_time_diff_max_ns", &pair_time_diff_max_ns, "pair_time_diff_max_ns/D");
+    raw_tree->Branch("nclust_selected", &nclust_selected, "nclust_selected/I");
+    raw_tree->Branch("passes_mmiss_exclusive_cut", &passes_mmiss_exclusive_cut,
+                     "passes_mmiss_exclusive_cut/I");
+    raw_tree->Branch("helicity", &helicity, "helicity/I");
+    raw_tree->Branch("mpi0_all", &mpi0_all, "mpi0_all/D");
+    raw_tree->Branch("mmiss_all", &mmiss_all, "mmiss_all/D");
+    raw_tree->Branch("mmiss_all_corr", &mmiss_all_corr, "mmiss_all_corr/D");
+    raw_tree->Branch("Q2", &Q2, "Q2/D");
+    raw_tree->Branch("W", &W, "W/D");
+    raw_tree->Branch("t", &t, "t/D");
+    raw_tree->Branch("tmin", &tmin, "tmin/D");
+    raw_tree->Branch("phi", &phi, "phi/D");
+    raw_tree->Branch("xB", &xB, "xB/D");
+
+    for (const auto& item : tree_data) {
+        const TreeEntry& entry = item.second;
+        event_id = entry.raw_chain_entry;
+        source_tree_number = entry.raw_source_tree_number;
+        source_entry = entry.raw_source_entry;
+        event_number = entry.raw_event_number;
+        t1_ns = entry.raw_t1_ns;
+        t2_ns = entry.raw_t2_ns;
+        pair_dt_ns = entry.raw_pair_dt_ns;
+        timing_region_mask = entry.raw_timing_region_mask;
+        timing_category = entry.raw_timing_category;
+        acquisition_mode = entry.raw_mode;
+        shifted_sidebands = entry.raw_shifted_sidebands;
+        pair_time_diff_max_ns = entry.raw_pair_time_diff_max_ns;
+        nclust_selected = entry.nclust_selected;
+        passes_mmiss_exclusive_cut = entry.raw_passes_mmiss_exclusive_cut;
+        helicity = entry.helicity;
+        mpi0_all = entry.mpi0_all;
+        mmiss_all = entry.mmiss_all;
+        mmiss_all_corr = entry.mmiss_all_corr;
+        Q2 = entry.Q2;
+        W = entry.W;
+        t = entry.t;
+        tmin = entry.tmin;
+        phi = entry.phi;
+        xB = entry.xB;
+        raw_tree->Fill();
+    }
+    raw_tree->Write();
+    safe_delete(raw_tree);
+
+    TTree* segment_tree = new TTree(
+        "raw_observation_segments",
+        "ALG-001 input-chain segment mapping; tree number is zero-based");
+    Int_t segment_run_number = run;
+    Int_t source_tree_index = -1;
+    std::string source_tree_name;
+    std::string source_path;
+    segment_tree->Branch("run_number", &segment_run_number, "run_number/I");
+    segment_tree->Branch("source_tree_number", &source_tree_index, "source_tree_number/I");
+    segment_tree->Branch("source_tree_name", &source_tree_name);
+    segment_tree->Branch("source_path", &source_path);
+
+    const TObjArray* files = chain->GetListOfFiles();
+    if (files) {
+        for (Int_t index = 0; index < files->GetEntries(); ++index) {
+            const auto* element = dynamic_cast<const TChainElement*>(files->At(index));
+            if (!element) continue;
+            source_tree_index = index;
+            source_tree_name = element->GetName();
+            source_path = element->GetTitle();
+            segment_tree->Fill();
+        }
+    }
+    segment_tree->Write();
+    safe_delete(segment_tree);
 }
 
 inline void write_summary_csv_row(std::ostream& out, const RunSummaryRow& row)
@@ -1741,6 +1879,11 @@ void nps_analysis_main(const TString &kinematic_in = "",
     }
 
     const bool write_global_csv = parse_env_bool(gSystem->Getenv("NPS_WRITE_GLOBAL_CSV"), false);
+    const bool export_raw_observations =
+        parse_env_bool(gSystem->Getenv("NPS_RAW_OBSERVATION_EXPORT"), false);
+    if (export_raw_observations) {
+        logmsg(INFO, "ALG-001 raw-observation export enabled");
+    }
     TString global_csv;
     if (write_global_csv) {
         global_csv = outSummaryDir + "summary_all_runs.csv";
@@ -3030,7 +3173,9 @@ void nps_analysis_main(const TString &kinematic_in = "",
                                                                 clusX[sel_j], clusY[sel_j],
                                                                 run_z_nps_cm, -run_nps_theta_deg);
 
-                plot_diagnostics.stage_pass = acceptance_cuts->pass_weighted_exclusive(mm_p_corr);
+                const bool passes_mmiss_exclusive_cut =
+                    acceptance_cuts->pass_weighted_exclusive(mm_p_corr);
+                plot_diagnostics.stage_pass = passes_mmiss_exclusive_cut;
                 fill_cut_hist(h_cut_mmiss_corr, mm_p_corr);
 
                 if (good_idx.size()==2) h_mmiss_2->Fill(mm_p);
@@ -3127,6 +3272,34 @@ void nps_analysis_main(const TString &kinematic_in = "",
                 entry.xpfp = hxpfp;
                 entry.ypfp = hypfp;
                 entry.event_id = ev;
+
+                if (export_raw_observations) {
+                    const auto classification = nps_raw_observation::classify(
+                        t1,
+                        t2,
+                        coin_win,
+                        diag_windows,
+                        side_windows,
+                        full1_t1,
+                        full1_t2,
+                        full2_t1,
+                        full2_t2);
+                    entry.raw_chain_entry = ev;
+                    entry.raw_source_tree_number = chain->GetTreeNumber();
+                    const TTree* source_tree = chain->GetTree();
+                    entry.raw_source_entry = source_tree ? source_tree->GetReadEntry() : -1;
+                    entry.raw_event_number = g_evnum;
+                    entry.raw_t1_ns = t1;
+                    entry.raw_t2_ns = t2;
+                    entry.raw_pair_dt_ns = t1 - t2;
+                    entry.raw_timing_region_mask = classification.region_mask;
+                    entry.raw_timing_category = classification.category;
+                    entry.raw_mode = branch_map.mode == AnalysisMode::kWaveform ? 2 : 1;
+                    entry.raw_shifted_sidebands = use_shifted_timing_windows ? 1 : 0;
+                    entry.raw_pair_time_diff_max_ns = pair_time_diff_max_ns;
+                    entry.raw_passes_mmiss_exclusive_cut =
+                        passes_mmiss_exclusive_cut ? 1 : 0;
+                }
                 
                 treeData[ev] = entry;
             } catch (const std::exception& e) {
@@ -3795,6 +3968,9 @@ void nps_analysis_main(const TString &kinematic_in = "",
         // Create, fill, and write event-level physics tree from treeData map.
         plot_diagnostics.write();
         write_event_physics_tree(fout, treeData);
+        if (export_raw_observations) {
+            write_raw_observation_trees(fout, run, treeData, chain.get());
+        }
         treeData.clear();
 
         // write histograms (explicit list)

@@ -1593,6 +1593,11 @@ inline bool open_chain_for_run(const TString& input_dir,
         std::unique_ptr<TChain> trial(new TChain(tree_name.c_str()));
         int added = 0;
         for (const auto& pat : patterns) {
+            const std::string pattern = pat.Data();
+            const bool has_wildcard = pattern.find_first_of("*?[") != std::string::npos;
+            if (!has_wildcard && gSystem->AccessPathName(pat.Data()) != 0) {
+                continue;
+            }
             added += trial->Add(pat);
         }
         if (added <= 0) continue;

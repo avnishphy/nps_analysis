@@ -72,6 +72,10 @@ ALG-001 export.
 
 Each per-run file contains `raw_observation_segments`, mapping
 `(run_number, source_tree_number)` to the original tree name and input path.
+Nonexistent exact-path candidates are rejected before constructing the ROOT
+chain; wildcard candidates continue to use ROOT discovery. This prevents a
+deferred nonexistent `skim_run<run>.root` entry from shifting real segment
+numbers or entering the provenance ledger.
 
 The combiner writes beside `combined_branches_<target>.root`:
 
@@ -98,6 +102,7 @@ python3 -m py_compile src/analysis/combine_analysis_branches.py tests/test_raw_o
 g++ -std=c++17 -Wall -Wextra -pedantic tests/test_nps_raw_observation.cpp -o /tmp/test_nps_raw_observation_20261001
 /tmp/test_nps_raw_observation_20261001
 python3 tests/test_raw_observation_bundle.py
+python3 tests/compare_alg001_real_run.py --default-dir validation/runtime/alg001_run5237_postfix_default/KinC_x50_0a --optin-dir validation/runtime/alg001_run5237_postfix_optin/KinC_x50_0a --run 5237 --expected-source /lustre24/expphy/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_5237_0_1_-1.root
 csh -c 'source /usr/share/Modules/init/csh; source /group/nps/singhav/setup.csh; root -l -b -q -e '\''gSystem->SetBuildDir("build/alg001_phase1", kTRUE); gROOT->ProcessLine(".L src/analysis/nps_analysis_main.C+");'\'''
 ```
 
@@ -106,5 +111,8 @@ The C++ executable exercises every timing category and strict boundaries. The
 Python test creates temporary synthetic ROOT files, checks ready/zero/missing
 ledger states, proves `event_id` remains excluded by default but is preserved
 opt-in, and round-trips the combined raw tree. ACLiC compiles the actual macro
-against ROOT 6.30.04. Full results and the known baseline failure are in
+against ROOT 6.30.04. The real-run comparator verifies shared tree and
+histogram values, event order, source provenance, timing reconciliation,
+auxiliary ROOT products, and ordinary output bytes. Full results and the known
+baseline failure are in
 `validation/ALG001_phase1_validation_20261001.md`.

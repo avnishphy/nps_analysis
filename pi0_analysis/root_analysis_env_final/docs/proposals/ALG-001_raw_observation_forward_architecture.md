@@ -251,8 +251,13 @@ the opt-in run cannot overwrite legacy products. The implementation adds:
 
 ROOT compilation and synthetic tests pass. The existing 2D mass-cut regression
 still fails its pre-existing background-fraction threshold identically against
-the recoverable pre-ALG-001 combiner. No real-data run or one-setting shadow
-comparison has been performed, so phase one is not production-validated.
+the recoverable pre-ALG-001 combiner. A matched default-off/opt-in real-data
+check on run 5237 passed after fixing a segment-provenance defect exposed by
+that check: nonexistent exact input candidates are now excluded before ROOT
+chain construction. Shared physics rows, histograms, summaries, auxiliary
+products, timing counts, event order, and the single real source segment were
+validated exactly. A complete-setting combined ledger/shadow comparison has
+not yet been performed, so phase one is not production-validated.
 
 Schema and reproduction commands are in `docs/raw_observation_schema.md` and
 `validation/ALG001_phase1_validation_20261001.md`.

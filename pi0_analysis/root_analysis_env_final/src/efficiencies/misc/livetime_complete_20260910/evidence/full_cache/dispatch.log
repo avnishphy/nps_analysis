@@ -1,0 +1,17 @@
+{"time_utc": "2026-09-10T00:36:04.516912+00:00", "state": "early_started", "runs": [4253, 4254, 4255, 4256, 4257, 4258, 4259, 4300, 4301, 4302, 4303, 4304, 4305, 4306, 4307, 4308, 4349, 4350, 4351, 4352, 4353, 4354, 4355, 4356, 4398, 4400, 4401, 4403, 4404, 4483, 4484, 4485, 4486, 4487, 4488, 4489, 4490, 4491, 4492, 4493, 4551, 4552, 4553, 4554, 4555, 4556, 4557, 4558], "segments": 172}
+{"time_utc": "2026-09-10T00:36:04.519439+00:00", "state": "worker_started", "pid": 43, "argument": "0,0,3", "log": "export_batch0.log"}
+{"time_utc": "2026-09-10T00:36:04.521676+00:00", "state": "worker_started", "pid": 44, "argument": "0,1,3", "log": "export_batch1.log"}
+{"time_utc": "2026-09-10T00:36:04.523314+00:00", "state": "worker_started", "pid": 46, "argument": "0,2,3", "log": "export_batch2.log"}
+{"time_utc": "2026-09-10T00:52:41.928057+00:00", "state": "early_started", "runs": [4253, 4254, 4255, 4256, 4257, 4258, 4259, 4300, 4301, 4302, 4303, 4304, 4305, 4306, 4307, 4308, 4349, 4350, 4351, 4352, 4353, 4354, 4355, 4356, 4398, 4400, 4401, 4403, 4404, 4483, 4484, 4485, 4486, 4487, 4488, 4489, 4490, 4491, 4492, 4493, 4551, 4552, 4553, 4554, 4555, 4556, 4557, 4558], "segments": 172}
+{"time_utc": "2026-09-10T00:52:41.929790+00:00", "state": "worker_started", "pid": 43, "argument": "0,0,3", "log": "export_batch0.log"}
+{"time_utc": "2026-09-10T00:52:41.931865+00:00", "state": "worker_started", "pid": 44, "argument": "0,1,3", "log": "export_batch1.log"}
+{"time_utc": "2026-09-10T00:52:41.933487+00:00", "state": "worker_started", "pid": 46, "argument": "0,2,3", "log": "export_batch2.log"}
+{"time_utc": "2026-09-10T01:13:41.365080+00:00", "state": "early_finished"}
+{"time_utc": "2026-09-10T01:13:51.402799+00:00", "state": "tail_inventory", "run": 4397, "source": "updated", "segments": [0, 1, 2, 3, 4, 5, 6]}
+{"time_utc": "2026-09-10T01:14:01.438874+00:00", "state": "tail_inventory", "run": 4399, "source": "updated", "segments": [0, 1, 2, 3, 4, 5, 6]}
+{"time_utc": "2026-09-10T01:14:11.471218+00:00", "state": "tail_inventory", "run": 4402, "source": "updated", "segments": [0]}
+{"time_utc": "2026-09-10T01:14:11.481002+00:00", "state": "tail_started"}
+{"time_utc": "2026-09-10T01:14:11.483166+00:00", "state": "worker_started", "pid": 208, "argument": "4397", "log": "export_batch_tail4397.log"}
+{"time_utc": "2026-09-10T01:14:11.485092+00:00", "state": "worker_started", "pid": 209, "argument": "4399", "log": "export_batch_tail4399.log"}
+{"time_utc": "2026-09-10T01:14:11.487428+00:00", "state": "worker_started", "pid": 211, "argument": "4402", "log": "export_batch_tail4402.log"}
+{"time_utc": "2026-09-10T01:17:42.515864+00:00", "state": "exports_complete", "segments": 187}

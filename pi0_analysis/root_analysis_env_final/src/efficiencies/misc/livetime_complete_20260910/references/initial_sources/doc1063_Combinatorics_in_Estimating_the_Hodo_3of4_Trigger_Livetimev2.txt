@@ -1,0 +1,543 @@
+               Combinatorics in Estimating
+             the Hodo 3of4 Trigger Livetime -
+applying the incoherent approximation to an interpretable SHMS example
+
+                               D. Mack
+                               6/10/20
+
+
+
+
+                                                                   1
+                                                 Motivation
+If our strategy is to “trust but verify” the electronic deadtime inferred from EDTM, then once in a while we need to do the
+verify part.
+
+It helps if we have an interpretable case. For example: in Carlos Yero’s thesis, he finds a fairly stable EDTM deadtime of
+~7%. (Fig 5.4 of his thesis.) Conditions were:
+
+•   Daq coincidence trigger rates of ~2.5 Hz. (so we can ignore the computer DT)
+•   EDTM rate of ~2 Hz. (so we can ignore the non-Poissonian correction to EDTM)
+•   HMS 3of4 rate of ~140Hz (so we can ignore the HMS electronic DT)
+•   No PID in the trigger (right or wrong, Carlos and I are consistently calculating the DT in the 3of4 hodo trigger)
+•   SHMS hodo plane rates of ~1MHz (oops)
+
+which means that we can attribute nearly all his 7% total deadtime to electronic DT in the 3of4 hodo trigger in the SHMS.
+This seemed a bit high.
+
+                                                  Can we understand this?
+
+                                                                                                                        2
+                                              Hodo Logic Chain
+ DT estimates are a lot easier if we can find a critical node
+that dominates, usually where rate and gate width are both
+large.
+
+The critical nodes probably were and are the P/S 755
+outputs which standardize the 4 hodo plane signals. (arrows
+on right) They were 100ns wide during commissioning when
+Carlos’s data were taken*, and the rates are high in this
+section since S1X for example represents the OR of all the
+S1X paddles with double-ended hits in that plane.
+
+The upstream Lecroy 4564 camac logic unit sees the same
+high rate but is basically deadtimeless; it does real-time
+logic operations corresponding to overlaps .
+
+The widths of the upstream discriminator outputs are
+significant on this scale (60ns), but any one discriminator
+only sees the rate in a single paddle.
+
+*Thanks, Dave G! It was later reduced to 50ns, but because of high
+rates, the P/S 755 outputs probably remain the critical node, so the
+formalism here and its Excel file implementation should work when
+the incoherent approximation is valid (most of the time).              Carlos Yero
+                                                                       https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1028   3
+                       Incoherent Rate Approximation
+
+The first order deadtime probability at a critical node will simply be DT = rate * DPR. I take the double pulse resolution to
+be the P/S 755 output gate width.
+
+The main approximation we’re going to make is to assume that the blocking rate is incoherent, with no correlations
+between hits in different paddles. This is probably a good approximation for high Q2 electron scattering where most of
+PMT rate is background.
+
+(The coherent case would be where the rate is mainly from good tracks, eg in low Q2 elastic scattering. If a track is blocked
+in S1X by another track that came 20ns earlier, for example, then it is likely to be blocked in the other planes as well. Fully
+coherent tracks are bad in that sense; the worst case scenario for blocking. It doesn’t even matter if you have one plane or
+twelve. )
+
+ Since a real focal plane always has a mixture of incoherent and coherent rates, I’ll put both on the plots to give you an
+idea of the model dependence
+
+
+
+                                                                                                                        4
+                                                 All Combos
+Assume for plane i , that Li is the probability of being unblocked or “Live”, and Di is the probability of being ”Dead”. Of
+course, Li + Di = 1, for i = 1,4 . We can generate a list of all combos by multiplying out
+
+                                              (L1+D1)*(L2+D2)*(L3+D3)*(L4+D4)
+
+and here they are (the multiplication signs are implicit):
+
+
+
+                   L1L2L3L4               L1L2L3D4               L1L2D3L4               L1L2D3D4
+                   L1D2L3L4               L1D2L3D4               L1D2D3L4               L1D2D3D4
+                   D1L2L3L4               D1L2L3D4               D1L2D3L4               D1L2D3D4
+                   D1D2L3L4               D1D2L3D4               D1D2D3L4               D1D2D3D4
+
+
+If your eyes are glazing over, these are readily interpretable. Eg, the combo label “L1D2L3D4” means
+
+“(Prob the 1st plane is Live) x (Prob the 2nd plane is Dead) x (Prob the 3rd plane is Live) x (Prob the 4th plane is Dead)”
+                                                                                                                              5
+                              Combos With ≥3 Planes Hit
+  There is 1 combo where all 4 planes are hit, and 4 combos where exactly 3 planes are hit.
+             L1L2L3L4                  L1L2L3D4                  L1L2D3L4
+             L1D2L3L4
+             D1L2L3L4
+
+
+Hence
+                                Livetime_3of4 = L1L2L3L4 + L1L2L3M4 + L1L2M3L4 + L1M2L3L4 + M1L2L3L4
+
+Let’s plug in an approximate rate:
+
+Rate in the SHMS = 1 MHz (the HMS had low rates)
+DPR = 100ns
+The deadtime for the 1st plane is M1 = R*DPR = 0.1, so H1=1-0.1 = 0.9, and similarly for the other 3 planes. So
+
+                                           Livetime_3of4 = 0.9*0.9*0.9*0.9 + 4*(0.9*0.9*0.9*0.1)
+                                                     = 0.656 + 4*0.0729 =0.948
+
+which is in the ballpark of Carlos’s 93%. Let’s take a closer look on the next slide with a more precise calculation:
+                                                                                                                        6
+                                 3of4 Hodo Trigger Livetime
+                                                                 100ns gates
+  Mark J provided detailed scaler rates, and the data itself reminded me to correct those scaler rates for deadtime:
+
+                                                             True Rate
+                                                           (ie, corrected              DT
+                                            Scaler Rates       for DT)      (first order using true
+                                   Plane       (MHz)            (MHz)                 rate)           LT = 1 - DT
+                                    S1X       9.80E-01        1.09E+00              1.09E-01           8.91E-01
+                                    S1Y       8.70E-01        9.53E-01              9.53E-02           9.05E-01
+                                    S2X       6.20E-01        6.61E-01              6.61E-02           9.34E-01
+                                    S2Y      1.80E+00         2.20E+00              2.20E-01           7.80E-01
+
+
+                                Livetime_3of4 = L1L2L3L4 + L1L2L3M4 + L1L2M3L4 + L1M2L3L4 + M1L2L3L4
+
+                                               = 0.588 + 0.165 + 0.042 + 0.062 + 0.072
+                                                                                                                    See the Excel spreadsheet.
+                                               = 0.928
+
+                              which agrees well with Carlo’s 93% result.
+
+I was surprised how important it was to correct the scaler rates for deadtime. Because the typical per plane livetimes dropped to 90%
+during Carlos’s production data taking, the electronic deadtime in the 3of4 trigger was starting to exponentiate.
+
+
+                                                                                                                                                 7
+                     3of4 Hodo Trigger Livetime vs Rate
+                                                                             100ns gates
+The incoherent model pretty much nailed
+Carlo’s EDTM predicted livetime. (blue                                               3of4 Hodo Livetime vs Average Hodo Plane Rate
+curve)
+                                                                                                     Incoherent          Coherent
+Maybe dumb luck. Need more examples.                           1.05
+
+
+
+There is some model dependence because                         1.00
+real focal plane rates have at least some
+coherent admixture from tracks. It’s hard to                   0.95
+
+
+
+
+                                               3of4 Livetime
+estimate the uncertainty.
+                                                               0.90
+A 100% coherent model using Carlo’s
+average rates would look like the orange,                      0.85
+dashed curve.
+                                                               0.80
+About 15% of Carlos’s rates were coherent,
+so a better estimate might drop the
+                                                               0.75
+predicted livetime by another percent.                                0.00    0.25     0.50   0.75     1.00       1.25       1.50   1.75   2.00   2.25   2.50
+
+                                                                                                     Average Rate (MHz)
+
+                                                                                                                                                                8
+      We SHOULD be in a Much Better Place Now
+                                                            50ns gates!
+                                                         True Rate
+                                                       (ie, corrected            DT
+                                        Scaler Rates       for DT)      (first order using
+                                Plane      (MHz)            (MHz)            true rate)      LT = 1 - DT
+                                 S1X      9.80E-01        1.03E+00            5.15E-02        9.48E-01
+                                 S1Y      8.70E-01        9.10E-01            4.55E-02        9.55E-01
+                                 S2X      6.20E-01        6.40E-01            3.20E-02        9.68E-01
+                                 S2Y      6.20E-01        6.40E-01            3.20E-02        9.68E-01
+
+
+
+
+The 3of4 deadtime drops super fast as soon as you make improvements:
+
+•   when I assume the present 50 ns wide gates and the same true rates, the efficiency increases to 98.3%, and
+
+•   when I assume both 50 ns wide gates and S2Y rate ~ S2X (rather than 3x higher), then the efficiency increases to 99.1%.
+
+
+
+                              Wrt electronic deadtime, we seem to be in MUCH better shape
+                                         now compared to during commissioning.
+
+                                                                                                                              9
+               We SHOULD be in a Much Better Place Now
+                                                                               50ns gates
+
+                                                             3of4 Hodo Livetime vs Average Hodo Plane Rate
+
+                                                                             Incoherent          Coherent
+
+                                        1.01
+                                                                                                                                        Maybe we can augment the
+                                                                                                                                           old rule of thumb:
+                                        1.00
+ I had to expand
+                                        0.99
+the vertical scale.                                                                                                                     “Exceeding 1 MHz is risky for
+                                        0.98                                                                                             precision measurements…”
+                        3of4 Livetime
+
+
+
+
+    2% at 1 MHz                         0.97
+
+
+is not insignificant,                   0.96                                                                                                        with
+     but seems                          0.95
+                                                                                                                                        “…but properly applying Brad
+    reasonable.                         0.94
+                                                                                                                                         et al’s EDTM total livetime
+                                        0.93
+                                                                                                                                           corrections might save
+                                        0.92
+                                                                                                                                                  your data.”
+                                        0.91
+
+                                        0.90
+                                               0.00   0.25     0.50   0.75     1.00       1.25       1.50   1.75   2.00   2.25   2.50
+
+                                                                             Average Rate (MHz)
+
+                                                                                                                                                             10
+          Combos With 2 planes hit, with 1 hit in S1 and 1 hit in S2
+I always assumed the 2of4 efficiency must be very, very close to 100%. Seems unlikely during the commissioning period.
+Let’s take a closer look.
+
+In addition to the previous 5 combos, there are 4 additional combos that can make 2of4 trigger.
+
+
+                L1L2L3L4                 L1L2L3D4            L1L2D3L4
+                L1D2L3L4                 L1D2L3D4            L1D2D3L4
+                D1L2L3L4                 D1L2L3D4            D1L2D3L4
+
+
+
+  Hence
+                            Livetime_2of4 = L1L2L3L4 + L1L2L3M4 + L1L2M3L4 + L1M2L3L4 + M1L2L3L4 +
+                                               L1D2L3D4 + L1D2D3L4 + D1L2L3D4 + D1L2D3L4
+
+  See next slide for Excel plot for 100ns and 50ns.
+
+
+
+                                                                                                                11
+                                              2of4 Hodo Trigger Livetime vs Rate
+                                                                                              100ns vs 50ns
+
+                              2of4 Hodo Livetime vs Average Hodo Plane Rate                                                                2of4 Hodo Livetime vs Average Hodo Plane Rate
+
+                                                 Incoherent          Coherent                                                                                   Incoherent          Coherent
+
+                1.01                                                                                                         1.01
+
+                1.00                                                                                                         1.00
+
+                0.99                                                                                                         0.99
+
+                0.98                                                                                                         0.98
+2of4 Livetime
+
+
+
+
+                                                                                                             2of4 Livetime
+                0.97                                                                                                         0.97
+
+                0.96                                                                                                         0.96
+
+                0.95                                                                                                         0.95
+
+                0.94                                                                                                         0.94
+
+                0.93
+                                                     The 2of4 efficiency was definitely                                      0.93
+                                                                                                                                                         Should be great now though.
+                                                     not ~100% during commissioning
+                0.92                                                                                                         0.92
+
+                0.91                                                                                                         0.91
+
+                0.90                                                                                                         0.90
+                       0.00     0.25   0.50   0.75     1.00   1.25    1.50      1.75   2.00    2.25   2.50                          0.00   0.25   0.50   0.75       1.00     1.25     1.50     1.75   2.00   2.25   2.50
+
+                                                Average Rate (MHz)                                                                                              Average Rate (MHz)
+                                                                                                                                                                                                             12
+                                     Possible Improvements
+Mark suggests a more general, but still simple calculation along the lines of
+
+                       Livetime_3of4 = Livetime_coherent(3of4 rate)*Efficiency_incoherent(Total rate – 3of4rate)
+
+Ie, use the 3of4 rate to estimate the fully coherent track rate. This would interpolate nicely. I can quickly implement that in the Excel
+file and check to make sure it’s stable. It won’t be exact because
+
+•   no cross terms (which might be important if coherent fraction gets up to ~50% - but if the coherent fraction is that high, the
+    experiment is very unlikely to be running at hodo plane rates of ~ 1 MHz)
+
+•   ignores partially coherent, stubby tracks that hit S1X and S1Y but miss S2, eg, the dipole iron showers. (I don’t remember if we even
+    have the scaler information to assess this.)
+
+This may be getting to the point though where the simple simulation needed to test the simple analytic formulae is going to replace
+the simple analytic formula.
+
+
+
+                                                                                                                                     13
+                                                      Summary
+It looks like we can understand why EDTM reported 7% electronic deadtime in the hodo 3of4 trigger in Carlos's data. It was mainly a
+combination of
+
+•   MHz scale hodo plane rates, and
+•   100ns wide gates
+
+It would be nice to have more examples (in general, need the CLT, the EDTM total LT, and scaler outputs for both spectrometers). There’s a
+lot I don’t understand about the role of cuts.
+
+The same model predicts that, now that the gates are reduced to 50ns, and S2Y thresholds are optimized, for Carlos’s same kinematics the
+electronic deadtime would drop to a very reasonable 2%.
+
+During commissioning, the 2of4 trigger efficiency was sometimes not as close to 100% as one would like. Presumably EDTM would keep
+track of this, as well as nodes in the PID trigger electronics with very high Cerenkov rates which were not examined here.
+
+Along with these slides, at https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1063 there is an Excel file which calculates the
+3of4 and 2of4 electronic livetimes. Just plug in your hodo plane rates and gate widths.
+
+Will implement a reasonable incoherent+coherent calculation in Excel. But it shouldn’t be too hard to simulate.
+
+Mark now has a trigger history at https://hallcweb.jlab.org/wiki/index.php/Trigger_History .
+
+                                                                                                                                  14
+Backups
+
+
+
+
+          15
+                                                          Cross Check
+Mark J has a back of the envelope calculation that is so clever it makes my head spin.
+                   Instead of calculating the
+                livetime by adding probs for
+                    combos with 3 planes,
+                  calculate the deadtime by                 Since the DT of a plane
+                                                        is small, keep only the lowest     Just going for a rough
+               adding probs for combos w/o
+Start with all                                          order terms, ie terms missing     estimate, so take those
+                           3 planes
+the combos                                                      exactly 2 planes              L terms to be ~1
+                  (Looks grim. I would turn
+                                                        (the key insight. Looks nicer.)       (looks nicer still)
+                     around and run away
+  L1L2L3L4       screaming at this point lol.)
+ L1L2L3D4
+ L1L2D3L4
+ L1D2L3L4
+ D1L2L3L4                                                                                                             So you get a formula with
+                          L1D2L3D4                              L1D2L3D4                        D2D4
+ L1D2L3D4
+                                                                L1D2D3L4                        D2D3                  a ~20% uncertainty which
+ L1D2D3L4                 L1D2D3L4
+ D1L2L3D4                 D1L2L3D4                              D1L2L3D4                        D1D4                fits on the back of a coconut.
+                          D1L2D3L4                              D1L2D3L4                        D1D3                         For 1 MHz and
+ D1L2D3L4
+                          D1D2L3L4                              D1D2L3L4                        D1D2
+ D1D2L3L4
+                                                                L1L2D3D4                        D3D4
+                                                                                                                            100ns wide gates,
+ L1L2D3D4                 L1L2D3D4
+                          L1D2D3D4
+                                                                                                                    this would yield 6% DT which
+ L1D2D3D4
+ D1D2L3D4                 D1D2L3D4                                                                                       is not far from the full
+ D1D2D3L4                 D1D2D3L4                                                                                             calculation.
+ D1L2D3D4                 D1L2D3D4
+ D1D2D3D4                 D1D2D3D4
+
+                (Basically, working from the opposite                                                                                     16
+                end of the binomial distribution.)
+How, Exactly, do Logic Pulses Get Blocked?
+
+
+
+
+                                             17
+                              SHMS Hodo Trigger Now
+                                                                                                          SHMS Hodo Trigger Now
+                                                                                                   S2X early     S2X late     S1Y early    S2Y late
+                                                                                                   S1X           S2Y early    S2Y late
+                                                                                         0
+                                                                           -20 -15 -10 -5 0   5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100105110115120
+
+                                                                                      -0.5
+
+
+                                                                                       -1
+                                                                                                                                                              S1Y
+
+
+
+
+                                                             Scope Trace (Volts)
+                                                                                      -1.5
+                                                                                                                                                              S2X
+                                                                                       -2
+
+                                                                                                                                                              S1X
+                                                                                      -2.5
+
+
+                                                                                       -3                                                                     S2Y
+                                                                                      -3.5
+
+
+                                                                                       -4
+                                                                                                               Time rel. S1X (ns)
+
+Eric Pooser, Dec 2019, https://logbooks.jlab.org/entry/3752072
+                                                                                   Above is my Excel approximation, including the jitter bands.
+                                                                                                                                                             18
+                                 Nominal Hodo 3of4 Timing
+                                                                                                       SHMS Hodo Trigger Now
+                                                                                                 S2X early      S1Y early    S1X      S2Y early
+
+                                                                                   0
+                                                                         -15 -10 -5 0   5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 105 110 115 120
+
+                                                                                 -0.5
+                                                                                                                                                          S1Y
+This is the present timing if I average away the jitter.                          -1
+
+
+
+
+                                                           Scope Trace (Volts)
+Input gates to the 3of4 coincidence units in this                                -1.5                                                                     S2X
+example are 50 ns wide.
+                                                                                  -2
+
+
+Timing of the hodo 3of4 is nominally set by S1X.                                                                                                          S1X
+                                                                                 -2.5
+
+
+                                                                                  -3
+                                                                                                                                                          S2Y
+                                                                                 -3.5
+
+
+                                                                                  -4
+                                                                                                             Time rel. S1X (ns)
+     Making the coincidence with increasingly delayed gates this way has implications I don’t fully understand:
+     • There is only ~15ns of slop in accepting all four planes.
+     • The broken symmetry means more likely to lose an early hit in S1Y, less likely to lose an early hit in S2Y.
+                                                                                                                                                                      19
+                            Example of a Single Earlier Hit
+                                                                                                       SHMS Hodo Trigger Now
+                                                                                                 S2X early      S1Y early      S1X       S2Y early
+
+                                                                                              0
+                                                                       -40-35-30-25-20-15-10 -5 0 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100105110115120
+
+                                                                                          -0.5
+                                                                                                                                                               S1Y
+S1X has the highest rate. There is a ~10% chance in
+Carlos’s data that there will be an earlier hit in S1X                                      -1
+which blocks the real hit in that plane .                                                                                                                      S2X
+
+
+
+
+                                                         Scope Trace (Volts)
+                                                                                          -1.5
+
+If there is a noise hit in S1X which is say 40 ns
+earlier, then S2X will set the timing. Fine. The hodo                                       -2                                                                 S1X
+3of4 trigger can still accept the good event albeit
+                                                                                          -2.5
+with potentially corrupt timing in S1X.
+                                                                                                                                                               S2Y
+                                                                                            -3
+(Depending on the degree of software filtering,
+both beta and the wire chamber resolutions might                                          -3.5
+be visibly deteriorating.)
+                                                                                            -4
+                                                                                                             Time rel. S1X (ns)
+
+
+                                                                                                                                                                            20
+                             Example with Two Earlier Hits
+                                                                                                       SHMS Hodo Trigger Now
+                                                                                                 S2X early     S1Y early       S1X       S2Y early
+
+                                                                                              0
+                                                                       -40-35-30-25-20-15-10 -5 0 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100105110115120
+                                                                                                                                                          S1Y
+                                                                                          -0.5
+Two hits now: S1X still 40ns earier, and S1Y 25ns
+earlier
+                                                                                            -1
+                                                                                                                                                          S2X
+
+
+
+
+                                                         Scope Trace (Volts)
+ S2X will still set the timing. Fine. The hodo 3of4                                       -1.5
+trigger can still accept the good event albeit with
+potentially corrupt timing in S1X and S1Y.                                                  -2
+                                                                                                                                                          S1X
+
+(Depending on the degree of software filtering,                                           -2.5
+
+both beta and the wire chamber resolutions might                                                                                                          S2Y
+be visibly deteriorating.)                                                                  -3
+
+
+                                                                                          -3.5
+
+
+                                                                                            -4
+                                                                                       Time rel. S1X (ns)
+Very early hits in S1Y and S2X can truly block the hodo3of4 trigger. But in general the problem seems to be more a question of how much
+corruption of the timing information corruption one wants to accept, which is cuts dependent and depends some consistency between  21
+                                                                                                                                      EDTM
+Events and data events for EDTM to be useful. I need to think about this much more.
+

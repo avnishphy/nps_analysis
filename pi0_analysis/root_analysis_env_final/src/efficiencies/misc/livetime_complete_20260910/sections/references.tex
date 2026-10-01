@@ -1,0 +1,83 @@
+References are evidence with stated scope, not authority to import a correction. The source collections retain original files, text, retrieval metadata and hashes. The August 2023 logbooks were supplied as text/URLs by the user; the web tool's expired-authentication response prevented independent page retrieval. All other retrieval status is recorded in the original manifests, including failed attempts followed by successful public downloads. No source is silently replaced by a newer web revision during this documentation build.
+
+
+\section{Hall C and the user's earlier analysis}
+{\small\setlength{\tabcolsep}{0pt}\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}p{0.120\linewidth}@{\hspace{.014\linewidth}}p{0.430\linewidth}@{\hspace{.014\linewidth}}p{0.422\linewidth}@{}}\toprule
+\textbf{ID} & \textbf{Reference} & \textbf{Use and limitation}\\\midrule\endhead
+D00 & \href{https://indico.jlab.org/event/946/contributions/16510/attachments/12602/20074/Luminosity_nps_collaboration_meeting_2025.pdf}{Singh, NPS luminosity, May 2025} & User's earlier four definitions and normalization questions; historical sample differs\\
+D01 & \href{https://hallcweb.jlab.org/DocDB/0010/001022/001/pooser_live_time.pdf}{Pooser, Live Time Calculations, DocDB1022-v1} & HallC EDTM concept, ROC-lock and buffered distinction; title2018/body2019 date ambiguity preserved\\
+D02 & \href{https://hallcweb.jlab.org/DocDB/0010/001001/002/EDTMnonPoissonBiasCorrectionv2.pdf}{Mack, EDTM non-Poisson bias,1001-v2,2019-09-20} & Periodic pulser and beam-ramp effects; explicitly unbuffered, not an NPS correction\\
+D03a & \href{https://hallcweb.jlab.org/DocDB/0010/001028/005/trigger_v3.pdf}{HallC trigger layout,1028-v5} & Historical wiring/stages; not run-specific NPS PRE mapping\\
+D03b & \href{https://hallcweb.jlab.org/DocDB/0010/001028/005/EL_real_trigger_update-03Dec2021.pdf}{Sawatzky, EL-REAL update,2021-12-03} & EL-REAL electronics context; later run configuration must be established\\
+D04 & \href{https://wiki.jlab.org/cuawiki/images/9/90/NPS_Trigger_Status_Feb_2_2023.pdf}{Raydo, NPS trigger status,2023-02-02} & Commissioning trigger/readout architecture, not Feb 2024 readback\\
+D05a & \href{https://hallcweb.jlab.org/DocDB/0011/001110/002/DetailedDeadtimeSourcesv2.pdf}{Mack, non-obvious deadtime sources,1110-v2} & Leading edges, updating logic, recovery and shaping; examples not our measured hardware\\
+D05b & \href{https://hallcweb.jlab.org/DocDB/0010/001063/002/Combinatorics\%20in\%20Estimating\%20the\%20Hodo\%203of4\%20Trigger\%20Livetimev2.pdf}{Mack, hodoscope3-of-4 combinatorics,1063-v2} & Correlation/model assumptions; no plane-rate correction fitted\\
+D06 & \href{https://mailman.jlab.org/pipermail/hallc/attachments/20240605/2611cf32/attachment-0001.pdf}{SHMS instrument circulated draft,2024-06-05} & Sections 4.1-4.2,6.2; draft/SHMS scope, not verified final journal version or NPS coverage\\
+D07 & \href{https://indico.jlab.org/event/946/contributions/16518/attachments/12601/20084/Edited_SemiInclusive_Pi0_Status_May2025_styled_clean.pdf}{Crafts, semi-inclusive pi0 status,2025-05-06} & Slide 13 PRE100/150 and TRIG6 precedent; convention is not validation\\
+D08a & \href{https://github.com/JeffersonLab/nps_replay}{JeffersonLab nps\_replay} & Local archived replay tar/job provenance used; current repository head is not historical executable proof\\
+D08b & \href{https://github.com/JeffersonLab/hcana}{JeffersonLab hcana} & Inspected local scaler/event handling; source path/hash in evidence\\
+D08c & \href{https://github.com/JeffersonLab/NPSlib}{JeffersonLab NPSlib} & VTP/config/timing source; known installed HEAD does not prove pass 2 binary\\
+\bottomrule\end{longtable}}
+\section{NPS-period and pulser studies}
+{\small\setlength{\tabcolsep}{0pt}\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}p{0.120\linewidth}@{\hspace{.014\linewidth}}p{0.430\linewidth}@{\hspace{.014\linewidth}}p{0.422\linewidth}@{}}\toprule
+\textbf{ID} & \textbf{Reference} & \textbf{Use and limitation}\\\midrule\endhead
+N01 & \href{https://redmine.jlab.org/attachments/download/1499/EDTM_Study_Report.pdf}{Murphy, EDTM study,2022-06-28} & PionLT timing tails and competing triggers; do not transplant window/delay values\\
+N02 & \href{https://indico.jlab.org/event/866/contributions/14918/subcontributions/283/attachments/11529/17843/Deadtime\%20and\%20Efficiency.pdf}{Zhang, Deadtime and Efficiency,2024-07-18} & NPS definitions, discrepancies and historical 19-run slope; original units/causality unresolved\\
+N03 & \href{https://indico.jlab.org/event/866/contributions/14914/subcontributions/234/attachments/11505/17805/NPS_July17_2024_Raydo.pdf}{Raydo, NPS Trigger/DAQ,2024-07-17} & Trigger versus readout thresholds, EVIO config and VTP decisions; accepted-sample tests cannot recover rejected population\\
+N04 & \href{https://redmine.jlab.org/attachments/download/2343/Dead\%20time\%20analysis_2024-02-19.pdf}{Zhang, dead-time analysis,2024-02-19} & Historical raw-TDC/scaler investigation; examples not all current runs\\
+N05 & \href{https://redmine.jlab.org/attachments/download/2368/Updates_2024-03-03.pdf}{Zhang, updates,2024-03-03} & Automatic peak,2-uA cut, inferred scaler repair and terminal handling; not adopted defaults\\
+N06 & \href{https://redmine.jlab.org/issues/837}{NPS issue837} & Chronology and attachments; a resolved issue is not validation of this replay\\
+N07a & \href{https://redmine.jlab.org/issues/866}{NPS electronics-deadtime issue866} & Task context, not recovered hardware state\\
+N07b & \href{https://redmine.jlab.org/issues/836}{DAQ event-blocking issue836} & Task context, not effective whole-DAQ-mode proof\\
+N08 & \href{https://hallcweb.jlab.org/wiki/index.php/Trigger_History}{HallC Trigger History} & Links older wiring; historical entry 3532998 content not read\\
+N09 & \href{https://hallcweb.jlab.org/wiki/index.php?title=Hall_C_EDTM_Pulser}{HallC EDTM Pulser} & Pulser infrastructure and entry 3893007 link; not this run's measured clock/rate\\
+\bottomrule\end{longtable}}
+\section{Dated logbooks and CODA}
+{\small\setlength{\tabcolsep}{0pt}\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}p{0.120\linewidth}@{\hspace{.014\linewidth}}p{0.430\linewidth}@{\hspace{.014\linewidth}}p{0.422\linewidth}@{}}\toprule
+\textbf{ID} & \textbf{Reference} & \textbf{Use and limitation}\\\midrule\endhead
+L01 & \href{https://logbooks.jlab.org/entry/4170042}{Entry 4170042,2023-08-23} & User text: firmware capabilities, local NPS outputs and VLD path; capabilities not active settings\\
+L02 & \href{https://logbooks.jlab.org/entry/4171556}{Entry 4171556,2023-08-29} & User text and applicability confirmation: CH delays, EDTM injection and ROC1 TI mapping\\
+L03 & User log4303,2024-02-10 & Original supplied attachment preserved under \path|evidence/full_cache/logbook|; no external entry URL supplied\\
+L04 & User log4305,2024-02-10 & Original supplied attachment preserved; TI/ROC counters and interleaved status output\\
+C00 & \href{https://coda.jlab.org/drupal/}{CODA documentation portal} & Requested starting point; generic documentation must be tied to run configuration\\
+C01 & \href{https://coda.jlab.org/drupal/content/example-single-crate-configuration}{CODA single-crate example} & COOL\_HOME and rol1/rol2 fields; example paths are not NPS paths\\
+C02 & \href{https://coda.jlab.org/drupal/system/files/coda/3.10/walkthrough/index.html}{CODA3.10 walkthrough} & Compiled ROL1 configuration and reproduction context\\
+C03 & \href{https://coda.jlab.org/drupal/content/vme-module-drivers}{VME module drivers} & TI3v11.3 documentation matches logged firmware label, not exact online library build\\
+C04a & \href{https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/tiLib_8h_source.html}{TI header3v11.3} & Buffer/selector/busy register masks\\
+C04b & \href{https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/group__Config.html}{TI configuration API} & External busy versus buffer-threshold control\\
+C04c & \href{https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/group__Status.html}{TI status API} & Timer units and latch/reset readout options; no proof of actual tiStatus execution\\
+C04d & \href{https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/group__MasterConfig.html}{TI master configuration API} & Latch requirement before timer getters\\
+C05 & \href{https://coda.jlab.org/drupal/system/files/pdfs/HardwareManual/TI/TI.pdf}{TI hardware manual} & Saved update2026-08-27; later features not assumed in 2024\\
+C06 & \href{https://coda.jlab.org/drupal/system/files/pdfs/HardwareManual/TS/TS.pdf}{TS hardware manual} & Saved2017 Version 4 architecture; actual NPS master not identified\\
+C07 & \href{https://coda.jlab.org/drupal/content/downloads}{CODA downloads} & Public files also at /group/da/distribution/coda; matching local copies checked\\
+C08 & \href{https://coda.jlab.org/drupal/content/readout-controller-roc}{ROC landing page} & Inspected, no detailed implementation there; exact ROC5 source remains missing\\
+\bottomrule\end{longtable}}
+\section{Supporting historical sources retained}
+\begin{itemize}
+\item \href{https://hallcweb.jlab.org/wiki/index.php?title=Hall_C_DAQ}{HallC DAQ}: prescale setting/factor and coda-flags context, mutable and not run-specific.
+\item \href{https://hallcweb.jlab.org/wiki/index.php?title=Hall_C_Trigger_Layout}{HallC Trigger Layout} and \href{https://hallcweb.jlab.org/wiki/index.php?title=Scalers}{Scalers}: map context, not channel attribution by rate alone.
+\item \href{https://hallcweb.jlab.org/wiki/images/archive/1/10/20230911123553\%21NPS_DVCS_RunPlan.pdf}{Archived NPS run plan,2023-09-11}: planned TI4/TI6 labels, now supplemented by L02.
+\item \href{https://raw.githubusercontent.com/JeffersonLab/Hall-C-Trigger-Setup/master/edtm_studies/EDTM_report.pdf}{Yero, EDTM report,2017-09-06} and \href{https://raw.githubusercontent.com/JeffersonLab/Hall-C-Trigger-Setup/master/edtm_studies/EDTM_LT_Studies.pdf}{livetime studies,2017-11-21}: commissioning precedents, not current calibration.
+\item \href{https://indico.jlab.org/event/517/contributions/9310/attachments/7536/10488/F2_HallCwinterCollaboration_2022.pdf}{F2 update,2022-02-17}: limited EDTM statistics/model precedent, not transferable correction.
+\item \href{https://logbooks.jlab.org/entry/3532998}{Historical wiring entry 3532998} and \href{https://logbooks.jlab.org/entry/3893007}{pulser entry 3893007}: linked leads, original content not inspected. These are not substitutes for L01/L02.
+\item The NPS RG1a Computer and Electronic Deadtime wiki entry was a redlink in the archived index; it supplied no prescription.
+\end{itemize}
+\section{Local implementation and data references}
+The full local source manifests retain paths, bytes and SHA256; selected original Git identifiers are documented in the research log. These references are local files, not web-derived claims:
+
+
+\begin{itemize}
+\item Original current NewGen: \path|evidence/full_cache/snapshot/newgen_edtm_livetime.h|, \path|compute_efficiencies_stuff.cxx|, \path|prescale_beamtime_helper.h|, \path|good_event_selection_helper.h|, \path|root_file_discovery.h| and the original plot/CSV.
+\item Original older luminosity and \path|nps_livetimes.h| source: \path|evidence/run4398/code_provenance.json| and its archived source snapshots; later \path|DT_Analyzer_new.C| under \path|references/later_sources/local|.
+\item Full-cache methodology: \path|evidence/full_cache/analyze.py|, \path|audited_results.json|, results, \path|acceptance_tests.py/CSV|, timestamp/phase/clock checks and all validation manifests.
+\item Raw 4305: \path|evidence/full_cache/raw_extract.C|, \path|raw_validate.py|, \path|raw_config_probe.py|, raw 4305 arrays/configs, logbook originals and raw checksum manifest.
+\item Actual-map evidence: \path|evidence/run4398/replay_snapshot/MAPS_db_HScalevt.dat| and other archived replay files; job/tar attribution remains limited to its documented scope.
+\item NPSlib versions 0269b41,bf8ec57,fddb8e9: evidence/npslib source snapshots, Git history and repeated-key model.
+\item Apps/hcana search: evidence/apps\_search commands, negative results, file inventory and source hashes; offline sources are not online ROC5 implementations.
+\item Final routing interpretation and 43-run metadata join: evidence/routing; exact original-to-matched4398 comparison: evidence/refinements.
+\end{itemize}
+No source gives permission to identify PRE channels by resemblance to a pulse width or fit a correction to CLT\_physics. Applicability is assessed separately from successful download, and missing hardware evidence remains visible.
+

@@ -1,0 +1,603 @@
+Deadtime and Efficiency
+Yaopeng Zhang
+
+
+
+
+NPS Collaboration Meeting 07/18/2024
+2                                                                   Overview
+    n Deadtime and Efficiency
+    A certain run
+                                                                                                                     Count
+                                                                                                Scalar Module                     𝑁 %&'('*)
+               Detectors               Electronics         Pre-triggers
+    Events
+                                                                                           𝑃𝑆                    Read and write
+                                                                               TI Module        DAQ System                         𝑁"#$
+            Losing events
+                                                                                                                Losing events
+               Efficiency                                                                                                         Dead time
+
+
+        So, for a certain run, the average dead time for the ith trigger can be expressed as:
+
+                                                                                 "#$
+                                                                          𝑃𝑆! ( 𝑁!
+                                                           𝐷𝑇! = 1 −
+                                                                           𝑁!%&'(')
+
+
+
+                                               Dead time          Pre-scale factors             Counts
+
+    NPS Collaboration Meeting 07/18/2024
+3                                                                                                     Efficiency
+    n Pre-trigger List
+
+        Ø T1: NPS cluster trigger (VTP 1 Cluster OR VTP 2 Cluster OR delayed EDTM)
+
+        Ø T2: NPS cosmic (NPS cosmic OR LED)
+
+        Ø T3: HMS h3/4
+
+        Ø T4: HMS hEL-REAL
+                                                                                                                                                                           run 1145, LD2, ps3=2
+        Ø T5: (T1) AND (T3)
+
+        Ø T6: (T1) AND (T4)                                               Hodoscope 3/4 Track Efficiency vs. RunNo                                                   Hodoscope 4/4 Track Efficiency vs. RunNo
+                                           Track Efficiency
+
+
+
+
+                                                                                                                                      Track Efficiency
+                                                                 1                                                                                          1
+
+                                                              0.98                                                                                       0.98
+
+                                                              0.96                                                                                       0.96
+
+                                                              0.94                                                                                       0.94
+
+                                                              0.92                                                                                       0.92
+
+                                                               0.9                                                                                        0.9
+
+                                                              0.88                                                                                       0.88
+
+                                                              0.86
+                                                                                      h3/4 > 99.7%                                                       0.86
+                                                                                                                                                                                       h4/4 ~ 94%
+                                                              0.84                                                                                       0.84
+
+                                                              0.82                                                                                       0.82
+
+                                                               0.8                                                                                        0.8
+                                                                1500   2000   2500   3000   3500   4000   4500   5000   5500   6000                        1500   2000   2500   3000   3500   4000   4500   5000   5500   6000
+                                                                                                                        Run Number                                                                                 Run Number
+
+
+    NPS Collaboration Meeting 07/18/2024
+4                                                           Efficiency
+    n NPS T1 efficiency                                                                               Credit to Wassim
+
+        Ø Kinematics : Kin_x50_4 (HMS momentum : -5.253, HMS = 16.917 deg, SHMS = 31.747 deg and NPS = 14.447)
+
+        Ø Taking in account only the highest energy cluster in each event
+
+
+
+
+                                                                                                 Ø 13 runs on LH2
+
+                                                                                                 Ø 12 runs on LD2
+
+                                                                                                 Ø Trigger: T3 (h3/4)
+
+
+
+
+    NPS Collaboration Meeting 07/18/2024
+5                                                              Deadtime
+    n Several ways to estimate the deadtime
+
+        1. EDTM deadtime
+
+               • TI / Computer deadtime
+               • Electronics (discriminator) deadtime
+
+        2. Event time difference distribution
+
+               • TI / Computer deadtime
+
+        3. TI live time (already exists in the report files)
+
+               • TI / Computer deadtime
+
+        The deadtime for NPS part is not estimated yet.
+
+
+
+
+    NPS Collaboration Meeting 07/18/2024
+                 Rate (Hz)
+
+
+
+
+                                                                                                                                                                       Rate (Hz
+                                60                                                                                                                                                         40.5
+                                                  Event Rate
+
+
+6                               55
+                                                  40Hz
+                                                  Scaler Rate                                                                                          EDTM Deadtime                         40
+
+
+                                                                                                                                                                                           39.5
+
+
+
+    n TDC noise needs to be considered
+                                50
+                                                                                                                                                                                             39
+
+
+                                45                                                                                                                                                         38.5
+
+                                                                                                                                                                                                                                                                                              Event Rate
+                                                                                                                                                                                             38
+                                                                                                                                                                                                                                                                                              40Hz
+
+                                                                                                                                                                                                                EDTM TDC Time Raw∈ [1770,2200]
+                                40
+
+
+                                         0
+                                                                EDTM TDC Time Raw > 1
+                                                                     50                      100                      150                        200
+                                                                                                                                                                                           37.5
+                                                                                                                                                                                                      0                          50                      100                      150
+                                                                                                                                                                                                                                                                                              Scaler Rate
+                                                                                                                                                                                                                                                                                                              200
+
+
+                                                                                                                                       LT > 100%
+                                                                                                                            Time (250MHz Clock) in second                                                                                                                               Time (250MHz Clock) in second
+                                                                              EDTM Counts Difference (Run 3992)                                                                                                                           EDTM Counts Difference (Run 3992)
+                                 45
+              Difference
+
+
+
+
+                                                                                                                                                                          Difference
+                                                                                                                                                                                             10                                                  hL1ACCP Rate (Run 3992)
+                                                  Events - Scaler                    hL1ACCP Rate (Run 3992)
+                                 40               40Hz counts - Scaler
+
+
+
+
+                                                                                                                                                                      Rate (Hz)
+         Rate (Hz)
+
+
+
+
+                                                                                                                                                                                              5
+                                 35               Scaler - Scaler
+                               2500                                                                                                                                                        2500
+                                 30                                                                                                                                                           0
+
+                                 25
+                               2000                                                                                                                                                        2000
+                                                                                                                                                                                             −5
+
+                                 20
+                               1500                                                                                                                                                         − 10
+                                                                                                                                                                                           1500
+                                 15
+                                                                                                                                                                                            − 15
+                                 10
+                               1000                                                                                                                                                        1000               Events - Scaler
+
+                                 5
+                               500
+                                                                                                                                                                                            − 20
+                                                                                                                                                                                            500
+                                                                                                                                                                                                              40Hz counts - Scaler
+                                                                                                                                                                                                              Scaler - Scaler
+                                                                                                                                                                                                                                                                                                                             LT < 100%
+                                 0           0                           50                   100                     150                        200                                                      0                          50                   100                     150                         200
+                                                                                                                            Time (250MHz Clock) in second                                                                                                                               Time (250MHz Clock) in second
+                                 0                                                                                                                                                            0       0                          50                      100                      150                         200
+                                         0                           50                      100                      150                        200
+                                                                                                                            Time (250MHz Clock) in second                                                                                                                               Time (250MHz Clock) in second
+                                                                                 EDTM Counts Rate (Run 3992)                                                                                                                                 EDTM Counts Rate (Run 3992)
+                   Rate (Hz)
+
+
+
+
+                                                                                                                                                                       Rate (Hz)
+                                 60               Event Rate                         h_EDTM_tdcTimeRaw_3992                                                                                40.5                                                  h_EDTM_tdcTimeRaw_3992
+                                                                                                                                           h_EDTM_tdcTimeRaw_3992                                                                                                                                      h_EDTM_tdcTimeRaw_3992
+                                                  40Hz
+
+
+
+
+                                                                                                                                                                                  Counts
+                 Counts
+
+
+
+
+                                                                                                                                          Entries             7320                                                                                                                                    Entries             7255
+                                                                                                                                                                                             40                                                                                                       Mean                1983
+
+                                                 EDTM TDC Time Raw                                                                                                                                            EDTM TDC Time Raw
+                                                  Scaler Rate                                                                             Mean                1983
+                                 55                                                                                                       Std Dev             88.91                                                                                                                                   Std Dev            87.65
+
+                                                                                                                                                                                           39.5
+                               102                                                                                                                                                         102
+                                50
+                                                                                                                                                                                             39
+
+
+                                 45                                                                                                                                                        38.5
+                                10                                                                                                                                                          10
+                                                                                                                                                                                                                                                                                              Event Rate
+                                                                                                                                                                                             38
+                                 40                                                                                                                                                                                                                                                           40Hz
+
+                                                                                                                                                                                           37.5                                                                                               Scaler Rate
+                                 1       0                           50                       100                     150                        200                                          1       0                          50                      100                      150                         200
+                                                                                                                            Time (250MHz Clock) in second                                                                                                                               Time (250MHz Clock) in second
+                                     0                    500                 1000             1500            2000                2500                 3000                                      0                   500                 1000             1500            2000                2500                   3000
+                                                                                                                                              Raw tdc Time                                                                                                                                                  Raw tdc Time
+
+                                                                                     hL1ACCP Rate (Run 3992)                                                                                                                                     hL1ACCP Rate (Run 3992)
+         Rate (Hz)
+
+
+
+
+                                                                                                                                                                      Rate (Hz)
+                               2500                                                                                                                                                        2500
+
+
+                               2000                                                                                                                                                        2000
+
+
+    NPS Collaboration
+            1500
+                      Meeting 07/18/2024                                                                                                                                                   1500
+7                                                                                                          EDTM Deadtime
+    n Other considerations                                                                                                             Ø Sudden EDTM scaler rate drop
+                                                                 EDTM Counts Difference (Run 3993)
+
+                                                                                                                                               • It needs to be corrected
+         Difference
+
+
+
+
+                         120
+
+
+                         100
+
+
+                          80
+
+
+                          60                                                                                                           Ø Beam trips
+                          40
+
+
+                          20
+                                                                                                                                               • The beam trips should be removed when
+                           0
+                                    Events - Scaler                                                                                              calculating the EDTM deadtime
+                                    40Hz counts - Scaler
+                         − 20       Scaler - Scaler
+                                0          100             200        300       400        500       600         700          800                                   EDTM Live Time vs. Trigger Rate
+                                                                                                       Time (250MHz Clock) in second
+
+
+
+
+                                                                                                                                          Live Time
+                                                                   EDTM Counts Rate (Run 3993)
+                                                                                                                                                      1.005
+             Rate (Hz)
+
+
+
+
+                          45
+
+                          40
+                                                                                                                                                          1
+                          35
+
+                          30
+
+                          25
+                                                                                                                                                      0.995
+
+                          20
+
+                          15                                                                                                                           0.99
+                                                                                                             Event Rate
+                          10
+                                                                                                             40Hz
+                           5                                                                                                                          0.985
+                                                                                                             Scaler Rate
+                           0    0          100             200        300       400        500       600         700          800
+                                                                                                       Time (250MHz Clock) in second
+                                                                                                                                                       0.98
+                                                                                                                                                              0   500   1000   1500   2000   2500   3000   3500   4000   4500
+                                                                     hL1ACCP Rate (Run 3993)                                                                                                               Trigger Rate (Hz)
+                         1000
+      te (Hz)
+
+
+
+
+    NPS Collaboration Meeting 07/18/2024
+8                                                 Events Time Difference Distribution
+    n Other ways to estimate the deadtime
+                                           hccoda@hcvme01:~/hms/hcvme01/hcvme01.c
+
+                                                                                                             Rule 1
+                                                                                                                      Rule 4
+
+                                           Ø     1D histogram for time interval between adjacent events
+                        Method 1           Ø     The minimum of the time interval is 𝑇!"#!
+                                           Ø     𝑁 events, total time 𝑇
+                                                      $×&!"#!
+                                           Ø     DT =              Percentage of the time
+                                                          &
+
+
+
+Dead time                                    hccoda@hcvme01:~/hms/hcvme01/hcvme01.c
+
+
+
+
+                                             Ø    We can have multiple TDC hits for a single event
+                                             Ø    Only the first hit was recorded as an event
+                       Method 2                                                        " $%& (())'
+                                             Ø    Poisson distribution: 𝑃 𝑁(𝑡) = 𝑘 =      +!
+                                             Ø    Exponential distribution: 𝑃 𝑇 > 𝑡 = 𝑃 𝑁(𝑡) = 0 = 𝑒 -()
+                                             Ø    1D histogram for time interval between adjacent hits
+                                             Ø    Fit the histogram to get the 𝜆
+                                             Ø    Mathematical expectation: 𝐸 𝑁 𝑡 = 𝜆𝑡
+                                                              .      ()
+                                             Ø    DT = 1 − ()/. = ()/.      Percentage of the event counts
+
+
+    NPS Collaboration Meeting 07/18/2024
+9                                                      Events Time Difference Distribution
+    n Other ways to estimate the deadtime
+
+                                   Method 1                                                                    Method 2
+                                                                                                          Event time difference
+                                                                                         ×103                                                   h_event_time_diff
+
+
+
+
+                                                                          Counts
+                                                                                                                                                Entries   1984719
+                                                                                   140
+                                                                                                                                                Mean         1641
+                                                                                                                                                Std Dev      1657
+                                                                                   120
+                                                                                                                                     $( 6
+                                                                                   100                 𝑦 = 1.456 5 100 𝑒 -1..134.5          + 117
+
+                                                                                    80
+
+
+                                                                                    60
+                                                                                                                 𝜆 = 6.163 5 10-7 𝜇s-.
+                                                                                                                   = 6.163 5 10-8 ns-.
+                                                                                    40
+
+
+                                                                                    20
+
+
+                                                                                     0
+                                                                                      0         2000    4000        6000     8000           10000       12000
+                                                                                                                                                     T / µs
+
+               𝑇+*'+ = 230 𝑛𝑠
+
+                                                                                                                /
+                                                                                                       LT =           = 99.9858%
+                                                                                                               <=>/
+
+
+                        ,×.!"#!        /012345×465 89
+           LT = 1 −                =                     = 99.9873%
+                            .              6:1/.:: 9
+    NPS Collaboration Meeting 07/18/2024
+10                                                         Comparison
+ n Comparison between different methods
+
+     Ø EDTM deadtime                                                                      Comparation between different dead time calculation methods
+
+     Ø Events time difference distribution (Method 1&2)
+
+
+
+
+                                                               Live Time
+                                                                               1
+
+     Ø TI live time (already exists in the report files)                   0.995
+
+
+ n Conclusions                                                              0.99
+
+     Ø Blue and pink lines are close to 100%                               0.985
+
+         • Theoretically TI Rule1&4 gives little dead                       0.98
+           time at our data taken rate (2kHz ~ 0.046%)
+                                                                                                                                       EDTM LT
+     Ø EDTM and TI live time makes more sense                              0.975
+                                                                                                                                       TI LT
+         • TI was not always working perfectly                              0.97
+                                                                                                                                       Tdiff Fit LT
+                                                                                                                                       Time Percent LT
+     Ø TI live time is much lower than EDTM LT
+                                                                                   4220   4240   4260   4280   4300   4320   4340   4360    4380      4400
+                                                                                                                                                Run Number
+            • The TI LT in report files needs to be improved
+              (see also next page)
+
+
+
+ NPS Collaboration Meeting 07/18/2024
+11                                                                                                   Improved TI LT Calculation
+ n The TI LT in the root files are not reliable
+
+                                                Charge normalized El-Real events(Carbon)                                                                              Charge normalized El-Real events(Carbon)
+                             1.03                                                                                                                  1.03
+        Counts / Intercept
+
+
+
+
+                                                                                                                              Counts / Intercept
+                                             Scaler Yield                                                                                                          Scaler Yield
+                                             Non-tracking Yield                                                                                                    Non-tracking Yield
+                             1.02                                                                                                                  1.02
+                                             Tracking Yield                                                                                                        Tracking Yield
+
+                             1.01                                                                                                                  1.01
+
+
+
+                                1                                                                                                                     1
+
+
+
+                             0.99                                                                                                                  0.99
+
+
+
+                             0.98        Slope : 2.398 % in 100 µA Slope : 3.532 % in 100 µA Slope : 3.234 % in 100 µA                             0.98        Slope : 2.398 % in 100 µA Slope : 6.638 % in 100 µA Slope : 6.313 % in 100 µA
+                                         χ2 / NDf = 7.624 / 3      χ2 / NDf = 1.888 / 3      χ2 / NDf = 1.837 / 3                                              χ2 / NDf = 7.624 / 3      χ2 / NDf = 473.838 / 3    χ2 / NDf = 438.948 / 3
+
+                             0.97                                                                                                                  0.97
+                                    10           15           20           25           30           35          40                                       10           15           20           25           30           35          40
+                                                                                                          Beam Current (µA)                                                                                                     Beam Current (µA)
+
+
+                                                                   # @A BCBDEF                                                                                             LT from the report file
+                                         LT =                                                     × ps-factor                                                        (“HMS TRIG4 Computer Live Time”)
+                                                  FGHIBJ_LEJMN2 O FGHIBJ_BPEQ
+
+
+
+     Ø The left formula is exactly what we want
+
+     Ø TI LT in the report file doesn’t match with the calculation
+ NPS Collaboration Meeting 07/18/2024
+12                                                             Summary
+ n What is done now:                                                             /group/nps/yaopeng/Analysis/Deadtime/DeadTime.root
+
+     I calculated the deadtime for runs from 1500 to 5000 (03/02/2024)
+
+     Ø EDTM deadtime
+
+     Ø Events time difference distribution
+
+     Ø TI live time (already exists in the root files)
+ n Need to do next:
+     Ø Improve algorithm for EDTM deadtime calculation
+
+     Ø Calculate the LT using the formula: LT =                   # #$ %&%'()
+                                                                                       × ps factor
+                                                         )*+,%-_/(-012 3 )*+,%-_%4(5
+     Ø Generate the “DeadTime.root” for all the runs
+
+ n Questions:
+     Ø Do we need (have chance) to estimate the NPS deadtime?
+
+     Ø There is some clue for the NPS deadtime
+
+     Ø As Julie suggested, I prepared some slides about luminosity analysis and helicity, may I continue to show them?
+ NPS Collaboration Meeting 07/18/2024
+13                                                        NPS Deadtime
+ n Slope Table
+
+                   KinC_x               LH2 Yield vs Trigger1 rate     Maximum Trigger1                  Runs
+                                          Slope (𝟏𝟎O𝟓 %/kHz )             Rate (kHz)                  (More than 5)
+                     36_3                          0.79                       800                              20
+                     36_5                         -3.03                       2200                             13
+                     50_4                         -2.43                       1800                             25
+                    50_4’                         -3.30                       2000                             35
+                     60_3                         -3.32                       1100                             11
+                     50_1                         -2.79                       1000                             9
+            36_5’ (Calibrated)                    -3.07                       2200                             8
+            60_4a (Calibrated)                    -2.22                       2200                             14
+                    60_4b                         -2.13                       1200                             19
+
+      Ø For LD2, the slope varies a lot (can be positive and also negative)
+      Ø For LH2, if the maximum hTRIG1 rate is larger than 800 kHz, the slope is always negative [-2, -3]e-5
+
+ NPS Collaboration Meeting 07/18/2024
+THANKS!
+15                                                                                  Appendix
+              n Slope Table
+
+
+                                   Charge normalized DVCS events / Mean value                                                Charge normalized DVCS events / Mean value
+                                                                                                                1.05
+counts / Mean value
+
+
+
+
+                                                                                          counts / Mean value
+                                                                             LD2                                                                                                      LD2
+                      1.03
+                                                                             LH2                                1.04                                                                  LH2
+                      1.02
+                                                                                                                1.03
+
+                      1.01
+                                                                                                                1.02
+
+                         1
+                                                                                                                1.01
+
+                      0.99
+                                                                                                                   1
+
+                      0.98
+                                                                                                                0.99
+
+                      0.97
+                                                                                                                0.98
+
+                             200      300   400    500   600   700   800    900                                        600   800   1000   1200    1400   1600   1800   2000   2200 2400 2600
+                                                                       TRIG1 Rate (kHz)                                                                                         TRIG1 Rate (kHz)
+
+
+
+                                                  KinC_36_3                                                                                      KinC_x60_4a
+
+
+     NPS Collaboration Meeting 07/18/2024
+

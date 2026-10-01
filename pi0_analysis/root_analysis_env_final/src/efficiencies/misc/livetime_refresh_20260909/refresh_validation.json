@@ -1,0 +1,339 @@
+{
+  "production_runs": 43,
+  "production_segments": 183,
+  "production_events": 77838384,
+  "count_checks": [
+    {
+      "run": 4253,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4254,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4255,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4256,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": -1.1102230246251565e-16
+    },
+    {
+      "run": 4259,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4300,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4301,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4302,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4303,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4304,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4305,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4306,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": -1.1102230246251565e-16
+    },
+    {
+      "run": 4308,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4349,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 1.1102230246251565e-16
+    },
+    {
+      "run": 4350,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4351,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4352,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": -1.1102230246251565e-16
+    },
+    {
+      "run": 4353,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4354,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 1.1102230246251565e-16
+    },
+    {
+      "run": 4355,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": -1.1102230246251565e-16
+    },
+    {
+      "run": 4356,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4397,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4398,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4399,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4400,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 1.1102230246251565e-16
+    },
+    {
+      "run": 4401,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4402,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4403,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4404,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 1.1102230246251565e-16
+    },
+    {
+      "run": 4484,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 1.1102230246251565e-16
+    },
+    {
+      "run": 4485,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4487,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4488,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": -1.1102230246251565e-16
+    },
+    {
+      "run": 4489,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 1.1102230246251565e-16
+    },
+    {
+      "run": 4490,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4491,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": -1.1102230246251565e-16
+    },
+    {
+      "run": 4492,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4493,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4551,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4555,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 1.1102230246251565e-16
+    },
+    {
+      "run": 4556,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4557,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    },
+    {
+      "run": 4558,
+      "phase_counts_equal_interval_counts": true,
+      "shared_count_identity_residual": 0.0
+    }
+  ],
+  "production_sources": [
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/config/nps_dvcs_all_kins_main.csv",
+      "sha256": "f3ee5f17956e0291a5c6f10f0b96b9cfaee222a8155012d9fa7be6814bee61c8",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/efficiency_stuff/efficiency_KinC_x60_4b.csv",
+      "sha256": "d8ae13f5977bae855cd4adb5d41d2098811ee83831bea45b21ae8f9906b371fd",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/efficiency_stuff/selection_report_KinC_x60_4b.csv",
+      "sha256": "9f2cbaeaf503c1e239ff42fb292bffe10813186d8d06eefd8af0bcbba2909b50",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/efficiency_stuff/plots/efficiency_multipanel_vs_run_KinC_x60_4b_lh2.png",
+      "sha256": "c637aca3e82c31aa2ecccaa169eef9073660acde195461301135b990bcc73810",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_tracking_eff.h",
+      "sha256": "b052791e109d9188881c5acfde31e4674edc03490e5573fd735c9a0215a5eafc",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/newgen_edtm_livetime.h",
+      "sha256": "88d5a235b998c3717a6e81035fd206abae040c00026d863dacfc6adb51f2496a",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_pid_eff.h",
+      "sha256": "af380dd033474db70864703cc5d1bebdf1f28c2cf2bc47af69e5a96c23a50555",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_cal_eff_tag_cer.h",
+      "sha256": "7774355eb5696a195a284c70ba220713a58fe4f6954cae0a87f0740cf935101a",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/efficiency_types.h",
+      "sha256": "83e08fc4f28115129ce73039cccb19ec4dc029d2774412ed9c4454e4f13d9fdb",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/prescale_beamtime_helper.h",
+      "sha256": "91154b5163b70620cb25e0f7f9da4f2b5e464ec9d719f61a4589967f2f619b6e",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/root_file_discovery.h",
+      "sha256": "506fa635704f7a267e847c5de20455bb660933bad40f3f1f2209df55865aee61",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/NPS_selection_helper.h",
+      "sha256": "2c59235ba398ce164f4c01bc44d576be79e76ab68967580703589e2a31c93741",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/good_event_selection_helper.h",
+      "sha256": "6565d2a89d88c79263cf14b586115c73219ce114fa20f4dc80939542271f124e",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/eff_math_utils.h",
+      "sha256": "81a5a0a35aa8d1ab057d26ed4156036313554839325347cb3428a726171d2e63",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_cer_eff_tag_cal.h",
+      "sha256": "91649b2e26986968bffe6bc12e2ff7226383b4c3e5df51db58a89ec377156a21",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/nps_hel_select.h",
+      "sha256": "f56c78cfb6d9daab79e987b0d44b0f2a38b57efca163394f718e88f617b21f34",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_pid_common.h",
+      "sha256": "8ba6249ec0adbdcee6db59b145003773e38d8a59ef3ed25f089b8793c87dadc3",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/config_csv_helper.h",
+      "sha256": "e5457b640d404c24d3eb35c48075c619e91494741adf11e2b3efc975aa65e62e",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_hodo_3of4_eff.h",
+      "sha256": "61bfcdc5848e0a03e1060833d422e4d3fc109a686f4c0fc55f5376a2392196f0",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_event_context.h",
+      "sha256": "c528c9c90a7b652eba79fa9bcbaabf736953ea79aabf4e35958db929f3ddfdfa",
+      "unchanged": true
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/compute_efficiencies_stuff.cxx",
+      "sha256": "a70d0def3b60f20b6aefd1a36fa8d67cc482346315fe1955f2cd51464fb569ae",
+      "unchanged": true
+    }
+  ],
+  "previous_archives": [
+    {
+      "archive": "livetime_KinC_x60_4b_lh2_20260909",
+      "files_verified": 402
+    },
+    {
+      "archive": "livetime_beamer_20260909",
+      "files_verified": 148
+    }
+  ]
+}

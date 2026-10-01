@@ -1,0 +1,11 @@
+baseline_commit=e1e7ecc4b18d359e02140c1785df64b69b3b53aa
+baseline_parent=535df7f75d416dec90bf7b39dfca78a942083912
+source_prefix=pi0_analysis/root_analysis_env_main/
+destination_prefix=pi0_analysis/root_analysis_env_final/
+repository=/w/hallc-scshelf2102/nps/singhav/nps_analysis
+audit_sha256=9f0df3ea13872358dc7766f7e0d75d29079e0418f846ecb841ab2ee536f64ddb
+copy_manifest_rows=3315
+copy_manifest_mismatches=0
+freeze_file_count=31047
+freeze_directory_count=847
+freeze_symlink_count=0

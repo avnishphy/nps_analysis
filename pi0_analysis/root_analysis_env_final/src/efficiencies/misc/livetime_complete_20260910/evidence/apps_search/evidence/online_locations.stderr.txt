@@ -1,0 +1,5 @@
+ls: cannot access '/cdaqfs1': No such file or directory
+ls: cannot access '/u/cdaqfs1': No such file or directory
+ls: cannot access '/home/coda': No such file or directory
+ls: cannot access '/u/home/coda': No such file or directory
+ls: cannot access '/adaqfs': No such file or directory

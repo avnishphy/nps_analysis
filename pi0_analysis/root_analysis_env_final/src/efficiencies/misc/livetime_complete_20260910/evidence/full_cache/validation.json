@@ -1,0 +1,29 @@
+{
+  "runs": 51,
+  "calculated": 46,
+  "no_cache": [
+    4307,
+    4486,
+    4552,
+    4553,
+    4554
+  ],
+  "exported_segments": 187,
+  "events": 79564296,
+  "saved_count_checks": 11,
+  "counter_suspect_intervals": 2,
+  "counter_suspect_runs": [
+    4303,
+    4305
+  ],
+  "max_boundary_delta": 0.00019976028765478215,
+  "max_width10_delta": 6.066304710483639e-05,
+  "embedded_prescale_checks": 187,
+  "all_prescale_read_flags_zero": true,
+  "all_prescale_set_flags_zero": true,
+  "all_events_have_configured_trigger_bit": true,
+  "scaler_anomalies": 2,
+  "selected_scaler_anomalies": 0,
+  "populated_prescale_agreements": 45,
+  "empty_prescale_placeholders": 142
+}

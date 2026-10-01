@@ -1,0 +1,70 @@
+{
+  "inputs": [
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_refresh_20260909/production_summary.csv",
+      "sha256": "4727626b783bb3b6a45109772478b874c18357e7d3dfe1e6310a5622d2f6a9a3"
+    },
+    {
+      "path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_refresh_20260909/snapshot/nps_dvcs_all_kins_main.csv",
+      "sha256": "f3ee5f17956e0291a5c6f10f0b96b9cfaee222a8155012d9fa7be6814bee61c8"
+    }
+  ],
+  "groups": {
+    "4": {
+      "runs": [
+        4300,
+        4301,
+        4302,
+        4303,
+        4304,
+        4305,
+        4306,
+        4308,
+        4349,
+        4350,
+        4351,
+        4352,
+        4353,
+        4354,
+        4355,
+        4356,
+        4397,
+        4398,
+        4399,
+        4400,
+        4401,
+        4402,
+        4403,
+        4404,
+        4484,
+        4485,
+        4487,
+        4488,
+        4489,
+        4490,
+        4491,
+        4492,
+        4493,
+        4551,
+        4555,
+        4556,
+        4557,
+        4558
+      ],
+      "events": 75131474
+    },
+    "6": {
+      "runs": [
+        4253,
+        4254,
+        4255,
+        4256,
+        4259
+      ],
+      "events": 2706910
+    }
+  },
+  "all_single_enabled": true,
+  "applicability_basis": "User confirmation; logbook4171556 dated2023-08-29 and4170042 dated2023-08-23. Physical routing not independently measured here.",
+  "new_events_read": 0
+}

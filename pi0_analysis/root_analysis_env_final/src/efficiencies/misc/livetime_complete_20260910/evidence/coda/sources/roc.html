@@ -1,0 +1,192 @@
+
+
+<!DOCTYPE html>
+<!--[if IEMobile 7]><html class="iem7"  lang="en" dir="ltr"><![endif]-->
+<!--[if lte IE 6]><html class="lt-ie9 lt-ie8 lt-ie7"  lang="en" dir="ltr"><![endif]-->
+<!--[if (IE 7)&(!IEMobile)]><html class="lt-ie9 lt-ie8"  lang="en" dir="ltr"><![endif]-->
+<!--[if IE 8]><html class="lt-ie9"  lang="en" dir="ltr"><![endif]-->
+<!--[if (gte IE 9)|(gt IEMobile 7)]><!--><html  lang="en" dir="ltr" prefix="content: http://purl.org/rss/1.0/modules/content/ dc: http://purl.org/dc/terms/ foaf: http://xmlns.com/foaf/0.1/ og: http://ogp.me/ns# rdfs: http://www.w3.org/2000/01/rdf-schema# sioc: http://rdfs.org/sioc/ns# sioct: http://rdfs.org/sioc/types# skos: http://www.w3.org/2004/02/skos/core# xsd: http://www.w3.org/2001/XMLSchema#"><!--<![endif]-->
+
+<head>
+  <meta charset="utf-8" />
+<meta name="Generator" content="Drupal 7 (http://drupal.org)" />
+<link rel="canonical" href="/drupal/content/readout-controller-roc" />
+<link rel="shortlink" href="/drupal/node/27" />
+<link rel="prev" href="/drupal/content/online-data-formats" />
+<link rel="up" href="/drupal/content/data-stream-components" />
+<link rel="next" href="/drupal/content/event-management-unit-emu" />
+<link rel="shortcut icon" href="https://coda.jlab.org/drupal/system/files/Coda_daq_0.jpg" type="image/jpeg" />
+  <title>ReadOut Controller (ROC) | Data Acquisition Support</title>
+
+      <meta name="MobileOptimized" content="width">
+    <meta name="HandheldFriendly" content="true">
+    <meta name="viewport" content="width=device-width">
+    <meta http-equiv="cleartype" content="on">
+
+  <style>
+@import url("https://coda.jlab.org/drupal/modules/system/system.base.css?s6y9vg");
+</style>
+<style>
+@import url("https://coda.jlab.org/drupal/sites/all/modules/ldap/ldap_user/ldap_user.css?s6y9vg");
+@import url("https://coda.jlab.org/drupal/modules/book/book.css?s6y9vg");
+@import url("https://coda.jlab.org/drupal/modules/comment/comment.css?s6y9vg");
+@import url("https://coda.jlab.org/drupal/modules/field/theme/field.css?s6y9vg");
+@import url("https://coda.jlab.org/drupal/sites/all/modules/filebrowser/css/filebrowser_style.css?s6y9vg");
+@import url("https://coda.jlab.org/drupal/modules/node/node.css?s6y9vg");
+@import url("https://coda.jlab.org/drupal/modules/poll/poll.css?s6y9vg");
+@import url("https://coda.jlab.org/drupal/modules/search/search.css?s6y9vg");
+@import url("https://coda.jlab.org/drupal/modules/user/user.css?s6y9vg");
+@import url("https://coda.jlab.org/drupal/modules/forum/forum.css?s6y9vg");
+@import url("https://coda.jlab.org/drupal/sites/all/modules/views/css/views.css?s6y9vg");
+</style>
+<style>
+@import url("https://coda.jlab.org/drupal/sites/all/modules/ctools/css/ctools.css?s6y9vg");
+@import url("https://coda.jlab.org/drupal/sites/all/modules/ldap/ldap_servers/ldap_servers.admin.css?s6y9vg");
+</style>
+<style>
+@import url("https://coda.jlab.org/drupal/sites/all/themes/coda/css/styles.css?s6y9vg");
+</style>
+  <script src="https://coda.jlab.org/drupal/misc/jquery.js?v=1.4.4"></script>
+<script src="https://coda.jlab.org/drupal/misc/jquery-extend-3.4.0.js?v=1.4.4"></script>
+<script src="https://coda.jlab.org/drupal/misc/jquery-html-prefilter-3.5.0-backport.js?v=1.4.4"></script>
+<script src="https://coda.jlab.org/drupal/misc/jquery.once.js?v=1.2"></script>
+<script src="https://coda.jlab.org/drupal/misc/drupal.js?s6y9vg"></script>
+<script src="https://coda.jlab.org/drupal/sites/all/modules/image_caption/image_caption.min.js?s6y9vg"></script>
+<script>jQuery.extend(Drupal.settings, {"basePath":"\/drupal\/","pathPrefix":"","setHasJsCookie":0,"ajaxPageState":{"theme":"coda","theme_token":"GPRuwz7bZ4KdSGhAqfhN5e85JAnrh_BLvr4KkA2VEyM","js":{"misc\/jquery.js":1,"misc\/jquery-extend-3.4.0.js":1,"misc\/jquery-html-prefilter-3.5.0-backport.js":1,"misc\/jquery.once.js":1,"misc\/drupal.js":1,"sites\/all\/modules\/image_caption\/image_caption.min.js":1},"css":{"modules\/system\/system.base.css":1,"modules\/system\/system.menus.css":1,"modules\/system\/system.messages.css":1,"modules\/system\/system.theme.css":1,"sites\/all\/modules\/ldap\/ldap_user\/ldap_user.css":1,"modules\/book\/book.css":1,"modules\/comment\/comment.css":1,"modules\/field\/theme\/field.css":1,"sites\/all\/modules\/filebrowser\/css\/filebrowser_style.css":1,"modules\/node\/node.css":1,"modules\/poll\/poll.css":1,"modules\/search\/search.css":1,"modules\/user\/user.css":1,"modules\/forum\/forum.css":1,"sites\/all\/modules\/views\/css\/views.css":1,"sites\/all\/modules\/ctools\/css\/ctools.css":1,"sites\/all\/modules\/ldap\/ldap_servers\/ldap_servers.admin.css":1,"sites\/all\/themes\/coda\/system.menus.css":1,"sites\/all\/themes\/coda\/system.messages.css":1,"sites\/all\/themes\/coda\/system.theme.css":1,"sites\/all\/themes\/coda\/css\/styles.css":1}}});</script>
+      <!--[if lt IE 9]>
+    <script src="/drupal/sites/all/themes/zen/js/html5-respond.js"></script>
+    <![endif]-->
+  </head>
+<body class="html not-front not-logged-in one-sidebar sidebar-first page-node page-node- page-node-27 node-type-book section-content" >
+      <p id="skip-link">
+      <a href="#main-menu" class="element-invisible element-focusable">Jump to navigation</a>
+    </p>
+      
+<div id="page">
+
+  <header class="header" id="header" role="banner">
+    <div class="borderbar"  style="overflow: hidden;height: 20px;">
+   	  <div class="fred" style="text-align:left;float:left;display:inline-block;width: 40%;height: 20px;"><a href="http://cc.jlab.org"><b> Thomas Jefferson National Accelerator Facility</b></a></div>
+      <div class="borderbar" style="text-align:right;float:right;display:inline-block;width: 30%;height: 20px;"><a href="http://cc.jlab.org/jhtmllib/JLabSecurityBanner.html">Privacy and Security Notice </a></div>
+    </div>
+          <a href="/drupal/" title="Home" rel="home" class="header__logo" id="logo"><img width="400" height="40" src="https://coda.jlab.org/drupal/system/files/Logo.png" alt="Home" class="header__logo-image" /></a>
+    
+    <!--
+           <div class="header__name-and-slogan" id="name-and-slogan">
+                  <h1 class="header__site-name" id="site-name">
+            <a href="/drupal/" title="Home" class="header__site-link" rel="home"><span>Data Acquisition Support</span></a>
+          </h1>
+                      </div> -->
+      <div class="borderbar" style="margin-top: 5px;float:left;display:inline-block;width: 100%;height: 5px;"></div>
+
+    
+    
+    
+  </header>
+
+  <div id="main">
+
+    <div id="content" class="column" role="main">
+                                          
+
+
+
+<article class="node-27 node node-book view-mode-full clearfix" about="/drupal/content/readout-controller-roc" typeof="sioc:Item foaf:Document">
+
+      <header>
+	  <ul class="links inline"><li class="comment_forbidden first last"></li>
+</ul>	    <div id="book-navigation-3" class="book-navigation">
+
+  <!--  -->
+
+        <div class="page-links clearfix">
+              <a href="/drupal/content/online-data-formats" class="page-previous" title="Go to previous page">‹ Go to previous page</a>
+                    <a href="/drupal/content/data-stream-components" class="page-up" title="Go to parent page">^ parent page</a>
+                    <a href="/drupal/content/event-management-unit-emu" class="page-next" title="Go to next page">Go to next page ›</a>
+          </div>
+    	 
+
+  </div>
+
+
+                    <h1 class="node__title node-title">ReadOut Controller (ROC)</h1>
+            <span property="dc:title" content="ReadOut Controller (ROC)" class="rdf-meta element-hidden"></span>
+      	  
+    </header>
+     
+	<div id="node-content">
+	<div class="node-sidebar">
+    	</div>
+		
+	</div>
+
+
+
+  
+</article>
+          </div>
+
+    
+    
+          <aside class="sidebars">
+          <section class="region region-sidebar-first column sidebar">
+    <div id="block-system-main-menu" class="block block-system block-menu first odd" role="navigation">
+
+        <h2 class="block__title block-title">Main Menu</h2>
+    
+  <ul class="menu"><li class="menu__item is-leaf first leaf"><a href="/drupal/content/welcome" title="Welcome to the CODA website" class="menu__link">Welcome</a></li>
+<li class="menu__item is-leaf leaf"><a href="/drupal/content/about-us" class="menu__link">About Us</a></li>
+<li class="menu__item is-leaf last leaf"><a href="/drupal/user/login" title="" class="menu__link">Login</a></li>
+</ul>
+</div>
+<div id="block-menu-block-1" class="block block-menu-block last even" role="navigation">
+
+        <h2 class="block__title block-title">Documentation and downloads</h2>
+    
+  <div class="menu-block-wrapper menu-block-1 menu-name-book-toc-3 parent-mlid-787 menu-level-1">
+  <ul class="menu"><li class="menu__item is-leaf first leaf menu-mlid-1381"><a href="/drupal/content/introduction" class="menu__link">Introduction</a></li>
+<li class="menu__item is-expanded expanded menu-mlid-1454"><a href="/drupal/content/front-end-hardware" class="menu__link">Front end hardware</a><ul class="menu"><li class="menu__item is-leaf is-parent first leaf has-children menu-mlid-1385"><a href="/drupal/coda/hardware/manuals" class="menu__link">JLab Electronics Manuals</a></li>
+<li class="menu__item is-leaf is-parent leaf has-children menu-mlid-1449"><a href="/drupal/content/vme-controllers" class="menu__link">VME Controllers</a></li>
+<li class="menu__item is-leaf last leaf menu-mlid-1456"><a href="/drupal/content/vme-module-drivers" class="menu__link">VME Module drivers</a></li>
+</ul></li>
+<li class="menu__item is-expanded is-active-trail expanded active-trail menu-mlid-1817"><a href="/drupal/content/software-subsystems" class="menu__link is-active-trail active-trail">Software subsystems</a><ul class="menu"><li class="menu__item is-leaf is-parent first leaf has-children menu-mlid-1785"><a href="/drupal/content/run-control" class="menu__link">Run Control</a></li>
+<li class="menu__item is-leaf is-parent is-active-trail leaf has-children active-trail menu-mlid-1825"><a href="/drupal/content/data-stream-components" class="menu__link is-active-trail active-trail">Data Stream Components</a></li>
+<li class="menu__item is-leaf is-parent last leaf has-children menu-mlid-1830"><a href="/drupal/content/control-designer" class="menu__link">Control Designer</a></li>
+</ul></li>
+<li class="menu__item is-expanded expanded menu-mlid-1458"><a href="/drupal/content/core-packages" class="menu__link">Core Packages</a><ul class="menu"><li class="menu__item is-leaf is-parent first leaf has-children menu-mlid-1777"><a href="/drupal/content/coda-messaging-cmsg" class="menu__link">CODA Messaging (cMsg)</a></li>
+<li class="menu__item is-leaf is-parent leaf has-children menu-mlid-1459"><a href="/drupal/content/event-io-evio" class="menu__link">Event IO (evio)</a></li>
+<li class="menu__item is-leaf is-parent leaf has-children menu-mlid-2706"><a href="/drupal/content/event-management-unit-emu-0" class="menu__link">Event Management Unit (EMU)</a></li>
+<li class="menu__item is-leaf is-parent leaf has-children menu-mlid-1460"><a href="/drupal/content/event-transfer-et" class="menu__link">Event Transfer (ET)</a></li>
+<li class="menu__item is-leaf is-parent last leaf has-children menu-mlid-1784"><a href="/drupal/content/experiment-control-system-afecs" class="menu__link">Experiment Control System (Afecs)</a></li>
+</ul></li>
+<li class="menu__item is-expanded expanded menu-mlid-2341"><a href="/drupal/content/coda-3-release" class="menu__link">CODA 3 release</a><ul class="menu"><li class="menu__item is-leaf first last leaf menu-mlid-2530"><a href="/drupal/content/example-single-crate-configuration" class="menu__link">Example Single Crate Configuration</a></li>
+</ul></li>
+<li class="menu__item is-expanded expanded menu-mlid-1446"><a href="/drupal/content/coda-26-release" class="menu__link">CODA 2.6 release</a><ul class="menu"><li class="menu__item is-leaf first leaf menu-mlid-1447"><a href="/drupal/content/overview" class="menu__link">Overview</a></li>
+<li class="menu__item is-leaf leaf menu-mlid-1445"><a href="/drupal/content/install-instructions" class="menu__link">Install Instructions</a></li>
+<li class="menu__item is-leaf last leaf menu-mlid-1448"><a href="/drupal/content/ppc-cross-compilers" class="menu__link">PPC Cross Compilers</a></li>
+</ul></li>
+<li class="menu__item is-leaf leaf menu-mlid-1801"><a href="/drupal/content/downloads" class="menu__link">Downloads</a></li>
+<li class="menu__item is-leaf last leaf menu-mlid-2340"><a href="/drupal/content/documents" class="menu__link">Documents</a></li>
+</ul></div>
+
+</div>
+  </section>
+        
+              </aside>
+    
+  </div>
+
+  <div class="borderbar" style="overflow: hidden;">
+   	<div class="borderbar" style="float:left;display:inline-block;width: 30%;height: 100px"><div style="margin-left: 2em;">12000 Jefferson Avenue, Newport News, VA, 23606<br> Phone:(757)269-7100 Fax: (757)269-7363</div></div>
+    <div class="borderbar" style="text-align:right;float:right;display:inline-block;width: 50%;height: 100px">
+			<a href="http://www.jlab.org"><img src="/drupal/sites/all/themes/coda/logos/JLabLogo-140x41.gif" alt="JLab Logo" class="sticky" /></a>
+			<a href="http://www.jlab.org"><img src="/drupal/sites/all/themes/coda/logos/DOELogo-140x41.gif" alt="DOE Logo" class="sticky" /></a>
+			<a href="http://www.jlab.org"><img src="/drupal/sites/all/themes/coda/logos/OSLogo-150x41.jpg" alt="OS Logo" class="sticky" /></a>
+			<a href="http://www.jlab.org"><img src="/drupal/sites/all/themes/coda/logos/JSALogo-180x41.gif" alt="JSA Logo" class="sticky" /></a>
+	</div>
+  </div>
+
+</div>
+
+  </body>
+</html>

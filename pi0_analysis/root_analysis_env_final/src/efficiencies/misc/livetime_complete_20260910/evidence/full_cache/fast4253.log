@@ -1,0 +1,14 @@
+Setting up NPS offline replay environment
+
+****************************************************
+>>>>  IMPORTANT: After loading this module, do  <<<<
+>>>>    cd $REPLAYDIR                           <<<<
+****************************************************
+
+Loading nps_replay/5.28.24
+  Loading requirement: pythia6/6.4.28 pythia8/8.317 root/6.30.04 evio/5.3
+    analyzer/1.7.12 hcana/1.1 NPSlib/fddb8e9_1.1.0
+
+Processing export_fast.C(4253,0)...
+FAST_EXPORTED 450326 19
+elapsed=2.98 cpu_user=1.26 cpu_system=0.62

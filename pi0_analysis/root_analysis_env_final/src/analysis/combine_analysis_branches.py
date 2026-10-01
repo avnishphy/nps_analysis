@@ -1,0 +1,2033 @@
+#!/usr/bin/env python3
+"""
+combine_analysis_branches.py
+
+Combine per-run diagnostics ROOT trees into one per-kinematics ROOT file.
+
+This script is designed as a downstream stage of the unified analysis chain:
+1) per-run diagnostics ROOT files are produced by nps_analysis_main.C
+2) this combiner merges those run files for one Kin_old setting
+3) optional QA plots are generated from the merged dataset
+
+The script resolves canonical paths from the same workflow inputs used by
+the main driver:
+- NPS_KIN / --kin
+- NPS_CONFIG_CSV / --config
+- NPS_OUTPUT_BASE / --output-base
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import re
+import sys
+from collections import deque
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import uproot
+from matplotlib.backends.backend_pdf import PdfPages
+
+
+DEFAULT_TARGET = "LH2"
+DEFAULT_CONFIG = "nps_dvcs_all_kins_main.csv"
+BRANCHES_TO_EXCLUDE = {"event_id"}
+REQUIRED_EFFICIENCY_COLUMNS = (
+    "run_number",
+    "kinematic_setting",
+    "HEL_charge_after_cut_uC",
+    "HMS_tracking_eff",
+    "HMS_hodo_3of4_eff",
+    "NewGen_EDTM_livetime",
+    "HMS_tracking_eff_err",
+    "HMS_hodo_3of4_eff_err",
+    "NewGen_EDTM_livetime_err",
+)
+
+# Combined-level 2D mass-cut branches. Recomputed from the merged weighted
+# mmiss_all:mpi0_all distribution, not copied from per-run flags.
+CREATE_COMBINED_2D_MASS_CUT = True
+COMBINED_MASS_CUT_TAG = "combined_2d_mass_cut"
+WRITE_COMBINED_MASS_CUT_PARAM_TREES = False
+
+MASS_CUT_CONFIG = {
+    "n_mpi0_bins": 60,
+    "mpi0_min": 0.11,
+    "mpi0_max": 0.15,
+    "n_mmiss_bins": 80,
+    "mmiss_min": 0.6,
+    "mmiss_max": 1.5,
+    "seed_mpi0": 0.13498,
+    "seed_mpi0_half_width": 0.010,
+    "seed_mmiss": 0.938,
+    "seed_mmiss_half_width": 0.030,
+    "smoothing_radius_bins": 1,
+    "peak_fraction": -1.0,
+    "core_quantile": 0.6827,
+    "ellipse_quantile": 0.990,
+    "ellipse_grow_iterations": 20,
+    "ellipse_padding": 1.05,
+    "ridge_mmiss_sigma_range": 2.0,
+    "ridge_mpi0_search_half_width": 0.0045,
+    "ridge_min_peak_fraction": 0.20,
+    "ridge_min_y_bins": 18,
+    "ridge_huber_mpi0": 0.0015,
+    "auto_peak_min": 0.05,
+    "auto_peak_max": 0.60,
+    "auto_peak_step": 0.005,
+    "auto_min_core_total_fraction": 0.005,
+    "auto_max_core_total_fraction": 0.30,
+    "auto_min_core_bins": 8,
+    "max_model_mpi0_offset": 0.008,
+    "max_model_mmiss_offset": 0.100,
+    "mcd_candidate_mpi0_half_width": 0.015,
+    "mcd_candidate_mmiss_half_width": 0.180,
+    "mcd_keep_candidate_fraction": 0.50,
+    "mcd_iterations": 8,
+    "mcd_ellipse_quantile": 0.975,
+    "mcd_padding": 1.05,
+    "covariance_regularization_bins": 0.50,
+}
+
+
+@dataclass(frozen=True)
+class WorkflowConfig:
+    cfg_path: Path
+    output_base: Path
+    root_dir: Path
+    out_combined_root: Path
+    kin_setting: str
+    target_to_combine: str
+    efficiency_csv: Path
+    analysis_plots_pdf: Path
+    fp_debug_pdf: Path
+    allowed_types: Tuple[str, ...]
+    run_filter: Tuple[int, ...]
+    create_analysis_plots: bool
+    create_fp_debug_plots: bool
+
+
+@dataclass(frozen=True)
+class RunConfig:
+    prescale_token: str
+    prescale_value: float
+    target: str
+
+
+@dataclass(frozen=True)
+class RunEfficiencyMeta:
+    charge_uC: float
+    tracking_eff: float
+    tracking_eff_err: float
+    hodo_3of4_eff: float
+    hodo_3of4_eff_err: float
+    livetime: float
+    livetime_err: float
+    efficiency: float
+    efficiency_err: float
+
+
+@dataclass(frozen=True)
+class Hist1DSpec:
+    name: str
+    title: str
+    xlabel: str
+    bins: int
+    value_range: Optional[Tuple[float, float]]
+    color: str
+
+
+def sanitize_token(value: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_-]", "_", value.strip())
+
+
+def clean_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, float) and np.isnan(value):
+        return ""
+    out = str(value).strip()
+    if len(out) >= 2 and out[0] == out[-1] and out[0] in {'"', "'"}:
+        out = out[1:-1]
+    return out.strip()
+
+
+def safe_int(value: Any) -> Optional[int]:
+    try:
+        text = clean_text(value)
+        if text == "":
+            return None
+        return int(float(text))
+    except Exception:
+        return None
+
+
+def safe_float(value: Any) -> Optional[float]:
+    try:
+        text = clean_text(value)
+        if text == "":
+            return None
+        out = float(text)
+        if not np.isfinite(out):
+            return None
+        return out
+    except Exception:
+        return None
+
+
+def normalize_header(header: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", header.lower().strip())
+
+
+def pick_column(columns: Iterable[str],
+                preferred: Sequence[str],
+                contains: Optional[str] = None) -> Optional[str]:
+    cols = list(columns)
+    norm_map = {normalize_header(c): c for c in cols}
+
+    for key in preferred:
+        found = norm_map.get(normalize_header(key))
+        if found is not None:
+            return found
+
+    if contains:
+        token = normalize_header(contains)
+        for c in cols:
+            if token in normalize_header(c):
+                return c
+
+    return None
+
+
+def extract_prescale_r(token: str) -> Optional[int]:
+    if not isinstance(token, str):
+        return None
+    assignments = [
+        (int(trigger), int(setting))
+        for trigger, setting in re.findall(
+            r"ps\s*(\d+)\s*=\s*(-?\d+)", token, flags=re.IGNORECASE
+        )
+    ]
+    enabled = [(trigger, setting) for trigger, setting in assignments if setting >= 0]
+    if not enabled:
+        return None
+    # Temporary, explicit policy for multi-trigger runs: use first enabled
+    # assignment in token order. Plotting writes those runs to an audit CSV.
+    return enabled[0][1]
+
+
+def prescale_from_token(token: str) -> float:
+    r = extract_prescale_r(token)
+    if r is None or r <= 0:
+        return 1.0
+    return float((2 ** (r - 1)) + 1)
+
+
+def parse_types_csv(types_csv: str) -> Tuple[str, ...]:
+    out: List[str] = []
+    for tok in types_csv.split(","):
+        cleaned = clean_text(tok)
+        if cleaned:
+            out.append(cleaned)
+    return tuple(out)
+
+
+def parse_run_args(run_args: Sequence[Any]) -> Tuple[int, ...]:
+    run_filter: List[int] = []
+    for group in run_args:
+        items = [group] if isinstance(group, str) else group
+        for item in items:
+            for token in str(item).split(","):
+                cleaned = clean_text(token)
+                if not cleaned:
+                    continue
+                parsed = safe_int(cleaned)
+                if parsed is None:
+                    raise ValueError(f"Invalid --run value: {cleaned}")
+                run_filter.append(parsed)
+    return tuple(sorted(set(run_filter)))
+
+
+def infer_plots_dir(args: argparse.Namespace,
+                    output_base: Path,
+                    kin_safe: str,
+                    root_dir: Path,
+                    out_combined_root: Path) -> Path:
+    if args.root_dir:
+        return root_dir.parent / "plots" if root_dir.name.lower() == "root" else root_dir / "plots"
+    if args.out_combined_root and out_combined_root.parent.name.lower() == "root":
+        return out_combined_root.parent.parent / "plots"
+    return output_base / kin_safe / "plots"
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Combine per-run diagnostics trees into one per-kinematics ROOT file."
+    )
+    parser.add_argument("--kin", default=None,
+                        help="Kin_old setting to combine (defaults to NPS_KIN env var).")
+    parser.add_argument("--config", default=None,
+                        help="Path to config CSV (defaults to NPS_CONFIG_CSV or canonical config).")
+    parser.add_argument("--output-base", default=None,
+                        help="Canonical output base directory (defaults to NPS_OUTPUT_BASE or repo/output).")
+    parser.add_argument("--root-dir", default=None,
+                        help="Optional explicit ROOT input directory (default: <output-base>/<kin>/root).")
+    parser.add_argument("--out-combined-root", default=None,
+                        help="Optional explicit output ROOT file path.")
+    parser.add_argument("--efficiency-csv", default=None,
+                        help="Optional explicit efficiency CSV path.")
+    parser.add_argument("--target", default=DEFAULT_TARGET,
+                        help="Target to combine (default: LH2).")
+    parser.add_argument("--types", default="production,Production",
+                        help="Allowed Type values in config CSV (comma-separated).")
+    parser.add_argument("--run", action="append", nargs="+", default=[],
+                        help="Restrict to one or more run numbers (repeatable; accepts space- or comma-separated values).")
+    parser.add_argument("--no-analysis-plots", action="store_true",
+                        help="Skip creation of analysis plot PDF.")
+    parser.add_argument("--fp-debug-plots", action="store_true",
+                        help="Enable focal-plane debug PDF.")
+    return parser
+
+
+def resolve_workflow_config(args: argparse.Namespace) -> WorkflowConfig:
+    repo_root = Path(__file__).resolve().parents[2]
+
+    kin_setting = clean_text(args.kin or os.getenv("NPS_KIN") or "")
+    if not kin_setting:
+        raise ValueError("KIN_SETTING is required (pass --kin or set NPS_KIN).")
+
+    cfg_default = repo_root / "config" / DEFAULT_CONFIG
+    output_default = repo_root / "output"
+
+    cfg_path = Path(args.config or os.getenv("NPS_CONFIG_CSV") or cfg_default).expanduser().resolve()
+    output_base = Path(args.output_base or os.getenv("NPS_OUTPUT_BASE") or output_default).expanduser().resolve()
+
+    kin_safe = sanitize_token(kin_setting)
+    root_dir = Path(args.root_dir).expanduser().resolve() if args.root_dir else (output_base / kin_safe / "root")
+
+    target = clean_text(args.target or DEFAULT_TARGET)
+    if not target:
+        raise ValueError("target cannot be empty")
+    target_safe = sanitize_token(target)
+
+    out_combined_root = (
+        Path(args.out_combined_root).expanduser().resolve()
+        if args.out_combined_root
+        else (root_dir / f"combined_branches_{target_safe}.root")
+    )
+
+    eff_candidates: List[Path] = []
+    if args.efficiency_csv:
+        eff_candidates.append(Path(args.efficiency_csv).expanduser().resolve())
+    else:
+        eff_base = output_base / "efficiency_stuff"
+        eff_candidates.append((eff_base / f"efficiency_{kin_setting}.csv").resolve())
+        eff_candidates.append((eff_base / f"efficiency_{kin_safe}.csv").resolve())
+
+    efficiency_csv = next((p for p in eff_candidates if p.exists()), eff_candidates[0])
+
+    plots_dir = infer_plots_dir(args, output_base, kin_safe, root_dir, out_combined_root)
+    analysis_plots_pdf = plots_dir / f"{out_combined_root.stem}_plots.pdf"
+    fp_debug_pdf = plots_dir / f"{out_combined_root.stem}_focal_plane_debug.pdf"
+
+    allowed_types = parse_types_csv(args.types)
+    if not allowed_types:
+        raise ValueError("--types resolved to an empty set.")
+
+    run_filter = parse_run_args(args.run)
+
+    if not cfg_path.exists():
+        raise FileNotFoundError(f"CFG_PATH does not exist: {cfg_path}")
+    if not output_base.exists():
+        raise FileNotFoundError(f"OUTPUT_BASE does not exist: {output_base}")
+    if not root_dir.exists():
+        raise FileNotFoundError(f"ROOT_DIR does not exist: {root_dir}")
+    if not efficiency_csv.exists():
+        candidates = "\n".join(str(p) for p in eff_candidates)
+        raise FileNotFoundError(
+            "Per-kin efficiency CSV not found. Tried:\n" + candidates
+        )
+
+    out_combined_root.parent.mkdir(parents=True, exist_ok=True)
+    analysis_plots_pdf.parent.mkdir(parents=True, exist_ok=True)
+    fp_debug_pdf.parent.mkdir(parents=True, exist_ok=True)
+
+    return WorkflowConfig(
+        cfg_path=cfg_path,
+        output_base=output_base,
+        root_dir=root_dir,
+        out_combined_root=out_combined_root,
+        kin_setting=kin_setting,
+        target_to_combine=target,
+        efficiency_csv=efficiency_csv,
+        analysis_plots_pdf=analysis_plots_pdf,
+        fp_debug_pdf=fp_debug_pdf,
+        allowed_types=allowed_types,
+        run_filter=run_filter,
+        create_analysis_plots=(not args.no_analysis_plots),
+        create_fp_debug_plots=bool(args.fp_debug_plots),
+    )
+
+
+def load_config(cfg_path: Path) -> pd.DataFrame:
+    df = pd.read_csv(cfg_path, dtype=str, keep_default_na=False, skipinitialspace=True)
+    df = df.replace({"": pd.NA})
+    return df
+
+
+def build_lookup(df_cfg: pd.DataFrame,
+                 kin_setting: str,
+                 allowed_types: Sequence[str]) -> Dict[int, RunConfig]:
+    kin_col = pick_column(df_cfg.columns, ["Kin_old", "kin_old", "kinematic_setting"], contains="kin")
+    if kin_col is None:
+        raise ValueError("Config CSV missing Kin_old/kinematic-setting column.")
+
+    run_col = pick_column(df_cfg.columns, ["run_number", "run"], contains="run")
+    if run_col is None:
+        raise ValueError("Config CSV missing run number column.")
+
+    ps_col = pick_column(df_cfg.columns, ["prescale", "prescale_token"], contains="prescale")
+    if ps_col is None:
+        raise ValueError("Config CSV missing prescale column.")
+
+    type_col = pick_column(df_cfg.columns, ["Type", "run_type"], contains="type")
+    target_col = pick_column(df_cfg.columns, ["target"], contains="target")
+
+    initial_rows = len(df_cfg)
+    df_cfg = df_cfg[df_cfg[kin_col].map(clean_text) == kin_setting]
+    print(f"[INFO] Filtered config by Kin_old='{kin_setting}': {initial_rows} -> {len(df_cfg)} rows")
+
+    if type_col is not None:
+        allowed_lower = {clean_text(t).lower() for t in allowed_types}
+        before = len(df_cfg)
+        df_cfg = df_cfg[df_cfg[type_col].map(lambda x: clean_text(x).lower() in allowed_lower)]
+        print(f"[INFO] Filtered config by Type in {sorted(allowed_lower)}: {before} -> {len(df_cfg)} rows")
+
+    if df_cfg.empty:
+        raise ValueError(f"No config rows selected for kin='{kin_setting}' after type filtering.")
+
+    lookup: Dict[int, RunConfig] = {}
+    for _, row in df_cfg.iterrows():
+        run = safe_int(row.get(run_col))
+        if run is None:
+            continue
+
+        token = clean_text(row.get(ps_col))
+        ps_value = prescale_from_token(token)
+
+        target = clean_text(row.get(target_col)) if target_col else ""
+
+        lookup[int(run)] = RunConfig(
+            prescale_token=token,
+            prescale_value=float(ps_value),
+            target=target,
+        )
+
+    if not lookup:
+        raise ValueError("No valid runs found after config parsing.")
+
+    return lookup
+
+
+def load_efficiency_metadata(efficiency_csv: Path,
+                             kin_setting: str) -> Dict[int, RunEfficiencyMeta]:
+    df = pd.read_csv(efficiency_csv, dtype=str, keep_default_na=False, skipinitialspace=True)
+    df.columns = [str(c).strip() for c in df.columns]
+
+    missing_columns = [name for name in REQUIRED_EFFICIENCY_COLUMNS if name not in df.columns]
+    if missing_columns:
+        raise ValueError(
+            f"Efficiency CSV missing required column(s): {', '.join(missing_columns)}\n"
+            f"CSV: {efficiency_csv}"
+        )
+
+    before = len(df)
+    df = df[df["kinematic_setting"].map(clean_text) == kin_setting]
+    print(f"[INFO] Filtered efficiency CSV by kinematic_setting='{kin_setting}': {before} -> {len(df)} rows")
+
+    out: Dict[int, RunEfficiencyMeta] = {}
+    for _, row in df.iterrows():
+        run = safe_int(row.get("run_number"))
+        if run is None:
+            print("[WARN] Skipping efficiency row with invalid run_number")
+            continue
+
+        numeric_columns = REQUIRED_EFFICIENCY_COLUMNS[2:]
+        values = {name: safe_float(row.get(name)) for name in numeric_columns}
+        invalid = [name for name, value in values.items() if value is None]
+        if invalid:
+            print(f"[WARN] Skipping run {run}: invalid efficiency value(s): {', '.join(invalid)}")
+            continue
+
+        charge_uC = float(values["HEL_charge_after_cut_uC"])
+        tracking_eff = float(values["HMS_tracking_eff"])
+        hodo_eff = float(values["HMS_hodo_3of4_eff"])
+        livetime = float(values["NewGen_EDTM_livetime"])
+        tracking_err = float(values["HMS_tracking_eff_err"])
+        hodo_err = float(values["HMS_hodo_3of4_eff_err"])
+        livetime_err = float(values["NewGen_EDTM_livetime_err"])
+
+        if charge_uC <= 0 or tracking_eff <= 0 or hodo_eff <= 0 or livetime <= 0:
+            print(f"[WARN] Skipping run {run}: charge, efficiencies, and livetime must be positive")
+            continue
+        if tracking_err < 0 or hodo_err < 0 or livetime_err < 0:
+            print(f"[WARN] Skipping run {run}: efficiency and livetime errors must be nonnegative")
+            continue
+
+        efficiency = tracking_eff * hodo_eff
+        efficiency_err = float(np.hypot(hodo_eff * tracking_err, tracking_eff * hodo_err))
+
+        out[int(run)] = RunEfficiencyMeta(
+            charge_uC=charge_uC,
+            tracking_eff=tracking_eff,
+            tracking_eff_err=tracking_err,
+            hodo_3of4_eff=hodo_eff,
+            hodo_3of4_eff_err=hodo_err,
+            livetime=livetime,
+            livetime_err=livetime_err,
+            efficiency=efficiency,
+            efficiency_err=efficiency_err,
+        )
+
+    if not out:
+        raise ValueError(f"No usable rows found in efficiency CSV: {efficiency_csv}")
+
+    print(f"[INFO] Loaded efficiency metadata for {len(out)} runs from {efficiency_csv}")
+    return out
+
+
+def fit_gaussian_from_histogram(
+    bin_centers: np.ndarray,
+    counts: np.ndarray,
+    fit_half_window: float = 0.035,
+    fit_range: Tuple[float, float] = (0.09, 0.18),
+) -> Optional[Tuple[float, float, float]]:
+    if len(bin_centers) != len(counts) or len(bin_centers) < 6:
+        return None
+
+    mask_range = (bin_centers >= fit_range[0]) & (bin_centers <= fit_range[1])
+    x_range = np.asarray(bin_centers[mask_range], dtype=float)
+    y_range = np.asarray(counts[mask_range], dtype=float)
+    if len(x_range) < 6:
+        return None
+
+    y_range = np.nan_to_num(y_range, nan=0.0, posinf=0.0, neginf=0.0)
+    kernel = np.array([1.0, 2.0, 1.0], dtype=float)
+    kernel /= kernel.sum()
+    y_smooth = np.convolve(y_range, kernel, mode="same")
+    if np.all(y_smooth <= 0):
+        return None
+
+    baseline = float(np.percentile(y_range, 20))
+    signal = np.clip(y_range - baseline, a_min=0.0, a_max=None)
+    if np.all(signal <= 0):
+        return None
+
+    peak_idx_local = int(np.argmax(y_smooth))
+    peak_x = x_range[peak_idx_local]
+
+    mask_window = np.abs(x_range - peak_x) <= fit_half_window
+    x_fit = x_range[mask_window]
+    y_fit = signal[mask_window]
+    if len(x_fit) < 5 or np.sum(y_fit) <= 0:
+        return None
+
+    weight_sum = np.sum(y_fit)
+    mean = float(np.sum(x_fit * y_fit) / weight_sum)
+    variance = float(np.sum(y_fit * (x_fit - mean) ** 2) / weight_sum)
+    if variance <= 0:
+        return None
+    sigma = float(np.sqrt(variance))
+
+    if sigma < 0.0015 or sigma > 0.06:
+        y_peak = float(np.max(y_fit))
+        half = 0.5 * y_peak
+        above = np.where(y_fit >= half)[0]
+        if len(above) >= 2:
+            fwhm = float(x_fit[above[-1]] - x_fit[above[0]])
+            if fwhm > 0:
+                sigma = fwhm / 2.354820045
+
+    amplitude = float(np.max(y_fit) + baseline)
+    if not np.isfinite(amplitude) or not np.isfinite(mean) or not np.isfinite(sigma) or sigma <= 0:
+        return None
+    if not (fit_range[0] <= mean <= fit_range[1]):
+        return None
+
+    return amplitude, mean, sigma
+
+
+def combine_branches(lookup: Dict[int, RunConfig],
+                     root_dir: Path,
+                     target_to_combine: str,
+                     efficiency_map: Dict[int, RunEfficiencyMeta],
+                     run_filter: Optional[Set[int]] = None) -> pd.DataFrame:
+    combined_data: List[pd.DataFrame] = []
+    seen_runs: List[int] = []
+    total_events = 0
+
+    for run in sorted(lookup.keys()):
+        if run_filter and run not in run_filter:
+            continue
+        if run == 4349:
+            print(f"[WARN] Run {run} ignored due to known bad focal-plane data")
+            continue
+
+        cfg = lookup[run]
+        if target_to_combine and cfg.target and cfg.target.lower() != target_to_combine.lower():
+            continue
+
+        fpath = root_dir / f"diagnostics_run{run}.root"
+        if not fpath.exists():
+            print(f"[WARN] Missing diagnostics ROOT for run {run}: {fpath.name}")
+            continue
+
+        eff = efficiency_map.get(run)
+        if eff is None:
+            print(f"[WARN] No valid efficiency metadata for run {run}; skipping run")
+            continue
+
+        ps_value = cfg.prescale_value
+        charge_uC = eff.charge_uC
+        livetime = eff.livetime
+        efficiency = eff.efficiency
+
+        denom = (charge_uC / 1000.0) * livetime * efficiency
+        scale = float(ps_value) / float(denom)
+        scale_err = scale * float(np.hypot(
+            eff.livetime_err / livetime,
+            eff.efficiency_err / efficiency,
+        ))
+
+        print(
+            f"[INFO] run={run} ps={ps_value:.6g} charge_uC={charge_uC:.6g} "
+            f"livetime={livetime:.6g}+/-{eff.livetime_err:.3g} "
+            f"efficiency={efficiency:.6g}+/-{eff.efficiency_err:.3g} "
+            f"scale={scale:.6g}+/-{scale_err:.3g}"
+        )
+
+        try:
+            with uproot.open(fpath) as uf:
+                if "physics" not in uf:
+                    print(f"[WARN] Missing 'physics' tree in {fpath.name}")
+                    continue
+
+                physics = uf["physics"]
+                branch_names = [b.name for b in physics.branches if b.name not in BRANCHES_TO_EXCLUDE]
+                if not branch_names:
+                    print(f"[WARN] No branches available for run {run}")
+                    continue
+
+                branch_data: Dict[str, np.ndarray] = {}
+                reference_len: Optional[int] = None
+                for branch_name in branch_names:
+                    try:
+                        arr = physics[branch_name].array(library="np")
+                    except Exception as ex:
+                        print(f"[WARN] Could not read branch '{branch_name}' for run {run}: {ex}")
+                        continue
+
+                    if reference_len is None:
+                        reference_len = len(arr)
+                    if len(arr) != reference_len:
+                        print(
+                            f"[WARN] Skipping branch '{branch_name}' for run {run}: "
+                            f"length {len(arr)} != {reference_len}"
+                        )
+                        continue
+                    branch_data[branch_name] = arr
+
+                if not branch_data or reference_len is None or reference_len == 0:
+                    print(f"[WARN] No usable branch data for run {run}")
+                    continue
+
+                n_events = reference_len
+                branch_data["scale"] = np.full(n_events, scale, dtype=np.float32)
+                branch_data["scale_err"] = np.full(n_events, scale_err, dtype=np.float32)
+                branch_data["run_number"] = np.full(n_events, run, dtype=np.int32)
+                branch_data["charge_uC"] = np.full(n_events, charge_uC, dtype=np.float32)
+                branch_data["ps_value"] = np.full(n_events, ps_value, dtype=np.float32)
+                branch_data["livetime"] = np.full(n_events, livetime, dtype=np.float32)
+                branch_data["livetime_err"] = np.full(n_events, eff.livetime_err, dtype=np.float32)
+                branch_data["HMS_tracking_eff"] = np.full(n_events, eff.tracking_eff, dtype=np.float32)
+                branch_data["HMS_tracking_eff_err"] = np.full(n_events, eff.tracking_eff_err, dtype=np.float32)
+                branch_data["HMS_hodo_3of4_eff"] = np.full(n_events, eff.hodo_3of4_eff, dtype=np.float32)
+                branch_data["HMS_hodo_3of4_eff_err"] = np.full(
+                    n_events, eff.hodo_3of4_eff_err, dtype=np.float32
+                )
+                branch_data["efficiency"] = np.full(n_events, efficiency, dtype=np.float32)
+                branch_data["efficiency_err"] = np.full(n_events, eff.efficiency_err, dtype=np.float32)
+
+                df_run = pd.DataFrame(branch_data)
+                combined_data.append(df_run)
+                seen_runs.append(run)
+                total_events += n_events
+        except Exception as ex:
+            print(f"[ERROR] Failed to process run {run}: {ex}")
+
+    if not combined_data:
+        return pd.DataFrame()
+
+    df_combined = pd.concat(combined_data, ignore_index=True)
+    print(
+        f"[INFO] Combined {len(seen_runs)} runs for target={target_to_combine}; "
+        f"events={total_events}; shape={df_combined.shape}"
+    )
+    return df_combined
+
+
+def weighted_quantile(values: np.ndarray, weights: np.ndarray, quantile: float) -> float:
+    if len(values) == 0:
+        return 0.0
+    order = np.argsort(values)
+    v = values[order]
+    w = weights[order]
+    total = float(np.sum(w))
+    if total <= 0.0:
+        return float(v[-1])
+    target = max(0.0, min(1.0, quantile)) * total
+    running = np.cumsum(w)
+    idx = int(np.searchsorted(running, target, side="left"))
+    idx = min(idx, len(v) - 1)
+    return float(v[idx])
+
+
+def compute_cov_model(
+    x: np.ndarray,
+    y: np.ndarray,
+    w: np.ndarray,
+    regularization_x: float = 0.0,
+    regularization_y: float = 0.0,
+) -> Optional[Dict[str, float]]:
+    weight_sum = float(np.sum(w))
+    if weight_sum <= 0.0 or len(x) < 3:
+        return None
+    mean_x = float(np.sum(w * x) / weight_sum)
+    mean_y = float(np.sum(w * y) / weight_sum)
+    dx = x - mean_x
+    dy = y - mean_y
+    cov_xx = float(np.sum(w * dx * dx) / weight_sum + regularization_x ** 2)
+    cov_xy = float(np.sum(w * dx * dy) / weight_sum)
+    cov_yy = float(np.sum(w * dy * dy) / weight_sum + regularization_y ** 2)
+    max_abs_cov_xy = 0.995 * np.sqrt(cov_xx * cov_yy)
+    cov_xy = float(np.clip(cov_xy, -max_abs_cov_xy, max_abs_cov_xy))
+    det = cov_xx * cov_yy - cov_xy * cov_xy
+    if det <= 0.0 or not np.isfinite(det):
+        return None
+    return {
+        "mean_x": mean_x,
+        "mean_y": mean_y,
+        "cov_xx": cov_xx,
+        "cov_xy": cov_xy,
+        "cov_yy": cov_yy,
+        "det": det,
+        "weight": weight_sum,
+        "n_bins": int(len(x)),
+    }
+
+
+def model_is_anchored(model: Dict[str, float], cfg: Dict[str, float]) -> bool:
+    return (
+        abs(model["mean_x"] - cfg["seed_mpi0"]) <= cfg["max_model_mpi0_offset"]
+        and abs(model["mean_y"] - cfg["seed_mmiss"]) <= cfg["max_model_mmiss_offset"]
+    )
+
+
+def chi2_quantile_df2(quantile: float) -> float:
+    q = float(np.clip(quantile, 0.0, 1.0 - 1e-12))
+    return float(-2.0 * np.log1p(-q))
+
+
+def mcd_consistency_scale_df2(keep_fraction: float) -> float:
+    h = float(np.clip(keep_fraction, 1e-6, 1.0 - 1e-6))
+    cutoff = chi2_quantile_df2(h)
+    truncated_variance = 1.0 - cutoff * (1.0 - h) / (2.0 * h)
+    return 1.0 / truncated_variance if truncated_variance > 1e-6 else 1.0
+
+
+def smooth_histogram2d(hist: np.ndarray, radius: int) -> np.ndarray:
+    """Triangular-kernel smoothing without a scipy dependency."""
+    radius = max(0, int(radius))
+    if radius == 0:
+        return hist.astype(float, copy=True)
+    one_d = np.arange(1, radius + 2, dtype=float)
+    one_d = np.concatenate((one_d, one_d[-2::-1]))
+    kernel = np.outer(one_d, one_d)
+    padded = np.pad(hist, radius, mode="constant")
+    padded_valid = np.pad(np.ones_like(hist, dtype=float), radius, mode="constant")
+    out = np.zeros_like(hist, dtype=float)
+    norm = np.zeros_like(hist, dtype=float)
+    for ix, kx in enumerate(range(-radius, radius + 1)):
+        for iy, ky in enumerate(range(-radius, radius + 1)):
+            weight = kernel[ix, iy]
+            out += weight * padded[
+                radius + kx:radius + kx + hist.shape[0],
+                radius + ky:radius + ky + hist.shape[1],
+            ]
+            norm += weight * padded_valid[
+                radius + kx:radius + kx + hist.shape[0],
+                radius + ky:radius + ky + hist.shape[1],
+            ]
+    return np.divide(out, norm, out=np.zeros_like(out), where=norm > 0.0)
+
+
+def covariance_d2(model: Dict[str, float], x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    dx = x - model["mean_x"]
+    dy = y - model["mean_y"]
+    return (
+        model["cov_yy"] * dx * dx
+        - 2.0 * model["cov_xy"] * dx * dy
+        + model["cov_xx"] * dy * dy
+    ) / model["det"]
+
+
+def ellipse_points(model: Dict[str, float], d2_cut: float, n: int = 240) -> Tuple[np.ndarray, np.ndarray]:
+    trace = model["cov_xx"] + model["cov_yy"]
+    diff = model["cov_xx"] - model["cov_yy"]
+    root = np.sqrt(0.25 * diff * diff + model["cov_xy"] * model["cov_xy"])
+    lambda1 = max(0.0, 0.5 * trace + root)
+    lambda2 = max(0.0, 0.5 * trace - root)
+    angle = 0.5 * np.arctan2(2.0 * model["cov_xy"], diff)
+    ca = np.cos(angle)
+    sa = np.sin(angle)
+    axis1 = np.sqrt(max(0.0, d2_cut * lambda1))
+    axis2 = np.sqrt(max(0.0, d2_cut * lambda2))
+    t = np.linspace(0.0, 2.0 * np.pi, n + 1)
+    u = axis1 * np.cos(t)
+    v = axis2 * np.sin(t)
+    x = model["mean_x"] + u * ca - v * sa
+    y = model["mean_y"] + u * sa + v * ca
+    return x, y
+
+
+def align_ellipse_to_mass_ridge(
+    model: Dict[str, float], h2: np.ndarray, density: np.ndarray,
+    x_centers: np.ndarray, y_centers: np.ndarray, cfg: Dict[str, float],
+) -> Tuple[Dict[str, float], Dict[str, float]]:
+    """Align the ellipse's long axis with the signal peak across missing mass.
+
+    The high-missing-mass background is nearly vertical in mpi0. Slicing in
+    mpi0 follows that background and flattens the apparent signal slope.
+    Locate the mpi0 peak in central missing-mass slices instead, then fit
+    mpi0(mmiss). Keep the original ellipse eigenvalues and area.
+    """
+    diagnostics = {"ridge_aligned": 0.0, "ridge_fit_bins": 0.0}
+    if model["cov_yy"] <= 0.0 or not np.any(density > 0.0):
+        return model, diagnostics
+    initial_dx_dy = model["cov_xy"] / model["cov_yy"]
+    peak_floor = cfg["ridge_min_peak_fraction"] * float(np.max(density))
+    y_half_width = min(
+        cfg["ridge_mmiss_sigma_range"] * np.sqrt(model["cov_yy"]),
+        cfg["mcd_candidate_mmiss_half_width"],
+    )
+    ridge_rows = []
+    for iy, y in enumerate(y_centers):
+        if abs(y - cfg["seed_mmiss"]) > y_half_width:
+            continue
+        predicted_x = model["mean_x"] + initial_dx_dy * (y - model["mean_y"])
+        candidates = np.flatnonzero(
+            np.abs(x_centers - predicted_x) <= cfg["ridge_mpi0_search_half_width"]
+        )
+        if len(candidates) == 0:
+            continue
+        peak_ix = int(candidates[np.argmax(density[candidates, iy])])
+        peak_height = float(density[peak_ix, iy])
+        if peak_height < peak_floor:
+            continue
+        local = np.arange(max(0, peak_ix - 2), min(len(x_centers), peak_ix + 3))
+        local_weight = h2[local, iy]
+        if np.sum(local_weight) <= 0.0:
+            continue
+        ridge_rows.append((y, float(np.average(x_centers[local], weights=local_weight)), peak_height))
+
+    diagnostics["ridge_fit_bins"] = float(len(ridge_rows))
+    if len(ridge_rows) < cfg["ridge_min_y_bins"]:
+        return model, diagnostics
+    ridge = np.asarray(ridge_rows)
+    if np.ptp(ridge[:, 0]) < 6.0 * (y_centers[1] - y_centers[0]):
+        return model, diagnostics
+    base_weight = ridge[:, 2]
+    weight = base_weight.copy()
+    y_ref = float(np.average(ridge[:, 0], weights=base_weight))
+    dx_dy = intercept = 0.0
+    for _ in range(3):
+        y_offset = ridge[:, 0] - y_ref
+        y_mean = float(np.average(y_offset, weights=weight))
+        x_mean = float(np.average(ridge[:, 1], weights=weight))
+        variance = float(np.sum(weight * (y_offset - y_mean) ** 2))
+        if variance <= 0.0:
+            return model, diagnostics
+        dx_dy = float(np.sum(weight * (y_offset - y_mean) * (ridge[:, 1] - x_mean)) / variance)
+        intercept = x_mean - dx_dy * y_mean
+        residual = ridge[:, 1] - (intercept + dx_dy * y_offset)
+        weight = base_weight * np.minimum(
+            1.0, cfg["ridge_huber_mpi0"] / np.maximum(np.abs(residual), 1e-12)
+        )
+    if abs(dx_dy) < 1.0 / 120.0:
+        return model, diagnostics
+    slope = 1.0 / dx_dy
+    ridge_mean_y = y_ref + (model["mean_x"] - intercept) / dx_dy
+    if (
+        not np.isfinite(slope) or not np.isfinite(ridge_mean_y)
+        or slope * initial_dx_dy <= 0.0
+        or abs(ridge_mean_y - model["mean_y"]) > 0.05
+    ):
+        return model, diagnostics
+
+    covariance = np.array([
+        [model["cov_xx"], model["cov_xy"]],
+        [model["cov_xy"], model["cov_yy"]],
+    ])
+    eigenvalues = np.linalg.eigvalsh(covariance)
+    if eigenvalues[0] <= 0.0:
+        return model, diagnostics
+    major = np.array([1.0, slope]) / np.hypot(1.0, slope)
+    minor = np.array([-major[1], major[0]])
+    aligned_covariance = (
+        eigenvalues[1] * np.outer(major, major)
+        + eigenvalues[0] * np.outer(minor, minor)
+    )
+    aligned = model.copy()
+    aligned.update({
+        "mean_y": float(ridge_mean_y),
+        "cov_xx": float(aligned_covariance[0, 0]),
+        "cov_xy": float(aligned_covariance[0, 1]),
+        "cov_yy": float(aligned_covariance[1, 1]),
+        "det": float(np.linalg.det(aligned_covariance)),
+    })
+    if not model_is_anchored(aligned, cfg):
+        return model, diagnostics
+    diagnostics.update({
+        "ridge_aligned": 1.0,
+        "ridge_slope": slope,
+        "ridge_mmiss_at_mean_mpi0": float(ridge_mean_y),
+    })
+    return aligned, diagnostics
+
+
+def _fit_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
+    """Add combined-level ellipse/MCD exclusivity flags and return ROOT debug payload."""
+    required = ["mpi0_all", "mmiss_all", "pi0_weight"]
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        print(f"[WARN] Missing columns for combined 2D mass cut: {missing}")
+        df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
+        df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
+        return None
+
+    cfg = MASS_CUT_CONFIG
+    x_all = df["mpi0_all"].to_numpy(dtype=float)
+    y_all = df["mmiss_all"].to_numpy(dtype=float)
+    pi0_w = df["pi0_weight"].to_numpy(dtype=float)
+    scale = df["scale"].to_numpy(dtype=float) if "scale" in df.columns else np.ones(len(df), dtype=float)
+    event_w = pi0_w * scale
+
+    valid = (
+        np.isfinite(x_all) & np.isfinite(y_all) & np.isfinite(event_w) &
+        (event_w > 0.0) &
+        (x_all >= cfg["mpi0_min"]) & (x_all < cfg["mpi0_max"]) &
+        (y_all >= cfg["mmiss_min"]) & (y_all < cfg["mmiss_max"])
+    )
+    if not np.any(valid):
+        print("[WARN] Combined 2D mass-cut histogram is empty after cuts.")
+        df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
+        df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
+        return None
+
+    x_edges = np.linspace(cfg["mpi0_min"], cfg["mpi0_max"], cfg["n_mpi0_bins"] + 1)
+    y_edges = np.linspace(cfg["mmiss_min"], cfg["mmiss_max"], cfg["n_mmiss_bins"] + 1)
+    h2, _, _ = np.histogram2d(x_all[valid], y_all[valid], bins=[x_edges, y_edges], weights=event_w[valid])
+    total_weight = float(np.sum(h2))
+    if total_weight <= 0.0:
+        print("[WARN] Combined 2D mass-cut histogram has zero total weight.")
+        df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
+        df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
+        return None
+
+    nx, ny = h2.shape
+    x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
+    y_centers = 0.5 * (y_edges[:-1] + y_edges[1:])
+    occupied = np.argwhere(h2 > 0.0)
+    point_x = x_centers[occupied[:, 0]]
+    point_y = y_centers[occupied[:, 1]]
+    point_w = h2[occupied[:, 0], occupied[:, 1]]
+
+    density = smooth_histogram2d(h2, int(cfg["smoothing_radius_bins"]))
+    seed_mpi0 = float(cfg["seed_mpi0"])
+    seed_mpi0_half_width = float(cfg["seed_mpi0_half_width"])
+    seed_mmiss = float(cfg["seed_mmiss"])
+    seed_mmiss_half_width = float(cfg["seed_mmiss_half_width"])
+    seed_x_bins = np.flatnonzero(np.abs(x_centers - seed_mpi0) <= seed_mpi0_half_width)
+    seed_y_bins = np.flatnonzero(np.abs(y_centers - seed_mmiss) <= seed_mmiss_half_width)
+    if len(seed_x_bins) == 0 or len(seed_y_bins) == 0:
+        print(
+            "[WARN] No bins lie inside configured 2D mass-cut seed window "
+            f"({seed_mpi0:.5f} +/- {seed_mpi0_half_width:.5f}, "
+            f"{seed_mmiss:.3f} +/- {seed_mmiss_half_width:.3f}) GeV."
+        )
+        df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
+        df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
+        return None
+
+    seed_window = density[np.ix_(seed_x_bins, seed_y_bins)]
+    max_density = float(np.max(seed_window))
+    tied = np.argwhere(np.isclose(seed_window, max_density, rtol=1e-9, atol=1e-12))
+    tied_x = x_centers[seed_x_bins[tied[:, 0]]]
+    tied_y = y_centers[seed_y_bins[tied[:, 1]]]
+    anchor_d2 = ((tied_x - seed_mpi0) / seed_mpi0_half_width) ** 2
+    anchor_d2 += ((tied_y - seed_mmiss) / seed_mmiss_half_width) ** 2
+    chosen_tie = tied[int(np.argmin(anchor_d2))]
+    peak_ix = int(seed_x_bins[chosen_tie[0]])
+    peak_iy = int(seed_y_bins[chosen_tie[1]])
+    smoothed_peak_weight = float(density[peak_ix, peak_iy])
+    peak_weight = float(h2[peak_ix, peak_iy])
+    if smoothed_peak_weight <= 0.0:
+        print(
+            "[WARN] No positive density lies inside configured 2D mass-cut seed window."
+        )
+        df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
+        df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
+        return None
+
+    def build_core(candidate_peak_fraction: float) -> Tuple[np.ndarray, Dict[str, float]]:
+        threshold_weight = candidate_peak_fraction * smoothed_peak_weight
+        mask = np.zeros_like(h2, dtype=bool)
+        frontier = deque([(peak_ix, peak_iy)])
+        mask[peak_ix, peak_iy] = True
+
+        while frontier:
+            ix, iy = frontier.popleft()
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    if dx == 0 and dy == 0:
+                        continue
+                    jx = ix + dx
+                    jy = iy + dy
+                    if jx < 0 or jx >= nx or jy < 0 or jy >= ny:
+                        continue
+                    if mask[jx, jy]:
+                        continue
+                    if density[jx, jy] + 1e-12 < threshold_weight:
+                        continue
+                    mask[jx, jy] = True
+                    frontier.append((jx, jy))
+
+        occupied_mask = mask & (h2 > 0.0)
+        weight = float(np.sum(h2[occupied_mask]))
+        bins = int(np.count_nonzero(occupied_mask))
+        mean_x = 0.0
+        mean_y = 0.0
+        if weight > 0.0:
+            mean_x = float(np.sum(h2 * occupied_mask * x_centers[:, None]) / weight)
+            mean_y = float(np.sum(h2 * occupied_mask * y_centers[None, :]) / weight)
+        stats = {
+            "peak_fraction": float(candidate_peak_fraction),
+            "weight": weight,
+            "total_fraction": weight / total_weight if total_weight > 0.0 else 0.0,
+            "bins": bins,
+            "mean_x": mean_x,
+            "mean_y": mean_y,
+        }
+        return mask, stats
+
+    scan_rows = []
+    peak_fraction = float(cfg["peak_fraction"])
+    auto_jump_ratio = 1.0
+    core_leak_rejected = False
+    if peak_fraction <= 0.0:
+        best_jump = 0.0
+        chosen_peak_fraction = None
+        previous = None
+        last_safe_fraction = None
+        last_qualified_fraction = None
+        n_scan = int(np.floor((cfg["auto_peak_max"] - cfg["auto_peak_min"]) / cfg["auto_peak_step"] + 0.5)) + 1
+        for i in range(n_scan):
+            candidate = max(cfg["auto_peak_min"], cfg["auto_peak_max"] - i * cfg["auto_peak_step"])
+            _, current = build_core(candidate)
+            weight_ratio = 0.0
+            bin_ratio = 0.0
+            if previous is not None and previous["bins"] > 0 and previous["weight"] > 0.0:
+                weight_ratio = current["weight"] / previous["weight"]
+                bin_ratio = current["bins"] / previous["bins"]
+                jump = max(weight_ratio, bin_ratio)
+                best_jump = max(best_jump, jump)
+            anchored = (
+                abs(current["mean_x"] - seed_mpi0) <= cfg["max_model_mpi0_offset"]
+                and abs(current["mean_y"] - seed_mmiss) <= cfg["max_model_mmiss_offset"]
+            )
+            safe = (
+                current["bins"] >= 3 and current["weight"] > 0.0 and anchored
+                and current["total_fraction"] <= cfg["auto_max_core_total_fraction"]
+            )
+            qualified = (
+                safe and current["bins"] >= cfg["auto_min_core_bins"]
+                and current["total_fraction"] >= cfg["auto_min_core_total_fraction"]
+            )
+            if safe:
+                last_safe_fraction = float(current["peak_fraction"])
+                if qualified:
+                    last_qualified_fraction = float(current["peak_fraction"])
+            elif last_safe_fraction is not None and (
+                current["total_fraction"] > cfg["auto_max_core_total_fraction"] or not anchored
+            ):
+                core_leak_rejected = True
+            scan_rows.append({
+                **current,
+                "weight_ratio_to_previous": float(weight_ratio),
+                "bin_ratio_to_previous": float(bin_ratio),
+                "anchored": float(anchored),
+                "safe": float(safe),
+                "qualified": float(qualified),
+            })
+            if core_leak_rejected:
+                break
+            previous = current
+        chosen_peak_fraction = (
+            last_qualified_fraction if last_qualified_fraction is not None else last_safe_fraction
+        )
+        if chosen_peak_fraction is None:
+            print("[WARN] Combined 2D mass cut found no safe anchored core.")
+            df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
+            df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
+            return None
+        peak_fraction = chosen_peak_fraction
+        auto_jump_ratio = best_jump
+
+    core_mask, core_stats = build_core(peak_fraction)
+    core_safe = (
+        core_stats["bins"] >= 3 and core_stats["weight"] > 0.0
+        and core_stats["total_fraction"] <= cfg["auto_max_core_total_fraction"]
+        and abs(core_stats["mean_x"] - seed_mpi0) <= cfg["max_model_mpi0_offset"]
+        and abs(core_stats["mean_y"] - seed_mmiss) <= cfg["max_model_mmiss_offset"]
+    )
+    core_idx = np.argwhere(core_mask & (h2 > 0.0))
+    if len(core_idx) < 3 or not core_safe:
+        print("[WARN] Combined 2D mass cut core failed anchoring/leak validation.")
+        df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
+        df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
+        return None
+
+    regularization_x = cfg["covariance_regularization_bins"] * (x_edges[1] - x_edges[0])
+    regularization_y = cfg["covariance_regularization_bins"] * (y_edges[1] - y_edges[0])
+    core_model = compute_cov_model(
+        x_centers[core_idx[:, 0]],
+        y_centers[core_idx[:, 1]],
+        h2[core_idx[:, 0], core_idx[:, 1]],
+        regularization_x,
+        regularization_y,
+    )
+    if core_model is None or not model_is_anchored(core_model, cfg):
+        print("[WARN] Combined 2D mass cut covariance is singular or displaced from seed.")
+        df["is_exclusive_ellipse_combined"] = np.zeros(len(df), dtype=np.int32)
+        df["is_exclusive_mcd_combined"] = np.zeros(len(df), dtype=np.int32)
+        return None
+    seed_core_model = core_model.copy()
+    seed_core_stats = core_stats.copy()
+
+    candidate_mask = (
+        (np.abs(point_x - seed_mpi0) <= cfg["mcd_candidate_mpi0_half_width"])
+        & (np.abs(point_y - seed_mmiss) <= cfg["mcd_candidate_mmiss_half_width"])
+    )
+    candidate_indices = np.flatnonzero(candidate_mask)
+    candidate_weight = float(np.sum(point_w[candidate_indices]))
+    keep_fraction = float(np.clip(cfg["mcd_keep_candidate_fraction"], 0.05, 0.95))
+
+    expanded_core_indices = np.flatnonzero(core_mask[occupied[:, 0], occupied[:, 1]])
+    ellipse_grow_d2 = chi2_quantile_df2(cfg["ellipse_quantile"])
+    ellipse_growth_steps = 0
+    for _ in range(int(cfg["ellipse_grow_iterations"])):
+        if len(point_x) < 3:
+            break
+        all_d2 = covariance_d2(core_model, point_x, point_y)
+        grown_indices = np.flatnonzero(all_d2 <= ellipse_grow_d2)
+        grown_model = compute_cov_model(
+            point_x[grown_indices], point_y[grown_indices], point_w[grown_indices],
+            regularization_x, regularization_y,
+        )
+        grown_weight = float(np.sum(point_w[grown_indices]))
+        if (
+            grown_model is None or not model_is_anchored(grown_model, cfg)
+            or grown_weight / total_weight > cfg["auto_max_core_total_fraction"]
+        ):
+            break
+        converged = np.array_equal(grown_indices, expanded_core_indices)
+        expanded_core_indices = grown_indices
+        core_model = grown_model
+        ellipse_growth_steps += 1
+        if converged:
+            break
+
+    fit_subset_mask = np.zeros_like(h2, dtype=bool)
+    fit_subset_mask[
+        occupied[expanded_core_indices, 0], occupied[expanded_core_indices, 1]
+    ] = True
+    fit_subset_stats = {
+        "weight": float(np.sum(point_w[expanded_core_indices])),
+        "total_fraction": float(np.sum(point_w[expanded_core_indices])) / total_weight,
+        "bins": int(len(expanded_core_indices)),
+        "mean_x": core_model["mean_x"],
+        "mean_y": core_model["mean_y"],
+    }
+    core_model, ridge_diagnostics = align_ellipse_to_mass_ridge(
+        core_model, h2, density, x_centers, y_centers, cfg
+    )
+    ellipse_d2_cut = chi2_quantile_df2(cfg["ellipse_quantile"])
+    ellipse_d2_cut *= cfg["ellipse_padding"] * cfg["ellipse_padding"]
+
+    mcd_model = seed_core_model
+    best_mcd_model = None
+    best_mcd_subset = None
+    best_mcd_det = np.inf
+    mcd_target_weight = keep_fraction * candidate_weight
+
+    for _ in range(int(cfg["mcd_iterations"])):
+        if len(candidate_indices) < 3 or candidate_weight <= 0.0:
+            break
+        d2 = covariance_d2(mcd_model, point_x[candidate_indices], point_y[candidate_indices])
+        order = candidate_indices[np.argsort(d2)]
+        running = 0.0
+        keep_indices = []
+        for idx in order:
+            keep_indices.append(idx)
+            running += point_w[idx]
+            if running >= mcd_target_weight:
+                break
+        keep_indices = np.asarray(keep_indices, dtype=int)
+        candidate_model = compute_cov_model(
+            point_x[keep_indices], point_y[keep_indices], point_w[keep_indices],
+            regularization_x, regularization_y,
+        )
+        if candidate_model is None or not model_is_anchored(candidate_model, cfg):
+            break
+        mcd_model = candidate_model
+        if candidate_model["det"] < best_mcd_det:
+            best_mcd_det = candidate_model["det"]
+            best_mcd_model = candidate_model
+            best_mcd_subset = keep_indices
+
+    mcd_valid = best_mcd_model is not None and best_mcd_subset is not None and len(best_mcd_subset) >= 3
+    if mcd_valid:
+        consistency_scale = mcd_consistency_scale_df2(keep_fraction)
+        best_mcd_model["cov_xx"] *= consistency_scale
+        best_mcd_model["cov_xy"] *= consistency_scale
+        best_mcd_model["cov_yy"] *= consistency_scale
+        best_mcd_model["det"] = (
+            best_mcd_model["cov_xx"] * best_mcd_model["cov_yy"]
+            - best_mcd_model["cov_xy"] * best_mcd_model["cov_xy"]
+        )
+        mcd_subset_w = point_w[best_mcd_subset]
+    else:
+        best_mcd_model = core_model.copy()
+        best_mcd_subset = np.asarray([], dtype=int)
+        mcd_subset_w = np.asarray([], dtype=float)
+    mcd_d2_cut = chi2_quantile_df2(cfg["mcd_ellipse_quantile"])
+    mcd_d2_cut *= cfg["mcd_padding"] * cfg["mcd_padding"]
+
+    ellipse_flags = np.zeros(len(df), dtype=np.int32)
+    mcd_flags = np.zeros(len(df), dtype=np.int32)
+    valid_idx = np.where(valid)[0]
+    event_ellipse_d2 = covariance_d2(core_model, x_all[valid], y_all[valid])
+    ellipse_flags[valid_idx[event_ellipse_d2 <= ellipse_d2_cut]] = 1
+    if mcd_valid:
+        event_mcd_d2 = covariance_d2(best_mcd_model, x_all[valid], y_all[valid])
+        mcd_flags[valid_idx[event_mcd_d2 <= mcd_d2_cut]] = 1
+
+    df["is_exclusive_ellipse_combined"] = ellipse_flags
+    df["is_exclusive_mcd_combined"] = mcd_flags
+
+    xx, yy = np.meshgrid(x_centers, y_centers, indexing="ij")
+    core_d2_cut = chi2_quantile_df2(cfg["core_quantile"])
+    core_mask = covariance_d2(core_model, xx, yy) <= core_d2_cut
+    bin_ellipse_mask = covariance_d2(core_model, xx, yy) <= ellipse_d2_cut
+    bin_mcd_mask = (
+        covariance_d2(best_mcd_model, xx, yy) <= mcd_d2_cut
+        if mcd_valid else np.zeros_like(h2, dtype=bool)
+    )
+
+    ellipse_weight = float(np.sum(event_w[ellipse_flags == 1]))
+    mcd_weight = float(np.sum(event_w[mcd_flags == 1]))
+    core_weight = float(np.sum(h2[core_mask]))
+    core_stats = {
+        "weight": core_weight,
+        "total_fraction": core_weight / total_weight,
+        "bins": int(np.count_nonzero(core_mask & (h2 > 0.0))),
+        "mean_x": core_model["mean_x"],
+        "mean_y": core_model["mean_y"],
+    }
+    legacy_exclusive_weight = 0.0
+    h_legacy_exclusive = np.zeros_like(h2)
+    if "is_exclusive" in df.columns:
+        legacy_valid = valid & (df["is_exclusive"].to_numpy(dtype=float) > 0.5)
+        legacy_exclusive_weight = float(np.sum(event_w[legacy_valid]))
+        if np.any(legacy_valid):
+            h_legacy_exclusive, _, _ = np.histogram2d(
+                x_all[legacy_valid],
+                y_all[legacy_valid],
+                bins=[x_edges, y_edges],
+                weights=event_w[legacy_valid],
+            )
+    params = {
+        "valid": 1.0,
+        "ellipse_valid": 1.0,
+        "mcd_valid": float(mcd_valid),
+        "core_leak_rejected": float(core_leak_rejected),
+        "peak_fraction": float(peak_fraction),
+        "auto_jump_ratio": float(auto_jump_ratio),
+        "peak_weight": peak_weight,
+        "smoothed_peak_weight": smoothed_peak_weight,
+        "threshold_weight": float(peak_fraction * smoothed_peak_weight),
+        "total_weight": total_weight,
+        "peak_ix": float(peak_ix + 1),
+        "peak_iy": float(peak_iy + 1),
+        "peak_mpi0": float(x_centers[peak_ix]),
+        "peak_mmiss": float(y_centers[peak_iy]),
+        "seed_mpi0": seed_mpi0,
+        "seed_mpi0_half_width": seed_mpi0_half_width,
+        "seed_mmiss": seed_mmiss,
+        "seed_mmiss_half_width": seed_mmiss_half_width,
+        "core_bins": float(core_stats["bins"]),
+        "core_weight": float(core_stats["weight"]),
+        "core_total_fraction": float(core_stats["total_fraction"]),
+        "core_quantile": float(cfg["core_quantile"]),
+        "fit_subset_bins": float(fit_subset_stats["bins"]),
+        "fit_subset_weight": float(fit_subset_stats["weight"]),
+        "fit_subset_total_fraction": float(fit_subset_stats["total_fraction"]),
+        "seed_core_bins": float(seed_core_stats["bins"]),
+        "seed_core_weight": float(seed_core_stats["weight"]),
+        "seed_core_total_fraction": float(seed_core_stats["total_fraction"]),
+        "ellipse_growth_steps": float(ellipse_growth_steps),
+        **ridge_diagnostics,
+        "auto_max_core_total_fraction": float(cfg["auto_max_core_total_fraction"]),
+        "mean_mpi0": core_model["mean_x"],
+        "mean_mmiss": core_model["mean_y"],
+        "cov_mpi0_mpi0": core_model["cov_xx"],
+        "cov_mpi0_mmiss": core_model["cov_xy"],
+        "cov_mmiss_mmiss": core_model["cov_yy"],
+        "cov_det": core_model["det"],
+        "ellipse_d2_cut": float(ellipse_d2_cut),
+        "ellipse_weight": ellipse_weight,
+        "ellipse_total_fraction": ellipse_weight / float(np.sum(event_w[valid])),
+        "mcd_mean_mpi0": best_mcd_model["mean_x"],
+        "mcd_mean_mmiss": best_mcd_model["mean_y"],
+        "mcd_cov_mpi0_mpi0": best_mcd_model["cov_xx"],
+        "mcd_cov_mpi0_mmiss": best_mcd_model["cov_xy"],
+        "mcd_cov_mmiss_mmiss": best_mcd_model["cov_yy"],
+        "mcd_det": best_mcd_model["det"],
+        "mcd_d2_cut": float(mcd_d2_cut),
+        "mcd_subset_weight": float(np.sum(mcd_subset_w)),
+        "mcd_subset_bins": float(len(best_mcd_subset)),
+        "mcd_candidate_weight": candidate_weight,
+        "mcd_candidate_bins": float(len(candidate_indices)),
+        "mcd_keep_candidate_fraction": keep_fraction,
+        "mcd_weight": mcd_weight,
+        "mcd_total_fraction": mcd_weight / float(np.sum(event_w[valid])),
+        "legacy_is_exclusive_weight": legacy_exclusive_weight,
+        "legacy_is_exclusive_total_fraction": legacy_exclusive_weight / float(np.sum(event_w[valid])),
+    }
+
+    print("[INFO] Combined 2D mass cut:")
+    print(
+        f"       seed mmiss={params['peak_mmiss']:.5f} GeV "
+        f"(target {params['seed_mmiss']:.3f} +/- {params['seed_mmiss_half_width']:.3f} GeV)"
+    )
+    print(f"       peak_fraction={params['peak_fraction']:.3f} core={100.0 * params['core_total_fraction']:.2f}%")
+    print(f"       ellipse={int(np.sum(ellipse_flags))} events, MCD={int(np.sum(mcd_flags))} events")
+
+    ellipse_x, ellipse_y = ellipse_points(core_model, ellipse_d2_cut)
+    if mcd_valid:
+        mcd_x, mcd_y = ellipse_points(best_mcd_model, mcd_d2_cut)
+    else:
+        mcd_x, mcd_y = None, None
+
+    return {
+        "histograms": {
+            f"{COMBINED_MASS_CUT_TAG}_h_mmiss_vs_mpi0_weighted": (h2, x_edges, y_edges),
+            f"{COMBINED_MASS_CUT_TAG}_h_core_selected": (np.where(core_mask, h2, 0.0), x_edges, y_edges),
+            f"{COMBINED_MASS_CUT_TAG}_h_ellipse_fit_subset": (np.where(fit_subset_mask, h2, 0.0), x_edges, y_edges),
+            f"{COMBINED_MASS_CUT_TAG}_h_legacy_is_exclusive_selected": (h_legacy_exclusive, x_edges, y_edges),
+            f"{COMBINED_MASS_CUT_TAG}_h_ellipse_selected": (np.where(bin_ellipse_mask, h2, 0.0), x_edges, y_edges),
+            f"{COMBINED_MASS_CUT_TAG}_h_mcd_selected": (np.where(bin_mcd_mask, h2, 0.0), x_edges, y_edges),
+            f"{COMBINED_MASS_CUT_TAG}_h_core_mask": (core_mask.astype(float), x_edges, y_edges),
+            f"{COMBINED_MASS_CUT_TAG}_h_ellipse_mask": (bin_ellipse_mask.astype(float), x_edges, y_edges),
+            f"{COMBINED_MASS_CUT_TAG}_h_mcd_mask": (bin_mcd_mask.astype(float), x_edges, y_edges),
+        },
+        "params": params,
+        "scan": scan_rows,
+        "ellipse_line": (ellipse_x, ellipse_y),
+        "mcd_line": (mcd_x, mcd_y),
+        "peak": (float(x_centers[peak_ix]), float(y_centers[peak_iy])),
+    }
+
+
+
+def ellipse_diagnostic_failure(params: Dict[str, float]) -> str:
+    """Same display qualification as npsplot::ellipse_failure; flags are retained."""
+    if not params.get("valid", 0) or not params.get("ellipse_valid", 0):
+        return "ellipse fit unavailable"
+    if params.get("fit_subset_bins", 0) < MASS_CUT_CONFIG["auto_min_core_bins"]:
+        return "ellipse fit has too few occupied bins"
+    if params.get("fit_subset_total_fraction", 0) < MASS_CUT_CONFIG["auto_min_core_total_fraction"]:
+        return "ellipse fit subset below minimum fraction"
+    det = params.get("cov_det", np.nan)
+    if not np.isfinite(det) or det <= 0:
+        return "ellipse covariance invalid"
+    return ""
+
+
+def add_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
+    debug = _fit_combined_2d_mass_cut(df)
+    required = {"mpi0_all", "mmiss_all", "pi0_weight"}
+    if not required.issubset(df.columns):
+        return debug
+    cfg = MASS_CUT_CONFIG
+    if debug is None:
+        debug = {"params": {"valid": 0.0, "ellipse_valid": 0.0, "mcd_valid": 0.0},
+                 "histograms": {}, "scan": []}
+    failure = ellipse_diagnostic_failure(debug["params"])
+    debug["diagnostic_failure"] = failure
+    debug["params"]["diagnostic_ellipse_valid"] = float(not failure)
+    debug["params"]["diagnostic_fallback_decorrelation"] = float(bool(failure))
+    if failure:
+        print(f"[WARN] {failure}; diagnostic fallback=de-correlation (is_exclusive)")
+
+    # Histograms are produced here from the actual event selectors. Evaluating a
+    # cut at bin centers can misclassify partially selected boundary bins.
+    x = df["mpi0_all"].to_numpy(dtype=float)
+    y = df["mmiss_all"].to_numpy(dtype=float)
+    w = df["pi0_weight"].to_numpy(dtype=float)
+    if "scale" in df:
+        w = w * df["scale"].to_numpy(dtype=float)
+    finite = np.isfinite(x) & np.isfinite(y) & np.isfinite(w) & (w > 0)
+    valid = finite & (x >= cfg["mpi0_min"]) & (x < cfg["mpi0_max"]) & (
+        y >= cfg["mmiss_min"]) & (y < cfg["mmiss_max"])
+    debug["params"]["diagnostic_outside_window_weight"] = float(w[finite & ~valid].sum())
+    edges = [np.linspace(cfg["mpi0_min"], cfg["mpi0_max"], int(cfg["n_mpi0_bins"]) + 1),
+             np.linspace(cfg["mmiss_min"], cfg["mmiss_max"], int(cfg["n_mmiss_bins"]) + 1)]
+    selections = {"h_mmiss_vs_mpi0_weighted": None,
+                  "h_legacy_is_exclusive_selected": "is_exclusive",
+                  "h_ellipse_selected": "is_exclusive_ellipse_combined",
+                  "h_mcd_selected": "is_exclusive_mcd_combined"}
+    for name, branch in selections.items():
+        mask = valid if branch is None else valid & (
+            df[branch].to_numpy(dtype=float) > 0.5 if branch in df else np.zeros(len(df), dtype=bool))
+        debug["histograms"][f"{COMBINED_MASS_CUT_TAG}_{name}"] = np.histogram2d(
+            x[mask], y[mask], bins=edges, weights=w[mask])
+    total = float(w[valid].sum())
+    debug["params"].setdefault("total_weight", total)
+    for suffix, parameter in [("h_legacy_is_exclusive_selected", "legacy_is_exclusive_total_fraction"),
+                              ("h_ellipse_selected", "ellipse_total_fraction"),
+                              ("h_mcd_selected", "mcd_total_fraction")]:
+        weight = float(debug["histograms"][f"{COMBINED_MASS_CUT_TAG}_{suffix}"][0].sum())
+        debug["params"].setdefault(parameter, weight / total if total > 0 else 0.0)
+    debug["histograms"].setdefault(f"{COMBINED_MASS_CUT_TAG}_h_core_selected",
+                                  (np.zeros((len(edges[0])-1, len(edges[1])-1)), *edges))
+    return debug
+
+
+def save_to_root(df: pd.DataFrame, output_path: Path, mass_cut_debug: Optional[Dict[str, Any]] = None) -> None:
+    print(f"[INFO] Writing combined ROOT tree to {output_path}")
+    payload: Dict[str, np.ndarray] = {}
+    for col in df.columns:
+        payload[col] = df[col].to_numpy()
+
+    with uproot.recreate(str(output_path)) as out_file:
+        branch_types = {name: arr.dtype for name, arr in payload.items()}
+        tree = out_file.mktree("physics", branch_types)
+        tree.extend(payload)
+        if mass_cut_debug:
+            for name, hist_tuple in mass_cut_debug.get("histograms", {}).items():
+                out_file[name] = hist_tuple
+            if WRITE_COMBINED_MASS_CUT_PARAM_TREES:
+                params = mass_cut_debug.get("params", {})
+                if params:
+                    out_file[f"{COMBINED_MASS_CUT_TAG}_params"] = {
+                        key: np.asarray([value], dtype=np.float64)
+                        for key, value in params.items()
+                    }
+                scan = mass_cut_debug.get("scan", [])
+                if scan:
+                    out_file[f"{COMBINED_MASS_CUT_TAG}_peak_scan"] = {
+                        key: np.asarray([row[key] for row in scan], dtype=np.float64)
+                        for key in scan[0].keys()
+                    }
+
+    print(f"[INFO] Wrote {len(df)} events with {len(payload)} branches")
+    if mass_cut_debug:
+        print(f"[INFO] Wrote combined 2D mass-cut debug objects with tag '{COMBINED_MASS_CUT_TAG}'")
+
+
+def apply_1d_style(ax: plt.Axes,
+                   title: str,
+                   xlabel: str,
+                   weighted: bool = True) -> None:
+    ax.set_title(title, fontsize=11, fontweight="bold")
+    ax.set_xlabel(xlabel, fontsize=10)
+    ax.set_ylabel("Weighted events / bin" if weighted else "Events / bin", fontsize=10)
+    ax.tick_params(axis="both", labelsize=9)
+    ax.margins(x=0.01)
+    ax.grid(True, alpha=0.3, linewidth=0.6)
+    for spine in ax.spines.values():
+        spine.set_linewidth(1.0)
+
+
+def draw_hist1d(ax: plt.Axes,
+                data: pd.Series,
+                weights: Optional[np.ndarray],
+                spec: Hist1DSpec,
+                label: Optional[str] = None,
+                alpha: float = 0.75,
+                weighted: bool = True) -> Tuple[np.ndarray, np.ndarray]:
+    values = data.dropna().to_numpy()
+    if len(values) == 0:
+        ax.text(0.5, 0.5, f"No data for {spec.name}", ha="center", va="center")
+        apply_1d_style(ax, spec.title, spec.xlabel, weighted=weighted)
+        return np.array([]), np.array([])
+
+    if weights is not None:
+        weights = np.asarray(weights)
+
+    counts, edges, _ = ax.hist(
+        values,
+        bins=spec.bins,
+        range=spec.value_range,
+        weights=weights,
+        alpha=alpha,
+        edgecolor="black",
+        linewidth=0.6,
+        color=spec.color,
+        label=label,
+    )
+    apply_1d_style(ax, spec.title, spec.xlabel, weighted=weighted)
+    if spec.value_range is not None:
+        ax.set_xlim(spec.value_range)
+
+    # Keep headroom so overlays/annotations are not clipped.
+    if len(counts) > 0:
+        finite_counts = np.asarray(counts[np.isfinite(counts)], dtype=float)
+        if finite_counts.size > 0:
+            cmin = float(np.min(finite_counts))
+            cmax = float(np.max(finite_counts))
+            span = cmax - cmin
+            if not (span > 0.0):
+                span = abs(cmax) if cmax != 0.0 else 1.0
+
+            pad = 0.12 * span
+            target_low = (cmin - pad) if cmin < 0.0 else 0.0
+            target_top = cmax + pad
+
+            current_low, current_top = ax.get_ylim()
+            ax.set_ylim(min(float(current_low), target_low), max(float(current_top), target_top))
+
+    if label:
+        ax.legend(loc="upper right", frameon=False, fontsize=9)
+    return counts, edges
+
+
+def write_combined_mass_cut_debug_text(mass_cut_debug: Optional[Dict[str, Any]], output_root: Path,
+                                       debug_path: Optional[Path] = None):
+    if not mass_cut_debug:
+        return
+    params = mass_cut_debug.get("params", {})
+    if not params:
+        return
+
+    if debug_path is None:
+        debug_path = output_root.with_name(f"{output_root.stem}_{COMBINED_MASS_CUT_TAG}_debug.txt")
+    keys = [
+        "valid", "ellipse_valid", "mcd_valid", "core_leak_rejected",
+        "diagnostic_ellipse_valid", "diagnostic_fallback_decorrelation",
+        "diagnostic_outside_window_weight",
+        "peak_fraction", "auto_jump_ratio",
+        "peak_mpi0", "peak_mmiss", "seed_mpi0", "seed_mpi0_half_width",
+        "seed_mmiss", "seed_mmiss_half_width",
+        "peak_weight", "smoothed_peak_weight", "threshold_weight",
+        "core_bins", "core_weight", "core_total_fraction",
+        "core_quantile",
+        "fit_subset_bins", "fit_subset_weight", "fit_subset_total_fraction",
+        "seed_core_bins", "seed_core_weight", "seed_core_total_fraction",
+        "ellipse_growth_steps",
+        "ridge_aligned", "ridge_fit_bins", "ridge_slope",
+        "ridge_mmiss_at_mean_mpi0",
+        "auto_max_core_total_fraction",
+        "mean_mpi0", "mean_mmiss", "cov_mpi0_mpi0",
+        "cov_mpi0_mmiss", "cov_mmiss_mmiss", "ellipse_d2_cut",
+        "ellipse_weight", "ellipse_total_fraction",
+        "mcd_mean_mpi0", "mcd_mean_mmiss", "mcd_cov_mpi0_mpi0",
+        "mcd_cov_mpi0_mmiss", "mcd_cov_mmiss_mmiss", "mcd_d2_cut",
+        "mcd_subset_bins", "mcd_subset_weight",
+        "mcd_candidate_bins", "mcd_candidate_weight", "mcd_keep_candidate_fraction",
+        "mcd_weight", "mcd_total_fraction",
+        "legacy_is_exclusive_weight", "legacy_is_exclusive_total_fraction",
+    ]
+
+    with debug_path.open("w", encoding="utf-8") as fout:
+        fout.write("# Combined 2D mass-cut debug summary\n")
+        fout.write(f"tag={COMBINED_MASS_CUT_TAG}\n")
+        fout.write(f"weight=pi0_weight*scale\n")
+        fout.write(f"ellipse_branch=is_exclusive_ellipse_combined\n")
+        fout.write(f"mcd_branch=is_exclusive_mcd_combined\n")
+        for key in ("mpi0_min", "mpi0_max", "mmiss_min", "mmiss_max"):
+            fout.write(f"{key}={MASS_CUT_CONFIG[key]:.12g}\n")
+        fout.write(f"diagnostic_failure={mass_cut_debug.get('diagnostic_failure', '')}\n")
+        fout.write("\n[parameters]\n")
+        for key in keys:
+            if key in params:
+                fout.write(f"{key}={params[key]:.17g}\n")
+        fout.write("\n[scan_notes]\n")
+        fout.write("Full scan not stored in ROOT. To inspect scan, temporarily enable WRITE_COMBINED_MASS_CUT_PARAM_TREES.\n")
+
+    print(f"[INFO] Combined 2D mass-cut debug text saved: {debug_path}")
+
+
+def write_combined_mass_cut_canvas(mass_cut_debug: Optional[Dict[str, Any]], output_root: Path):
+    if not mass_cut_debug:
+        return
+    histograms = mass_cut_debug.get("histograms", {})
+    all_tuple = histograms.get(f"{COMBINED_MASS_CUT_TAG}_h_mmiss_vs_mpi0_weighted")
+    core_tuple = histograms.get(f"{COMBINED_MASS_CUT_TAG}_h_core_selected")
+    legacy_tuple = histograms.get(f"{COMBINED_MASS_CUT_TAG}_h_legacy_is_exclusive_selected")
+    ellipse_tuple = histograms.get(f"{COMBINED_MASS_CUT_TAG}_h_ellipse_selected")
+    mcd_tuple = histograms.get(f"{COMBINED_MASS_CUT_TAG}_h_mcd_selected")
+    if not all_tuple or not ellipse_tuple or not mcd_tuple:
+        return
+
+    h_all, x_edges, y_edges = all_tuple
+    h_core, _, _ = core_tuple
+    h_legacy = legacy_tuple[0] if legacy_tuple else np.zeros_like(h_all)
+    h_ellipse, _, _ = ellipse_tuple
+    h_mcd, _, _ = mcd_tuple
+    ellipse_x, ellipse_y = mass_cut_debug.get("ellipse_line", (None, None))
+    mcd_x, mcd_y = mass_cut_debug.get("mcd_line", (None, None))
+    peak_x, peak_y = mass_cut_debug.get("peak", (None, None))
+    params = mass_cut_debug.get("params", {})
+
+    failure = mass_cut_debug.get("diagnostic_failure", "")
+    ellipse_label = "ellipse" if not failure else "ellipse FAILED (stored selector)"
+    h_selected = h_legacy if failure else h_ellipse
+
+    canvas_pdf = output_root.with_name(f"{output_root.stem}_{COMBINED_MASS_CUT_TAG}_canvas.pdf")
+    canvas_png = output_root.with_name(f"{output_root.stem}_{COMBINED_MASS_CUT_TAG}_canvas.png")
+
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    ax = axes[0, 0]
+    mesh = ax.pcolormesh(x_edges, y_edges, h_all.T, shading="auto", cmap="viridis",
+                         vmin=0, vmax=max(1.0, float(np.max(h_all))))
+    fig.colorbar(mesh, ax=ax, label="Weighted counts")
+    if ellipse_x is not None:
+        ax.plot(ellipse_x, ellipse_y, color="magenta", linewidth=2.0, label=ellipse_label)
+    if mcd_x is not None:
+        ax.plot(mcd_x, mcd_y, color="lime", linewidth=2.0, label="MCD")
+    if peak_x is not None:
+        ax.axvline(peak_x, color="black", linestyle="--", linewidth=1.0)
+        ax.axhline(peak_y, color="black", linestyle="--", linewidth=1.0)
+    ax.set_title("Before mass selection")
+    ax.set_xlabel("mpi0_all [GeV]")
+    ax.set_ylabel("mmiss_all [GeV]")
+    ax.legend(loc="upper right")
+    ax.text(
+        0.02, 0.98,
+        f"peak_fraction={params.get('peak_fraction', np.nan):.3f}\n"
+        f"ridge slope={params.get('ridge_slope', np.nan):.2f} "
+        f"({int(params.get('ridge_fit_bins', 0))} y bins)\n"
+        f"core={100.0 * params.get('core_total_fraction', 0.0):.2f}%\n"
+        f"de-correlation={100.0 * params.get('legacy_is_exclusive_total_fraction', 0.0):.2f}%\n"
+        f"ellipse={100.0 * params.get('ellipse_total_fraction', 0.0):.2f}%\n"
+        f"MCD={100.0 * params.get('mcd_total_fraction', 0.0):.2f}%",
+        transform=ax.transAxes, va="top", ha="left",
+        bbox=dict(facecolor="white", alpha=0.8, edgecolor="none"),
+        fontsize=9,
+    )
+
+    ax = axes[0, 1]
+    mesh = ax.pcolormesh(x_edges, y_edges, h_selected.T, shading="auto", cmap="viridis",
+                         vmin=0, vmax=max(1.0, float(np.max(h_all))))
+    fig.colorbar(mesh, ax=ax, label="Weighted counts")
+    if ellipse_x is not None:
+        ax.plot(ellipse_x, ellipse_y, color="magenta", linewidth=2.0, label=ellipse_label)
+    if mcd_x is not None:
+        ax.plot(mcd_x, mcd_y, color="lime", linewidth=2.0, label="MCD")
+    ax.set_title("After de-correlation (ellipse failed)" if failure else "After ellipse (diagnostic)")
+    ax.set_xlabel("mpi0_all [GeV]")
+    ax.set_ylabel("mmiss_all [GeV]")
+    ax.legend(loc="upper right")
+
+    x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
+    y_centers = 0.5 * (y_edges[:-1] + y_edges[1:])
+
+    ax = axes[1, 0]
+    ax.step(x_centers, np.sum(h_all, axis=1), where="mid", color="black", label="all")
+    ax.step(x_centers, np.sum(h_core, axis=1), where="mid", color="red", label="core")
+    ax.step(x_centers, np.sum(h_legacy, axis=1), where="mid", color="blue", label="de-correlation")
+    ax.step(x_centers, np.sum(h_ellipse, axis=1), where="mid", color="magenta", label=ellipse_label)
+    ax.step(x_centers, np.sum(h_mcd, axis=1), where="mid", color="green", label="MCD")
+    ax.set_title("mpi0_all projection")
+    ax.set_xlabel("mpi0_all [GeV]")
+    ax.set_ylabel("Weighted counts")
+    ax.legend(loc="upper right")
+
+    ax = axes[1, 1]
+    ax.step(y_centers, np.sum(h_all, axis=0), where="mid", color="black", label="all")
+    ax.step(y_centers, np.sum(h_core, axis=0), where="mid", color="red", label="core")
+    ax.step(y_centers, np.sum(h_legacy, axis=0), where="mid", color="blue", label="de-correlation")
+    ax.step(y_centers, np.sum(h_ellipse, axis=0), where="mid", color="magenta", label=ellipse_label)
+    ax.step(y_centers, np.sum(h_mcd, axis=0), where="mid", color="green", label="MCD")
+    ax.set_title("mmiss_all projection")
+    ax.set_xlabel("mmiss_all [GeV]")
+    ax.set_ylabel("Weighted counts")
+    ax.legend(loc="upper right")
+
+    title = "Combined 2D Mass-Cut Debug"
+    if failure:
+        title += f"\n{failure}; diagnostic fallback = de-correlation"
+    fig.suptitle(title, fontsize=14, fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(canvas_pdf, dpi=150)
+    fig.savefig(canvas_png, dpi=150)
+    plt.close(fig)
+    print(f"[INFO] Combined 2D mass-cut canvas saved: {canvas_pdf}")
+    print(f"[INFO] Combined 2D mass-cut canvas saved: {canvas_png}")
+
+
+
+def create_focal_plane_debug_plots(df: pd.DataFrame, output_path: Path) -> None:
+    print(f"[INFO] Creating focal-plane debug PDF: {output_path}")
+    if "run_number" not in df.columns:
+        print("[WARN] run_number column missing. Skipping focal-plane debug plots.")
+        return
+
+    fp_keywords = ["xfp", "yfp", "xpfp", "ypfp"]
+    fp_cols = [c for c in df.columns if any(k in c.lower() for k in fp_keywords)]
+    if not fp_cols:
+        print("[WARN] No focal-plane columns found.")
+        return
+
+    runs = sorted(df["run_number"].unique())
+    with PdfPages(str(output_path)) as pdf:
+        for run in runs:
+            df_run = df[df["run_number"] == run]
+            n_vars = len(fp_cols)
+            n_cols = 2
+            n_rows = int(np.ceil(n_vars / n_cols))
+            fig, axes = plt.subplots(n_rows, n_cols, figsize=(12, 4 * n_rows))
+            axes = np.atleast_1d(axes).flatten()
+
+            fig.suptitle(f"Run {run} focal-plane distributions", fontsize=13, fontweight="bold")
+
+            for idx, col in enumerate(fp_cols):
+                spec = Hist1DSpec(
+                    name=col,
+                    title=f"{col} distribution",
+                    xlabel=col,
+                    bins=80,
+                    value_range=None,
+                    color="slateblue",
+                )
+                draw_hist1d(axes[idx], df_run[col], None, spec, weighted=False)
+
+            for idx in range(n_vars, len(axes)):
+                axes[idx].axis("off")
+
+            plt.tight_layout(rect=(0.0, 0.0, 1.0, 0.97))
+            pdf.savefig(fig, dpi=130)
+            plt.close(fig)
+
+    print("[INFO] Focal-plane debug plots complete")
+
+
+def create_analysis_plots(df: pd.DataFrame, output_path: Path) -> None:
+    print(f"[INFO] Creating analysis PDF: {output_path}")
+    if "scale" not in df.columns:
+        print("[WARN] Missing 'scale' column; cannot make weighted analysis plots")
+        return
+
+    pi0_weight_col = "pi0_weight" if "pi0_weight" in df.columns else (
+        "pi0_weights" if "pi0_weights" in df.columns else None
+    )
+    has_is_exclusive = "is_exclusive" in df.columns
+
+    with PdfPages(str(output_path)) as pdf:
+        if "mpi0_all" in df.columns:
+            fig, ax = plt.subplots(figsize=(10, 7))
+            series = df["mpi0_all"].dropna()
+            w_all = df.loc[series.index, "scale"].to_numpy()
+
+            spec_all = Hist1DSpec(
+                name="mpi0_all",
+                title="pi0 invariant-mass overlay",
+                xlabel=r"$m_{\gamma\gamma}$ [GeV/$c^2$]",
+                bins=120,
+                value_range=(0.0, 0.4),
+                color="royalblue",
+            )
+            draw_hist1d(ax, series, w_all, spec_all, label="All candidates", alpha=0.55)
+
+            if pi0_weight_col:
+                w_final = w_all * df.loc[series.index, pi0_weight_col].fillna(0.0).to_numpy()
+                spec_fin = Hist1DSpec(
+                    name="pi0_weighted",
+                    title="pi0 invariant-mass overlay",
+                    xlabel=r"$m_{\gamma\gamma}$ [GeV/$c^2$]",
+                    bins=120,
+                    value_range=(0.0, 0.4),
+                    color="firebrick",
+                )
+                counts_w, edges_w = draw_hist1d(
+                    ax, series, w_final, spec_fin, label="Weighted candidates", alpha=0.50
+                )
+                if len(counts_w) > 0:
+                    centers = 0.5 * (edges_w[:-1] + edges_w[1:])
+                    fit = fit_gaussian_from_histogram(centers, counts_w)
+                    if fit is not None:
+                        amp, mu, sigma = fit
+                        x_fit = np.linspace(max(0.09, mu - 4 * sigma), min(0.18, mu + 4 * sigma), 300)
+                        y_fit = amp * np.exp(-0.5 * ((x_fit - mu) / sigma) ** 2)
+                        ax.plot(x_fit, y_fit, color="darkred", linestyle="--", linewidth=2.0,
+                                label="Gaussian fit")
+                        ax.text(
+                            0.98,
+                            0.95,
+                            f"$\\mu$={mu:.5f} GeV/$c^2$\\n$\\sigma$={sigma:.5f} GeV/$c^2$",
+                            transform=ax.transAxes,
+                            va="top",
+                            ha="right",
+                            fontsize=10,
+                            bbox=dict(boxstyle="round", facecolor="white", alpha=0.85, edgecolor="gray"),
+                        )
+
+            ax.set_xlim(0.0, 0.4)
+            ax.legend(loc="upper right", frameon=False, fontsize=9)
+            plt.tight_layout()
+            pdf.savefig(fig, dpi=150)
+            plt.close(fig)
+
+        if "mmiss_all" in df.columns:
+            fig, ax = plt.subplots(figsize=(10, 7))
+
+            s_mmiss = df["mmiss_all"].dropna()
+            w_mmiss = df.loc[s_mmiss.index, "scale"].to_numpy()
+            draw_hist1d(
+                ax,
+                s_mmiss,
+                w_mmiss,
+                Hist1DSpec(
+                    name="mmiss_all",
+                    title="Missing-mass overlay",
+                    xlabel=r"$M_{miss}$ [GeV/$c^2$]",
+                    bins=120,
+                    value_range=(0.0, 2.5),
+                    color="seagreen",
+                ),
+                label="mmiss_all",
+                alpha=0.55,
+            )
+
+            if "mmiss_all_corr" in df.columns:
+                s_corr = df["mmiss_all_corr"].dropna()
+                w_corr = df.loc[s_corr.index, "scale"].to_numpy()
+                draw_hist1d(
+                    ax,
+                    s_corr,
+                    w_corr,
+                    Hist1DSpec(
+                        name="mmiss_all_corr",
+                        title="Missing-mass overlay",
+                        xlabel=r"$M_{miss}$ [GeV/$c^2$]",
+                        bins=120,
+                        value_range=(0.0, 2.5),
+                        color="darkorange",
+                    ),
+                    label="mmiss_all_corr",
+                    alpha=0.5,
+                )
+
+            ax.set_xlim(0.4, 2.5)
+            ax.legend(loc="upper right", frameon=False, fontsize=9)
+            plt.tight_layout()
+            pdf.savefig(fig, dpi=150)
+            plt.close(fig)
+
+        df_plot = df
+        if has_is_exclusive:
+            df_plot = df[df["is_exclusive"] == True]
+
+        def event_weights(index: pd.Index) -> np.ndarray:
+            weights = df_plot.loc[index, "scale"].to_numpy()
+            if pi0_weight_col:
+                weights = weights * df_plot.loc[index, pi0_weight_col].fillna(1.0).to_numpy()
+            return weights
+
+        physics_specs: Dict[str, Hist1DSpec] = {
+            "Q2": Hist1DSpec("Q2", "Q2 distribution", r"$Q^2$ [GeV$^2$]", 80, (0, 10), "steelblue"),
+            "W": Hist1DSpec("W", "W distribution", r"$W$ [GeV]", 80, (0.5, 4.5), "steelblue"),
+            "t": Hist1DSpec("t", "t distribution", r"$t$ [GeV$^2$]", 80, (-5.0, 0.5), "steelblue"),
+            "tmin": Hist1DSpec("tmin", "tmin distribution", r"$t_{min}$ [GeV$^2$]", 80, (-5.0, 0.0), "steelblue"),
+            "pt": Hist1DSpec("pt", "pt distribution", r"$p_T$ [GeV/$c$]", 80, (0.0, 1.0), "steelblue"),
+            "theta": Hist1DSpec("theta", "theta distribution", r"$\theta$ [rad]", 80, (0.0, 0.5), "steelblue"),
+            "phi": Hist1DSpec("phi", "phi distribution", r"$\phi$ [rad]", 80, (-3.2, 3.2), "steelblue"),
+            "xB": Hist1DSpec("xB", "xB distribution", r"$x_B$", 80, (0.0, 1.0), "steelblue"),
+            "z": Hist1DSpec("z", "z distribution", r"$z$", 80, (0.0, 1.2), "steelblue"),
+        }
+
+        available_physics = [k for k in physics_specs if k in df_plot.columns]
+        if available_physics:
+            n_cols = 3
+            n_rows = int(np.ceil(len(available_physics) / n_cols))
+            fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 4 * n_rows))
+            axes = np.atleast_1d(axes).flatten()
+            fig.suptitle("Physics 1D distributions", fontsize=13, fontweight="bold")
+
+            selectors = {"is_exclusive": ("De-correlation", "blue"),
+                         "is_exclusive_ellipse": ("Ellipse (per run)", "magenta"),
+                         "is_exclusive_mcd": ("MCD (per run)", "green"),
+                         "is_exclusive_ellipse_combined": ("Ellipse (combined)", "darkorange"),
+                         "is_exclusive_mcd_combined": ("MCD (combined)", "purple")}
+            for idx, key in enumerate(available_physics):
+                ax = axes[idx]
+                spec = physics_specs[key]
+                values = df[key].to_numpy(dtype=float)
+                weights = df["scale"].to_numpy(dtype=float)
+                if pi0_weight_col:
+                    weights = weights * df[pi0_weight_col].fillna(1.0).to_numpy(dtype=float)
+                finite = np.isfinite(values) & np.isfinite(weights)
+                edges = np.linspace(*spec.value_range, spec.bins + 1)
+                counts, _ = np.histogram(values[finite], bins=edges, weights=weights[finite])
+                ax.stairs(counts, edges, color="black", label="Before mass selection (weighted)")
+                for branch, (label, color) in selectors.items():
+                    if branch not in df:
+                        continue
+                    mask = finite & (df[branch].to_numpy(dtype=float) > 0.5)
+                    selected, _ = np.histogram(values[mask], bins=edges, weights=weights[mask])
+                    ax.stairs(selected, edges, color=color, label=label)
+                # Set the view from the before population, never the selected peak.
+                occupancy, _ = np.histogram(values[finite], bins=edges)
+                occupied = np.flatnonzero(occupancy)
+                if len(occupied):
+                    pad = max(2, (occupied[-1]-occupied[0]+1)//20)
+                    ax.set_xlim(edges[max(0,occupied[0]-pad)], edges[min(spec.bins,occupied[-1]+pad+1)])
+                ax.set_title(spec.title); ax.set_xlabel(spec.xlabel); ax.set_ylabel("Weighted counts")
+                ax.legend(loc="upper right", fontsize=6)
+
+            for idx in range(len(available_physics), len(axes)):
+                axes[idx].axis("off")
+            plt.tight_layout(rect=(0.0, 0.0, 1.0, 0.97))
+            pdf.savefig(fig, dpi=150)
+            plt.close(fig)
+
+        spec_specs: Dict[str, Hist1DSpec] = {
+            "delta": Hist1DSpec("delta", "delta distribution", r"$\delta$ [%]", 80, None, "coral"),
+            "xptar": Hist1DSpec("xptar", "xptar distribution", r"$x'_{tar}$ [rad]", 80, None, "coral"),
+            "yptar": Hist1DSpec("yptar", "yptar distribution", r"$y'_{tar}$ [rad]", 80, None, "coral"),
+            "xtar": Hist1DSpec("xtar", "xtar distribution", r"$x_{tar}$ [cm]", 80, None, "coral"),
+            "ytar": Hist1DSpec("ytar", "ytar distribution", r"$y_{tar}$ [cm]", 80, None, "coral"),
+            "xfp": Hist1DSpec("xfp", "xfp distribution", r"$x_{fp}$ [cm]", 80, None, "coral"),
+            "yfp": Hist1DSpec("yfp", "yfp distribution", r"$y_{fp}$ [cm]", 80, None, "coral"),
+            "xpfp": Hist1DSpec("xpfp", "xpfp distribution", r"$x'_{fp}$ [rad]", 80, None, "coral"),
+            "ypfp": Hist1DSpec("ypfp", "ypfp distribution", r"$y'_{fp}$ [rad]", 80, None, "coral"),
+        }
+
+        available_spec = [k for k in spec_specs if k in df_plot.columns]
+        if available_spec:
+            n_cols = 3
+            n_rows = int(np.ceil(len(available_spec) / n_cols))
+            fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 4 * n_rows))
+            axes = np.atleast_1d(axes).flatten()
+            fig.suptitle("Spectrometer 1D distributions", fontsize=13, fontweight="bold")
+
+            for idx, key in enumerate(available_spec):
+                s = df_plot[key].dropna()
+                w = event_weights(s.index)
+                draw_hist1d(axes[idx], s, w, spec_specs[key], alpha=0.75)
+
+            for idx in range(len(available_spec), len(axes)):
+                axes[idx].axis("off")
+            plt.tight_layout(rect=(0.0, 0.0, 1.0, 0.97))
+            pdf.savefig(fig, dpi=150)
+            plt.close(fig)
+
+    print("[INFO] Analysis plots complete")
+
+
+def print_summary_statistics(df: pd.DataFrame) -> None:
+    print("\n" + "=" * 72)
+    print("COMBINED DATASET SUMMARY")
+    print("=" * 72)
+    print(f"events={len(df)}  columns={len(df.columns)}")
+
+    if "run_number" in df.columns:
+        runs = sorted(df["run_number"].unique())
+        print(f"runs={runs}")
+        print(df["run_number"].value_counts().sort_index())
+
+    for col in ["scale", "charge_uC", "ps_value", "livetime", "efficiency"]:
+        if col in df.columns:
+            print(
+                f"{col}: min={df[col].min():.6g} max={df[col].max():.6g} "
+                f"mean={df[col].mean():.6g}"
+            )
+
+
+def run(argv: Optional[Sequence[str]] = None) -> int:
+    args = build_arg_parser().parse_args(argv)
+    cfg = resolve_workflow_config(args)
+
+    print("=" * 72)
+    print("COMBINE ANALYSIS BRANCHES")
+    print("=" * 72)
+    print(f"[INFO] CFG_PATH={cfg.cfg_path}")
+    print(f"[INFO] ROOT_DIR={cfg.root_dir}")
+    print(f"[INFO] OUT_COMBINED_ROOT={cfg.out_combined_root}")
+    print(f"[INFO] KIN_SETTING={cfg.kin_setting}")
+    print(f"[INFO] EFFICIENCY_CSV={cfg.efficiency_csv}")
+    print(f"[INFO] TARGET={cfg.target_to_combine}")
+
+    df_cfg = load_config(cfg.cfg_path)
+    lookup = build_lookup(df_cfg, cfg.kin_setting, cfg.allowed_types)
+    eff_map = load_efficiency_metadata(cfg.efficiency_csv, cfg.kin_setting)
+
+    run_filter_set = set(cfg.run_filter) if cfg.run_filter else None
+    df_combined = combine_branches(
+        lookup=lookup,
+        root_dir=cfg.root_dir,
+        target_to_combine=cfg.target_to_combine,
+        efficiency_map=eff_map,
+        run_filter=run_filter_set,
+    )
+
+    if df_combined.empty:
+        print("[ERROR] No events were combined.")
+        return 1
+
+    mass_cut_debug = None
+    if CREATE_COMBINED_2D_MASS_CUT:
+        mass_cut_debug = add_combined_2d_mass_cut(df_combined)
+
+    print_summary_statistics(df_combined)
+    write_combined_mass_cut_debug_text(mass_cut_debug, cfg.out_combined_root)
+    write_combined_mass_cut_canvas(mass_cut_debug, cfg.out_combined_root)
+    save_to_root(df_combined, cfg.out_combined_root, mass_cut_debug)
+
+    if cfg.create_fp_debug_plots:
+        create_focal_plane_debug_plots(df_combined, cfg.fp_debug_pdf)
+    if cfg.create_analysis_plots:
+        create_analysis_plots(df_combined, cfg.analysis_plots_pdf)
+
+    print("[INFO] Combine stage complete")
+    return 0
+
+
+def main() -> None:
+    try:
+        status = run()
+    except Exception as ex:
+        print(f"[ERROR] {ex}", file=sys.stderr)
+        status = 2
+    raise SystemExit(status)
+
+
+if __name__ == "__main__":
+    main()

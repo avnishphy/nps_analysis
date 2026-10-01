@@ -1,0 +1,393 @@
+Luminosity analysis
+ Avnish Singh
+ Supervisor: Prof. Tanja Horn
+
+
+
+
+                     NPS Collaboration Meeting 2025 (May 5 - May 6)
+Luminosity runs
+
+
+
+
+                  Tables taken from Yaopeng.
+
+
+
+
+                                               2
+Livetime Deﬁnitions (current cut: peak+-1uA)
+
+
+
+
+                                               3
+          Carbon runs
+
+
+EDTM Livetime > 1 in some runs → indicates logical inconsistency:
+
+
+ ●    More accepted than generated EDTM pulses — not physically possible.
+
+ ●    Potential issues:
+       ○    Hardware/electronics limitations
+       ○    DAQ prescaling errors?
+
+ ●    Carbon 1: Most extreme deviation
+ ●    Carbon 2 & 3:
+      EDTM > 1
+      Other livetimes < 1
+      Physics livetime fluctuates significantly
+
+
+                                        NPS Collaboration Meeting 2025 (May 5 - May 6)   4
+      LH2 and LD2 runs
+
+LH1_1: Livetime increases with current contrary to
+expectations
+
+LH2_2:
+ ●   EDTM > 1
+ ●   Most other livetimes approach 1 as
+     current → 0
+
+LD2:
+ ●   EDTM > 1; other livetimes also exceed 1
+ ●   Abrupt dip around ~18 µA
+ ●   Possibly due to sudden rate spike;
+     extrapolates to ~1 at zero current
+
+
+
+
+                                   NPS Collaboration Meeting 2025 (May 5 - May 6)   5
+Comparison: Carbon 1
+
+
+
+
+        Computer Livetime Physics (tdc)   CPU LT (HW scaler);            Ref: Yaopeng
+        Computer Livetime All (tdc)       CPU LT with EDTM (HW scaler)
+
+                  NPS Collaboration Meeting 2025 (May 5 - May 6)                        6
+Comparison: Carbon 2
+
+
+
+
+                                                                          Ref: Yaopeng
+         Computer Livetime Physics (tdc)   CPU LT (HW scaler)
+         Computer Livetime All (tdc)       CPU LT with EDTM (HW scaler)
+
+                 NPS Collaboration Meeting 2025 (May 5 - May 6)                          7
+Comparison: Carbon 3
+
+
+
+
+                                                                         Ref: Yaopeng
+        Computer Livetime Physics (tdc)   CPU LT (HW scaler)
+        Computer Livetime All (tdc)       CPU LT with EDTM (HW scaler)
+                  NPS Collaboration Meeting 2025 (May 5 - May 6)                        8
+      Investigation into Low Livetime in Luminosity Scans
+
+
+
+
+DAQ Issues Identified (Log Entry             Anomaly in Run 1525
+4190122)
+                                              ●   Run 1525 has low livetime despite a valid       ●   Red = runs with low livetimes
+  ●   Runs 1526–1532: npsvme3 failed to           END_OF_RUN entry
+                                                                                                  ●   Green = notable beam-on
+      communicate with CODA
+                                              ●   Green highlight: large difference between           discrepancy
+  ●   CODA required multiple restarts
+                                                    ○    beam_on_percent_edtm
+  ●   Runs 1526–1534: Missing
+      END_OF_RUN entries in logbook                 ○    beam_on_percent_trig_accp
+       → Strong indicator that DAQ was not
+      functioning properly                    ●   This discrepancy is unique to Run 1524 onward
+                                                                                                                                      9
+    Change in ps_factor and Potential Misconﬁguration
+
+
+
+
+●    ps_factor changed in Run 1524
+
+●    Known CODA issue: ps_factor changes may
+     not save correctly
+
+●    Likely caused problematic DAQ configuration
+
+●    May explain both beam-on mismatch and
+     DAQ failures
+
+
+
+
+                              NPS Collaboration Meeting 2025 (May 5 - May 6)   10
+      Summary of livetimes
+
+●   ps_factor change in Run 1524 correlates with beam-on tracking anomaly
+
+●   Runs 1525–1530 show unusually low livetimes
+
+●   Runs 1526–1534 lack proper END_OF_RUN entries
+
+●   CODA likely failed to read or record data correctly during this period
+
+●   Decide on the usability of the first luminosity scan.
+
+●   Need to decide which livetime to use.
+
+
+
+
+                                  NPS Collaboration Meeting 2025 (May 5 - May 6)   11
+       Yield Deﬁnitions
+Accepted Trigger:
+
+  ●    T_hms_hTRIG4_tdcTimeRaw[0] != 0
+
+Untracked Yield Criteria:
+
+  ●    TRIG4 fired
+
+  ●    H_cer_npeSum[0] > 2
+
+  ●    |H_cal_etotnorm[0] − 1| < 0.4
+       → Counted as untracked event
+
+Tracked Yield Criteria (All above + tracking cuts):
+
+  ●    |H_gtr_dp[0]| < 10                                 ●   Used to map scaler-based livetime (TSH tree) to event-level
+                                                              triggers (T tree), since there’s no direct one-to-one mapping.
+  ●    |H_gtr_th[0]| < 0.09, |H_gtr_ph[0]| < 0.055
+
+  ●    H_gtr_ok[0] == 1, H_react_ok[0] == 1
+       → Counted as tracked event
+
+                                       NPS Collaboration Meeting 2025 (May 5 - May 6)                                          12
+    Carbon Yields: Carbon 1
+
+
+
+
+●   Tracked and untracked yields, calculated using computer livetime (physics triggers only), match the
+    scaler-based yields trend. This consistency supports Yaopeng’s findings.
+
+●   However, when using computer livetime (all triggers = physics + EDTM),
+    the tracked and untracked yields show deviations up to ~20% from scaler-based yields.
+                                                                                                          13
+Carbon Yields: Carbon 2
+
+
+
+
+●   Need to decide on the more reliable between the two livetimes.
+
+
+                          NPS Collaboration Meeting 2025 (May 5 - May 6)   14
+Carbon Yields: Carbon 3
+
+
+
+
+   ●   Need to decide on the more reliable between the two livetimes.
+
+                      NPS Collaboration Meeting 2025 (May 5 - May 6)    15
+      Flattening the Carbon runs
+
+Observed an “anti-boiling” trend — an increase in Carbon’s charge-normalized
+yield with increasing beam current.
+
+Initialize: Load TSH tree to access scaler info from ROOT files.            Optimize Correction:
+
+Select Current Window: Filter events within peak ± 1.0 µA (adjustable).
+                                                                               ●   Tune correction to minimize deviation from
+Filter Events: Exclude events outside current window for all scaler sums.          unity in Carbon yields.
+
+Accumulate Scalers: Use 2 s intervals (via 1 MHz clock) to sum accepted
+                                                                               ●   Cost function:
+scalers.
+                                                                                   cost = ∑(normalized_yieldsi − 1)²
+Apply Correction:
+                                                                            Apply to LH2/LD2: Use optimal Carbon correction
+                                                                            for final yield normalization.
+  ●   Compute:
+      corrected_current = BCM4A_current + correction
+
+  ●   Use to calculate corrected total charge.
+                                                                                                                           16
+  Correction methods
+To correct this effect, I implemented two approaches:
+
+
+ 1.   Global Correction
+
+        ○   Based on the method used in the KaonLT experiment.
+
+        ○   Applies a fixed offset to the BCM4A current (in Amperes).
+
+        ○   KaonLT used a global shift of 33 nA.
+
+ 2.   Rate-Dependent Correction
+
+        ○   Accounts for Unser monitor noise, modeled as at least 2 µA /√Hz.
+
+        ○   Correction applied dynamically based on beam rate.
+
+        ○   Unit: A√Hz       NPS Collaboration Meeting 2025 (May 5 - May 6)    17
+      Global correction
+
+
+●   Applies a fixed offset (in Amperes) to BCM4A_current,
+    regardless of run conditions:
+     corrected_current = BCM4A_current +
+    correction
+
+●   Optimized corrections for Carbon run periods:
+
+●   Results align with Yaopeng’s estimate of ~200 nA.
+
+
+
+
+                                                               Table: Correction values based on the scaler yields.
+                                  NPS Collaboration Meeting 2025 (May 5 - May 6)                                      18
+    Rate dependent method
+
+
+●   Correction varies with BCM scaler rate,
+    computed every 2 s interval.
+
+●   Formula:
+    corrected_current = BCM4A_current +
+    correction × √(BCM_rate)
+
+●   Correction unit: A/√Hz
+
+
+
+
+                                              Table: Correction values based on the scaler yields.
+                                                                                                     19
+Summary
+
+●   Four deﬁnitions of livetimes were studied.
+●   Two deﬁnitions called “Computer livetime All (tdc)” and “Computer livetime Physics (tdc)” bear
+    conﬁdence. (refer slide 4 )
+●   Livetimes as calculated by Yaopeng are in disagreement for some runs which ask for further
+    investigation into the detailed implementation of livetimes as compared to this study.
+●   First luminosity scan might be bugged due to the crashed CODA.
+●   Scaler, untracked, and tracked normalised yields were calculated and compared using two different
+    livetime deﬁnitions as mentioned above.
+●   A difference in the two yields is shown by the two methods.
+●   Need to decide on which livetime to use for the analysis.
+●   Two correction methods for ﬂattening the Carbon runs are checked.
+
+                         NPS Collaboration Meeting 2025 (May 5 - May 6)                                 20
+Thank you for listening :D
+
+
+
+
+              NPS Collaboration Meeting 2025 (May 5 - May 6)   21
+Extras
+
+
+
+
+         22
+Livetime definitions
+
+Total EDTM livetime = (EDTM triggers accepted)/(Total EDTM scalers); EDTM triggers accepted: T_hms_hEDTM_tdcTimeRaw[0] !=
+0; Total EDTM scalers: Total edtm scalers accumulated in TSH tree; No current cut
+
+Computer Livetime All (TSH) = (accepted triggers accumulated in scalers)/(total hTRIG4 triggers accumulated in scalers ); Current
+Cut; accepted triggers: H.hL1ACCP.scaler
+
+Computer Livetime All (tdc) = ((accepted hTRIG4 triggers from tdcTimeRaw)/(total hTRIG4 triggers accumulated in
+scalers))*beam_on_percent; accepted hTRIG4: T_hms_hTRIG4_tdcTimeRaw[0] != 0; beam_on_percent =
+(trig_accp_total_current_cut/trig_accp_no_cut) from scaler
+
+Computer Livetime Physics (tdc) = (accepted physics triggers from tdcRawTime)/(scaler_hTRIG4_total -
+scaler_edtm_total)*beam_on_percent; accepted physics triggers: T_hms_hTRIG4_tdcTimeRaw[0] !=0 and
+T_hms_hEDTM_tdcTimeRaw[0] == 0:
+
+                                                                                                                                    23
+Correlations
+
+
+
+
+               No correlation found between
+               the variables.
+
+
+
+
+                                              24
+Comparison: LH2_1 livetimes
+
+
+
+
+                              25
+Comparison: LH2_2 livetimes
+
+
+
+
+                              26
+Comparison: LD2 livetimes
+
+
+
+
+                            27
+LH2 Yields
+
+
+
+
+             28
+LH2 Yields (2nd scan)
+
+
+
+
+                        29
+LD2 Yields
+
+
+
+
+             30
+E/P peaks against current (carbon runs)
+                              Reasoning:
+                              A positive shift could push more pions above the
+                              etotnorm > 0.7 cut, possibly inflating yields.
+
+                              Carbon runs show a ~0.11% shift in peak position.
+                              → Envelope estimates indicate negligible impact
+                              on yield.
+
+                              For LD2 and LH2, a more detailed study could help,
+                              but currently deemed non-critical after further
+                              discussion.
+
+
+
+
+                                                                                   31
+E/P peaks against current (LH2 and LD2 runs)
+
+
+
+
+                                               32
+

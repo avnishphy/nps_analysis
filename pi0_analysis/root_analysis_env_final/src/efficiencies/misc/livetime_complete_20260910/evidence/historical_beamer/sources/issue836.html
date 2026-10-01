@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<title>Task #836: Data with event blocking - NPS DAQ - Redmine</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Redmine" />
+<meta name="keywords" content="issue,bug,tracker" />
+<meta name="csrf-param" content="authenticity_token" />
+<meta name="csrf-token" content="AOA3qHvmK39u1SUi71LDdYmql1VjBjONJR1/rl+ugryTo66BMrWd3MEdINH6aoHKnXWmhYomp6Ltjyc7va34Wg==" />
+<link rel='shortcut icon' href='/favicon.ico?1633834840' />
+<link rel="stylesheet" media="all" href="/stylesheets/jquery/jquery-ui-1.12.1.css?1633834840" />
+<link rel="stylesheet" media="all" href="/stylesheets/tribute-5.1.3.css?1633834840" />
+<link rel="stylesheet" media="all" href="/stylesheets/application.css?1633834840" />
+<link rel="stylesheet" media="all" href="/stylesheets/responsive.css?1633834840" />
+
+<script src="/javascripts/jquery-3.5.1-ui-1.12.1-ujs-5.2.4.5.js?1633834840"></script>
+<script src="/javascripts/jquery-migrate-3.3.2.min.js?1633834840"></script>
+<script src="/javascripts/tribute-5.1.3.min.js?1633834840"></script>
+<script src="/javascripts/tablesort-5.2.1.min.js?1633834840"></script>
+<script src="/javascripts/tablesort-5.2.1.number.min.js?1633834840"></script>
+<script src="/javascripts/application.js?1633834840"></script>
+<script src="/javascripts/responsive.js?1633834840"></script>
+<script>
+//<![CDATA[
+$(window).on('load', function(){ warnLeavingUnsaved('The current page contains unsaved text that will be lost if you leave this page.'); });
+//]]>
+</script>
+
+<script>
+//<![CDATA[
+rm = window.rm || {};rm.AutoComplete = rm.AutoComplete || {};rm.AutoComplete.dataSources = '{"issues":"/issues/auto_complete?project_id=nps-daq\u0026q=","wiki_pages":"/wiki_pages/auto_complete?project_id=nps-daq\u0026q="}';
+//]]>
+</script>
+
+<!-- page specific tags -->
+    <link rel="alternate" type="application/atom+xml" title="NPS DAQ - Task #836: Data with event blocking" href="https://redmine.jlab.org/issues/836.atom" />
+<script src="/javascripts/context_menu.js?1633834840"></script><link rel="stylesheet" media="screen" href="/stylesheets/context_menu.css?1633834840" /></head>
+<body class="project-nps-daq has-main-menu controller-issues action-show avatars-off">
+
+<div id="wrapper">
+
+<div class="flyout-menu js-flyout-menu">
+
+        <div class="flyout-menu__search">
+            <form action="/projects/nps-daq/search" accept-charset="UTF-8" name="form-649497bc" method="get"><input name="utf8" type="hidden" value="&#x2713;" />
+            <input type="hidden" name="issues" value="1" />
+            <label class="search-magnifier search-magnifier--flyout" for="flyout-search">&#9906;</label>
+            <input type="text" name="q" id="flyout-search" class="small js-search-input" placeholder="Search" />
+</form>        </div>
+
+
+        <h3>Project</h3>
+        <span class="js-project-menu"></span>
+
+    <h3>General</h3>
+    <span class="js-general-menu"></span>
+
+    <span class="js-sidebar flyout-menu__sidebar"></span>
+
+    <h3>Profile</h3>
+    <span class="js-profile-menu"></span>
+
+</div>
+
+<div id="wrapper2">
+<div id="wrapper3">
+<div id="top-menu">
+    <div id="account">
+        <ul><li><a class="login" href="/login">Sign in</a></li></ul>    </div>
+    
+    <ul><li><a class="home" href="/">Home</a></li><li><a class="projects" href="/projects">Projects</a></li><li><a class="help" href="https://www.redmine.org/guide">Help</a></li></ul></div>
+
+<div id="header">
+
+    <a href="#" class="mobile-toggle-button js-flyout-menu-toggle-button"></a>
+
+    <div id="quick-search">
+        <form action="/projects/nps-daq/search" accept-charset="UTF-8" name="form-8543e3dc" method="get"><input name="utf8" type="hidden" value="&#x2713;" />
+        <input type="hidden" name="scope" value="subprojects" />
+        <input type="hidden" name="issues" value="1" />
+        <label for='q'>
+          <a accesskey="4" href="/projects/nps-daq/search?scope=subprojects">Search</a>:
+        </label>
+        <input type="text" name="q" id="q" size="20" class="small" accesskey="f" data-auto-complete="true" />
+</form>        <div id="project-jump" class="drdn"><span class="drdn-trigger">NPS DAQ</span><div class="drdn-content"><div class="quick-search"><input type="text" name="q" id="projects-quick-search" value="" class="autocomplete" data-automcomplete-url="/projects/autocomplete.js?jump=issues" autocomplete="off" /></div><div class="drdn-items projects selection"></div><div class="drdn-items all-projects selection"><a href="/projects?jump=issues">All Projects</a></div></div></div>
+    </div>
+
+    <h1><span class="breadcrumbs"><a class="root" href="/projects/nps?jump=issues">NPS</a><span class="separator"> &raquo; </span></span><span class="current-project">NPS DAQ</span></h1>
+
+    <div id="main-menu" class="tabs">
+        <ul><li><a class="overview" href="/projects/nps-daq">Overview</a></li><li><a class="activity" href="/projects/nps-daq/activity">Activity</a></li><li><a class="issues selected" href="/projects/nps-daq/issues">Issues</a></li><li><a class="time-entries" href="/projects/nps-daq/time_entries">Spent time</a></li><li><a class="gantt" href="/projects/nps-daq/issues/gantt">Gantt</a></li><li><a class="calendar" href="/projects/nps-daq/issues/calendar">Calendar</a></li><li><a class="news" href="/projects/nps-daq/news">News</a></li><li><a class="documents" href="/projects/nps-daq/documents">Documents</a></li><li><a class="wiki" href="/projects/nps-daq/wiki">Wiki</a></li><li><a class="files" href="/projects/nps-daq/files">Files</a></li></ul>
+        <div class="tabs-buttons" style="display:none;">
+            <button class="tab-left" onclick="moveTabLeft(this); return false;"></button>
+            <button class="tab-right" onclick="moveTabRight(this); return false;"></button>
+        </div>
+    </div>
+</div>
+
+<div id="main" class="nosidebar">
+    <div id="sidebar">
+        
+        
+    </div>
+
+    <div id="content">
+        
+        <div class="contextual">
+
+
+
+
+<span class="drdn"><span class="drdn-trigger"><span class="icon-only icon-actions" title="Actions">Actions</span></span><div class="drdn-content"><div class="drdn-items">
+  <a href="#" onclick="copyTextToClipboard(this);; return false;" class="icon icon-copy-link" data-clipboard-text="https://redmine.jlab.org/issues/836">Copy link</a>
+  
+</div></div></span></div>
+
+
+<h2 class="inline-flex">Task #836</h2>
+<span class="badge badge-status-open">open</span>
+
+<div class="issue tracker-5 status-2 priority-2 priority-default details">
+
+  <div class="gravatar-with-child">
+    
+    
+  </div>
+
+<div class="subject">
+<div><h3>Data with event blocking</h3></div>
+</div>
+        <p class="author">
+        Added by <a class="user active" href="/users/25">Alexandre Camsonne</a> <a title="09/25/2023 05:41 AM" href="/projects/nps-daq/activity?from=2023-09-25">almost 3 years</a> ago.
+        Updated <a title="02/05/2024 09:50 AM" href="/projects/nps-daq/activity?from=2024-02-05">over 2 years</a> ago.
+        </p>
+
+<div class="attributes">
+<div class="splitcontent"><div class="splitcontentleft"><div class="status attribute"><div class="label">Status:</div><div class="value">In Progress</div></div><div class="priority attribute"><div class="label">Priority:</div><div class="value">Normal</div></div><div class="assigned-to attribute"><div class="label">Assignee:</div><div class="value"><a class="user active" href="/users/25">Alexandre Camsonne</a></div></div></div><div class="splitcontentleft"><div class="start-date attribute"><div class="label">Start date:</div><div class="value">09/25/2023</div></div><div class="due-date attribute"><div class="label">Due date:</div><div class="value"></div></div><div class="progress attribute"><div class="label">% Done:</div><div class="value"><table class="progress progress-0"><tr><td style="width: 100%;" class="todo"></td></tr></table><p class="percent">0%</p></div></div><div class="estimated-hours attribute"><div class="label">Estimated time:</div><div class="value"></div></div></div></div>
+
+
+</div>
+
+
+
+
+
+
+
+
+</div>
+
+
+
+<div id="history">
+
+<div class="tabs">
+  <ul>
+    <li><a id="tab-history" class="selected" onclick="showIssueHistory(&quot;history&quot;, this.href); return false;" href="/issues/836?tab=history">History</a></li>
+    <li><a id="tab-properties" onclick="showIssueHistory(&quot;properties&quot;, this.href); return false;" href="/issues/836?tab=properties">Property changes</a></li>
+  </ul>
+  <div class="tabs-buttons" style="display:none;">
+    <button class="tab-left" type="button" onclick="moveTabLeft(this);"></button>
+    <button class="tab-right" type="button" onclick="moveTabRight(this);"></button>
+  </div>
+</div>
+
+  <div id="tab-content-history" class="tab-content">
+  <div id="change-1559" class="journal has-details">
+    <div id="note-1">
+    <div class="contextual">
+      <span class="journal-actions"><span class="drdn"><span class="drdn-trigger"><span class="icon-only icon-actions" title="Actions">Actions</span></span><div class="drdn-content"><div class="drdn-items"><a href="#" onclick="copyTextToClipboard(this);; return false;" class="icon icon-copy-link" data-clipboard-text="https://redmine.jlab.org/issues/836#note-1">Copy link</a></div></div></span></span>
+      <a href="#note-1" class="journal-link">#1</a>
+    </div>
+    <h4 class='note-header'>
+      
+      Updated by <a class="user active" href="/users/25">Alexandre Camsonne</a> <a title="09/28/2023 09:52 AM" href="/projects/nps-daq/activity?from=2023-09-28">almost 3 years</a> ago
+      <span id="journal-1559-private_notes" class=""></span>
+    </h4>
+
+    <ul class="details">
+       <li><strong>Assignee</strong> set to <i>Alexandre Camsonne</i></li>
+    </ul>
+    
+    </div>
+  </div>
+  
+  <div id="change-1575" class="journal has-details">
+    <div id="note-2">
+    <div class="contextual">
+      <span class="journal-actions"><span class="drdn"><span class="drdn-trigger"><span class="icon-only icon-actions" title="Actions">Actions</span></span><div class="drdn-content"><div class="drdn-items"><a href="#" onclick="copyTextToClipboard(this);; return false;" class="icon icon-copy-link" data-clipboard-text="https://redmine.jlab.org/issues/836#note-2">Copy link</a></div></div></span></span>
+      <a href="#note-2" class="journal-link">#2</a>
+    </div>
+    <h4 class='note-header'>
+      
+      Updated by <a class="user active" href="/users/25">Alexandre Camsonne</a> <a title="10/05/2023 09:12 AM" href="/projects/nps-daq/activity?from=2023-10-05">almost 3 years</a> ago
+      <span id="journal-1575-private_notes" class=""></span>
+    </h4>
+
+    <ul class="details">
+       <li><strong>Status</strong> changed from <i>New</i> to <i>In Progress</i></li>
+    </ul>
+    
+    </div>
+  </div>
+  
+  <div id="change-1726" class="journal has-details">
+    <div id="note-3">
+    <div class="contextual">
+      <span class="journal-actions"><span class="drdn"><span class="drdn-trigger"><span class="icon-only icon-actions" title="Actions">Actions</span></span><div class="drdn-content"><div class="drdn-items"><a href="#" onclick="copyTextToClipboard(this);; return false;" class="icon icon-copy-link" data-clipboard-text="https://redmine.jlab.org/issues/836#note-3">Copy link</a></div></div></span></span>
+      <a href="#note-3" class="journal-link">#3</a>
+    </div>
+    <h4 class='note-header'>
+      
+      Updated by <a class="user active" href="/users/25">Alexandre Camsonne</a> <a title="11/16/2023 09:23 AM" href="/projects/nps-daq/activity?from=2023-11-16">almost 3 years</a> ago
+      <span id="journal-1726-private_notes" class=""></span>
+    </h4>
+
+    <ul class="details">
+       <li><strong>Priority</strong> changed from <i>Normal</i> to <i>High</i></li>
+    </ul>
+    
+    </div>
+  </div>
+  
+  <div id="change-1836" class="journal has-details">
+    <div id="note-4">
+    <div class="contextual">
+      <span class="journal-actions"><span class="drdn"><span class="drdn-trigger"><span class="icon-only icon-actions" title="Actions">Actions</span></span><div class="drdn-content"><div class="drdn-items"><a href="#" onclick="copyTextToClipboard(this);; return false;" class="icon icon-copy-link" data-clipboard-text="https://redmine.jlab.org/issues/836#note-4">Copy link</a></div></div></span></span>
+      <a href="#note-4" class="journal-link">#4</a>
+    </div>
+    <h4 class='note-header'>
+      
+      Updated by <a class="user active" href="/users/25">Alexandre Camsonne</a> <a title="01/29/2024 09:57 AM" href="/projects/nps-daq/activity?from=2024-01-29">over 2 years</a> ago
+      <span id="journal-1836-private_notes" class=""></span>
+    </h4>
+
+    <ul class="details">
+       <li><strong>Priority</strong> changed from <i>High</i> to <i>Urgent</i></li>
+    </ul>
+    
+    </div>
+  </div>
+  
+  <div id="change-1886" class="journal has-details">
+    <div id="note-5">
+    <div class="contextual">
+      <span class="journal-actions"><span class="drdn"><span class="drdn-trigger"><span class="icon-only icon-actions" title="Actions">Actions</span></span><div class="drdn-content"><div class="drdn-items"><a href="#" onclick="copyTextToClipboard(this);; return false;" class="icon icon-copy-link" data-clipboard-text="https://redmine.jlab.org/issues/836#note-5">Copy link</a></div></div></span></span>
+      <a href="#note-5" class="journal-link">#5</a>
+    </div>
+    <h4 class='note-header'>
+      
+      Updated by <a class="user active" href="/users/25">Alexandre Camsonne</a> <a title="02/05/2024 09:50 AM" href="/projects/nps-daq/activity?from=2024-02-05">over 2 years</a> ago
+      <span id="journal-1886-private_notes" class=""></span>
+    </h4>
+
+    <ul class="details">
+       <li><strong>Priority</strong> changed from <i>Urgent</i> to <i>Normal</i></li>
+    </ul>
+    
+    </div>
+  </div>
+  
+
+</div>
+  
+
+<script>
+//<![CDATA[
+showIssueHistory("history", this.href)
+//]]>
+</script>
+
+</div>
+
+<div style="clear: both;"></div>
+<div class="contextual">
+
+
+
+
+<span class="drdn"><span class="drdn-trigger"><span class="icon-only icon-actions" title="Actions">Actions</span></span><div class="drdn-content"><div class="drdn-items">
+  <a href="#" onclick="copyTextToClipboard(this);; return false;" class="icon icon-copy-link" data-clipboard-text="https://redmine.jlab.org/issues/836">Copy link</a>
+  
+</div></div></span></div>
+
+
+<div style="clear: both;"></div>
+
+
+<p class="other-formats">Also available in:  <span><a class="atom" rel="nofollow" href="/issues/836.atom">Atom</a></span>
+  <span><a class="pdf" rel="nofollow" href="/issues/836.pdf">PDF</a></span>
+</p>
+
+
+
+
+
+        
+        <div style="clear:both;"></div>
+    </div>
+</div>
+<div id="footer">
+    Powered by <a href="https://www.redmine.org/">Redmine</a> &copy; 2006-2021 Jean-Philippe Lang
+</div>
+</div>
+
+<div id="ajax-indicator" style="display:none;"><span>Loading...</span></div>
+<div id="ajax-modal" style="display:none;"></div>
+
+</div>
+</div>
+
+</body>
+</html>

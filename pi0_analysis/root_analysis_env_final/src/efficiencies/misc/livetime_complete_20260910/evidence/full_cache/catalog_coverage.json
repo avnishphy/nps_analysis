@@ -1,0 +1,835 @@
+{
+  "method": "Read-only directory listing of /mss catalog; no file payload reads and no staging commands",
+  "runs": [
+    {
+      "run": 4253,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4254,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4255,
+      "source": "updated",
+      "catalog_segments": [
+        0
+      ],
+      "cached_segments": [
+        0
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4256,
+      "source": "updated",
+      "catalog_segments": [
+        0
+      ],
+      "cached_segments": [
+        0
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4257,
+      "source": "updated",
+      "catalog_segments": [
+        0
+      ],
+      "cached_segments": [
+        0
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4258,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1
+      ],
+      "cached_segments": [
+        0,
+        1
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4259,
+      "source": "updated",
+      "catalog_segments": [
+        0
+      ],
+      "cached_segments": [
+        0
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4300,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4301,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4302,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4303,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4304,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1
+      ],
+      "cached_segments": [
+        0,
+        1
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4305,
+      "source": "updated",
+      "catalog_segments": [
+        0
+      ],
+      "cached_segments": [
+        0
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4306,
+      "source": "updated",
+      "catalog_segments": [
+        0
+      ],
+      "cached_segments": [
+        0
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4307,
+      "source": "updated",
+      "catalog_segments": [],
+      "cached_segments": [],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4308,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4349,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4350,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4351,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4352,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4353,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1
+      ],
+      "cached_segments": [
+        0,
+        1
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4354,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1
+      ],
+      "cached_segments": [
+        0,
+        1
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4355,
+      "source": "updated",
+      "catalog_segments": [
+        0
+      ],
+      "cached_segments": [
+        0
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4356,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4397,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4398,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4399,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4400,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4401,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1
+      ],
+      "cached_segments": [
+        0,
+        1
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4402,
+      "source": "updated",
+      "catalog_segments": [
+        0
+      ],
+      "cached_segments": [
+        0
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4403,
+      "source": "updated",
+      "catalog_segments": [
+        0
+      ],
+      "cached_segments": [
+        0
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4404,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4483,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1
+      ],
+      "cached_segments": [
+        1
+      ],
+      "missing_catalog_segments": [
+        0
+      ]
+    },
+    {
+      "run": 4484,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4485,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4486,
+      "source": "updated",
+      "catalog_segments": [],
+      "cached_segments": [],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4487,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4488,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4489,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4490,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1
+      ],
+      "cached_segments": [
+        0,
+        1
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4491,
+      "source": "updated",
+      "catalog_segments": [
+        0
+      ],
+      "cached_segments": [
+        0
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4492,
+      "source": "updated",
+      "catalog_segments": [
+        0
+      ],
+      "cached_segments": [
+        0
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4493,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4551,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4552,
+      "source": "updated",
+      "catalog_segments": [
+        0
+      ],
+      "cached_segments": [],
+      "missing_catalog_segments": [
+        0
+      ]
+    },
+    {
+      "run": 4553,
+      "source": "updated",
+      "catalog_segments": [],
+      "cached_segments": [],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4554,
+      "source": "updated",
+      "catalog_segments": [],
+      "cached_segments": [],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4555,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4556,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1
+      ],
+      "cached_segments": [
+        0,
+        1
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4557,
+      "source": "updated",
+      "catalog_segments": [
+        0
+      ],
+      "cached_segments": [
+        0
+      ],
+      "missing_catalog_segments": []
+    },
+    {
+      "run": 4558,
+      "source": "updated",
+      "catalog_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "cached_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "missing_catalog_segments": []
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+Dead-Time Studies
+       Carlos Yero
+       Eric Pooser
+       11/21/2017
+                     Basic Concepts
+                 T = 1/f
+
+                            PULSE     Case 1: T > w (or f < 1/w):
+Case 1: T > w      W
+                                    Live Time = 100% (only EDTM)
+(or f < 1/w)
+
+                T.I. BUSY
+
+
+                                    Case 2: T = w (or f = 1/w):
+Case 2: T = w
+                                          Live Time ~ 50%
+(or f = 1/w)
+
+
+
+
+Case 3: T < w                        Case 3: T < w (or f > 1/w):
+
+(or f > 1/w)                              Live Time < 50%
+             HMS Trigger Interface Busy
+
+                                      TI BUSY with NO scaler reads
+                                         W = 270 us (3.703 kHz)
+       W
+                                       TI BUSY with scaler reads
+                                         W = 816 us (1.225 kHz)
+              W
+                    What are scaler reads?
+
+
+         The DAQ can be configured for scalers to be
+  read out at intervals of time/event counts during a run
+
+
+   Example: scaler counts = 1000 events, t-scaler = 2 sec. ,
+every 1000 events or a 2-sec period, the SCALERS will produce
+                   an inhibit signal (RED)
+                 Total Live Time Using ONLY EDTM Pulse
+                                     HMS Live Time Measurements
+               100            100%                         Expected HMS LiveTime
+
+
+                                                           Measured HMS LiveTime: No Scaler Reads
+
+
+                                                           Measured HMS LiveTime: With Scaler Reads
+                80
+
+                                                Expected L.T. = 1 / n, n=1, 2, 3, …
+                                                       EDTM Rate = n * BUSY
+LiveTime (%)
+
+
+
+
+                60
+                                        50%
+
+                40
+                                                    33.3%
+                                                                   25%
+                                                                                    20%
+                20
+                                                                                                16.6%
+
+                 0
+                  0   2   4     6      8   10      12      14       16         18         20          22   24
+                                                Rate (kHz)
+                      HMS Live Time Measurements (NO Scaler Reads)
+        100
+                                                                             HMS Measured Computer Live Time
+                90
+                                                                             HMS Measured Total Live Time
+
+                80                                                           BUSY MIN = 200 µs
+
+                                                                             BUSY MAX = 270 µs
+                70
+
+                                                     EDMT = 100 Hz
+Live Time (%)
+
+
+
+
+                60
+
+                50
+
+                40
+
+                30
+
+                20
+
+                10
+
+                 0
+                  0     20         40               60                             80                 100
+                                        Poisson Rate (kHz)
+
+                                                                                                 HMS Live Time Measurements (with Scaler Reads)
+                                                                100
+                                                                                                                                    HMS Measured Computer Live Time
+                                                                        90                                                          HMS Measured Total Live Time
+                                                                                                                                    BUSY MIN = 200 µs
+                                                                        80
+                                                                                                                                    BUSY MAX = 270 µs
+                                                                        70
+                                                                                                                             EDTM = 100 Hz
+                                                        Live Time (%)
+
+
+
+
+                                                                        60
+
+                                                                        50
+
+                                                                        40                                                  Scaler Read Configuration
+                                                                        30
+                                                                                                                                  event count = 1000
+                                                                                                                                   T-scaler = 2 sec.
+                                                                        20
+
+                                                                        10
+
+                                                                        0
+                                                                         0                       20            40           60           80                 100
+                                                                                                                    Rate (kHz)
+

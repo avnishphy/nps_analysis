@@ -1,0 +1,222 @@
+[
+  {
+    "page": 1,
+    "title": "Livetime can create artificial physics structure",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 2,
+    "title": "Scope: all LH2 entries, with their run types visible",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 3,
+    "title": "Partial cache coverage is explicit",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 4,
+    "title": "The original study tested four definitions",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 5,
+    "title": "Previous estimators: the population matters",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 6,
+    "title": "The older database CLT is a component comparison",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 7,
+    "title": "Current NewGen: reproduced before changing it",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 8,
+    "title": "Saved versus new: the full production comparison",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 9,
+    "title": "Factor-one runs reveal the smaller structures",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 10,
+    "title": "A common interval is the unit of calculation",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 11,
+    "title": "Initial counts and final tails are different problems",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 12,
+    "title": "What fixed the original run-4398 segment-0 excess",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 13,
+    "title": "Run 4398: separate a coverage change from a method change",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 14,
+    "title": "Current alignment and helicity are separate issues",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 15,
+    "title": "Raw channels are not corrected nanoseconds",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 16,
+    "title": "State the prescale and the counted population",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 17,
+    "title": "Prescaled runs require their own interpretation",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 18,
+    "title": "Stored prescales are useful evidence, with a clear limit",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 19,
+    "title": "Run 4259: endpoint matching is not the whole explanation",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 20,
+    "title": "These are correlated ratios, not three independent tests",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 21,
+    "title": "Counter defects: a plausible run average can hide them",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 22,
+    "title": "Run 4305: this is a counter mismatch, not ordinary busy",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 23,
+    "title": "A diagnostic exclusion is not an authorized physics repair",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 24,
+    "title": "Run 4350: monotonicity alone is insufficient",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 25,
+    "title": "Real loss bursts must remain in the average",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 26,
+    "title": "Early production runs: inspect the run dependence",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 27,
+    "title": "Later production runs: inspect the run dependence",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 28,
+    "title": "Separate the contributions to the method change",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 29,
+    "title": "A livetime error becomes a normalization error",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 30,
+    "title": "How artificial structures enter physics results",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 31,
+    "title": "Timing selection must survive a sensitivity check",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 32,
+    "title": "Boundary, timing and current changes are distinct",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 33,
+    "title": "Do not mistake a convenient error bar for an uncertainty",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 34,
+    "title": "PRE attribution remains unresolved",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 35,
+    "title": "What is needed before adopting total livetime",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 36,
+    "title": "What this calculation delivers",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 37,
+    "title": "Reproduce without staging",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 38,
+    "title": "Appendix: supplied applied-efficiency reference",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 39,
+    "title": "Appendix: all LH2 entries (1--9)",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 40,
+    "title": "Appendix: all LH2 entries (10--18)",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 41,
+    "title": "Appendix: all LH2 entries (19--27)",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 42,
+    "title": "Appendix: all LH2 entries (28--36)",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 43,
+    "title": "Appendix: all LH2 entries (37--45)",
+    "text_bounds_pass": true
+  },
+  {
+    "page": 44,
+    "title": "Appendix: all LH2 entries (46--51)",
+    "text_bounds_pass": true
+  }
+]

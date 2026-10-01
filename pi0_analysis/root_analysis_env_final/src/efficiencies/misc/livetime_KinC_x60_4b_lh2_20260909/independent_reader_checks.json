@@ -1,0 +1,45 @@
+[
+  {
+    "run": 4259,
+    "segment": 0,
+    "tree": "T",
+    "rows": 58600,
+    "columns": 5,
+    "all_values_identical": true
+  },
+  {
+    "run": 4305,
+    "segment": 0,
+    "tree": "T",
+    "rows": 560647,
+    "columns": 5,
+    "all_values_identical": true,
+    "suspect_interval_N": 1047,
+    "suspect_interval_E": 80,
+    "event_timestamps_strictly_increasing": true
+  },
+  {
+    "run": 4350,
+    "segment": 3,
+    "tree": "TSH",
+    "rows": 794,
+    "columns": 28,
+    "all_values_identical": true
+  },
+  {
+    "run": 4350,
+    "segment": 4,
+    "tree": "TSH",
+    "rows": 523,
+    "columns": 28,
+    "all_values_identical": true
+  },
+  {
+    "run": 4350,
+    "segment": 5,
+    "tree": "TSH",
+    "rows": 170,
+    "columns": 28,
+    "all_values_identical": true
+  }
+]

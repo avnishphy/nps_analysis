@@ -1,0 +1,246 @@
+% Livetime comparison presentation.
+%
+% Compile after making edits (run these commands from the repository root):
+%   mkdir -p /tmp/livetime_slides_build
+%   cd docs
+%   pdflatex -interaction=nonstopmode -halt-on-error \
+%     -output-directory=/tmp/livetime_slides_build livetime_analysis_update.tex
+%   pdflatex -interaction=nonstopmode -halt-on-error \
+%     -output-directory=/tmp/livetime_slides_build livetime_analysis_update.tex
+%   cp /tmp/livetime_slides_build/livetime_analysis_update.pdf .
+
+\documentclass[aspectratio=169,11pt]{beamer}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{booktabs}
+
+\definecolor{NPSBlue}{RGB}{18,62,98}
+\definecolor{NPSTeal}{RGB}{0,139,139}
+\definecolor{LightBlue}{RGB}{234,242,247}
+\definecolor{DarkGray}{RGB}{50,55,60}
+
+\setbeamercolor{normal text}{fg=DarkGray,bg=white}
+\setbeamercolor{structure}{fg=NPSBlue}
+\setbeamercolor{frametitle}{fg=white,bg=NPSBlue}
+\setbeamercolor{block title}{fg=white,bg=NPSBlue}
+\setbeamercolor{block body}{fg=DarkGray,bg=LightBlue}
+\setbeamercolor{alerted text}{fg=NPSTeal}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{blocks}[rounded][shadow=false]
+\setbeamertemplate{itemize item}{\color{NPSTeal}$\blacktriangleright$}
+\setbeamertemplate{itemize subitem}{\color{NPSTeal}$\bullet$}
+\setbeamertemplate{footline}{%
+  \hfill\raisebox{2mm}{\color{NPSBlue}\insertframenumber\hspace{3mm}}}
+\setbeamersize{text margin left=7mm,text margin right=7mm}
+
+\newcommand{\NEDTM}{N_{\mathrm{EDTM}}}
+\newcommand{\Nhtrig}{N_{\mathrm{hTRIG4}}}
+\newcommand{\beamOn}{f_{\mathrm{beam\ on}}}
+\newcommand{\PlotPDF}{../output/efficiency_stuff/plots/compare_livetimes_multipanel_KinC_x60_4b_lh2.pdf}
+
+\title{Livetime Definitions and EDTM Matching}
+\subtitle{NPS livetime comparison}
+\date{}
+
+\begin{document}
+
+% Slide 1
+\begin{frame}[plain]
+  \centering
+  \vspace{1.5cm}
+  {\color{NPSBlue}\LARGE\bfseries Livetime Definitions and EDTM Matching\par}
+  \vspace{0.45cm}
+  {\large NPS livetime comparison\par}
+  \vspace{0.7cm}
+  {\color{NPSTeal}\rule{0.45\textwidth}{1.5pt}}
+\end{frame}
+
+% Slide 2
+\begin{frame}{Four definitions used in the NPS presentation}
+\small
+\begin{columns}[T,onlytextwidth]
+  \begin{column}{0.49\textwidth}
+    \begin{block}{1. Total EDTM livetime}
+      \[
+      LT_{\mathrm{EDTM}}=
+      \frac{N_{\mathrm{EDTM}}^{\mathrm{TDC}}}
+           {N_{\mathrm{EDTM}}^{\mathrm{scaler}}}
+      \]
+      \scriptsize Accepted: \(T.\mathrm{hEDTM}_{\rm raw}\neq0\). No current cut.
+    \end{block}
+    \begin{block}{3. Computer livetime all (TDC)}
+      \[
+      LT_{\mathrm{all,TDC}}=
+      \frac{N_{\mathrm{hTRIG4}}^{\mathrm{TDC}}}
+           {N_{\mathrm{hTRIG4}}^{\mathrm{scaler}}}\,\beamOn
+      \]
+      \scriptsize Accepted: \(T.\mathrm{hTRIG4}_{\rm raw}\neq0\).
+    \end{block}
+  \end{column}
+  \begin{column}{0.49\textwidth}
+    \begin{block}{2. Computer livetime all (TSH)}
+      \[
+      LT_{\mathrm{all,TSH}}=
+      \frac{N_{\mathrm{hL1ACCP}}^{\mathrm{scaler}}}
+           {N_{\mathrm{hTRIG4}}^{\mathrm{scaler}}}
+      \]
+      \scriptsize Accepted-trigger scaler: \(H.\mathrm{hL1ACCP}\). Current cut applied.
+    \end{block}
+    \begin{block}{4. Computer livetime physics (TDC)}
+      \[
+      LT_{\mathrm{phys,TDC}}=
+      \frac{N_{\mathrm{physics}}^{\mathrm{TDC}}}
+           {N_{\mathrm{hTRIG4}}^{\mathrm{scaler}}-N_{\mathrm{EDTM}}^{\mathrm{scaler}}}\,\beamOn
+      \]
+      \scriptsize Physics: hTRIG4 \(\neq0\) and EDTM \(=0\).
+    \end{block}
+  \end{column}
+\end{columns}
+\vspace{-1mm}
+\centering\scriptsize
+\(\displaystyle \beamOn=
+N_{\mathrm{L1ACCP}}(\text{current cut})/N_{\mathrm{L1ACCP}}(\text{no cut})\).
+\end{frame}
+
+% Slide 3
+\begin{frame}{Why preTRIG and hTRIG are different}
+\centering
+\vspace{2mm}
+\begin{beamercolorbox}[rounded=true,sep=3mm,wd=0.94\textwidth]{block body}
+  \centering\large
+  Detector trigger hit
+  \(\longrightarrow\)
+  \alert{preTRIG\(_n\)}
+  \(\longrightarrow\)
+  Trigger Supervisor
+  \(\longrightarrow\)
+  \alert{hTRIG\(_n\)}
+\end{beamercolorbox}
+
+\vspace{5mm}
+\begin{itemize}\setlength\itemsep{3mm}
+  \item \textbf{preTRIG\(_n\)} fires for every hit delivered by trigger path \(n\).
+  \item \textbf{hTRIG\(_n\)} is accumulated after further processing by the Trigger Supervisor.
+  \item Trigger-Supervisor busy/acceptance therefore places an \textbf{implicit deadtime} in hTRIG\(_n\).
+  \item hTRIG\(_n\) is consequently not the correct incident-trigger denominator. Use the matching pretrigger channel: \(\mathrm{PS}n\rightarrow\mathrm{preTRIG}n\), for \(n=1,\ldots,6\).
+\end{itemize}
+\end{frame}
+
+% Slide 4
+\begin{frame}{NewGen EDTM livetime}
+\begin{columns}[T,onlytextwidth]
+  \begin{column}{0.57\textwidth}
+    \begin{block}{Exact common event selection}
+    \small
+    \begin{itemize}\setlength\itemsep{1.2mm}
+      \item Run mean current, evaluated above \(2.5~\mu\mathrm{A}\), must be at least \(2.75~\mu\mathrm{A}\).
+      \item Define \(I_0\) as the peak of the helicity-scaler current above \(2.5~\mu\mathrm{A}\); require \(0.85I_0\le I\le1.15I_0\).
+      \item Require \(\texttt{actualHelicity}\neq0\) and retain complete helicity quartets.
+      \item Over 30 scaler reads, require
+      \(\left(Q_{\max}-Q_{\min}\right)/\overline Q\le0.08\).
+      \item Require \(\texttt{fEvtHdr.fEvtType}=1\), \(g.\mathrm{evnum}\) inside the resulting accepted range, and event current inside the same current window.
+    \end{itemize}
+    \end{block}
+  \end{column}
+  \begin{column}{0.41\textwidth}
+    \begin{block}{EDTM numerator}
+    \small
+    Require a finite raw EDTM value \(>1\), then count
+    \[
+      |t_{\rm raw}-t_{\rm raw}^{\rm peak}|\le500
+      \quad\text{raw channels}. 
+    \]
+    The raw peak is the maximum of a 10-channel-binned histogram.
+    \end{block}
+    \begin{block}{Definition}
+    \small
+    \[
+      LT_{\rm NewGen}=
+      \mathrm{PS}\,
+      \frac{N_{\rm raw\ peak}}
+           {\Delta N_{\rm EDTM}^{\rm good\ current}}.
+    \]
+    \scriptsize The denominator includes every TSH interval whose current is inside the current window.
+    \end{block}
+  \end{column}
+\end{columns}
+\end{frame}
+
+% Slide 5
+\begin{frame}{Matched EDTM livetime}
+\begin{columns}[T,onlytextwidth]
+  \begin{column}{0.49\textwidth}
+    \begin{block}{Event and interval selection}
+    \footnotesize
+    Start with the exact common selection from slide 4 and a finite raw EDTM value \(>1\).
+    
+    \vspace{2mm}
+    Match the event by \(g.\mathrm{evnum}\) to a TSH interval
+    \[
+       [\,\mathrm{evNumber}_{i-1},\mathrm{evNumber}_{i}\,).
+    \]
+    Retain the interval only when it:
+    \begin{itemize}\setlength\itemsep{1mm}
+      \item lies wholly inside one accepted event-number range;
+      \item has current in \([0.85I_0,1.15I_0]\);
+      \item is fully covered by recorded events.
+    \end{itemize}
+    \end{block}
+  \end{column}
+  \begin{column}{0.49\textwidth}
+    \begin{block}{Corrected-time match}
+    \footnotesize
+    \begin{enumerate}\setlength\itemsep{1mm}
+      \item Use raw pulses within \(\pm500\) channels to form a corrected-time histogram with 0.1-ns bins.
+      \item Find its rough maximum.
+      \item Define the final peak as the median within \(\pm1\) ns of that maximum.
+      \item Count an interval-matched pulse when
+      \[
+        |t_{\rm corr}-t_{\rm corr}^{\rm peak}|\le2~\mathrm{ns}.
+      \]
+    \end{enumerate}
+    \end{block}
+    \begin{block}{Definition}
+    \small
+    \[
+      LT_{\rm matched}=
+      \mathrm{PS}\,
+      \frac{N_{\rm interval+time\ matched}}
+           {\Delta N_{\rm EDTM}^{\rm selected\ intervals}}.
+    \]
+    \end{block}
+  \end{column}
+\end{columns}
+\end{frame}
+
+% Slide 6
+\begin{frame}{Livetime comparison: KinC\_x60\_4b, LH2}
+\vspace{-2mm}
+\begin{columns}[c,onlytextwidth]
+  \begin{column}{0.58\textwidth}
+    \centering
+    \includegraphics[page=1,width=\linewidth,height=0.62\textheight,keepaspectratio]{\PlotPDF}
+  \end{column}
+  \begin{column}{0.40\textwidth}
+    \centering
+    \includegraphics[page=2,width=\linewidth,height=0.28\textheight,keepaspectratio]{\PlotPDF}\\[1.5mm]
+    \includegraphics[page=3,width=\linewidth,height=0.28\textheight,keepaspectratio]{\PlotPDF}
+  \end{column}
+\end{columns}
+\end{frame}
+
+% Slide 7
+\begin{frame}{Summary}
+\begin{itemize}\setlength\itemsep{4mm}
+  \item The four original definitions have been implemented with the common good-event selection and the trigger channel selected from \(\mathrm{PS}1\)--\(\mathrm{PS}6\).
+  \item hTRIG\(_n\) contains Trigger-Supervisor deadtime; trigger-based scaler denominators should use the corresponding preTRIG\(_n\).
+  \item NewGen EDTM uses a broad raw-TDC peak and a good-current scaler denominator.
+  \item Matched EDTM pairs events and scaler exposure in the same fully selected TSH intervals, then applies a \(\pm2\)-ns corrected-time window.
+  \item The comparison output records every scaler quantity and plots all six definitions versus run number, beam current, and HMS S1X rate.
+\end{itemize}
+\end{frame}
+
+\end{document}

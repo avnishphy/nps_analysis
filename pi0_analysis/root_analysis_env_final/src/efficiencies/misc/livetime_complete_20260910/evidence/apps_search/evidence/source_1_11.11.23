@@ -1,0 +1,55 @@
+#%Module 1.0
+#
+# Modulefile for NPS experiment analysis environment
+#
+
+proc ModulesHelp { } {
+  puts stderr "Setting up NPS offline replay environment"
+  puts stderr ""
+  puts stderr "****************************************************"
+  puts stderr ">>>>  IMPORTANT: After loading this module, do  <<<<"
+  puts stderr ">>>>    cd \$REPLAYDIR                           <<<<"
+  puts stderr "****************************************************"
+}
+
+module-whatis   "Sets up environment for NPS analysis (ROOT, hcana)"
+conflict        nps_analysis
+
+# For development. Not needed for replay. Perhaps load separately?
+# NB: We need /apps/modulefiles for root/6.22.06 at the moment
+if { [module-info mode load] } {
+  module use /apps/modulefiles
+  module use /group/halla/modulefiles
+  module use /group/nps/modulefiles
+}
+module load cmake git
+
+# For the time being, do not use hcana from /cdaqfs1/apps. People want control
+module load hcana/1.0.1 NPSlib/bf8ec57
+
+set user [module-info username]
+set topdir /group/nps/$user
+#set prefix $topdir/hcana-install
+#prepend-path    PATH                    $prefix/bin
+#prepend-path    LD_LIBRARY_PATH         $prefix/lib64
+#prepend-path    CMAKE_PREFIX_PATH       $prefix
+#prepend-path    ROOT_INCLUDE_PATH       $prefix/include
+
+# Work directory
+setenv          REPLAYDIR               $topdir/nps_replay
+setenv blob [getenv REPLAYDIR]
+if { ![info exists ::env(DB_DIR)] || [module-info mode remove] } {
+  setenv        DB_DIR                  $topdir/nps_replay/DBASE
+}
+
+# What users want
+setenv          EDITOR                  emacs
+
+if { [module-info mode load] && ![info exists ::env(MODULES_QUIET)] } {
+  ModulesHelp
+}
+
+# Local Variables:
+# mode: Tcl
+# comment-column: 0
+# End:

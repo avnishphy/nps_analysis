@@ -1,0 +1,46 @@
+Input file: /lustre24/expphy/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_3728_1_1_-1.root
+Selection summary
+-----------------
+Helicity mode: QuartetPM
+Quartet snap applied: yes
+Current window enabled: yes
+I0 used [uA]: 30.25
+Imin used [uA]: 25.7125
+Imax used [uA]: 34.7875
+Mean current [uA]: 30.1426
+Rolling stability window N: 30
+Rolling fractional charge-range threshold: 0.08
+Scaler reads before stability: 4571
+Scaler reads after stability: 4512
+
+Accumulated helicity scaler charge BEFORE cuts [uC]
+  hel =  0 : 118.343
+  hel = -1 : 2331.6
+  hel = +1 : 2330.43
+  total    : 4780.38
+
+Accumulated helicity scaler charge AFTER cuts [uC]
+  hel =  0 : 0
+  hel = -1 : 2304.27
+  hel = +1 : 2303.14
+  total    : 4607.41
+
+Fraction of charge retained AFTER cuts
+  hel =  0 : 0
+  hel = -1 : 0.98828
+  hel = +1 : 0.988289
+  total    : 0.963818
+
+Accepted scaler-read ranges (evcount)
+  144 -> 1599
+  1620 -> 4235
+  4244 -> 4691
+
+Accepted cumulative event-number ranges (evNumber)
+  387956 -> 505956
+  507626 -> 720570
+
+Accepted T event ranges (g.evnum)
+  376507 -> 377962
+  377983 -> 380598
+

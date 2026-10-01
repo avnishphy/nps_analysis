@@ -1,0 +1,56 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NPS π⁰ · Runbook</title><link rel="stylesheet" href="assets/css/site.css"></head>
+<body data-page="ops"><a class="skip-link" href="#main">Skip to content</a><header class="topbar"><div class="nav-shell"><a class="brand" href="index.html"><span class="brand-mark">π</span><span>NPS π⁰ analysis</span></a><button class="icon-button menu-button" data-menu-toggle>☰</button><nav class="site-nav"><a data-page="home" href="index.html">Start</a><a data-page="analysis" href="analysis.html">Data</a><a data-page="eff" href="efficiencies.html">Corrections</a><a data-page="sim" href="simulation.html">Simulation</a><a data-page="xsec" href="extraction.html">Cross sections</a><a data-page="results" href="results.html">Latest plots</a><a data-page="ops" href="operations.html">Runbook</a></nav><button class="icon-button" data-theme-toggle>◑ Light</button></div></header>
+<div class="page-head"><div class="kicker">Reproducible operations</div><h1>Commands, contracts and validation</h1><p>Copy-paste starting points for navigating and running the staged repository. Full production can be expensive; begin with help, inspection and one-run checks.</p></div>
+<main id="main" class="page-layout"><aside class="toc"><strong>On this page</strong><a href="#environment">Environment</a><a href="#quickstart">Quickstart</a><a href="#stages">Stage commands</a><a href="#layout">Repository map</a><a href="#contracts">Outputs</a><a href="#validation">Validation</a><a href="#trouble">Troubleshooting</a></aside><div class="content">
+<section id="environment"><h2>1. Load the Hall C environment</h2><p>Run ROOT commands through csh after sourcing the module initialization and experiment setup:</p><pre><code>cd /w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main
+csh -c 'source /usr/share/Modules/init/csh; source /group/nps/singhav/setup.csh; root-config --version'</code></pre><p>A ROOT version confirms the environment loaded. Documentation inspection and this static website do not require ROOT.</p></section>
+<section id="quickstart"><h2>2. Safest first execution: one run</h2><pre><code>cd /w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main
+
+bash src/analysis/run_parallel_nps_analysis_main.sh \
+  --kin KinC_x60_4b \
+  --run 4253 \
+  --source waveform \
+  --gevnum-cut no \
+  --jobs 1 \
+  --types production,Production \
+  --no-combine</code></pre><p>Check <code>output/KinC_x60_4b/logs/analysis_main_run4253.log</code>, the per-run summary, plots and diagnostics ROOT before scaling to a batch.</p></section>
+<section id="stages"><h2>3. Primary stage commands</h2><h3>Top-level orchestration</h3><pre><code>./scripts/run_pipeline.sh \
+  --kin KinC_x60_4b \
+  --source waveform \
+  --jobs 3 \
+  --gevnum-cut no \
+  --types production,Production \
+  --no-combine</code></pre><h3>Efficiencies</h3><pre><code>bash src/efficiencies/run_efficiencies_stuff_parallel.sh --help</code></pre><h3>Smearing</h3><pre><code>csh -c 'source /usr/share/Modules/init/csh; source /group/nps/singhav/setup.csh; \
+  bash src/simulation_smearing/run_smearing_pipeline.sh --help'</code></pre><h3>Cross sections</h3><pre><code>bash src/xsec_extract/run_xsec_pipeline.sh --help</code></pre><div class="callout warn"><strong>Before production:</strong> inspect the selected config rows, input paths, target, offsets, dead-mask choice, beam energy, output base and model/extractor mode. Many defaults are absolute Hall C paths.</div></section>
+<section id="layout"><h2>4. Repository map</h2><div class="file-tree">root_analysis_env_main/
+├── config/
+│   ├── nps_dvcs_all_kins_main.csv       # run/kinematic metadata
+│   ├── acceptance_cuts.conf              # inherited analysis/sim cuts
+│   ├── dead_block_per_runs.csv           # detector masks
+│   └── nps_simulation_kinematics.csv     # canonical simulation settings
+├── src/
+│   ├── analysis/                         # per-run macro + combination
+│   ├── efficiencies/                     # frozen correction pipeline
+│   ├── simulation_smearing/              # producer, fitter, wrapper
+│   └── xsec_extract/                     # ratio + response-fit methods
+├── scripts/
+│   ├── run_pipeline.sh                   # main orchestration entrypoint
+│   ├── generate_simc_infiles.py
+│   └── run_simulation_chain.py
+├── tests/                                # closure/regression scripts
+├── docs/                                 # physics/implementation audits
+├── output/                               # current artifacts
+└── plan.md                               # living contract/status record</div></section>
+<section id="contracts"><h2>5. Output names are interfaces</h2><div class="table-wrap"><table><thead><tr><th>Stage</th><th>Canonical artifact</th></tr></thead><tbody><tr><td>Per run</td><td><code>output/&lt;kin&gt;/root/diagnostics_run&lt;run&gt;.root</code></td></tr><tr><td>Run summary</td><td><code>output/&lt;kin&gt;/summary/summary_all_runs.csv</code></td></tr><tr><td>Efficiencies</td><td><code>output/efficiency_stuff/efficiency_&lt;kin&gt;.csv</code></td></tr><tr><td>Combined data</td><td><code>output/&lt;kin&gt;/root/combined_branches_&lt;target&gt;.root</code></td></tr><tr><td>Smearing</td><td><code>section_map.csv</code>, interpolated map ROOT, nominal/smeared producer ROOT</td></tr><tr><td>Cross section</td><td>ROOT, CSV and plot products below the selected <code>xsec*</code> directory</td></tr></tbody></table></div><p>Changes to names, paths, schemas, tree branches or physics-sensitive flow must be recorded in <code>plan.md</code> before merge.</p></section>
+<section id="validation"><h2>6. Proportional validation</h2><div class="grid two"><div class="card"><h3>Fast checks</h3><pre><code>bash -n scripts/run_pipeline.sh
+bash -n src/analysis/run_parallel_nps_analysis_main.sh
+python3 -m py_compile src/analysis/combine_analysis_branches.py
+git diff --check</code></pre></div><div class="card"><h3>Extraction closures</h3><pre><code>csh -c 'source /usr/share/Modules/init/csh; \
+source /group/nps/singhav/setup.csh; \
+bash tests/run_xsec_tests.sh'
+
+csh -c 'source /usr/share/Modules/init/csh; \
+source /group/nps/singhav/setup.csh; \
+bash tests/run_simc_phi_average_tests.sh'</code></pre></div></div><p>Use the smallest representative sample first. A successful syntax check verifies parsing; a closure test verifies recovery under its synthetic assumptions; neither independently validates the real detector model.</p></section>
+<section id="trouble"><h2>7. Common failure modes</h2><div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Likely cause / action</th></tr></thead><tbody><tr><td>No runs matched</td><td>Whitespace or selection mismatch in master CSV. Inspect normalized fields and chosen types/target/quality.</td></tr><tr><td>Unresolved <code>AcceptanceCuts</code></td><td>The driver must preload <code>acceptance_cuts.cpp</code> before the macro.</td></tr><tr><td>Combine reports missing metadata</td><td>Create <code>output/efficiency_stuff/efficiency_&lt;kin&gt;.csv</code> first or pass an explicit path.</td></tr><tr><td>Smearing exits before fit</td><td>Input/config/provenance validation failed. Do not reuse prior outputs; inspect the current staging log.</td></tr><tr><td>Response fit rank failure</td><td>Unsupported truth coefficient, sparse binning or degenerate angular support. Do not conceal it with an arbitrary pseudocount.</td></tr><tr><td>W&lt;2 GeV in SIMC-model extractor</td><td>The local high-W evaluator has no MAID implementation and rejects this region.</td></tr></tbody></table></div><p><a class="button" href="assets/docs/REPOSITORY_README.md">Repository README snapshot</a> <a class="button" href="assets/docs/REPOSITORY_PLAN.md">Living plan snapshot</a> <a class="button primary" href="index.html">Back to overview</a></p></section>
+</div></main><footer class="footer"><div class="footer-inner"><span>Operational guide · commands shown but not run by this website</span><span>Use current logs as the source of execution truth</span></div></footer><script src="assets/js/site.js"></script></body></html>

@@ -1,0 +1,30 @@
+[
+  {
+    "pid": 148228,
+    "command": "python3 run_exports.py "
+  },
+  {
+    "pid": 148229,
+    "command": "csh -c source /usr/share/Modules/init/csh; source /group/nps/singhav/setup.csh; hcana -l -b -q \"export_cached.C(0,0,3)\" "
+  },
+  {
+    "pid": 148230,
+    "command": "csh -c source /usr/share/Modules/init/csh; source /group/nps/singhav/setup.csh; hcana -l -b -q \"export_cached.C(0,1,3)\" "
+  },
+  {
+    "pid": 148232,
+    "command": "csh -c source /usr/share/Modules/init/csh; source /group/nps/singhav/setup.csh; hcana -l -b -q \"export_cached.C(0,2,3)\" "
+  },
+  {
+    "pid": 148352,
+    "command": "hcana -l -b -q export_cached.C(0,2,3) "
+  },
+  {
+    "pid": 148353,
+    "command": "hcana -l -b -q export_cached.C(0,0,3) "
+  },
+  {
+    "pid": 148354,
+    "command": "hcana -l -b -q export_cached.C(0,1,3) "
+  }
+]

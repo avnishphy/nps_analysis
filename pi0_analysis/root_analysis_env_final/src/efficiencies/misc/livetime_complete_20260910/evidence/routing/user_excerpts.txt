@@ -1,0 +1,48 @@
+Provenance: transcribed from user message, received in the 2026-09-10
+continuation. Line wrapping/formatting normalized; not an original logbook
+export. Entry dates/IDs supplied subsequently by the user:
+Excerpt1:2023-08-23, https://logbooks.jlab.org/entry/4170042
+Excerpt2:2023-08-29, https://logbooks.jlab.org/entry/4171556
+Authors were not supplied with the pasted excerpts.
+User applicability confirmation: "yeah, these should be good for the these runs"
+
+EXCERPT 1
+
+I updated the V1495 and VTP firmware to add the following features:
+- Increased cluster hit timing coincidence: was +/-16ns from seed hit, now can be up to +/-48ns from seed hit
+- selectable 5x5 or 7x7 readout of FADC waveforms centered on online cluster center (seed)
+- full detector readout every N events (where N=0 never reads out all channels, N=1 reads out all channels every event, N=2 reads out all channels every other event, ... up to N=65535)
+- 2 cluster trigger added (has it's own cluster threshold - different from the main NPS cluster threshold). This threshold must be passed by at least 2 clusters anywhere in the detector to trigger
+- VLD trigger: passes through the FADC->VTP->V1495->TS so that it can be delay matched to other triggers
+The trigger bit mapping is as follows:
+Local NPS setup:
+TS1 - NPS single cluster
+TS2 - Cosmic scintillator
+TS3 - Cosmic column trigger (OR of crates)
+TS4 - Cosmic column trigger (AND of crates)
+TS5 - VLD trigger
+TS6 - NPS >=2 cluster trigger
+Sent to counting room over cable:
+T1 - NPS single cluster
+T2 - Cosmic scintillator
+T3 - Cosmic column trigger (OR of crates)
+T4 - Cosmic column trigger (AND of crates)
+T5 - VLD trigger
+T6 - NPS >=2 cluster trigger
+I still need to update the configuration files and drivers to support the some of the new features and will do soon and update this post.
+I did confirm the VTP cosmic scintillator trigger still works - so there shouldn't be any difference seen in the data when using this trigger.
+
+EXCERPT 2
+
+The required delay for h3/4 and hEL-REAL to make coincidence with NPS Trigger is made by sending the HMS triggers through the SHMS cables to the hall [3 loops from Counting house (CH) to SHMS hut plus additional one loop from Counting house to the hall floor]. Total delay obtained by sending the signal CH <-> hall was ~3.5us). Delay between h3/4 and hEL-REAL pre-trigger was measured 40ns before sending it to the delay loop, and additional 27 ns delay was added to h3/4 at CH to align both before coincidence.
+Following the discussion with Charles Hyde, EDTM signal is included in NPS trigger at the counting house. EDTM signal to HMS are connected to the discriminators which is ~52 ns before the h3/4 at CH. So HMS EDTM signal is also delayed when we delay h3/4. To make coincidence with HMS EDTM, copy of EDTM is also delayed by ~3.5us and OR'ed with NPS (VTP 1 Cluster OR VTP 2 Cluster) trigger.
+To make coincidence between HMS and NPS with HMS deciding the coincidence timing, NPS Triggers (both NPS T1- VTP 1 cluster and NPS T6- VTP 2 cluster) are delayed by 100 ns before OR'ed with EDTM and 50 ns afterwards.
+Currently, h3/4 and hEL-REAL have width of 40 ns and NPS has 100 ns while making the coincidence. h3/4 and hEL-REAL signal arrives around ~40 ns after the NPS trigger to have HMS deciding the timing of coincidence.
+Each singles going to ROC1 TI (ie T1, T3 and T4) are delayed further before sending to the TI, so that singles arrives after coincidence in the TI. Right now, T1 is delayed by ~40 ns; T3 and T4 are delayed by ~24 ns compared to coincidence.
+Now the INPUTs to the ROC1 TI are changed with the following:
+TI #1 = NPS cluster trigger (VTP 1 Cluster OR VTP 2 Cluster OR delayed EDTM)
+TI #2 = NPS cosmic (NPS cosmic OR LED)
+TI #3 = HMS h3/4
+TI #4 = HMS hEL-REAL
+TI #5 = (Trig to TI #1) AND (Trig to TI #3)
+TI #6 = (Trig to TI #1) AND (Trig to TI #4)

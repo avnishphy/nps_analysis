@@ -1,0 +1,90 @@
+[
+  {
+    "run": 4303,
+    "log_path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_refresh_20260909/logbook/run4303_user_log.txt",
+    "sha256": "7effebb888bacb3904529cfa5345afe435f126cfb1b7a6f4528032a60b17a25b",
+    "end_counts": {
+      "Readout Count": [
+        3697226,
+        3697226,
+        3697226,
+        3697226,
+        3697226,
+        3310432,
+        3310432,
+        3310432,
+        3310432,
+        3310432
+      ],
+      "Ack Count": [
+        3697226,
+        3697226,
+        3697226,
+        3697226,
+        3697226,
+        3310432,
+        3310432,
+        3310432,
+        3310432,
+        3310432
+      ],
+      "L1A Count": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        3310432,
+        3310432,
+        3310432,
+        3310432,
+        3310432
+      ]
+    },
+    "expected_recorded": 3310432
+  },
+  {
+    "run": 4305,
+    "log_path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_refresh_20260909/logbook/run4305_user_log.txt",
+    "sha256": "0c8c12c890cf39a8d51f7d9762beb59def3f8d2aa6cbd6188461d25ac40fa448",
+    "end_counts": {
+      "Readout Count": [
+        910682,
+        910682,
+        910682,
+        910682,
+        910682,
+        560647,
+        560647,
+        560647,
+        560647,
+        560647
+      ],
+      "Ack Count": [
+        910682,
+        910682,
+        910682,
+        910682,
+        910682,
+        560647,
+        560647,
+        560647,
+        560647,
+        560647
+      ],
+      "L1A Count": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        560647,
+        560647,
+        560647,
+        560647,
+        560647
+      ]
+    },
+    "expected_recorded": 560647
+  }
+]

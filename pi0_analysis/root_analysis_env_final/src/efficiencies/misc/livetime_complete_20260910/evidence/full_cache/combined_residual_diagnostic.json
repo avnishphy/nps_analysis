@@ -1,0 +1,22 @@
+[
+  {
+    "variant": "raw",
+    "runs": 35,
+    "inverse_variance_mean_difference": 4.3734466825280836e-05,
+    "independent_run_sigma": 1.4348945891457165e-05,
+    "z": 3.047921927931914,
+    "chi2_about_mean": 15.810375101090484,
+    "positive_differences": 24,
+    "assumption": "Common mean and independent run-level block errors; no shared routing, calibration or sampling systematic included"
+  },
+  {
+    "variant": "tight",
+    "runs": 35,
+    "inverse_variance_mean_difference": -3.085031528800286e-05,
+    "independent_run_sigma": 1.516005636608087e-05,
+    "z": -2.0349736533320146,
+    "chi2_about_mean": 26.7676462236943,
+    "positive_differences": 12,
+    "assumption": "Common mean and independent run-level block errors; no shared routing, calibration or sampling systematic included"
+  }
+]

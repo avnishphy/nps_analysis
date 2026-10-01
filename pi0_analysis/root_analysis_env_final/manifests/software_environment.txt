@@ -1,0 +1,7 @@
+captured_utc=2026-10-01T21:38:28Z
+working_directory=/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final
+git_version=git version 2.47.3
+python_version=Python 3.9.25
+bash_version=GNU bash, version 5.1.8(1)-release (x86_64-redhat-linux-gnu)
+kernel=Linux ifarm2401.jlab.org 5.14.0-611.55.1.el9_7.x86_64 #1 SMP PREEMPT_DYNAMIC Tue May 19 15:19:29 EDT 2026 x86_64 x86_64 x86_64 GNU/Linux
+root_version=6.30.04

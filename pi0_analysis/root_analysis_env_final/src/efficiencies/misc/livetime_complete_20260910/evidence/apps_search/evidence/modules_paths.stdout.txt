@@ -1,0 +1,36 @@
+/u/group/nps/modulefiles/nps_replay/5.28.24:11:  puts stderr ">>>>    cd \$REPLAYDIR                           <<<<"
+/u/group/nps/modulefiles/nps_replay/5.28.24:26:# For the time being, do not use hcana from /cdaqfs1/apps. People want control
+/u/group/nps/modulefiles/nps_replay/5.28.24:27:module load hcana/1.1 NPSlib/fddb8e9_1.1.0
+/u/group/nps/modulefiles/nps_replay/5.28.24:30:set topdir /group/nps/$user
+/u/group/nps/modulefiles/nps_replay/5.28.24:38:setenv          REPLAYDIR               $topdir/nps_replay
+/u/group/nps/modulefiles/nps_replay/5.28.24:39:setenv blob [getenv REPLAYDIR]
+/u/group/nps/modulefiles/nps_replay/pass1.0.0:11:  puts stderr ">>>>    cd \$REPLAYDIR                           <<<<"
+/u/group/nps/modulefiles/nps_replay/pass1.0.0:26:# For the time being, do not use hcana from /cdaqfs1/apps. People want control
+/u/group/nps/modulefiles/nps_replay/pass1.0.0:27:module load hcana/1.1 NPSlib/fddb8e9_1.1.0
+/u/group/nps/modulefiles/nps_replay/pass1.0.0:30:set topdir /group/nps/$user
+/u/group/nps/modulefiles/nps_replay/pass1.0.0:38:setenv          REPLAYDIR               $topdir/nps_replay
+/u/group/nps/modulefiles/nps_replay/pass1.0.0:39:setenv blob [getenv REPLAYDIR]
+/u/group/nps/modulefiles/nps_replay/11.11.23:11:  puts stderr ">>>>    cd \$REPLAYDIR                           <<<<"
+/u/group/nps/modulefiles/nps_replay/11.11.23:27:# For the time being, do not use hcana from /cdaqfs1/apps. People want control
+/u/group/nps/modulefiles/nps_replay/11.11.23:28:module load hcana/1.0.1 NPSlib/bf8ec57
+/u/group/nps/modulefiles/nps_replay/11.11.23:31:set topdir /group/nps/$user
+/u/group/nps/modulefiles/nps_replay/11.11.23:39:setenv          REPLAYDIR               $topdir/nps_replay
+/u/group/nps/modulefiles/nps_replay/11.11.23:40:setenv blob [getenv REPLAYDIR]
+/u/group/nps/modulefiles/nps_replay/2.20.24:11:  puts stderr ">>>>    cd \$REPLAYDIR                           <<<<"
+/u/group/nps/modulefiles/nps_replay/2.20.24:27:# For the time being, do not use hcana from /cdaqfs1/apps. People want control
+/u/group/nps/modulefiles/nps_replay/2.20.24:28:module load hcana/1.0.2 NPSlib/fddb8e9_1.0.2
+/u/group/nps/modulefiles/nps_replay/2.20.24:31:set topdir /group/nps/$user
+/u/group/nps/modulefiles/nps_replay/2.20.24:39:setenv          REPLAYDIR               $topdir/nps_replay
+/u/group/nps/modulefiles/nps_replay/2.20.24:40:setenv blob [getenv REPLAYDIR]
+/u/group/nps/modulefiles/nps_replay/11.26.23:11:  puts stderr ">>>>    cd \$REPLAYDIR                           <<<<"
+/u/group/nps/modulefiles/nps_replay/11.26.23:27:# For the time being, do not use hcana from /cdaqfs1/apps. People want control
+/u/group/nps/modulefiles/nps_replay/11.26.23:28:module load hcana/1.0.2 NPSlib/bf8ec57_1.0.2
+/u/group/nps/modulefiles/nps_replay/11.26.23:31:set topdir /group/nps/$user
+/u/group/nps/modulefiles/nps_replay/11.26.23:39:setenv          REPLAYDIR               $topdir/nps_replay
+/u/group/nps/modulefiles/nps_replay/11.26.23:40:setenv blob [getenv REPLAYDIR]
+/u/group/nps/modulefiles/nps_replay/10.30.23:11:  puts stderr ">>>>    cd \$REPLAYDIR                           <<<<"
+/u/group/nps/modulefiles/nps_replay/10.30.23:27:# For the time being, do not use hcana from /cdaqfs1/apps. People want control
+/u/group/nps/modulefiles/nps_replay/10.30.23:28:module load hcana/207fd14 NPSlib/0269b41
+/u/group/nps/modulefiles/nps_replay/10.30.23:31:set topdir /group/nps/$user
+/u/group/nps/modulefiles/nps_replay/10.30.23:39:setenv          REPLAYDIR               $topdir/nps_replay
+/u/group/nps/modulefiles/nps_replay/10.30.23:40:setenv blob [getenv REPLAYDIR]

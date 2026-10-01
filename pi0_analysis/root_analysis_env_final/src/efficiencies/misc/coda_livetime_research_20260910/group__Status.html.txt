@@ -1,0 +1,1971 @@
+
+
+
+
+
+
+JLab VME Pipeline TI Library: Status
+
+
+
+
+
+
+  $(document).ready(function() { searchBox.OnSelectItem(0); });
+
+
+
+
+
+
+
+ 
+ 
+  
+   JLab VME Pipeline TI Library
+    3v11.3
+   
+   JLab VME Pipeline TI library
+  
+ 
+ 
+
+
+
+
+
+var searchBox = new SearchBox("searchBox", "search",false,'Search');
+
+  
+    
+      Main Page
+      Modules
+      Classes
+      Files
+      
+        
+        
+          
+          
+          
+            
+          
+        
+      
+    
+  
+
+
+
+ All Classes Functions Variables Groups
+
+
+
+
+
+
+
+
+  
+Modules |
+Functions  
+  
+Status  
+
+
+
+
+Modules
+ Master Status
+ 
+
+
+Functions
+void tiStatus (int pflag)
+ Print some status information of the TI to standard out.  More...
+ 
+int tiGetSlavePort ()
+ Returns the port of which the TI Slave has been configured (or will be)  More...
+ 
+void tiSlaveStatus (int pflag)
+ Print a summary of all fiber port connections to potential TI Slaves.  More...
+ 
+int tiGetFirmwareVersion ()
+ Get the Firmware Version.  More...
+ 
+unsigned int tiGetSerialNumber (char **rSN)
+ Get the Module Serial Number.  More...
+ 
+int tiGetCrateID (int port)
+ Get the crate ID of the selected port.  More...
+ 
+int tiGetPortTrigSrcEnabled (int port)
+ Get the trigger sources enabled bits of the selected port.  More...
+ 
+int tiGetSlaveBlocklevel (int port)
+ Get the blocklevel of the TI-Slave on the selected port.  More...
+ 
+int tiGetNextBlockLevel ()
+ Get the block level that will be updated on the end of the block readout.  More...
+ 
+int tiGetCurrentBlockLevel ()
+ Get the current block level.  More...
+ 
+int tiGetInstantBlockLevelChange ()
+ Get Status of instant blocklevel change when broadcast is received.  More...
+ 
+int32_t tiGetTriggerSource ()
+ Get the trigger source.  More...
+ 
+int32_t tiGetGoOutput ()
+ Return status of flag used to enable GO output.  More...
+ 
+int32_t tiGetSyncSource ()
+ Get the Sync source mask.  More...
+ 
+int32_t tiGetFPInputReadout ()
+ Get whether or not the latched pattern of FP Inputs in block readout.  More...
+ 
+int32_t tiGetBusySource ()
+ Get the busy sourcemask.  More...
+ 
+int tiGetPrescale ()
+ Get the current prescale factor.  More...
+ 
+int tiGetInputPrescale (int input)
+ Get the current prescale factor for the selected input.  More...
+ 
+int32_t tiGetTriggerPulse (int32_t trigger, int32_t *delay, int32_t *width, int32_t *delay_step)
+ Return the characteristics of a specified trigger.  More...
+ 
+int tiGetPromptTriggerWidth ()
+ Get the width of the prompt trigger from OT#2.  More...
+ 
+int32_t tiGetSyncDelayWidth (int32_t *delay, int32_t *width, int32_t *widthstep)
+ Get the delay time and width of the Sync signal.  More...
+ 
+int32_t tiGetSyncResetType ()
+ Get SyncReset type.  More...
+ 
+unsigned int tiGetAdr32 ()
+ Routine to get the A32 Base.  More...
+ 
+unsigned long long int tiGetEventCounter ()
+ Returns the event counter (48 bit)  More...
+ 
+unsigned int tiGetBlockLimit ()
+ Returns the value that is currently programmed as the block limit.  More...
+ 
+int tiGetBlockLimitStatus ()
+ Get the current status of the block limit.  More...
+ 
+int tiGetBlockBufferLevel ()
+ Get the block buffer level, as programmed or broadcasted from the TS.  More...
+ 
+int tiGetBroadcastBlockBufferLevel ()
+ Get the block buffer level, as broadcasted from the TS.  More...
+ 
+int32_t tiGetUseBroadcastBufferLevel ()
+ Get the status of enabling the use of the broadcasted buffer level, instead of the value set locally with .  More...
+ 
+int tiGetClockSource ()
+ Get the current clock source.  More...
+ 
+int tiGetFiberDelay ()
+ Get the fiber delay required to align the sync and triggers for all crates.  More...
+ 
+int tiGetTriggerHoldoff (int rule)
+ Get the value for a specified trigger rule.  More...
+ 
+int tiGetTriggerHoldoffClock ()
+ Return status of slower clock for trigger rules. If Enabled, will slow down the timestep = 1 by a factor of 32.  More...
+ 
+int tiGetTriggerHoldoffMin (int rule, int pflag)
+ Get the value for a specified trigger rule minimum busy.  More...
+ 
+int32_t tiGetTriggerTableMode ()
+ Return trigger table mode.  More...
+ 
+unsigned int tiGetLiveTime ()
+ Return the current "live" time of the module.  More...
+ 
+unsigned int tiGetBusyTime ()
+ Return the current "busy" time of the module.  More...
+ 
+int tiLive (int sflag)
+ Calculate the live time (percentage) from the live and busy time scalers.  More...
+ 
+unsigned int tiGetTSscaler (int input, int latch)
+ Get the current counter for the specified TS Input.  More...
+ 
+unsigned int tiBlockStatus (int fiber, int pflag)
+ Show block Status of specified fiber.  More...
+ 
+int tiGetFiberLatencyMeasurement ()
+ Return measured fiber length.  More...
+ 
+int tiGetLastSyncCodes (int pflag)
+ Return last SyncCommand received.  More...
+ 
+int tiGetSyncHistoryBufferStatus (int pflag)
+ Get the status of the SyncCommand History Buffer.  More...
+ 
+
+void tiPrintSyncHistory ()
+ Print to standard out the history buffer of Sync Commands received. 
+ 
+unsigned int tiGetTriggerLinkStatus (int pflag)
+ Get the error status bits for the trigger link.  More...
+ 
+int tiGetTSInputDelay (int chan)
+ Get the input delay for the specified front panel TSinput (1-6)  More...
+ 
+int tiPrintTSInputDelay ()
+ Print Front Panel TSinput Delays to Standard Out.  More...
+ 
+unsigned int tiGetGTPBufferLength (int pflag)
+ Return value of buffer length from GTP.  More...
+ 
+unsigned int tiGetSWAStatus (int reg)
+ Return the value from the SWa fast link register.  More...
+ 
+unsigned int tiGetSWBStatus (int reg)
+ Return the value from the SWB fast link register.  More...
+ 
+int tiGetGeoAddress ()
+ Return geographic address as provided from a VME-64X crate.  More...
+ 
+
+unsigned int tiGetIntCount ()
+ Return current readout count. 
+ 
+
+unsigned int tiGetAckCount ()
+ Return current acknowledge count. 
+ 
+int tiGetSWBBusy (int pflag)
+ Return status of Busy from SWB.  More...
+ 
+unsigned int tiGetBusyCounter (int busysrc)
+ Return BUSY counter for specified Busy Source.  More...
+ 
+int tiPrintBusyCounters ()
+ Print the BUSY counters for all busy sources.  More...
+ 
+int tiReadFiberFifo (int fiber, volatile unsigned int *data, int maxwords)
+ Read the fiber fifo from the TI.  More...
+ 
+int tiPrintFiberFifo (int fiber)
+ Read the fiber fifo from the TI and print to standard out.  More...
+ 
+int tiReadScalers (volatile unsigned int *data, int latch)
+ Read all the scalers into an array.  More...
+ 
+int32_t tiGetScalerMode (int32_t *mode, int32_t *control)
+ Returns the settings for the scaling of ts inputs.  More...
+ 
+int32_t tiGetEvTypeScalersFlag ()
+ Return the flag for Enabling/disabling recording of event type scalers.  More...
+ 
+int tiGetEvTypeScalers (unsigned int *data, int maxwords)
+ Returns an array providing the current values of the event type scalers.  More...
+ 
+
+void tiPrintEvTypeScalers ()
+ Print, to standard out, the current values of the event type scalers. 
+ 
+int tiWaitForIODelayReset (int nwait)
+ Check TI Ready for specified number of times after iodelay reset.  More...
+ 
+int tiGetSC1 ()
+ Return bitmask showing readback of SC1 dipswitches.  More...
+ 
+int tiPrintClockConfiguration ()
+ Print clock configuration to standard out.  More...
+ 
+void tiTriggerStatus (int pflag)
+ Print some trigger status information to standard out.  More...
+ 
+int tiGetHWRegisters (unsigned int *data_buffer, unsigned int maxwords)
+ Routine to return the values stored at the TIs registers.  More...
+ 
+void tiPrintHWRegisters (int32_t formatFlag)
+ Print TIs HW registers to standard out.  More...
+ 
+
+Detailed Description
+Function Documentation
+
+
+
+      
+        
+          unsigned int tiBlockStatus 
+          (
+          int 
+          fiber, 
+        
+        
+          
+          
+          int 
+          pflag 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Show block Status of specified fiber. 
+Parameters
+  
+    fiberFiber port to show 
+    pflagWhether or not to print to standard out 
+  
+  
+
+Returns0 
+
+
+
+
+
+
+      
+        
+          unsigned int tiGetAdr32 
+          (
+          )
+          
+        
+      
+
+
+Routine to get the A32 Base. 
+ReturnsA32 base address if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiGetBlockBufferLevel 
+          (
+          )
+          
+        
+      
+
+
+Get the block buffer level, as programmed or broadcasted from the TS. 
+ReturnsBlock buffer level if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          unsigned int tiGetBlockLimit 
+          (
+          )
+          
+        
+      
+
+
+Returns the value that is currently programmed as the block limit. 
+ReturnsCurrent Block Limit if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiGetBlockLimitStatus 
+          (
+          )
+          
+        
+      
+
+
+Get the current status of the block limit. 
+Returns1 if block limit has been reached, 0 if not, otherwise ERROR; 
+
+
+
+
+
+
+      
+        
+          int tiGetBroadcastBlockBufferLevel 
+          (
+          )
+          
+        
+      
+
+
+Get the block buffer level, as broadcasted from the TS. 
+ReturnsBroadcasted block buffer level if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          unsigned int tiGetBusyCounter 
+          (
+          int 
+          busysrc)
+          
+        
+      
+
+
+Return BUSY counter for specified Busy Source. 
+Parameters
+  
+    busysrc
+0: SWA
+1: SWB
+2: P2
+3: FP-FTDC
+4: FP-FADC
+5: FP
+6: Unused
+7: Loopack
+8-15: Fiber 1-8 
+
+
+  
+  
+
+Returns
+Busy counter for specified busy source 
+
+
+
+
+
+
+
+
+      
+        
+          int32_t tiGetBusySource 
+          (
+          )
+          
+        
+      
+
+
+Get the busy sourcemask. 
+Returnssource bitmask
+0: SWA
+1: SWB
+2: P2
+3: FP-FTDC
+4: FP-FADC
+5: FP
+6: Unused
+7: Loopack
+8-15: Fiber 1-8 
+
+
+
+
+
+
+
+
+      
+        
+          unsigned int tiGetBusyTime 
+          (
+          )
+          
+        
+      
+
+
+Return the current "busy" time of the module. 
+ReturnsThe current live time in units of 7.68 us 
+
+
+
+
+
+
+      
+        
+          int tiGetClockSource 
+          (
+          )
+          
+        
+      
+
+
+Get the current clock source. 
+ReturnsCurrent Clock Source
+0: Onboard clock
+1: External clock (HFBR1 input)
+5: External clock (HFBR5 input)
+9: Bridge port clock (firmware defined) 
+
+
+
+
+
+
+
+
+      
+        
+          int tiGetCrateID 
+          (
+          int 
+          port)
+          
+        
+      
+
+
+Get the crate ID of the selected port. 
+Parameters
+  
+    port
+0 - Self
+1-8 - Fiber port 1-8 (If Master)
+
+
+  
+  
+
+Returnsport Crate ID if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiGetCurrentBlockLevel 
+          (
+          )
+          
+        
+      
+
+
+Get the current block level. 
+ReturnsNext Block Level if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          unsigned long long int tiGetEventCounter 
+          (
+          )
+          
+        
+      
+
+
+Returns the event counter (48 bit) 
+ReturnsNumber of accepted events if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiGetEvTypeScalers 
+          (
+          unsigned int * 
+          data, 
+        
+        
+          
+          
+          int 
+          maxwords 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Returns an array providing the current values of the event type scalers. 
+Parameters
+  
+    data- local memory location where to store the scaler values 
+    maxwords- maximum amount of words to store at 'data'
+  
+  
+
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int32_t tiGetEvTypeScalersFlag 
+          (
+          )
+          
+        
+      
+
+
+Return the flag for Enabling/disabling recording of event type scalers. 
+Returnsenable flag
+0: Scalers Disabled
+1: Scalers Enabled 
+
+
+
+
+
+
+
+
+      
+        
+          int tiGetFiberDelay 
+          (
+          )
+          
+        
+      
+
+
+Get the fiber delay required to align the sync and triggers for all crates. 
+ReturnsCurrent fiber delay setting 
+
+
+
+
+
+
+      
+        
+          int tiGetFiberLatencyMeasurement 
+          (
+          )
+          
+        
+      
+
+
+Return measured fiber length. 
+ReturnsValue of measured fiber length 
+
+
+
+
+
+
+      
+        
+          int tiGetFirmwareVersion 
+          (
+          )
+          
+        
+      
+
+
+Get the Firmware Version. 
+ReturnsFirmware Version if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int32_t tiGetFPInputReadout 
+          (
+          )
+          
+        
+      
+
+
+Get whether or not the latched pattern of FP Inputs in block readout. 
+Returnsstate of input block readout
+0: Disabled
+1: Enabled 
+
+
+
+
+
+
+
+
+      
+        
+          int tiGetGeoAddress 
+          (
+          )
+          
+        
+      
+
+
+Return geographic address as provided from a VME-64X crate. 
+ReturnsGeographic Address if successful, otherwise ERROR. 0 would indicate that the TI is not in a VME-64X crate. 
+
+
+
+
+
+
+      
+        
+          int32_t tiGetGoOutput 
+          (
+          )
+          
+        
+      
+
+
+Return status of flag used to enable GO output. 
+ReturnsEnable flag 
+      0: Disabled
+      1: Enabled
+* 
+
+
+
+
+
+
+      
+        
+          unsigned int tiGetGTPBufferLength 
+          (
+          int 
+          pflag)
+          
+        
+      
+
+
+Return value of buffer length from GTP. 
+Returnsvalue of buffer length from GTP 
+
+
+
+
+
+
+      
+        
+          int tiGetHWRegisters 
+          (
+          unsigned int * 
+          data_buffer, 
+        
+        
+          
+          
+          unsigned int 
+          maxwords 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Routine to return the values stored at the TIs registers. 
+Parameters
+  
+    data_buffer- local memory address to place data 
+    maxwords- Max number of words to transfer
+  
+  
+
+ReturnsNumber of words transferred to data if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiGetInputPrescale 
+          (
+          int 
+          input)
+          
+        
+      
+
+
+Get the current prescale factor for the selected input. 
+Parameters
+  
+    inputSelected trigger input (1-6) 
+  
+  
+
+ReturnsCurrent prescale factor, otherwise ERROR. 
+
+
+
+
+
+
+      
+        
+          int tiGetInstantBlockLevelChange 
+          (
+          )
+          
+        
+      
+
+
+Get Status of instant blocklevel change when broadcast is received. 
+Returns1 if enabled, 0 if disabled , ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiGetLastSyncCodes 
+          (
+          int 
+          pflag)
+          
+        
+      
+
+
+Return last SyncCommand received. 
+Parameters
+  
+    >0,:print to standard out 
+  
+  
+
+ReturnsLast SyncCommand received 
+
+
+
+
+
+
+      
+        
+          unsigned int tiGetLiveTime 
+          (
+          )
+          
+        
+      
+
+
+Return the current "live" time of the module. 
+ReturnsThe current live time in units of 7.68 us 
+
+
+
+
+
+
+      
+        
+          int tiGetNextBlockLevel 
+          (
+          )
+          
+        
+      
+
+
+Get the block level that will be updated on the end of the block readout. 
+ReturnsNext Block Level if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiGetPortTrigSrcEnabled 
+          (
+          int 
+          port)
+          
+        
+      
+
+
+Get the trigger sources enabled bits of the selected port. 
+Parameters
+  
+    port
+0 - Self
+1-8 - Fiber port 1-8 (If Master)
+
+
+  
+  
+
+Returnsbitmask of rigger sources enabled if successful, otherwise ERROR bitmask
+0 - P0
+1 - Fiber 1
+2 - Loopback
+3 - TRG (FP)
+4 - VME
+5 - TS Inputs (FP)
+6 - TS (rev 2)
+7 - Internal Pulser 
+
+
+
+
+
+
+
+
+      
+        
+          int tiGetPrescale 
+          (
+          )
+          
+        
+      
+
+
+Get the current prescale factor. 
+ReturnsCurrent prescale factor, otherwise ERROR. 
+
+
+
+
+
+
+      
+        
+          int tiGetPromptTriggerWidth 
+          (
+          )
+          
+        
+      
+
+
+Get the width of the prompt trigger from OT#2. 
+This routine is only functional for Firmware type=2 (modTI)
+ReturnsOutput width set to (return value + 2) * 4ns, if successful. Otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiGetSC1 
+          (
+          )
+          
+        
+      
+
+
+Return bitmask showing readback of SC1 dipswitches. 
+ReturnsSC1 bitmask if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int32_t tiGetScalerMode 
+          (
+          int32_t * 
+          mode, 
+        
+        
+          
+          
+          int32_t * 
+          control 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Returns the settings for the scaling of ts inputs. 
+Parameters
+  
+    mode,:
+0: Always count, regardless of trigger source enable
+1: Only count when trigger source is enabled.
+
+
+    control,:
+0: TS inputs scalers count according to 'mode' parameter.
+1: TS inputs scalers can be enabled/disabled with /
+
+
+  
+  
+
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          unsigned int tiGetSerialNumber 
+          (
+          char ** 
+          rSN)
+          
+        
+      
+
+
+Get the Module Serial Number. 
+Parameters
+  
+    rSNPointer to string to pass Serial Number
+  
+  
+
+ReturnsSerialNumber if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiGetSlaveBlocklevel 
+          (
+          int 
+          port)
+          
+        
+      
+
+
+Get the blocklevel of the TI-Slave on the selected port. 
+Parameters
+  
+    port
+1-8 - Fiber port 1-8
+
+
+  
+  
+
+Returnsport blocklevel if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiGetSlavePort 
+          (
+          )
+          
+        
+      
+
+
+Returns the port of which the TI Slave has been configured (or will be) 
+Returns
+1 - Port 1
+5 - Port 5 
+
+
+
+
+
+
+
+
+      
+        
+          unsigned int tiGetSWAStatus 
+          (
+          int 
+          reg)
+          
+        
+      
+
+
+Return the value from the SWa fast link register. 
+Parameters
+  
+    regRegister to request 
+  
+  
+
+ReturnsValue at specified register 
+
+
+
+
+
+
+      
+        
+          int tiGetSWBBusy 
+          (
+          int 
+          pflag)
+          
+        
+      
+
+
+Return status of Busy from SWB. 
+Parameters
+  
+    pflag
+>0: Print to standard out 
+
+
+  
+  
+
+Returns
+1: Busy
+0: Not Busy
+-1: Error 
+
+
+
+
+
+
+
+
+      
+        
+          unsigned int tiGetSWBStatus 
+          (
+          int 
+          reg)
+          
+        
+      
+
+
+Return the value from the SWB fast link register. 
+Parameters
+  
+    regRegister to request 
+  
+  
+
+ReturnsValue at specified register 
+
+
+
+
+
+
+      
+        
+          int32_t tiGetSyncDelayWidth 
+          (
+          int32_t * 
+          delay, 
+        
+        
+          
+          
+          int32_t * 
+          width, 
+        
+        
+          
+          
+          int32_t * 
+          widthstep 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Get the delay time and width of the Sync signal. 
+Parameters
+  
+    delaythe delay (latency) set in units of 4ns. 
+    widththe width set in units of 4ns. 
+    twidthif this is non-zero, set width in units of 32ns. 
+  
+  
+
+
+
+
+
+
+
+      
+        
+          int tiGetSyncHistoryBufferStatus 
+          (
+          int 
+          pflag)
+          
+        
+      
+
+
+Get the status of the SyncCommand History Buffer. 
+Parameters
+  
+    pflag
+>0: Print to standard out
+
+
+  
+  
+
+Returns
+0: Empty
+1: Half Full
+2: Full 
+
+
+
+
+
+
+
+
+      
+        
+          int32_t tiGetSyncResetType 
+          (
+          )
+          
+        
+      
+
+
+Get SyncReset type. 
+ReturnsSync Reset Type
+0: User programmed width in each TI
+1: Fixed 4 microsecond width in each TI 
+
+
+
+
+
+
+
+
+      
+        
+          int32_t tiGetSyncSource 
+          (
+          )
+          
+        
+      
+
+
+Get the Sync source mask. 
+Returnsbit MASK indicating the sync source bit: description
+0: P0
+1: HFBR1
+2: HFBR5
+3: FP
+4: LOOPBACK 
+
+
+
+
+
+
+
+
+      
+        
+          int tiGetTriggerHoldoff 
+          (
+          int 
+          rule)
+          
+        
+      
+
+
+Get the value for a specified trigger rule. 
+Parameters
+  
+    rulethe number of triggers within some time period.. e.g. rule=1: No more than ONE trigger within the specified time period
+  
+  
+
+ReturnsIf successful, returns the value (in steps of 16ns) for the specified rule. ERROR, otherwise. 
+
+
+
+
+
+
+      
+        
+          int tiGetTriggerHoldoffClock 
+          (
+          )
+          
+        
+      
+
+
+Return status of slower clock for trigger rules. If Enabled, will slow down the timestep = 1 by a factor of 32. 
+ReturnsIf successful, returns 1 for enabled, 0 for disabled. ERROR, otherwise. 
+
+
+
+
+
+
+      
+        
+          int tiGetTriggerHoldoffMin 
+          (
+          int 
+          rule, 
+        
+        
+          
+          
+          int 
+          pflag 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Get the value for a specified trigger rule minimum busy. 
+Parameters
+  
+    rulethe number of triggers within some time period.. e.g. rule=1: No more than ONE trigger within the specified time period
+    pflagif not 0, print the setting to standard out.
+  
+  
+
+ReturnsIf successful, returns the value (in steps of 16ns for rule 2, 480ns otherwise) for the specified rule. ERROR, otherwise. 
+
+
+
+
+
+
+      
+        
+          unsigned int tiGetTriggerLinkStatus 
+          (
+          int 
+          pflag)
+          
+        
+      
+
+
+Get the error status bits for the trigger link. 
+Parameters
+  
+    pflag
+!0: Print to standard out
+
+
+  
+  
+
+ReturnsTrigger Link bits if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int32_t tiGetTriggerPulse 
+          (
+          int32_t 
+          trigger, 
+        
+        
+          
+          
+          int32_t * 
+          delay, 
+        
+        
+          
+          
+          int32_t * 
+          width, 
+        
+        
+          
+          
+          int32_t * 
+          delay_step 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Return the characteristics of a specified trigger. 
+Parameters
+  
+    trigger
+1: set for trigger 1
+2: set for trigger 2 (playback trigger) 
+
+
+    delaydelay in units of delay_step 
+    widthpulse width in units of 4ns 
+    delay_stepstep size of the delay
+0: 16ns !1: 64ns (with an offset of ~4.1 us)
+
+
+  
+  
+
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int32_t tiGetTriggerSource 
+          (
+          )
+          
+        
+      
+
+
+Get the trigger source. 
+Returnsinteger indicating the trigger source
+0: P0
+1: HFBR#1
+2: Front Panel (TRG)
+3: Front Panel TS Inputs
+4: TS (rev2)
+5: Random
+6-9: TS Partition 1-4
+10: HFBR#5
+11: Pulser Trig 2 then Trig1 after specified delay 
+
+
+
+
+
+
+
+
+      
+        
+          int32_t tiGetTriggerTableMode 
+          (
+          )
+          
+        
+      
+
+
+Return trigger table mode. 
+Returns0-3: Predefined modes, 4: User 
+
+
+
+
+
+
+      
+        
+          int tiGetTSInputDelay 
+          (
+          int 
+          chan)
+          
+        
+      
+
+
+Get the input delay for the specified front panel TSinput (1-6) 
+Parameters
+  
+    chanFront Panel TSInput Channel (1-6) 
+  
+  
+
+ReturnsChannel delay (units of 4ns) if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          unsigned int tiGetTSscaler 
+          (
+          int 
+          input, 
+        
+        
+          
+          
+          int 
+          latch 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Get the current counter for the specified TS Input. 
+Parameters
+  
+    input
+1-6 : TS Input (1-6) 
+
+
+    latch,:
+0: Do not latch before readout
+1: Latch before readout
+2: Latch and reset before readout
+
+
+  
+  
+
+ReturnsSpecified counter value 
+
+
+
+
+
+
+      
+        
+          int32_t tiGetUseBroadcastBufferLevel 
+          (
+          )
+          
+        
+      
+
+
+Get the status of enabling the use of the broadcasted buffer level, instead of the value set locally with . 
+Returns1: enabled, 0: disabled, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiLive 
+          (
+          int 
+          sflag)
+          
+        
+      
+
+
+Calculate the live time (percentage) from the live and busy time scalers. 
+Parameters
+  
+    sflagif > 0, then returns the integrated live time
+  
+  
+
+Returnslive time as a 3 digit integer % (e.g. 987 = 98.7%) 
+
+
+
+
+
+
+      
+        
+          int tiPrintBusyCounters 
+          (
+          )
+          
+        
+      
+
+
+Print the BUSY counters for all busy sources. 
+Returns
+OK if successful, otherwise ERROR; 
+
+
+
+
+
+
+
+
+      
+        
+          int tiPrintClockConfiguration 
+          (
+          )
+          
+        
+      
+
+
+Print clock configuration to standard out. 
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiPrintFiberFifo 
+          (
+          int 
+          fiber)
+          
+        
+      
+
+
+Read the fiber fifo from the TI and print to standard out. 
+Parameters
+  
+    fiber- Fiber fifo to read. 1 and 5 only supported.
+  
+  
+
+ReturnsOK if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          void tiPrintHWRegisters 
+          (
+          int32_t 
+          formatFlag)
+          
+        
+      
+
+
+Print TIs HW registers to standard out. 
+Parameters
+  
+    formatFlagHow many registers to display per line 
+  
+  
+
+
+
+
+
+
+
+      
+        
+          int tiPrintTSInputDelay 
+          (
+          )
+          
+        
+      
+
+
+Print Front Panel TSinput Delays to Standard Out. 
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiReadFiberFifo 
+          (
+          int 
+          fiber, 
+        
+        
+          
+          
+          volatile unsigned int * 
+          data, 
+        
+        
+          
+          
+          int 
+          maxwords 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Read the fiber fifo from the TI. 
+Parameters
+  
+    fiber- Fiber fifo to read. 1 and 5 only supported. 
+    data- local memory address to place data 
+    maxwords- Maximum number of 32bit words to put into data array.
+  
+  
+
+ReturnsNumber of words transferred to data if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiReadScalers 
+          (
+          volatile unsigned int * 
+          data, 
+        
+        
+          
+          
+          int 
+          latch 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Read all the scalers into an array. 
+Parameters
+  
+    data- local memory address to place scaler values element value 0 Live time 1 Busy time 2 TS input #1 3 TS input #2 4 TS input #3 5 TS input #4 6 TS input #5 7 TS input #6 8 All trigger sources, before busy 9 Top 16 bits of 48bit event number 10 Lower 32 bits of 48bit event number 11 Only TS inputs, before busy
+    latch,:
+0: Do not latch before readout
+1: Latch before readout
+2: Latch and reset before readout
+
+
+  
+  
+
+ReturnsNumber of scaler cahnnels
+If data is NULL, routine will return number of words that would have been transferred 
+
+
+
+
+
+
+      
+        
+          void tiSlaveStatus 
+          (
+          int 
+          pflag)
+          
+        
+      
+
+
+Print a summary of all fiber port connections to potential TI Slaves. 
+Parameters
+  
+    pflag
+0 - Default output
+1 - Print Raw Registers 
+
+
+  
+  
+
+
+
+
+
+
+
+      
+        
+          void tiStatus 
+          (
+          int 
+          pflag)
+          
+        
+      
+
+
+Print some status information of the TI to standard out. 
+Parameters
+  
+    pflagif pflag>0, print out raw registers 
+  
+  
+
+
+
+
+
+
+
+      
+        
+          void tiTriggerStatus 
+          (
+          int 
+          pflag)
+          
+        
+      
+
+
+Print some trigger status information to standard out. 
+Parameters
+  
+    pflagif pflag>0, print out raw registers 
+  
+  
+
+
+
+
+
+
+
+      
+        
+          int tiWaitForIODelayReset 
+          (
+          int 
+          nwait)
+          
+        
+      
+
+
+Check TI Ready for specified number of times after iodelay reset. 
+Parameters
+  
+    nwaitNumber of times to poll register for ready state 
+  
+  
+
+
+
+
+
+
+
+Generated by  
+
+ 1.8.5
+
+
+

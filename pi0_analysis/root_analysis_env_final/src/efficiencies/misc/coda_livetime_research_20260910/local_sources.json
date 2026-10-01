@@ -1,0 +1,30 @@
+[
+  {
+    "file": "sources/group__MasterConfig.html",
+    "local_source": "/group/da/distribution/coda/LibraryManual/tiLib/group__MasterConfig.html",
+    "url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/group__MasterConfig.html",
+    "sha256": "337cffff1030d3bc8d579c9d1c6804afcd8738da476cd635ceccd17dcbe69c93",
+    "matches_local": true
+  },
+  {
+    "file": "sources/tiLib_8h_source.html",
+    "local_source": "/group/da/distribution/coda/LibraryManual/tiLib/tiLib_8h_source.html",
+    "url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/tiLib_8h_source.html",
+    "sha256": "cc2bc48ddb7a38bf64bd514066ce213a1bc51019bf19109f77bf50319f7ba210",
+    "matches_local": true
+  },
+  {
+    "file": "sources/group__Status.html",
+    "local_source": "/group/da/distribution/coda/LibraryManual/tiLib/group__Status.html",
+    "url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/group__Status.html",
+    "sha256": "56e65fa4f3f8339c5448d2a0a9ef2eafc196962a2616b0398db25c639066469a",
+    "matches_local": true
+  },
+  {
+    "file": "sources/group__Config.html",
+    "local_source": "/group/da/distribution/coda/LibraryManual/tiLib/group__Config.html",
+    "url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/group__Config.html",
+    "sha256": "48d645f9a9b6dbcf48f734b3b1ec6b6b4ac14051a32c360f4357985a5cf47c1d",
+    "matches_local": true
+  }
+]

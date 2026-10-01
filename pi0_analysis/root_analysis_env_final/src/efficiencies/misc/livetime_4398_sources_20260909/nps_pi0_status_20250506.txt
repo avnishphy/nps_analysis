@@ -1,0 +1,371 @@
+Semi-Inclusive π⁰ Production Analysis
+         Status & Next Steps
+                Joshua P. Crafts
+       The Catholic University of America
+            NPS Collaboration Meeting
+                  May 6th, 2025
+
+
+
+
+                                            1
+                                                NPS Collaboration Meeting
+                                                                5/6/2025
+Outline
+  Semi-Inclusive 𝜋 0
+     o TMD Background
+     o Validation of factorization theorem
+     o E12-13-007 & E12-23-014 at Hall C Jlab
+     o Kinematic Range
+  Current Analysis Workflow
+     o Current Codebase Overview
+     o Background Subtraction
+     o Dummy Subtraction
+     o Physics Cuts
+     o Event Selection
+  SIMC Yield Comparison and Status
+     o Initial missing mass observation
+  Efficiencies and Live Time
+                                                                      2
+                                                                                   NPS Collaboration Meeting
+                                                                                                   5/6/2025
+Physics Motivations
+ Low-energy (x,z) factorization, or possible                     Non-trivial contributions to
+  convolution in terms of quark distribution and                   (e,e’p+) Cross Sections:
+  fragmentation functions, at JLab-12 GeV must
+  be well validated to substantiate the SIDIS
+  science output
+   o Many questions at intermediate-large z (~0.2-1) and
+     low-intermediate Q2 (~2-10 GeV2) remain
+
+    Advantages of (e,e’p0) beyond (e,e’p+/-)?
+  (e,e’p0):
+   No diffractive ρ contributions
+   No exclusive pole contributions
+   Reduced resonance contributions
+   Proportional to average D
+
+E12-13-007 & PR12-23-014 basic SIDIS cross sections, validate SIDIS framework at JLab energies
+
+                                                                                                         3
+                                                      NPS Collaboration Meeting
+                                                                      5/6/2025
+E12-13-007: Basic (e,e’𝜋 𝑜 ) cross sections
+   Linked to framework of Transverse Momentum
+    Dependent Parton Distributions
+   Basic cross sections are a fundamental test of
+    understanding SIDIS in 12 GeV kinematics and
+    essential for most future experiments and their
+    interpretation
+ o Validation of factorization theorem.
+ o Target-mass corrections and ln(1-z) re-
+   summations require precision large-z
+   data
+ o Transverse momentum widths of quarks
+   with different flavor (and polarization) can
+   be different
+
+
+
+
+                                                                            4
+                                                                                                       NPS Collaboration Meeting
+                                                                                                                       5/6/2025
+Kinematic Coverage for RG-1a
+ Kinematic
+   Setting
+               Beam
+               Pass
+                      Coulomb Goal
+                       Per Target
+                                     LH2 % of
+                                       Goal
+                                                LD2 % of
+                                                  Goal
+                                                            Wide range of kinematic settings accessed
+KinC_x36_1       3         1.2       119.33%    134.08%      during the experiment
+KinC_x36_2       4         1.1        37.12%     20.67%
+KinC_x36_2'      4         1.1        44.78%     25.22%
+                                                              o   Covering ranges of XBj and Q2 and with multiple beam
+KinC_x36_2''     4         1.1        34.77%     25.17%           energies for some settings.
+KinC_x36_3       5         0.6       107.21%    119.06%
+KinC_x36_4       4         2.7        36.67%     19.16%
+KinC_x36_5       5         1.4       121.88%     88.58%
+KinC_x36_5'      5         0.5       137.28%    106.98%
+KinC_x36_6       5         4.3        43.95%     36.85%
+KinC_x50_0a      3          2         55.18%     48.35%
+KinC_x50_0b      3          2         40.73%     47.39%
+KinC_x50_1       4         1.9       100.14%     81.01%
+KinC_x50_1'      4         1.9        94.84%     80.17%
+KinC_x50_2       5        2.05       121.33%     89.67%
+KinC_x50_2'      5        0.57       109.81%     90.19%
+KinC_x50_2''     5        0.61        94.90%    104.86%
+KinC_x50_3       5        4.85       117.56%     86.04%
+KinC_x50_3'      5        0.68        80.86%    119.14%
+KinC_x50_3''     5         0.7        88.31%    111.69%
+KinC_x60_1       3         10         32.48%     29.36%
+KinC_x60_2       4        4.75        24.59%     22.70%
+KinC_x60_2'      4        4.75        18.67%     20.05%
+KinC_x60_3       5        3.17       112.50%     99.41%
+KinC_x60_3'      5        1.26        85.76%    114.24%
+KinC_x60_3a      5        1.83        57.62%     82.17%
+KinC_x60_3b      5        1.83        83.94%     72.65%
+KinC_x60_4a      5        3.88        85.56%     77.40%
+KinC_x60_4b      5        3.88        83.39%     77.13%
+KinC_x25_1       3         0.5        53.14%     34.10%
+KinC_x25_3       4         2.6        27.73%     18.02%
+KinC_x25_4       5         2.6        41.78%     33.59%                                                                      5
+                                                                                           NPS Collaboration Meeting
+                                                                                                           5/6/2025
+
+Current Analysis Workflow Overview:
+HCANA decoding → ROOT ntuples
+   o Ingesting skimmed root files for analysis.
+Event cuts (HMS/NPS) in C++/ROOT
+   o Working cuts based on known good acceptances, detailed study to be done.
+Random-timing & ⌀-cluster background
+   o Spline fit background is shifted under the main coincidence peak and then subtracted to remove
+     accidentals.
+Dummy LH₂/LD2 subtraction
+   o Taking the Dummy target contribution for the setting and using the charge normalization to subtract.
+BCM charge Normalization & live-time scaling
+   o Applying overall charge normalizations (some done in previous steps) and also introducing the necessary
+     efficiency scaling
+SIMC comparison (in progress)
+   o Working on making the comparisons of the real data event yields to the SIMC yields.
+Outlook
+   o Extraction of the cross-section (multi-dimensional binning), model optimizations and coss-section
+     systematic uncertainties
+
+                                                                                                                 6
+                                                         NPS Collaboration Meeting
+                                                                         5/6/2025
+Background Subtraction
+ Single cluster time clusT[0] read in from
+  each event in the run/segment and used to
+  determine the accidental background
+   o Normalized to run charge (BCM2 used currently)
+     with HMS cuts applied at this stage.
+   o Background is fit with a spline curve with
+     smoothing added to capture the background
+     shape.
+   o This background function is then shifted to under
+     the real coincidence signal and subtracted.
+
+
+
+
+                                                                               7
+                                                                        NPS Collaboration Meeting
+Dummy Subtraction                                                                       5/6/2025
+
+ Dummy Subtraction Methodology
+   o hadd multiple dummy root files to increase the statistics.
+   o Split by the ztarg reconstruction into upstream and
+     downstream scaled by appropriate values.
+   o The dummy target wall thickness is usually higher than the
+     physics target wall thickness to accumulate enough statistics.
+   o Since the thickness is different we need to "scale" them down
+     to the thickness of the target walls for the actual contribution
+     from dummy.
+   o Dummy contribution subtracted in a mechanically similarly way
+     to the way that the accidentals are subtracted. Resulting
+     events are then processed for the Two-photon missing mass
+     calculation.
+
+
+                                              Scaled Dummy (hD)
+
+
+
+
+                                                                                              8
+                                                                                              NPS Collaboration Meeting
+                                                                                                              5/6/2025
+
+
+HMS Physics Cuts
+H.gtr.dp < |8.5|
+o Relative momentum deviation of the particle’s track from the HMS central momentum setting, in percent
+  (adjustments possible to increase acceptance/events).
+H.cal.etotnorm > 0.6 (variable)
+o Energy deposited in the HMS calorimeter, normalized to the track momentum.
+H.cer.npeSum > 1.0
+o Minimum of 1 photoelectron in the HMS Cherenkov detector.
+H.gtr.th & H.gtr.ph < |0.9| collimator cut
+o Vertical angular deviation of the reconstructed track (to be refined through diagnostic plots).
+
+
+
+
+                                                                                                                    9
+                                                                                               NPS Collaboration Meeting
+                                                                                                               5/6/2025
+Two Photon Event Selection
+ Photon-cluster quality cuts
+    o Both Photon Energies ≥ 0.6 GeV, removes low energy noise, and is being adjusted
+      for further studies.
+    o Coincidence-time within 149–151 ns window after background subtraction.
+ Fiducial region cut/rejection                                                                          Clusters
+    o Excludes one full block (≈ 2.16 cm) from every calorimeter edge to avoid edge leakage.
+    o We reject clusters with a shower center that lands in that outermost ring of blocks.
+    o Studying what impact this cut has on cluster/event level efficiency.
+ Build event-level photon list
+    o For each event, keep all clusters passing the quality cuts.
+    o Require ≥ 2 surviving clusters to attempt π0 reconstruction.
+ Form all unique γγ pairs
+    o Pair every cluster possible and
+                                        ∆𝑟𝑖𝑗
+        Compute opening angle 𝜃𝑖𝑗 ≈
+                                       𝐷𝑁𝑃𝑆
+        (with Δr in the front plane and D
+        being the NPS calo distance ).
+ Invariant Mass Calculation
+    o   Compute each candidate π0
+        cluster has invariant mass
+         2                   𝜃𝑖𝑗
+        𝑀𝛾𝛾 = 4 𝐸𝑖 𝐸𝑗 sin2
+                             2
+                                               Code hosted @ https://github.com/jpcrafts/Pi0_analysis               10
+                                                                                            NPS Collaboration Meeting
+                                                                                                            5/6/2025
+Preliminary Physics vs SimC Yield Comparisons
+ Importing SIMC Flat File Events
+   o   Loop over the file, reading one header + 2 cluster lines at a time.
+   o   Increment sum3 until the ifstream hits end-of-file (i.e. the trailer).
+   o   Result: sum3 = number of events in that SIMC file.
+   o   Read the 𝝈𝒄𝒎 from last line of the file, sigcm is the third number
+ Second Pass Event Loop
+   o Read the event record of two cluster lines → (x,y,E) for γ₁ and γ₂, plus unused (px,py,pz).
+     Header[0] → w_evt (SIMC’s per-event weight, counts / mC).
+   o Apply basic selection logic Per-cluster energy ≥ 0.60 GeV, cluster separation ≥ 15 cm.
+   o Calculate the π0 invariant mass m = m_gg(cluster1, cluster2, Ldet=407 cm) or other desired
+     physics variables via 4-vectors.
+ Final Event Weighting
+   o Start with SIMC’s own per-event weight
+     (w_evt). Already in counts
+     per milli-Coulomb (mC).
+   o Scale by a file-level normalization factor
+                        𝜎𝑐𝑚
+       𝑛𝑜𝑟𝑚𝑓𝑎𝑐 =
+                      𝑁_𝑒𝑣𝑒𝑛𝑡𝑠
+   o Scale by extra factor of ×0.7 if the file is
+     exclusive or Δ.
+   o Convert units to match workflow
+                                                                                                                11
+                                                                                NPS Collaboration Meeting
+SIMC Monte Carlo Status                                    Credit to Peter B.                   5/6/2025
+
+
+ Several models are available for PEEPI
+    o Valery Kubarovsky (VK) GPD inspired fit for “deep”
+      π⁰ (default when doing_pizero=.TRUE.).
+    o Bosted param-04 / param-3000 / param-2021 for
+      wider W,Q², latest phenomenological fit of global
+      data by Peter B.
+    o MAID 2007 multipole amplitudes below W≈2.2 GeV.
+    o Historic (1970s) Blok/Brauel fit.
+ The code chooses which one to call based on
+  W, Q² and the pion charge (π⁺, π⁻, π⁰).
+ Currently carries every historical model SIMC
+  has ever used
+ Takes a Monte-Carlo event, boosts it to the
+  photon–nucleon CM, evaluates the
+  appropriate γ N → π N model cross-section
+                                                               Run 4025
+  there,
+ Then multiplies Jacobian × virtual photon
+  flux, and hands SIMC the fully-differential
+  electron pion coincidence cross-section in the
+  lab.
+                                                                                                    12
+                                                                                          NPS Collaboration Meeting
+                                                                                                          5/6/2025
+Efficiencies & Live Time
+ LiveTime Efficiencies → Charge Normalization
+    o Initial Charge: BCM2
+    o Computer Livetime: (hms_trigs.npassed / H.hTRIG6.scaler)
+    o OG 6 GeV Electronic Live Time: (100, 150) : {100.0*(1. - ((H.pPRE100.scalerCut -
+      H.pPRE150.scalerCut)/H.pPRE100.scalerCut)
+    o EDTM Live Time: To be studied
+ Detector Efficiencies → Final Yield
+    o   Hodo_eff ¾: (hhod_3_of_4_eff)
+    o   E SING FID TRACK EFFIC: [HMSScinDide.npassed/(HMSScinShoulde.npassed+0.0001)]
+    o   Cherenkov Cut Efficiency: To be studied       2068
+    o   Calo cut Efficiency: To be studied
+    o   Fiducial Region cut Efficiency: To be studied
+    o   NPS Efficiency: To be studied
+                                                                                          Final
+                                        Initial                                       Events/Charge
+                                    Events/Charge
+
+
+
+                                                                                     Electronic Livetime
+
+                                                                                     Tracking
+                                                                                     Computer Livetime
+                                                                                     Hodoscope
+                                                                                                              13
+                                                                                            NPS Collaboration Meeting
+Summary and Next Steps                                                                                      5/5/2025
+
+ Pi-0 Analysis is Ongoing
+    o   Background and Dummy subtraction tested and working.
+    o   𝜋 0 two-𝛾 event selection tested and working.
+    o   Reconstructed invariant mass shows good results matching to 𝜋 0 mass.
+    o   Charge Normalization is in place (either BCM2 or BCM4a are available).
+    o   Some dials left to fine tune but functionally good to go.
+ Detector Efficiencies
+    o Pending the ongoing live time discussions, electronic and computer live times + uncertainties can
+      be applied to the charge calculations.
+    o HMS detector/tracking efficiencies can also be applied, there will likely need to be some further
+      discussions about which versions are available but they are in the report files for each run and
+      are using the standard HallC methodologies for their calculations.
+    o These can be applied to the total count histograms
+ SIMC Comparisons In-Progress
+    o Real data shows the reasonable (expected for the things I’ve seen) missing mass for the 𝜋 0
+      pending some more detailed studies of HMS cuts to make sure we’re not loosing events.
+    o SIMC data from Peter’s files is being extracted (as we speak).
+    o I will be working on generating SIMC files on my own to double check/fine tune.
+    o Comparing our real event statistics to the SIMC data soon.
+ Next Steps
+    o Generating Skim files for the 𝜋 0 and processing the kinematics on mass.
+    o Extraction of the cross-section (multi-dimensional binning), model optimizations and coss-section
+      systematic uncertainties.
+                                                                                                                  14
+                               NPS Collaboration Meeting
+                                               5/6/2025
+
+
+Thank you to the NPS Collaboration
+   Thanks to all my colleagues
+      at JLab and elsewhere
+   Thank you all for your time
+
+
+
+
+                                                   15
+2068
+                                 NPS Collaboration Meeting
+                                                 5/5/2025
+
+ HMS Efficencies
+
+Live times/ Luminosity talk
+          Eff vs rate
+                          Tracking eff
+   Cut Effencies
+                         hodo eff etc.
+          Total live times
+  which one to use in the end?
+                                                       17
+NPS Collaboration Meeting
+                5/5/2025
+
+
+
+
+                      18
+

@@ -1,0 +1,280 @@
+[
+  {
+    "name": "apps_listing",
+    "argv": [
+      "ls",
+      "-la",
+      "/u/group/nps/apps"
+    ],
+    "command": "ls -la /u/group/nps/apps",
+    "utc": "2026-09-10T02:31:50.250071+00:00",
+    "exit_code": 0,
+    "stdout_bytes": 443,
+    "stderr_bytes": 0
+  },
+  {
+    "name": "apps_files",
+    "argv": [
+      "rg",
+      "--files",
+      "--hidden",
+      "--no-ignore",
+      "-g",
+      "!**/.git/**",
+      "/u/group/nps/apps"
+    ],
+    "command": "rg --files --hidden --no-ignore -g '!**/.git/**' /u/group/nps/apps",
+    "utc": "2026-09-10T02:31:50.283103+00:00",
+    "exit_code": 0,
+    "stdout_bytes": 192302,
+    "stderr_bytes": 0
+  },
+  {
+    "name": "apps_roc_text",
+    "argv": [
+      "rg",
+      "-n",
+      "-i",
+      "--hidden",
+      "--no-ignore",
+      "-g",
+      "!**/.git/**",
+      "-g",
+      "!**/BUILD/**",
+      "-g",
+      "!*.so*",
+      "-g",
+      "!*.o",
+      "-g",
+      "!*.a",
+      "-g",
+      "!*.pcm",
+      "-g",
+      "!*.root",
+      "coin_sparse|COOL_HOME|cdaqfs|\brol[12]\b|sis3801|tiLib|/site/coda",
+      "/u/group/nps/apps"
+    ],
+    "command": "rg -n -i --hidden --no-ignore -g '!**/.git/**' -g '!**/BUILD/**' -g '!*.so*' -g '!*.o' -g '!*.a' -g '!*.pcm' -g '!*.root' 'coin_sparse|COOL_HOME|cdaqfs|\brol[12]\b|sis3801|tiLib|/site/coda' /u/group/nps/apps",
+    "utc": "2026-09-10T02:31:50.426087+00:00",
+    "exit_code": 0,
+    "stdout_bytes": 5397,
+    "stderr_bytes": 0
+  },
+  {
+    "name": "apps_roc_text_precise",
+    "argv": [
+      "rg",
+      "-n",
+      "-i",
+      "--hidden",
+      "--no-ignore",
+      "-g",
+      "!**/.git/**",
+      "-g",
+      "!**/BUILD*/**",
+      "-g",
+      "!**/build/**",
+      "-g",
+      "!*.so*",
+      "-g",
+      "!*.o",
+      "-g",
+      "!*.a",
+      "-g",
+      "!*.pcm",
+      "-g",
+      "!*.root",
+      "coin_sparse|COOL_HOME|cdaqfs|\\brol[12]\\b|sis3801|\\btiLib\\b|/site/coda",
+      "/u/group/nps/apps"
+    ],
+    "command": "rg -n -i --hidden --no-ignore -g '!**/.git/**' -g '!**/BUILD*/**' -g '!**/build/**' -g '!*.so*' -g '!*.o' -g '!*.a' -g '!*.pcm' -g '!*.root' 'coin_sparse|COOL_HOME|cdaqfs|\\brol[12]\\b|sis3801|\\btiLib\\b|/site/coda' /u/group/nps/apps",
+    "utc": "2026-09-10T02:31:50.560261+00:00",
+    "exit_code": 1,
+    "stdout_bytes": 0,
+    "stderr_bytes": 0
+  },
+  {
+    "name": "apps_decoder_positive_control",
+    "argv": [
+      "rg",
+      "-n",
+      "Scaler3801|AnalyzeBuffer|scal_overflows",
+      "/u/group/nps/apps/hcana/1.0.1/src/src/THcScalerEvtHandler.cxx"
+    ],
+    "command": "rg -n 'Scaler3801|AnalyzeBuffer|scal_overflows' /u/group/nps/apps/hcana/1.0.1/src/src/THcScalerEvtHandler.cxx",
+    "utc": "2026-09-10T02:31:50.566437+00:00",
+    "exit_code": 0,
+    "stdout_bytes": 447,
+    "stderr_bytes": 0
+  },
+  {
+    "name": "modules_paths",
+    "argv": [
+      "rg",
+      "-n",
+      "cdaqfs|module load hcana|set topdir|REPLAYDIR",
+      "/u/group/nps/modulefiles/nps_replay"
+    ],
+    "command": "rg -n 'cdaqfs|module load hcana|set topdir|REPLAYDIR' /u/group/nps/modulefiles/nps_replay",
+    "utc": "2026-09-10T02:31:50.575866+00:00",
+    "exit_code": 0,
+    "stdout_bytes": 3580,
+    "stderr_bytes": 0
+  },
+  {
+    "name": "online_locations",
+    "argv": [
+      "ls",
+      "-ld",
+      "/cdaqfs1",
+      "/u/cdaqfs1",
+      "/home/coda",
+      "/u/home/coda",
+      "/adaqfs"
+    ],
+    "command": "ls -ld /cdaqfs1 /u/cdaqfs1 /home/coda /u/home/coda /adaqfs",
+    "utc": "2026-09-10T02:31:50.579314+00:00",
+    "exit_code": 2,
+    "stdout_bytes": 0,
+    "stderr_bytes": 287
+  },
+  {
+    "name": "hcana_1.0.0_head",
+    "argv": [
+      "git",
+      "-c",
+      "safe.directory=/u/group/nps/apps/hcana/1.0.0/src",
+      "-C",
+      "/u/group/nps/apps/hcana/1.0.0/src",
+      "log",
+      "-1",
+      "--format=%H %cI %s"
+    ],
+    "command": "git -c safe.directory=/u/group/nps/apps/hcana/1.0.0/src -C /u/group/nps/apps/hcana/1.0.0/src log -1 '--format=%H %cI %s'",
+    "utc": "2026-09-10T02:31:50.593325+00:00",
+    "exit_code": 0,
+    "stdout_bytes": 116,
+    "stderr_bytes": 0
+  },
+  {
+    "name": "hcana_1.0.0_scaler_status",
+    "argv": [
+      "git",
+      "-c",
+      "safe.directory=/u/group/nps/apps/hcana/1.0.0/src",
+      "-C",
+      "/u/group/nps/apps/hcana/1.0.0/src",
+      "status",
+      "--short",
+      "--",
+      "src/THcScalerEvtHandler.cxx"
+    ],
+    "command": "git -c safe.directory=/u/group/nps/apps/hcana/1.0.0/src -C /u/group/nps/apps/hcana/1.0.0/src status --short -- src/THcScalerEvtHandler.cxx",
+    "utc": "2026-09-10T02:31:50.611963+00:00",
+    "exit_code": 0,
+    "stdout_bytes": 0,
+    "stderr_bytes": 0
+  },
+  {
+    "name": "hcana_1.0.1_head",
+    "argv": [
+      "git",
+      "-c",
+      "safe.directory=/u/group/nps/apps/hcana/1.0.1/src",
+      "-C",
+      "/u/group/nps/apps/hcana/1.0.1/src",
+      "log",
+      "-1",
+      "--format=%H %cI %s"
+    ],
+    "command": "git -c safe.directory=/u/group/nps/apps/hcana/1.0.1/src -C /u/group/nps/apps/hcana/1.0.1/src log -1 '--format=%H %cI %s'",
+    "utc": "2026-09-10T02:31:50.626721+00:00",
+    "exit_code": 0,
+    "stdout_bytes": 158,
+    "stderr_bytes": 0
+  },
+  {
+    "name": "hcana_1.0.1_scaler_status",
+    "argv": [
+      "git",
+      "-c",
+      "safe.directory=/u/group/nps/apps/hcana/1.0.1/src",
+      "-C",
+      "/u/group/nps/apps/hcana/1.0.1/src",
+      "status",
+      "--short",
+      "--",
+      "src/THcScalerEvtHandler.cxx"
+    ],
+    "command": "git -c safe.directory=/u/group/nps/apps/hcana/1.0.1/src -C /u/group/nps/apps/hcana/1.0.1/src status --short -- src/THcScalerEvtHandler.cxx",
+    "utc": "2026-09-10T02:31:50.638525+00:00",
+    "exit_code": 0,
+    "stdout_bytes": 0,
+    "stderr_bytes": 0
+  },
+  {
+    "name": "hcana_1.0.2_head",
+    "argv": [
+      "git",
+      "-c",
+      "safe.directory=/u/group/nps/apps/hcana/1.0.2/src",
+      "-C",
+      "/u/group/nps/apps/hcana/1.0.2/src",
+      "log",
+      "-1",
+      "--format=%H %cI %s"
+    ],
+    "command": "git -c safe.directory=/u/group/nps/apps/hcana/1.0.2/src -C /u/group/nps/apps/hcana/1.0.2/src log -1 '--format=%H %cI %s'",
+    "utc": "2026-09-10T02:31:50.651972+00:00",
+    "exit_code": 0,
+    "stdout_bytes": 143,
+    "stderr_bytes": 0
+  },
+  {
+    "name": "hcana_1.0.2_scaler_status",
+    "argv": [
+      "git",
+      "-c",
+      "safe.directory=/u/group/nps/apps/hcana/1.0.2/src",
+      "-C",
+      "/u/group/nps/apps/hcana/1.0.2/src",
+      "status",
+      "--short",
+      "--",
+      "src/THcScalerEvtHandler.cxx"
+    ],
+    "command": "git -c safe.directory=/u/group/nps/apps/hcana/1.0.2/src -C /u/group/nps/apps/hcana/1.0.2/src status --short -- src/THcScalerEvtHandler.cxx",
+    "utc": "2026-09-10T02:31:50.669794+00:00",
+    "exit_code": 0,
+    "stdout_bytes": 0,
+    "stderr_bytes": 0
+  },
+  {
+    "name": "run4303_roc_identity",
+    "argv": [
+      "rg",
+      "-n",
+      "channel ROC5|channel npsvme5|ROC5 INFO: ended after|ROC1 INFO: ended after|ROC3 INFO: ended after",
+      "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_refresh_20260909/logbook/run4303_user_log.txt"
+    ],
+    "command": "rg -n 'channel ROC5|channel npsvme5|ROC5 INFO: ended after|ROC1 INFO: ended after|ROC3 INFO: ended after' /w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_refresh_20260909/logbook/run4303_user_log.txt",
+    "utc": "2026-09-10T02:31:50.676418+00:00",
+    "exit_code": 0,
+    "stdout_bytes": 610,
+    "stderr_bytes": 0
+  },
+  {
+    "name": "run4305_roc_identity",
+    "argv": [
+      "rg",
+      "-n",
+      "channel ROC5|channel npsvme5|ROC5 INFO: ended after|ROC1 INFO: ended after|ROC3 INFO: ended after",
+      "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_refresh_20260909/logbook/run4305_user_log.txt"
+    ],
+    "command": "rg -n 'channel ROC5|channel npsvme5|ROC5 INFO: ended after|ROC1 INFO: ended after|ROC3 INFO: ended after' /w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_refresh_20260909/logbook/run4305_user_log.txt",
+    "utc": "2026-09-10T02:31:50.681871+00:00",
+    "exit_code": 0,
+    "stdout_bytes": 604,
+    "stderr_bytes": 0
+  }
+]

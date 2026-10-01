@@ -1,0 +1,2356 @@
+{
+  "checked_utc": "2026-09-09T20:08:14.034543+00:00",
+  "note": "Read-only filenames/stat. No reanalysis or staging; prior ratios retain frozen coverage.",
+  "runs": [
+    {
+      "run": 4253,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        0,
+        2
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4253_0_1_-1.root",
+            "bytes": 15150740406,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4253_1_1_-1.root",
+            "bytes": 15546727340,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4253_2_1_-1.root",
+            "bytes": 9990283999,
+            "segment": 2
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4253_0_1_-1.root",
+            "bytes": 15138142948,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4253_1_1_-1.root",
+            "bytes": 15138242412,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4253_2_1_-1.root",
+            "bytes": 9981959517,
+            "segment": 2
+          }
+        ]
+      }
+    },
+    {
+      "run": 4254,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        0,
+        1,
+        2
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4254_0_1_-1.root",
+            "bytes": 15524281440,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4254_1_1_-1.root",
+            "bytes": 15151972565,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4254_2_1_-1.root",
+            "bytes": 7811621093,
+            "segment": 2
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4254_0_1_-1.root",
+            "bytes": 15123806495,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4254_1_1_-1.root",
+            "bytes": 15531272631,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4254_2_1_-1.root",
+            "bytes": 7805446218,
+            "segment": 2
+          }
+        ]
+      }
+    },
+    {
+      "run": 4255,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        0
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4255_0_1_-1.root",
+            "bytes": 2465000565,
+            "segment": 0
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4255_0_1_-1.root",
+            "bytes": 2535900108,
+            "segment": 0
+          }
+        ]
+      }
+    },
+    {
+      "run": 4256,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        0
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4256_0_1_-1.root",
+            "bytes": 2357197360,
+            "segment": 0
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4256_0_1_-1.root",
+            "bytes": 2354118601,
+            "segment": 0
+          }
+        ]
+      }
+    },
+    {
+      "run": 4257,
+      "type": "efficiency",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        0
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4257_0_1_-1.root",
+            "bytes": 11605084400,
+            "segment": 0
+          }
+        ],
+        "production": []
+      }
+    },
+    {
+      "run": 4258,
+      "type": "efficiency",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        0,
+        1
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4258_0_1_-1.root",
+            "bytes": 14904870236,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4258_1_1_-1.root",
+            "bytes": 1159415024,
+            "segment": 1
+          }
+        ],
+        "production": []
+      }
+    },
+    {
+      "run": 4259,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        0
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4259_0_1_-1.root",
+            "bytes": 9990627223,
+            "segment": 0
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4259_0_1_-1.root",
+            "bytes": 9926980303,
+            "segment": 0
+          }
+        ]
+      }
+    },
+    {
+      "run": 4300,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        5
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4300_0_1_-1.root",
+            "bytes": 15375902706,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4300_1_1_-1.root",
+            "bytes": 15388734601,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4300_2_1_-1.root",
+            "bytes": 15833881382,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4300_3_1_-1.root",
+            "bytes": 15821580447,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4300_4_1_-1.root",
+            "bytes": 15374392507,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4300_5_1_-1.root",
+            "bytes": 15237508079,
+            "segment": 5
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4300_0_1_-1.root",
+            "bytes": 15359466809,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4300_1_1_-1.root",
+            "bytes": 15373379953,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4300_2_1_-1.root",
+            "bytes": 15372652600,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4300_3_1_-1.root",
+            "bytes": 15778869293,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4300_4_1_-1.root",
+            "bytes": 15743086314,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4300_5_1_-1.root",
+            "bytes": 15607302854,
+            "segment": 5
+          }
+        ]
+      }
+    },
+    {
+      "run": 4301,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4301_0_1_-1.root",
+            "bytes": 15283100742,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4301_1_1_-1.root",
+            "bytes": 15319616447,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4301_2_1_-1.root",
+            "bytes": 15305481451,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4301_3_1_-1.root",
+            "bytes": 15695106741,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4301_4_1_-1.root",
+            "bytes": 15707465523,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4301_5_1_-1.root",
+            "bytes": 10661327448,
+            "segment": 5
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4301_0_1_-1.root",
+            "bytes": 15267683565,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4301_1_1_-1.root",
+            "bytes": 15304126383,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4301_2_1_-1.root",
+            "bytes": 15289409843,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4301_3_1_-1.root",
+            "bytes": 15294390619,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4301_4_1_-1.root",
+            "bytes": 15691882909,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4301_5_1_-1.root",
+            "bytes": 10949284609,
+            "segment": 5
+          }
+        ]
+      }
+    },
+    {
+      "run": 4302,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4302_0_1_-1.root",
+            "bytes": 15697443724,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4302_1_1_-1.root",
+            "bytes": 15312504857,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4302_2_1_-1.root",
+            "bytes": 15327214294,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4302_3_1_-1.root",
+            "bytes": 15750687462,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4302_4_1_-1.root",
+            "bytes": 15319067938,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4302_5_1_-1.root",
+            "bytes": 15320072981,
+            "segment": 5
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4302_6_1_-1.root",
+            "bytes": 15315440660,
+            "segment": 6
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4302_7_1_-1.root",
+            "bytes": 1018069634,
+            "segment": 7
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4302_0_1_-1.root",
+            "bytes": 15296045170,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4302_1_1_-1.root",
+            "bytes": 15297285725,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4302_2_1_-1.root",
+            "bytes": 15311745631,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4302_3_1_-1.root",
+            "bytes": 15304756277,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4302_4_1_-1.root",
+            "bytes": 15303008479,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4302_5_1_-1.root",
+            "bytes": 15689205730,
+            "segment": 5
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4302_6_1_-1.root",
+            "bytes": 15299506784,
+            "segment": 6
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4302_7_1_-1.root",
+            "bytes": 988534290,
+            "segment": 7
+          }
+        ]
+      }
+    },
+    {
+      "run": 4303,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4303_0_1_-1.root",
+            "bytes": 14852069327,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4303_1_1_-1.root",
+            "bytes": 15761965005,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4303_2_1_-1.root",
+            "bytes": 15710773293,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4303_3_1_-1.root",
+            "bytes": 15242122198,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4303_4_1_-1.root",
+            "bytes": 15736655194,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4303_5_1_-1.root",
+            "bytes": 15328458834,
+            "segment": 5
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4303_6_1_-1.root",
+            "bytes": 3630163716,
+            "segment": 6
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4303_0_1_-1.root",
+            "bytes": 15261571077,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4303_1_1_-1.root",
+            "bytes": 15746414666,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4303_2_1_-1.root",
+            "bytes": 15306003255,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4303_3_1_-1.root",
+            "bytes": 15226482628,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4303_4_1_-1.root",
+            "bytes": 15301967589,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4303_5_1_-1.root",
+            "bytes": 15312926268,
+            "segment": 5
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4303_6_1_-1.root",
+            "bytes": 3626572198,
+            "segment": 6
+          }
+        ]
+      }
+    },
+    {
+      "run": 4304,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        0,
+        1
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4304_0_1_-1.root",
+            "bytes": 15214593972,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4304_1_1_-1.root",
+            "bytes": 6214241122,
+            "segment": 1
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4304_0_1_-1.root",
+            "bytes": 15196648669,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4304_1_1_-1.root",
+            "bytes": 6399940084,
+            "segment": 1
+          }
+        ]
+      }
+    },
+    {
+      "run": 4305,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        0
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4305_0_1_-1.root",
+            "bytes": 10442310232,
+            "segment": 0
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4305_0_1_-1.root",
+            "bytes": 10427689759,
+            "segment": 0
+          }
+        ]
+      }
+    },
+    {
+      "run": 4306,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        0
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4306_0_1_-1.root",
+            "bytes": 9405307916,
+            "segment": 0
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4306_0_1_-1.root",
+            "bytes": 9018787827,
+            "segment": 0
+          }
+        ]
+      }
+    },
+    {
+      "run": 4307,
+      "type": "junk",
+      "baseline_source": "none",
+      "baseline_segments": [],
+      "current_cache": {
+        "updated": [],
+        "production": []
+      }
+    },
+    {
+      "run": 4308,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4308_0_1_-1.root",
+            "bytes": 13435713501,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4308_1_1_-1.root",
+            "bytes": 13424059496,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4308_2_1_-1.root",
+            "bytes": 13264641538,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4308_3_1_-1.root",
+            "bytes": 13342178646,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4308_4_1_-1.root",
+            "bytes": 13421072845,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4308_5_1_-1.root",
+            "bytes": 7189835211,
+            "segment": 5
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4308_0_1_-1.root",
+            "bytes": 13350268725,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4308_1_1_-1.root",
+            "bytes": 13336344200,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4308_2_1_-1.root",
+            "bytes": 13291525015,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4308_3_1_-1.root",
+            "bytes": 13339722295,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4308_4_1_-1.root",
+            "bytes": 13421753013,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4308_5_1_-1.root",
+            "bytes": 7189951473,
+            "segment": 5
+          }
+        ]
+      }
+    },
+    {
+      "run": 4349,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4349_0_1_-1.root",
+            "bytes": 15287706536,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4349_1_1_-1.root",
+            "bytes": 15294840242,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4349_2_1_-1.root",
+            "bytes": 15484827945,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4349_3_1_-1.root",
+            "bytes": 15303107645,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4349_4_1_-1.root",
+            "bytes": 15701099927,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4349_5_1_-1.root",
+            "bytes": 14773729563,
+            "segment": 5
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4349_0_1_-1.root",
+            "bytes": 15272145742,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4349_1_1_-1.root",
+            "bytes": 15675696369,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4349_2_1_-1.root",
+            "bytes": 15080800138,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4349_3_1_-1.root",
+            "bytes": 15678544777,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4349_4_1_-1.root",
+            "bytes": 15302336373,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4349_5_1_-1.root",
+            "bytes": 15177057630,
+            "segment": 5
+          }
+        ]
+      }
+    },
+    {
+      "run": 4350,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4350_0_1_-1.root",
+            "bytes": 15303338307,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4350_1_1_-1.root",
+            "bytes": 15742859727,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4350_2_1_-1.root",
+            "bytes": 15292923366,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4350_3_1_-1.root",
+            "bytes": 15589481307,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4350_4_1_-1.root",
+            "bytes": 15203079686,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4350_5_1_-1.root",
+            "bytes": 9152200900,
+            "segment": 5
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4350_0_1_-1.root",
+            "bytes": 15287962322,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4350_1_1_-1.root",
+            "bytes": 15726969422,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4350_2_1_-1.root",
+            "bytes": 15277445586,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4350_3_1_-1.root",
+            "bytes": 15572518181,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4350_4_1_-1.root",
+            "bytes": 15187439811,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4350_5_1_-1.root",
+            "bytes": 9143184523,
+            "segment": 5
+          }
+        ]
+      }
+    },
+    {
+      "run": 4351,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        7
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4351_0_1_-1.root",
+            "bytes": 15277660842,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4351_1_1_-1.root",
+            "bytes": 15299095336,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4351_2_1_-1.root",
+            "bytes": 15297421277,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4351_3_1_-1.root",
+            "bytes": 15300663919,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4351_4_1_-1.root",
+            "bytes": 15307175973,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4351_5_1_-1.root",
+            "bytes": 15306025517,
+            "segment": 5
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4351_6_1_-1.root",
+            "bytes": 15310609484,
+            "segment": 6
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4351_7_1_-1.root",
+            "bytes": 2820020099,
+            "segment": 7
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4351_0_1_-1.root",
+            "bytes": 15700306383,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4351_1_1_-1.root",
+            "bytes": 15283109962,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4351_2_1_-1.root",
+            "bytes": 15281251656,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4351_3_1_-1.root",
+            "bytes": 15668022825,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4351_4_1_-1.root",
+            "bytes": 15727913789,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4351_5_1_-1.root",
+            "bytes": 15675001078,
+            "segment": 5
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4351_6_1_-1.root",
+            "bytes": 15684674016,
+            "segment": 6
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4351_7_1_-1.root",
+            "bytes": 2817215556,
+            "segment": 7
+          }
+        ]
+      }
+    },
+    {
+      "run": 4352,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        7
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4352_0_1_-1.root",
+            "bytes": 15148719268,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4352_1_1_-1.root",
+            "bytes": 15306204405,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4352_2_1_-1.root",
+            "bytes": 15720569316,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4352_3_1_-1.root",
+            "bytes": 15680976942,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4352_4_1_-1.root",
+            "bytes": 15690399225,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4352_5_1_-1.root",
+            "bytes": 15682300991,
+            "segment": 5
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4352_6_1_-1.root",
+            "bytes": 15737529940,
+            "segment": 6
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4352_7_1_-1.root",
+            "bytes": 2662139292,
+            "segment": 7
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4352_0_1_-1.root",
+            "bytes": 15133399423,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4352_1_1_-1.root",
+            "bytes": 15289584313,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4352_2_1_-1.root",
+            "bytes": 15705355190,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4352_3_1_-1.root",
+            "bytes": 15283411903,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4352_4_1_-1.root",
+            "bytes": 15291081717,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4352_5_1_-1.root",
+            "bytes": 15691327423,
+            "segment": 5
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4352_6_1_-1.root",
+            "bytes": 15736194863,
+            "segment": 6
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4352_7_1_-1.root",
+            "bytes": 2586539667,
+            "segment": 7
+          }
+        ]
+      }
+    },
+    {
+      "run": 4353,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0,
+        1
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4353_0_1_-1.root",
+            "bytes": 15619320810,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4353_1_1_-1.root",
+            "bytes": 8704782430,
+            "segment": 1
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4353_0_1_-1.root",
+            "bytes": 15171367815,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4353_1_1_-1.root",
+            "bytes": 8966432587,
+            "segment": 1
+          }
+        ]
+      }
+    },
+    {
+      "run": 4354,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        1
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4354_0_1_-1.root",
+            "bytes": 15148844287,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4354_1_1_-1.root",
+            "bytes": 1811594444,
+            "segment": 1
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4354_0_1_-1.root",
+            "bytes": 15128344158,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4354_1_1_-1.root",
+            "bytes": 1808996612,
+            "segment": 1
+          }
+        ]
+      }
+    },
+    {
+      "run": 4355,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4355_0_1_-1.root",
+            "bytes": 9457236205,
+            "segment": 0
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4355_0_1_-1.root",
+            "bytes": 9441196922,
+            "segment": 0
+          }
+        ]
+      }
+    },
+    {
+      "run": 4356,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        1,
+        3,
+        4,
+        5,
+        6
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4356_0_1_-1.root",
+            "bytes": 13274995551,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4356_1_1_-1.root",
+            "bytes": 13335147053,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4356_2_1_-1.root",
+            "bytes": 13337520721,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4356_3_1_-1.root",
+            "bytes": 13331691155,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4356_4_1_-1.root",
+            "bytes": 13269646199,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4356_5_1_-1.root",
+            "bytes": 13413934237,
+            "segment": 5
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4356_6_1_-1.root",
+            "bytes": 1500374153,
+            "segment": 6
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4356_0_1_-1.root",
+            "bytes": 13355992898,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4356_1_1_-1.root",
+            "bytes": 13412998933,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4356_2_1_-1.root",
+            "bytes": 13416296935,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4356_3_1_-1.root",
+            "bytes": 13329280981,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4356_4_1_-1.root",
+            "bytes": 13350066721,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4356_5_1_-1.root",
+            "bytes": 13327162274,
+            "segment": 5
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4356_6_1_-1.root",
+            "bytes": 1500096889,
+            "segment": 6
+          }
+        ]
+      }
+    },
+    {
+      "run": 4397,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4397_0_1_-1.root",
+            "bytes": 15831133799,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4397_1_1_-1.root",
+            "bytes": 15788232850,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4397_2_1_-1.root",
+            "bytes": 15840513875,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4397_3_1_-1.root",
+            "bytes": 15405328161,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4397_6_1_-1.root",
+            "bytes": 9372371150,
+            "segment": 6
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4397_0_1_-1.root",
+            "bytes": 15381242306,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4397_1_1_-1.root",
+            "bytes": 15385379011,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4397_2_1_-1.root",
+            "bytes": 15776665984,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4397_3_1_-1.root",
+            "bytes": 15390448701,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4397_4_1_-1.root",
+            "bytes": 15821271322,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4397_5_1_-1.root",
+            "bytes": 15387486507,
+            "segment": 5
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4397_6_1_-1.root",
+            "bytes": 9118102366,
+            "segment": 6
+          }
+        ]
+      }
+    },
+    {
+      "run": 4398,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_0_1_-1.root",
+            "bytes": 15400016868,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_1_1_-1.root",
+            "bytes": 15402060171,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_2_1_-1.root",
+            "bytes": 15387477689,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_3_1_-1.root",
+            "bytes": 15384335046,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_4_1_-1.root",
+            "bytes": 15404240726,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_5_1_-1.root",
+            "bytes": 14294205439,
+            "segment": 5
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4398_0_1_-1.root",
+            "bytes": 15384565572,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4398_1_1_-1.root",
+            "bytes": 15386458547,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4398_2_1_-1.root",
+            "bytes": 15371858548,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4398_3_1_-1.root",
+            "bytes": 15368641648,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4398_4_1_-1.root",
+            "bytes": 15387774449,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4398_5_1_-1.root",
+            "bytes": 13874822751,
+            "segment": 5
+          }
+        ]
+      }
+    },
+    {
+      "run": 4399,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4399_6_1_-1.root",
+            "bytes": 8123903341,
+            "segment": 6
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4399_0_1_-1.root",
+            "bytes": 15826702631,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4399_1_1_-1.root",
+            "bytes": 15390477298,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4399_2_1_-1.root",
+            "bytes": 15386362559,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4399_3_1_-1.root",
+            "bytes": 15381013950,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4399_4_1_-1.root",
+            "bytes": 15812792290,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4399_5_1_-1.root",
+            "bytes": 15378718008,
+            "segment": 5
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4399_6_1_-1.root",
+            "bytes": 8115807041,
+            "segment": 6
+          }
+        ]
+      }
+    },
+    {
+      "run": 4400,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "current_cache": {
+        "updated": [],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4400_0_1_-1.root",
+            "bytes": 15376996686,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4400_1_1_-1.root",
+            "bytes": 15817430005,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4400_2_1_-1.root",
+            "bytes": 15372232798,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4400_3_1_-1.root",
+            "bytes": 15401655307,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4400_4_1_-1.root",
+            "bytes": 15385251388,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4400_5_1_-1.root",
+            "bytes": 15403607242,
+            "segment": 5
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4400_6_1_-1.root",
+            "bytes": 11562461291,
+            "segment": 6
+          }
+        ]
+      }
+    },
+    {
+      "run": 4401,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0,
+        1
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4401_1_1_-1.root",
+            "bytes": 2506148602,
+            "segment": 1
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4401_0_1_-1.root",
+            "bytes": 15251683430,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4401_1_1_-1.root",
+            "bytes": 2435626719,
+            "segment": 1
+          }
+        ]
+      }
+    },
+    {
+      "run": 4402,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0
+      ],
+      "current_cache": {
+        "updated": [],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4402_0_1_-1.root",
+            "bytes": 13982983609,
+            "segment": 0
+          }
+        ]
+      }
+    },
+    {
+      "run": 4403,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0
+      ],
+      "current_cache": {
+        "updated": [],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4403_0_1_-1.root",
+            "bytes": 8487445253,
+            "segment": 0
+          }
+        ]
+      }
+    },
+    {
+      "run": 4404,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4404_0_1_-1.root",
+            "bytes": 13460381881,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4404_2_1_-1.root",
+            "bytes": 13464059330,
+            "segment": 2
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4404_0_1_-1.root",
+            "bytes": 13457969095,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4404_1_1_-1.root",
+            "bytes": 13461601749,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4404_2_1_-1.root",
+            "bytes": 13461623412,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4404_3_1_-1.root",
+            "bytes": 13455388293,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4404_4_1_-1.root",
+            "bytes": 13535578352,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4404_5_1_-1.root",
+            "bytes": 12335619425,
+            "segment": 5
+          }
+        ]
+      }
+    },
+    {
+      "run": 4483,
+      "type": "junk",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        1
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4483_1_1_-1.root",
+            "bytes": 4671854240,
+            "segment": 1
+          }
+        ],
+        "production": []
+      }
+    },
+    {
+      "run": 4484,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4484_0_1_-1.root",
+            "bytes": 15485465939,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4484_1_1_-1.root",
+            "bytes": 15520492769,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4484_5_1_-1.root",
+            "bytes": 15594131748,
+            "segment": 5
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4484_6_1_-1.root",
+            "bytes": 4635009366,
+            "segment": 6
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4484_0_1_-1.root",
+            "bytes": 15469879556,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4484_1_1_-1.root",
+            "bytes": 15504037688,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4484_2_1_-1.root",
+            "bytes": 15490114145,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4484_3_1_-1.root",
+            "bytes": 15466897568,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4484_4_1_-1.root",
+            "bytes": 15919859841,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4484_5_1_-1.root",
+            "bytes": 15178304254,
+            "segment": 5
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4484_6_1_-1.root",
+            "bytes": 4515526982,
+            "segment": 6
+          }
+        ]
+      }
+    },
+    {
+      "run": 4485,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4485_0_1_-1.root",
+            "bytes": 15471266215,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4485_3_1_-1.root",
+            "bytes": 15458171179,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4485_5_1_-1.root",
+            "bytes": 11592838482,
+            "segment": 5
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4485_0_1_-1.root",
+            "bytes": 15455860092,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4485_1_1_-1.root",
+            "bytes": 15875114781,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4485_2_1_-1.root",
+            "bytes": 15924281813,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4485_3_1_-1.root",
+            "bytes": 15442246429,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4485_4_1_-1.root",
+            "bytes": 15490944911,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4485_5_1_-1.root",
+            "bytes": 11580400816,
+            "segment": 5
+          }
+        ]
+      }
+    },
+    {
+      "run": 4486,
+      "type": "junk",
+      "baseline_source": "none",
+      "baseline_segments": [],
+      "current_cache": {
+        "updated": [],
+        "production": []
+      }
+    },
+    {
+      "run": 4487,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0,
+        1,
+        2
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4487_1_1_-1.root",
+            "bytes": 5247217664,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4487_2_1_-1.root",
+            "bytes": 8510015113,
+            "segment": 2
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4487_0_1_-1.root",
+            "bytes": 15176903991,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4487_1_1_-1.root",
+            "bytes": 15484470585,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4487_2_1_-1.root",
+            "bytes": 8246206805,
+            "segment": 2
+          }
+        ]
+      }
+    },
+    {
+      "run": 4488,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        4
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4488_4_1_-1.root",
+            "bytes": 15919898565,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4488_5_1_-1.root",
+            "bytes": 7045543234,
+            "segment": 5
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4488_0_1_-1.root",
+            "bytes": 15911488281,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4488_1_1_-1.root",
+            "bytes": 15448717230,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4488_2_1_-1.root",
+            "bytes": 15794592645,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4488_3_1_-1.root",
+            "bytes": 15913069029,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4488_4_1_-1.root",
+            "bytes": 15450590331,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4488_5_1_-1.root",
+            "bytes": 6839184171,
+            "segment": 5
+          }
+        ]
+      }
+    },
+    {
+      "run": 4489,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4489_6_1_-1.root",
+            "bytes": 1194661617,
+            "segment": 6
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4489_0_1_-1.root",
+            "bytes": 15451883815,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4489_1_1_-1.root",
+            "bytes": 15921612941,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4489_2_1_-1.root",
+            "bytes": 15862258963,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4489_3_1_-1.root",
+            "bytes": 15882676620,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4489_4_1_-1.root",
+            "bytes": 15474907865,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4489_5_1_-1.root",
+            "bytes": 15468557825,
+            "segment": 5
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4489_6_1_-1.root",
+            "bytes": 1164086344,
+            "segment": 6
+          }
+        ]
+      }
+    },
+    {
+      "run": 4490,
+      "type": "production",
+      "baseline_source": "updated",
+      "baseline_segments": [
+        1
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4490_1_1_-1.root",
+            "bytes": 2216479378,
+            "segment": 1
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4490_0_1_-1.root",
+            "bytes": 15313974905,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4490_1_1_-1.root",
+            "bytes": 2282508908,
+            "segment": 1
+          }
+        ]
+      }
+    },
+    {
+      "run": 4491,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0
+      ],
+      "current_cache": {
+        "updated": [],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4491_0_1_-1.root",
+            "bytes": 13298509233,
+            "segment": 0
+          }
+        ]
+      }
+    },
+    {
+      "run": 4492,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0
+      ],
+      "current_cache": {
+        "updated": [],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4492_0_1_-1.root",
+            "bytes": 8186930092,
+            "segment": 0
+          }
+        ]
+      }
+    },
+    {
+      "run": 4493,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4493_0_1_-1.root",
+            "bytes": 13383523013,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4493_1_1_-1.root",
+            "bytes": 13508415142,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4493_2_1_-1.root",
+            "bytes": 5796487853,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4493_4_1_-1.root",
+            "bytes": 13559626479,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4493_5_1_-1.root",
+            "bytes": 10461133109,
+            "segment": 5
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4493_0_1_-1.root",
+            "bytes": 13462277342,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4493_1_1_-1.root",
+            "bytes": 13423502978,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4493_2_1_-1.root",
+            "bytes": 13556205113,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4493_3_1_-1.root",
+            "bytes": 13636324571,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4493_4_1_-1.root",
+            "bytes": 13557298150,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4493_5_1_-1.root",
+            "bytes": 10524178129,
+            "segment": 5
+          }
+        ]
+      }
+    },
+    {
+      "run": 4551,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "current_cache": {
+        "updated": [],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4551_0_1_-1.root",
+            "bytes": 15254673144,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4551_1_1_-1.root",
+            "bytes": 15266537668,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4551_2_1_-1.root",
+            "bytes": 15265974259,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4551_3_1_-1.root",
+            "bytes": 15709408450,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4551_4_1_-1.root",
+            "bytes": 15268894595,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4551_5_1_-1.root",
+            "bytes": 13853236306,
+            "segment": 5
+          }
+        ]
+      }
+    },
+    {
+      "run": 4552,
+      "type": "junk",
+      "baseline_source": "none",
+      "baseline_segments": [],
+      "current_cache": {
+        "updated": [],
+        "production": []
+      }
+    },
+    {
+      "run": 4553,
+      "type": "junk",
+      "baseline_source": "none",
+      "baseline_segments": [],
+      "current_cache": {
+        "updated": [],
+        "production": []
+      }
+    },
+    {
+      "run": 4554,
+      "type": "junk",
+      "baseline_source": "none",
+      "baseline_segments": [],
+      "current_cache": {
+        "updated": [],
+        "production": []
+      }
+    },
+    {
+      "run": 4555,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4555_2_1_-1.root",
+            "bytes": 15753114010,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4555_5_1_-1.root",
+            "bytes": 5084535016,
+            "segment": 5
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4555_0_1_-1.root",
+            "bytes": 15270343634,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4555_1_1_-1.root",
+            "bytes": 15266151687,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4555_2_1_-1.root",
+            "bytes": 15683129081,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4555_3_1_-1.root",
+            "bytes": 15681335862,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4555_4_1_-1.root",
+            "bytes": 15578744647,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4555_5_1_-1.root",
+            "bytes": 6743543755,
+            "segment": 5
+          }
+        ]
+      }
+    },
+    {
+      "run": 4556,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0,
+        1
+      ],
+      "current_cache": {
+        "updated": [],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4556_0_1_-1.root",
+            "bytes": 15176457406,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4556_1_1_-1.root",
+            "bytes": 4801351114,
+            "segment": 1
+          }
+        ]
+      }
+    },
+    {
+      "run": 4557,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0
+      ],
+      "current_cache": {
+        "updated": [],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4557_0_1_-1.root",
+            "bytes": 8444383122,
+            "segment": 0
+          }
+        ]
+      }
+    },
+    {
+      "run": 4558,
+      "type": "production",
+      "baseline_source": "production",
+      "baseline_segments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "current_cache": {
+        "updated": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4558_4_1_-1.root",
+            "bytes": 13233605160,
+            "segment": 4
+          }
+        ],
+        "production": [
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4558_0_1_-1.root",
+            "bytes": 13236721227,
+            "segment": 0
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4558_1_1_-1.root",
+            "bytes": 13248802586,
+            "segment": 1
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4558_2_1_-1.root",
+            "bytes": 13235698710,
+            "segment": 2
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4558_3_1_-1.root",
+            "bytes": 13241001577,
+            "segment": 3
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4558_4_1_-1.root",
+            "bytes": 13310293026,
+            "segment": 4
+          },
+          {
+            "path": "/cache/hallc/c-nps/analysis/pass2/replays/production/nps_hms_coin_4558_5_1_-1.root",
+            "bytes": 7798991295,
+            "segment": 5
+          }
+        ]
+      }
+    }
+  ]
+}

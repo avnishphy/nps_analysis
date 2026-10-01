@@ -1,0 +1,8 @@
+{
+  "job_json": "/group/nps/nps-ana/hcswif/jsons/NPS_PASS2_x60_4b_x60_2.json",
+  "job_json_sha256": "84a735474beffb8d23e99aac62b7d618f934ad899fcd0788f527dddee60da306",
+  "tarball": "/group/nps/nps-ana/nps_replay_pass2_github.tar.gz",
+  "tarball_sha256": "ff34bf9a2b41f99f38af94691a5a8cb2aa4b7473c92b970cde80045418c1ed63",
+  "archived_head": "2d462a85b860c54785d8287e644619a1cb1acc19",
+  "original_binary_revision": "unresolved"
+}

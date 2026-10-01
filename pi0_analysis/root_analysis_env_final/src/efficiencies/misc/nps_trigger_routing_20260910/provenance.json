@@ -1,0 +1,20 @@
+{
+  "source": "User-pasted logbook excerpts and follow-up dates/links",
+  "entries": [
+    {
+      "excerpt": 1,
+      "id": 4170042,
+      "date": "2023-08-23",
+      "url": "https://logbooks.jlab.org/entry/4170042"
+    },
+    {
+      "excerpt": 2,
+      "id": 4171556,
+      "date": "2023-08-29",
+      "url": "https://logbooks.jlab.org/entry/4171556"
+    }
+  ],
+  "applicability_confirmation": "yeah, these should be good for the these runs",
+  "web_attempt": "web tool returned HTTP401 token_expired; pages not independently retrieved",
+  "metadata_check_note": "Initial conversion failed on aggregate run label2499-2512. Repeated check matches digit-only individual run IDs and asserts one match for every requested production run."
+}

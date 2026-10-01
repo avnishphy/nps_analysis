@@ -1,0 +1,198 @@
+[
+  {
+    "name": "0269b41_head",
+    "command": "git -c safe.directory=/group/nps/apps/NPSlib/0269b41/src -C /group/nps/apps/NPSlib/0269b41/src log -1 '--format=%H %cI %s'",
+    "argv": [
+      "git",
+      "-c",
+      "safe.directory=/group/nps/apps/NPSlib/0269b41/src",
+      "-C",
+      "/group/nps/apps/NPSlib/0269b41/src",
+      "log",
+      "-1",
+      "--format=%H %cI %s"
+    ],
+    "utc": "2026-09-10T16:12:23.205219+00:00",
+    "exit": 0
+  },
+  {
+    "name": "0269b41_status",
+    "command": "git -c safe.directory=/group/nps/apps/NPSlib/0269b41/src -C /group/nps/apps/NPSlib/0269b41/src status --short -- README.md src",
+    "argv": [
+      "git",
+      "-c",
+      "safe.directory=/group/nps/apps/NPSlib/0269b41/src",
+      "-C",
+      "/group/nps/apps/NPSlib/0269b41/src",
+      "status",
+      "--short",
+      "--",
+      "README.md",
+      "src"
+    ],
+    "utc": "2026-09-10T16:12:23.258393+00:00",
+    "exit": 0
+  },
+  {
+    "name": "0269b41_search",
+    "command": "rg -n -i 'edtm|pre40|pre100|pre150|pre200|livetime|deadtime|sis3801|\\brol[12]\\b|coin_sparse' /group/nps/apps/NPSlib/0269b41/src/src",
+    "argv": [
+      "rg",
+      "-n",
+      "-i",
+      "edtm|pre40|pre100|pre150|pre200|livetime|deadtime|sis3801|\\brol[12]\\b|coin_sparse",
+      "/group/nps/apps/NPSlib/0269b41/src/src"
+    ],
+    "utc": "2026-09-10T16:12:23.300723+00:00",
+    "exit": 0
+  },
+  {
+    "name": "bf8ec57_head",
+    "command": "git -c safe.directory=/group/nps/apps/NPSlib/bf8ec57/src -C /group/nps/apps/NPSlib/bf8ec57/src log -1 '--format=%H %cI %s'",
+    "argv": [
+      "git",
+      "-c",
+      "safe.directory=/group/nps/apps/NPSlib/bf8ec57/src",
+      "-C",
+      "/group/nps/apps/NPSlib/bf8ec57/src",
+      "log",
+      "-1",
+      "--format=%H %cI %s"
+    ],
+    "utc": "2026-09-10T16:12:23.394709+00:00",
+    "exit": 0
+  },
+  {
+    "name": "bf8ec57_status",
+    "command": "git -c safe.directory=/group/nps/apps/NPSlib/bf8ec57/src -C /group/nps/apps/NPSlib/bf8ec57/src status --short -- README.md src",
+    "argv": [
+      "git",
+      "-c",
+      "safe.directory=/group/nps/apps/NPSlib/bf8ec57/src",
+      "-C",
+      "/group/nps/apps/NPSlib/bf8ec57/src",
+      "status",
+      "--short",
+      "--",
+      "README.md",
+      "src"
+    ],
+    "utc": "2026-09-10T16:12:23.442586+00:00",
+    "exit": 0
+  },
+  {
+    "name": "bf8ec57_search",
+    "command": "rg -n -i 'edtm|pre40|pre100|pre150|pre200|livetime|deadtime|sis3801|\\brol[12]\\b|coin_sparse' /group/nps/apps/NPSlib/bf8ec57/src/src",
+    "argv": [
+      "rg",
+      "-n",
+      "-i",
+      "edtm|pre40|pre100|pre150|pre200|livetime|deadtime|sis3801|\\brol[12]\\b|coin_sparse",
+      "/group/nps/apps/NPSlib/bf8ec57/src/src"
+    ],
+    "utc": "2026-09-10T16:12:23.455149+00:00",
+    "exit": 0
+  },
+  {
+    "name": "fddb8e9_head",
+    "command": "git -c safe.directory=/group/nps/apps/NPSlib/fddb8e9/src -C /group/nps/apps/NPSlib/fddb8e9/src log -1 '--format=%H %cI %s'",
+    "argv": [
+      "git",
+      "-c",
+      "safe.directory=/group/nps/apps/NPSlib/fddb8e9/src",
+      "-C",
+      "/group/nps/apps/NPSlib/fddb8e9/src",
+      "log",
+      "-1",
+      "--format=%H %cI %s"
+    ],
+    "utc": "2026-09-10T16:12:23.471633+00:00",
+    "exit": 0
+  },
+  {
+    "name": "fddb8e9_status",
+    "command": "git -c safe.directory=/group/nps/apps/NPSlib/fddb8e9/src -C /group/nps/apps/NPSlib/fddb8e9/src status --short -- README.md src",
+    "argv": [
+      "git",
+      "-c",
+      "safe.directory=/group/nps/apps/NPSlib/fddb8e9/src",
+      "-C",
+      "/group/nps/apps/NPSlib/fddb8e9/src",
+      "status",
+      "--short",
+      "--",
+      "README.md",
+      "src"
+    ],
+    "utc": "2026-09-10T16:12:23.497402+00:00",
+    "exit": 0
+  },
+  {
+    "name": "fddb8e9_search",
+    "command": "rg -n -i 'edtm|pre40|pre100|pre150|pre200|livetime|deadtime|sis3801|\\brol[12]\\b|coin_sparse' /group/nps/apps/NPSlib/fddb8e9/src/src",
+    "argv": [
+      "rg",
+      "-n",
+      "-i",
+      "edtm|pre40|pre100|pre150|pre200|livetime|deadtime|sis3801|\\brol[12]\\b|coin_sparse",
+      "/group/nps/apps/NPSlib/fddb8e9/src/src"
+    ],
+    "utc": "2026-09-10T16:12:23.509960+00:00",
+    "exit": 0
+  },
+  {
+    "name": "edtm_blame",
+    "command": "git -c safe.directory=/group/nps/apps/NPSlib/fddb8e9/src -C /group/nps/apps/NPSlib/fddb8e9/src blame -L 78,78 -- src/THcNPSCoinTime.h",
+    "argv": [
+      "git",
+      "-c",
+      "safe.directory=/group/nps/apps/NPSlib/fddb8e9/src",
+      "-C",
+      "/group/nps/apps/NPSlib/fddb8e9/src",
+      "blame",
+      "-L",
+      "78,78",
+      "--",
+      "src/THcNPSCoinTime.h"
+    ],
+    "utc": "2026-09-10T16:12:23.524308+00:00",
+    "exit": 0
+  },
+  {
+    "name": "config_history",
+    "command": "git -c safe.directory=/group/nps/apps/NPSlib/fddb8e9/src -C /group/nps/apps/NPSlib/fddb8e9/src log --all '--format=%H %aI %s' -- src/THcNPSConfigEvtHandler.cxx",
+    "argv": [
+      "git",
+      "-c",
+      "safe.directory=/group/nps/apps/NPSlib/fddb8e9/src",
+      "-C",
+      "/group/nps/apps/NPSlib/fddb8e9/src",
+      "log",
+      "--all",
+      "--format=%H %aI %s",
+      "--",
+      "src/THcNPSConfigEvtHandler.cxx"
+    ],
+    "utc": "2026-09-10T16:12:23.536569+00:00",
+    "exit": 0
+  },
+  {
+    "name": "history_search",
+    "command": "git -c safe.directory=/group/nps/apps/NPSlib/fddb8e9/src -C /group/nps/apps/NPSlib/fddb8e9/src log --all --oneline --extended-regexp --regexp-ignore-case '--grep=EDTM|ROC5|livetime|deadtime|prescale|trigger|config'",
+    "argv": [
+      "git",
+      "-c",
+      "safe.directory=/group/nps/apps/NPSlib/fddb8e9/src",
+      "-C",
+      "/group/nps/apps/NPSlib/fddb8e9/src",
+      "log",
+      "--all",
+      "--oneline",
+      "--extended-regexp",
+      "--regexp-ignore-case",
+      "--grep=EDTM|ROC5|livetime|deadtime|prescale|trigger|config"
+    ],
+    "utc": "2026-09-10T16:12:23.548838+00:00",
+    "exit": 0
+  }
+]

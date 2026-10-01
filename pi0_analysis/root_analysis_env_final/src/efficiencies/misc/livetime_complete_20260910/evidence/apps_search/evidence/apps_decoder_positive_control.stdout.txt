@@ -1,0 +1,9 @@
+39:#include "Scaler3801.h"
+89:  scal_overflows.clear();
+121:    AnalyzeBuffer(rdata, kFALSE);
+262:    if((ret=AnalyzeBuffer(rdata,fOnlySyncEvents))) {
+271:Int_t THcScalerEvtHandler::AnalyzeBuffer(UInt_t* rdata, Bool_t onlysync)
+399:	    scal_overflows.push_back(0);
+498:	      scal_overflows[nscal]++;
+500:            dvars[ivar] = scaldata + (1+((Double_t)kMaxUInt))*scal_overflows[nscal]
+734:	  scalers.push_back(new Scaler3801(icrate, islot));

@@ -1,0 +1,86 @@
+[
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/config/nps_dvcs_all_kins_main.csv",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/efficiency_stuff/efficiency_KinC_x60_4b.csv",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/efficiency_stuff/selection_report_KinC_x60_4b.csv",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/efficiency_stuff/plots/efficiency_multipanel_vs_run_KinC_x60_4b_lh2.png",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_tracking_eff.h",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/newgen_edtm_livetime.h",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_pid_eff.h",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_cal_eff_tag_cer.h",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/efficiency_types.h",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/prescale_beamtime_helper.h",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/root_file_discovery.h",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/NPS_selection_helper.h",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/good_event_selection_helper.h",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/eff_math_utils.h",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_cer_eff_tag_cal.h",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/nps_hel_select.h",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_pid_common.h",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/config_csv_helper.h",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_hodo_3of4_eff.h",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_event_context.h",
+    "unchanged": true
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/compute_efficiencies_stuff.cxx",
+    "unchanged": true
+  }
+]

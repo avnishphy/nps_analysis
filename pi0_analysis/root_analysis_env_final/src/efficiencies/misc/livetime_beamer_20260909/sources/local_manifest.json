@@ -1,0 +1,197 @@
+[
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/audited_results.json",
+    "file": "baseline/audited_results.json",
+    "sha256": "5415f042c13ed7503e7d5a120a2222ddb707224375a453b046dfa840a06d7476"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/run_summary.csv",
+    "file": "baseline/run_summary.csv",
+    "sha256": "8729d36d5733d3eaf58d770f3a9a789e3d4210bad7f76f386babfaa8ad85af0c"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/inventory.json",
+    "file": "baseline/inventory.json",
+    "sha256": "0373abdc5f7637605a95a9ab079d4a7cfcb52db8edd60cee4df196f997406b7e"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/catalog_coverage.json",
+    "file": "baseline/catalog_coverage.json",
+    "sha256": "4a1938bedb2607095db63d1bbbfe815e483f693a0eca41f97ced426b2a7ddb4d"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/REPORT.md",
+    "file": "baseline/REPORT.md",
+    "sha256": "9e22265303e122cf3d7d78c2955dce4005582b325d3d9b0cdaa0d1a98c9f4e30"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/validation.json",
+    "file": "baseline/validation.json",
+    "sha256": "824c03870fee022cfb69683f92f56edeae664c88dfeb055504cdff1d4f0e6401"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/independent_reader_checks.json",
+    "file": "baseline/independent_reader_checks.json",
+    "sha256": "c0f7f8cf2acd604649da3823d3401ba20c106d6325680886a67bd5515801d772"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/figures/timing_sensitivity.pdf",
+    "file": "figures/timing_sensitivity.pdf",
+    "sha256": "defdc86490aeba5230ac825d7660582c911ec2339fe8dfa7796a3a60144edf16"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/figures/timing_peaks.pdf",
+    "file": "figures/timing_peaks.pdf",
+    "sha256": "d6a6af82a78335d5d7570a6185175083cdc9ab532976a2e18abb1f1de0113d10"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/figures/comparison_all.pdf",
+    "file": "figures/comparison_all.pdf",
+    "sha256": "09b1dae60acd1f4a4fe3467448e9687b11f9aa0d38c4ca37b2ffedb04ccd7c4c"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/figures/normalization_effect.pdf",
+    "file": "figures/normalization_effect.pdf",
+    "sha256": "3d005c903cd598a9c5fb655d259cc335c2d31a5d3b19b011d682e6bf7548a05b"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/figures/intervals_4398.pdf",
+    "file": "figures/intervals_4398.pdf",
+    "sha256": "d55bf2ab2300aa2751a40c513ec24081e0c339b2729b900e9266539a891dc5bd"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/figures/comparison_late.pdf",
+    "file": "figures/comparison_late.pdf",
+    "sha256": "bcf1875c1318abbefe479cffb056dae1416f93fd4456ed2c0aa48d6e2f630735"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/figures/comparison_unprescaled.pdf",
+    "file": "figures/comparison_unprescaled.pdf",
+    "sha256": "4a42f894edf7590e3461255ee283fc73371289f3e0bbb94be1a19d4e85317b31"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/figures/decomposition.pdf",
+    "file": "figures/decomposition.pdf",
+    "sha256": "6143cff3d6e5f3b1f16706f1aaca6b85aaf24f54371dae28239032f04dec9d26"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/figures/intervals_4305.pdf",
+    "file": "figures/intervals_4305.pdf",
+    "sha256": "a3bb5fff60ef8f56d0b5b1ed2739fe9a6cd6b4d8291bf47aaffeb1f510c45db7"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/figures/coverage.pdf",
+    "file": "figures/coverage.pdf",
+    "sha256": "eed82f2172b16c7fa2de1a30bbb7882022b9158d0c5bfe141f9255e66096acd9"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/figures/prescales.pdf",
+    "file": "figures/prescales.pdf",
+    "sha256": "f2107c54ff972d4708b3d5d6b3ba3fb1fe440cfdeaeb211e8b4b61388843fe54"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/figures/comparison_early.pdf",
+    "file": "figures/comparison_early.pdf",
+    "sha256": "358dadd4cfa781086ecc00b783b9ce22cc74845be734c1cbd080368515257268"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/figures/uncertainties.pdf",
+    "file": "figures/uncertainties.pdf",
+    "sha256": "534f0d44c3c096a77b99668bd504961987a199e2aa9297b52655b5233ef921d1"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/figures/intervals_4551.pdf",
+    "file": "figures/intervals_4551.pdf",
+    "sha256": "abc35e9c019f252c6a2c035c1d49819a387a3fcf18f68255d8b123e14ad533ad"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/figures/intervals_4303.pdf",
+    "file": "figures/intervals_4303.pdf",
+    "sha256": "26304e2fe00a3898c8023f7c5e25ca0f8dcc4434cbfcd086d2c49570e33bf0e1"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/figures/sensitivity_all.pdf",
+    "file": "figures/sensitivity_all.pdf",
+    "sha256": "2ce6c73702e43a464de8f4230f3004f382e9555a3002ad373e5e0efc5c61b568"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_KinC_x60_4b_lh2_20260909/snapshot/efficiency_multipanel_vs_run_KinC_x60_4b_lh2.png",
+    "file": "figures/applied_NewGen.png",
+    "sha256": "c637aca3e82c31aa2ecccaa169eef9073660acde195461301135b990bcc73810"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_4398_sources_20260909/singh_nps_luminosity_202505.pdf",
+    "file": "sources/singh_nps_luminosity_202505.pdf",
+    "sha256": "41315ac2d52f7d2c0bbb0f38432ea5919f04d7defe48905fb3e418f885184562"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_4398_sources_20260909/singh_nps_luminosity_202505.txt",
+    "file": "sources/singh_nps_luminosity_202505.txt",
+    "sha256": "99fe30975cf458028660c3895b332e042e7ed37e9cc696640dbb23cca47016d8"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_4398_sources_20260909/doc1022_pooser_live_time.pdf",
+    "file": "sources/doc1022_pooser_live_time.pdf",
+    "sha256": "2efecd8cf56819e0a994878e551bd131c7192431695972041849e38ce9e080d1"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_4398_sources_20260909/doc1022_pooser_live_time.txt",
+    "file": "sources/doc1022_pooser_live_time.txt",
+    "sha256": "3e89d32866eb2c38ccdde01852529a038ddb70906cd4def3307082e6f0da0fd7"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_4398_sources_20260909/doc1001_EDTMnonPoissonBiasCorrectionv2.pdf",
+    "file": "sources/doc1001_EDTMnonPoissonBiasCorrectionv2.pdf",
+    "sha256": "8325d24ca8895c7e04a1a6503d155bace7854aac3b3f815c523302a7c8425a0e"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_4398_sources_20260909/doc1001_EDTMnonPoissonBiasCorrectionv2.txt",
+    "file": "sources/doc1001_EDTMnonPoissonBiasCorrectionv2.txt",
+    "sha256": "3fc2806ff1f3319ce4c5757d8889ae02fe03f2f0cad7afcc7f9825951ba29d39"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_4398_sources_20260909/doc1110_DetailedDeadtimeSourcesv2.pdf",
+    "file": "sources/doc1110_DetailedDeadtimeSourcesv2.pdf",
+    "sha256": "1d29bc18b47ccacb241694180099b2f787ea8c61bf6592f3f4440028009628a4"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_4398_sources_20260909/doc1110_DetailedDeadtimeSourcesv2.txt",
+    "file": "sources/doc1110_DetailedDeadtimeSourcesv2.txt",
+    "sha256": "1e49767b0b1e8dd93cf135796e6d867e0df525878986f1dfe52b01b72ea5a454"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_4398_sources_20260909/doc1063_Combinatorics_in_Estimating_the_Hodo_3of4_Trigger_Livetimev2.pdf",
+    "file": "sources/doc1063_Combinatorics_in_Estimating_the_Hodo_3of4_Trigger_Livetimev2.pdf",
+    "sha256": "5c3d6136c3d608e0276d26639cd3f6afe91f1741f0dc8ec800c9fecf6c591a25"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_4398_sources_20260909/doc1063_Combinatorics_in_Estimating_the_Hodo_3of4_Trigger_Livetimev2.txt",
+    "file": "sources/doc1063_Combinatorics_in_Estimating_the_Hodo_3of4_Trigger_Livetimev2.txt",
+    "sha256": "a59593023bc1049536ae4966f8c00670670baad82939a016f03216f822de4c93"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_4398_sources_20260909/doc1028_trigger_v3.pdf",
+    "file": "sources/doc1028_trigger_v3.pdf",
+    "sha256": "b6413c6458652a5e763f4a5f30900220574978f18220be9f5ef9e556d9cc7196"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_4398_sources_20260909/doc1028_trigger_v3.txt",
+    "file": "sources/doc1028_trigger_v3.txt",
+    "sha256": "5edd6bfbbdafc873c72c3dc3da1e80a64e50ca5e5ed1bfc0fb3d26ef28231f69"
+  },
+  {
+    "source": "/group/nps/yaopeng/Analysis/Deadtime/mass-production-pass1/DT_Analyzer_new.C",
+    "file": "sources/local/DT_Analyzer_new.C",
+    "sha256": "93d742f16b658ca4c66410f536833763986261e766348c1a53bcef7743a38dc5"
+  },
+  {
+    "source": "/group/nps/yaopeng/Analysis/Deadtime/mass-production-pass1/DT_Analyzer.C",
+    "file": "sources/local/DT_Analyzer.C",
+    "sha256": "7897e5a0631c42af791e1b08f1765387d08d760d825d12d7974f06bc1825950c"
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_4398_check_20260909/code_evidence/compute_luminosity_scaler.cxx",
+    "file": "sources/local/compute_luminosity_scaler.cxx",
+    "sha256": "a382a7c7ab23710e45154b75e8fc8d7107a567034534647c1c4ea4d4399cd506"
+  }
+]

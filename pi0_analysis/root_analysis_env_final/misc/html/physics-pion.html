@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIMC exclusive pi0 calculation — physics_pion.f</title>
+  <style>
+    :root { --ink:#172126; --muted:#52646d; --paper:#f7f4ed; --card:#fffdf8;
+      --blue:#155d78; --teal:#177b6b; --amber:#b36a16; --red:#a3423c; --line:#d8d5cb;
+      --code:#13232a; --codeink:#e6f1ee; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; color:var(--ink); background:var(--paper); font:16px/1.58 system-ui,-apple-system,Segoe UI,sans-serif; }
+    header { color:white; background:linear-gradient(130deg,#123746,#176b72 62%,#2a7d68); padding:4.6rem max(1.2rem,calc((100% - 1120px)/2)); }
+    header h1 { max-width:900px; margin:0 0 .55rem; font:700 clamp(2rem,5vw,4.1rem)/1.04 Georgia,serif; }
+    header p { max-width:850px; margin:.4rem 0; color:#d8eceb; font-size:1.08rem; }
+    .stamp { display:inline-block; margin-top:1.1rem; padding:.35rem .7rem; border:1px solid #93c5bf; border-radius:99px; font-size:.82rem; }
+    .layout { display:grid; grid-template-columns:250px minmax(0,820px); gap:42px; max-width:1120px; margin:0 auto; padding:36px 20px 80px; }
+    nav { position:sticky; top:18px; align-self:start; padding:18px 16px; background:#eef1e9; border:1px solid var(--line); border-radius:12px; }
+    nav strong { display:block; margin-bottom:.5rem; }
+    nav a { display:block; padding:.25rem 0; color:#28576a; text-decoration:none; font-size:.92rem; }
+    nav a:hover { text-decoration:underline; }
+    main { min-width:0; }
+    section { scroll-margin-top:20px; margin-bottom:3.2rem; }
+    h2 { margin:0 0 1rem; color:#164f60; font:700 2rem/1.18 Georgia,serif; border-bottom:2px solid #d9e1dc; padding-bottom:.42rem; }
+    h3 { margin:1.8rem 0 .55rem; color:#245363; font-size:1.18rem; }
+    h4 { margin:1.3rem 0 .4rem; }
+    p { margin:.55rem 0 1rem; }
+    .lead { font-size:1.15rem; }
+    .card, .warning, .fact { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 20px; margin:1rem 0; box-shadow:0 2px 10px #2030380a; }
+    .warning { border-left:5px solid var(--amber); }
+    .fact { border-left:5px solid var(--teal); }
+    .critical { border-left:5px solid var(--red); }
+    .eyebrow { color:var(--muted); text-transform:uppercase; letter-spacing:.08em; font-size:.76rem; font-weight:750; }
+    .eq { overflow:auto; margin:.8rem 0; padding:13px 16px; background:#eef3f0; border-left:4px solid var(--teal); font:1.01rem/1.7 Georgia,serif; }
+    code { background:#e8ebe5; border-radius:4px; padding:.08rem .3rem; font:90% ui-monospace,SFMono-Regular,Consolas,monospace; }
+    pre { overflow:auto; background:var(--code); color:var(--codeink); padding:16px; border-radius:9px; line-height:1.48; font-size:.82rem; }
+    pre code { padding:0; background:none; color:inherit; }
+    table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:.94rem; }
+    th,td { text-align:left; vertical-align:top; padding:.6rem .65rem; border-bottom:1px solid var(--line); }
+    th { color:#174e5d; background:#edf1ec; }
+    .flow { display:grid; gap:10px; }
+    .flow > div { position:relative; padding:13px 16px; background:white; border:1px solid var(--line); border-radius:9px; }
+    .flow > div:not(:last-child)::after { content:"↓"; position:absolute; bottom:-21px; left:49%; color:var(--blue); z-index:2; }
+    .tag { display:inline-block; padding:.12rem .45rem; margin:.1rem; border-radius:99px; background:#dcebe5; font-size:.78rem; }
+    details { margin:.8rem 0; border:1px solid var(--line); border-radius:8px; background:#fff; }
+    summary { cursor:pointer; padding:.7rem .9rem; font-weight:650; color:#225769; }
+    details > div { padding:0 .9rem .8rem; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:15px; }
+    .calc label { display:block; color:var(--muted); font-size:.83rem; }
+    .calc input { width:100%; padding:.52rem; margin:.2rem 0 .7rem; border:1px solid #aeb9b5; border-radius:6px; font:inherit; }
+    button { border:0; border-radius:7px; padding:.65rem 1rem; background:var(--blue); color:#fff; font-weight:700; cursor:pointer; }
+    output { display:block; margin-top:1rem; padding:14px; background:#edf3ef; border-radius:7px; white-space:pre-wrap; font: .9rem/1.55 ui-monospace,monospace; }
+    .small { color:var(--muted); font-size:.86rem; }
+    .source { word-break:break-all; font-family:ui-monospace,monospace; font-size:.82rem; }
+    ol li, ul li { margin:.28rem 0; }
+    footer { color:#d7e6e2; background:#17333c; padding:25px max(1.2rem,calc((100% - 1120px)/2)); font-size:.88rem; }
+    @media(max-width:850px) { .layout{grid-template-columns:1fr}.layout nav{position:relative;top:0}.grid2{grid-template-columns:1fr} }
+    @media print { nav,.calc button{display:none}.layout{display:block}.card,details{break-inside:avoid} header{padding:2rem;color:#000;background:#fff;border-bottom:2px solid #000}header p{color:#222} }
+  </style>
+</head>
+<body>
+<a href="simulation.html#model" style="position:fixed;right:16px;bottom:16px;z-index:999;padding:.65rem .9rem;border-radius:9px;background:#155d78;color:white;text-decoration:none;box-shadow:0 4px 18px #0004">← Back to analysis site</a>
+<header>
+  <div class="eyebrow" style="color:#aee1d8">Code-trace / scientific audit</div>
+  <h1>How SIMC calculates exclusive π⁰ electroproduction</h1>
+  <p>An implementation-level reading of <code>physics_pion.f</code>, including the active 2021 charged-pion proxy, low-W MAID blend, every dormant legacy model, the CM-to-lab Jacobian, virtual-photon flux, and downstream channel factors.</p>
+  <div class="stamp">Audited 2026-09-22 · source commit 55998ac3 · no physics claims beyond the code</div>
+</header>
+
+<div class="layout">
+<nav aria-label="Contents">
+  <strong>Contents</strong>
+  <a href="#verdict">1. Essential result</a>
+  <a href="#route">2. Exact execution path</a>
+  <a href="#kinematics">3. Kinematics and units</a>
+  <a href="#highw">4. 2021 model / π⁰ proxy</a>
+  <a href="#dormant">5. All dormant models</a>
+  <a href="#loww">6. MAID and W blending</a>
+  <a href="#conversion">7. Jacobian and flux</a>
+  <a href="#channels">8. Channel factors</a>
+  <a href="#calculator">9. Equation calculator</a>
+  <a href="#cautions">10. Reliability cautions</a>
+  <a href="#verify">11. Reproduce the audit</a>
+  <a href="#provenance">Source provenance</a>
+</nav>
+
+<main>
+<section id="verdict">
+  <h2>1. Essential result</h2>
+  <div class="warning critical">
+    <div class="eyebrow">Most important finding</div>
+    <p><strong>The high-W π⁰ calculation is not a fit to exclusive π⁰ data.</strong> When <code>doing_pizero=.true.</code>, the active 2021 parameterization evaluates its π⁺ and π⁻ fits with the pion-pole factor set to zero, then returns their arithmetic mean:</p>
+    <div class="eq">σ<sub>π⁰,2021</sub> = ½ [ σ<sub>fit,π⁺</sub>(f<sub>π</sub>=0) + σ<sub>fit,π⁻</sub>(f<sub>π</sub>=0) ].</div>
+    <p>This statement follows directly from lines 788–793. The file itself labels it “first pass, average of pi+ and pi-.”</p>
+  </div>
+  <p class="lead">The final function <code>peepi</code> returns a five-fold cross section in <strong>μb/MeV/sr²</strong>. It starts from a model in <strong>μb/MeV²/rad</strong>, applies a full CM→lab Jacobian, then multiplies by a Hand-like virtual-photon flux and a moving-nucleon correction.</p>
+  <div class="fact">
+    <strong>Which π⁰ nucleon?</strong> At low W, <code>which_pion=0</code> uses MAID π⁰p and <code>which_pion=1 or 3</code> uses MAID π⁰n. At high W, the π⁰ proxy ignores <code>which_pion</code>: proton and neutron receive the same averaged charged-pion fit before any later channel scaling.
+  </div>
+</section>
+
+<section id="route">
+  <h2>2. Exact execution path</h2>
+  <div class="flow">
+    <div><strong><code>event.f:1459</code></strong> calls <code>main%sigcc = peepi(vertex,main)</code>.</div>
+    <div><strong><code>physics_pion.f:45–53</code></strong> calls <code>transform_to_cm</code> to boost the event and calculate θ*, φ*, q*, p*<sub>π</sub>, and the full Jacobian.</div>
+    <div><strong><code>physics_pion.f:77–84</code></strong> calculates s from the virtual photon plus struck nucleon and sets W<sub>CM</sub>=√s.</div>
+    <div><strong><code>physics_pion.f:126–127</code></strong> always evaluates <code>sig_param_2021</code>.</div>
+    <div><strong><code>physics_pion.f:132–154</code></strong> if W&lt;2 GeV, also evaluates <code>sigmaid</code> (MAID table) and blends it into the 2021 result.</div>
+    <div><strong><code>physics_pion.f:186–191</code></strong> multiplies the model by the Jacobian, virtual-photon flux, and moving-target correction.</div>
+    <div><strong><code>event.f:1460–1494</code></strong> optionally multiplies Δ-final-state π⁰ channels by empirical factors after <code>peepi</code> returns.</div>
+  </div>
+  <p class="small">An older multipole model, three older high-W fits, an alternate equivalent-photon definition, and an older MAID transition remain comment-disabled. Section 5 traces all of them.</p>
+</section>
+
+<section id="kinematics">
+  <h2>3. Kinematics and units</h2>
+  <p>SIMC’s native energies, momenta, and masses are MeV. The model subroutines receive selected invariants converted to GeV or GeV².</p>
+  <table>
+    <thead><tr><th>Quantity</th><th>Implemented calculation</th><th>Units passed to model</th></tr></thead>
+    <tbody>
+      <tr><td>ν</td><td><code>E − E′</code> (<code>event.f:530</code>)</td><td>MeV in <code>peepi</code></td></tr>
+      <tr><td>Q²</td><td><code>2 E E′ (1−cos θe)</code> (<code>event.f:531</code>), positive convention</td><td><code>vertex%q2 / 10⁶</code> GeV²</td></tr>
+      <tr><td>|q|</td><td>√(Q²+ν²)</td><td>MeV</td></tr>
+      <tr><td>t argument</td><td><code>Q² − mπ² + 2νEπ − 2|pπ||q|cosθπq</code></td><td><code>main%t / 10⁶</code> GeV²</td></tr>
+      <tr><td>s, W</td><td>See equation below; <code>main%wcm=√s</code></td><td><code>s/10⁶</code> GeV²; W/1000 GeV</td></tr>
+      <tr><td>ε</td><td>[1+2(1+ν²/Q²)tan²(θe/2)]<sup>−1</sup></td><td>dimensionless</td></tr>
+      <tr><td>θ*, φ*</td><td>π⁰ direction in the γ*–struck-nucleon CM, φ* relative to the boosted electron scattering plane</td><td>radians</td></tr>
+    </tbody>
+  </table>
+  <p>For Fermi momentum magnitude p<sub>F</sub>, direction cosine c<sub>Fq</sub>=p̂<sub>F</sub>·q̂, and struck-nucleon energy E<sub>F</sub>, the file computes:</p>
+  <div class="eq">s = (ν + E<sub>F</sub>)² − (|q| + p<sub>F</sub>c<sub>Fq</sub>)² − p<sub>F</sub>²(1−c<sub>Fq</sub>²), &nbsp; W<sub>CM</sub>=√s.</div>
+  <p>For a free stationary proton this reduces to s=M<sub>p</sub>²+2M<sub>p</sub>ν−Q². For bound targets, E<sub>F</sub> is off-shell: the target mass minus the on-shell spectator energy (<code>event.f:362–371</code>).</p>
+  <p>The π⁰ mass used during event kinematics is exactly <code>Mpi0=134.9766 MeV</code>. The active 2021 fit itself does not explicitly use m<sub>π⁰</sub>; its effects enter through event kinematics, t, and the Jacobian.</p>
+</section>
+
+<section id="highw">
+  <h2>4. Active 2021 model and the π⁰ proxy</h2>
+  <p><code>sig_param_2021</code> stores two 17-parameter vectors: <code>pp</code> for π⁺ and <code>pm</code> for π⁻. For π⁰ it calls <code>exclfit</code> twice with <code>fpifact=0.0</code>.</p>
+
+  <h3>4.1 Response equations exactly as coded</h3>
+  <p>Let u=|t|, Q=Q² (despite the short name), S=s=W², and P=(p₁,…,p₁₇). <code>exclfit</code> calculates:</p>
+  <div class="eq">
+    f<sub>π</sub> = f<sub>factor</sub> / (1+p₁Q+p₂Q²)<br>
+    A = Q f<sub>π</sub>²<br><br>
+    σ<sub>L</sub> = (p₃+p₁₅/Q) · u/(u+0.02)² · A · exp(p₄u) / [S<sup>p₁₁</sup>+(√S)<sup>p₁₇</sup>]<br>
+    σ<sub>T</sub> = (p₅/Q) · exp(p₆Q²) · exp(p₁₄u) / [S<sup>p₁₂</sup>+(√S)<sup>p₁₆</sup>]<br>
+    σ<sub>LT</sub> = [p₇/(1+p₁₀Q)] · exp(p₈u) · sinθ* / S<sup>p₁₃</sup><br>
+    σ<sub>TT</sub> = [p₉/(1+Q)] · exp(−7u) · sin²θ*
+  </div>
+  <div class="fact"><strong>π⁰ consequence:</strong> <code>f_factor=0</code> makes f<sub>π</sub>=A=σ<sub>L</sub>=0 for ordinary nonzero Q². σ<sub>T</sub>, σ<sub>LT</sub>, and σ<sub>TT</sub> remain those of each charged-pion fit.</div>
+
+  <h3>4.2 Azimuthal combination and normalization</h3>
+  <div class="eq">
+    σ<sub>219</sub> = σ<sub>T</sub> + εσ<sub>L</sub> + ε cos(2φ*)σ<sub>TT</sub>
+      + √[2ε(1+ε)] cosφ* σ<sub>LT</sub><br><br>
+    F(P) = σ<sub>219</sub> · 8.539/(S−0.938²)² · 1/(2π·10⁶)<br><br>
+    σ<sub>π⁰,2021</sub> = [F(P<sup>+</sup>)+F(P<sup>−</sup>)]/2.
+  </div>
+  <p>The returned unit documented by the code is d²σ/(dt dφ*) in <strong>μb/MeV²/rad</strong>. The hard-coded nucleon mass in this normalization is 0.938 GeV, for both proton and neutron.</p>
+
+  <details><summary>Exact π⁺ parameter vector P⁺</summary><div><pre><code>1.60077, -0.01523, 37.08142, -4.11060, 23.26192,
+0.00983, 0.87073, -5.77115, -271.08678, 0.13766,
+-0.00855, 0.27885, -1.13212, -1.50415, -6.34766,
+0.55769, -0.01709</code></pre></div></details>
+  <details><summary>Exact π⁻ parameter vector P⁻</summary><div><pre><code>1.75169, 0.11144, 47.35877, -4.69434, 1.60552,
+0.00800, 0.44194, -2.29188, -41.67194, 0.69475,
+0.02527, -0.50178, -1.22825, -1.16878, 5.75825,
+-1.00355, 0.05055</code></pre></div></details>
+</section>
+
+<section id="dormant">
+  <h2>5. Every dormant model and alternative in the file</h2>
+  <div class="warning critical">
+    <div class="eyebrow">π⁰ applicability audit</div>
+    <p><strong>None of the three dormant analytic fits, nor the dormant multipole routine, implements a neutral-pion amplitude.</strong> They predate the <code>doing_pizero</code> argument. If a dormant call were restored, a π⁰ job would be routed through charged-pion logic according to <code>which_pion</code>. They are included here because they are physically relevant alternatives present in <code>physics_pion.f</code>, but they must not be described as π⁰ models.</p>
+  </div>
+
+  <table>
+    <thead><tr><th>Routine / alternative</th><th>Status</th><th>What a π⁰ run would receive if naively enabled</th></tr></thead>
+    <tbody>
+      <tr><td><code>sig_blok</code></td><td>Call commented, body compiled</td><td><code>which_pion=0</code> → π⁺ fit; <code>1 or 3</code> → π⁻-modified fit. No π⁰ averaging.</td></tr>
+      <tr><td><code>sig_param04</code></td><td>Call commented, body compiled</td><td>Same charged-channel routing; no <code>doing_pizero</code>.</td></tr>
+      <tr><td><code>sig_param_3000</code></td><td>Call commented, body compiled</td><td>Same charged-channel routing; no <code>doing_pizero</code>.</td></tr>
+      <tr><td><code>sig_multipole</code></td><td>Setup and call prefixed <code>CDG</code>, so disabled</td><td><code>which_pion=0</code> → final_state 1 (π⁺n); all other ordinary π⁰ values → final_state 2 (π⁻p).</td></tr>
+      <tr><td>Older MAID transition</td><td>Two lines commented</td><td>A wider blend from 1.7 to 2.3 GeV, described below.</td></tr>
+      <tr><td>Moving-target <code>k_eq</code></td><td>Two lines commented</td><td>Changes photon flux normalization, not the hadronic model.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.1 Dormant <code>sig_blok</code> (lines 404–465)</h3>
+  <p>The source identifies this as a Brauel et al. π⁺ fit with π⁻ modifications “by hand.” With u=|t|:</p>
+  <div class="eq">
+    σ<sub>L</sub><sup>0</sup>=27.8e<sup>−11.5u</sup>, &nbsp;
+    σ<sub>T</sub><sup>0</sup>=50u e<sup>−5u</sup>, &nbsp; σ<sub>LT</sub>=0,<br>
+    σ<sub>TT</sub><sup>0</sup>=−(4σ<sub>L</sub><sup>0</sup>+0.5σ<sub>T</sub><sup>0</sup>)sin²θ*.<br><br>
+    f<sub>π</sub>=[1+1.65Q+0.5Q²]<sup>−1</sup>,<br>
+    σ<sub>L</sub>=σ<sub>L</sub><sup>0</sup>(Qf<sub>π</sub>²)/0.1215, &nbsp;
+    σ<sub>T</sub>=σ<sub>T</sub><sup>0</sup>/(0.3+Q), &nbsp;
+    σ<sub>TT</sub>=σ<sub>TT</sub><sup>0</sup>/(0.3+Q).
+  </div>
+  <p>For the π⁻ branch only, σ<sub>T</sub> and σ<sub>TT</sub> are additionally multiplied by ¼(1+3e<sup>−10u</sup>); σ<sub>L</sub> is unchanged. The routine forms the standard T+εL+TT+LT azimuthal sum and returns</p>
+  <div class="eq">σ<sub>Blok</sub>=σ<sub>sum</sub> · 15.333/(S−M<sub>struck</sub>²)² · 1/(2π·10⁶).</div>
+  <p><code>mrho_emp=0.712</code> is assigned but never used.</p>
+
+  <h3>5.2 Dormant <code>sig_param04</code> (lines 467–516)</h3>
+  <p>This fit is described as reproducing Fπ-1 and behaving at larger Q². The expressions preserve the code’s signed <code>t</code> wherever it does not call <code>abs</code>:</p>
+  <div class="eq">
+    f<sub>π</sub>=[1+1.77Q+0.05Q²]<sup>−1</sup>, &nbsp;
+    R=u/(u−0.02)²,<br>
+    σ<sub>L</sub>=350Qf<sub>π</sub>² exp[(16−7.5lnQ)(−t)],<br>
+    σ<sub>T</sub>=4.5/Q+2.0/Q²,<br>
+    σ<sub>LT</sub>={exp[0.79−(3.4/√Q)t]+1.1−3.6/Q²}sinθ*,<br>
+    σ<sub>TT</sub>=−(5/Q²)R sin²θ*.
+  </div>
+  <p>The π⁻ branch multiplies only T and TT by ¼(1+3e<sup>−10u</sup>). After the common azimuthal sum:</p>
+  <div class="eq">σ<sub>param04</sub>=σ<sub>sum</sub> · 8.539/(S−M<sub>struck</sub>²)² · 1/(2π·10⁶).</div>
+  <div class="warning"><strong>Literal-code detail:</strong> the pole factor is <code>abs(t)/(abs(t)-0.02)**2</code>, with a minus sign in the denominator. This creates a pole at |t|=0.02; the later fits use <code>+0.02</code>.</div>
+
+  <h3>5.3 Dormant <code>sig_param_3000</code> (lines 519–573)</h3>
+  <p>This fit is documented as covering Fπ-1, Fπ-2, Brauel separated data, and Bebek unseparated data:</p>
+  <div class="eq">
+    f<sub>π</sub>=[1+1.77Q+0.12Q²]<sup>−1</sup>,<br>
+    σ<sub>L</sub>=19.8 · u/(u+0.02)² · Qf<sub>π</sub>² · e<sup>−3.66u</sup>,<br>
+    σ<sub>T</sub>=(5.96/Q)e<sup>−0.013Q²</sup>,<br>
+    σ<sub>LT</sub>=[16.533/(1+Q)]e<sup>−5.1437u</sup>sinθ*,<br>
+    σ<sub>TT</sub>=[−178.06/(1+Q)]e<sup>−7.1381u</sup>sin²θ*.
+  </div>
+  <p>Again, π⁻ multiplies only T and TT by ¼(1+3e<sup>−10u</sup>). Its final normalization is identical to <code>param04</code>:</p>
+  <div class="eq">σ<sub>param3000</sub>=σ<sub>sum</sub> · 8.539/(S−M<sub>struck</sub>²)² · 1/(2π·10⁶).</div>
+
+  <h3>5.4 Dormant low-W multipole model (lines 94–107, 156–163, 197–398)</h3>
+  <p>The routine explicitly says it calculates p(e,e′π⁺)n; it also contains Clebsch–Gordan coefficients for π⁻p. It reads <code>MULTIPOL.file</code>, containing seven complex multipoles at 8 Q² points × 10 equivalent-photon-energy points × 3 isospins. It bilinearly interpolates each isospin amplitude:</p>
+  <div class="eq">
+    A<sub>12</sub>=[A₁(Q<sub>H</sub>−Q)+A₂(Q−Q<sub>L</sub>)]/(Q<sub>H</sub>−Q<sub>L</sub>),<br>
+    A<sub>34</sub>=[A₃(Q<sub>H</sub>−Q)+A₄(Q−Q<sub>L</sub>)]/(Q<sub>H</sub>−Q<sub>L</sub>),<br>
+    A=[A<sub>12</sub>(ν<sub>H</sub>−ν)+A<sub>34</sub>(ν−ν<sub>L</sub>)]/(ν<sub>H</sub>−ν<sub>L</sub>),<br>
+    a<sub>multipole</sub>= (197.327/m<sub>h</sub>) Σ<sub>I=1..3</sub>C(final,I)A<sub>I</sub>.
+  </div>
+  <p>The seven entries are E0+, M1−, E1+, M1+, S0+, S1−, and S1+. The charge-channel coefficient rows are:</p>
+  <div class="eq">
+    C(π⁺n)=(√2, √2/3, −√2/3), &nbsp;
+    C(π⁻p)=(√2, −√2/3, √2/3).
+  </div>
+  <p>With c=cosθ*, sθ=sinθ*, c½=cos(θ*/2), and s½=sin(θ*/2), it constructs CGLN terms:</p>
+  <div class="eq">
+    F₁=a₁+3c(a₄+a₃), &nbsp; F₂=2a₄+a₂, &nbsp; F₃=3(a₃−a₄), &nbsp; F₄=0,<br>
+    F₇=a₆−2a₇, &nbsp; F₈=a₅+6ca₇,<br>
+    H₅=−c½(F₇+F₈), &nbsp; H₆=−s½(F₇−F₈),<br>
+    H₄=[2s½(F₁+F₂)+c½sθ(F₃+F₄)]/√2,<br>
+    H₂=[−2c½(F₁−F₂)+s½sθ(F₃−F₄)]/√2,<br>
+    H₁=−c½sθ(F₃+F₄)/√2, &nbsp; H₃=−s½sθ(F₃−F₄)/√2.
+  </div>
+  <p>It converts these to Bartl amplitudes, then response bilinears:</p>
+  <div class="eq">
+    h<sub>n⊥</sub>=(H₄+H₁)/√2, h<sub>f∥</sub>=(H₃+H₂)/√2,
+    h<sub>n∥</sub>=(H₄−H₁)/√2, h<sub>f⊥</sub>=(H₃−H₂)/√2,
+    h<sub>nL</sub>=H₅, h<sub>fL</sub>=H₆,<br>
+    X<sub>T</sub>=|h<sub>n⊥</sub>|²+|h<sub>f∥</sub>|²+|h<sub>n∥</sub>|²+|h<sub>f⊥</sub>|²,<br>
+    X<sub>L</sub>=|h<sub>nL</sub>|²+|h<sub>fL</sub>|²,<br>
+    X<sub>TT</sub>=|h<sub>n∥</sub>|²+|h<sub>f⊥</sub>|²−|h<sub>n⊥</sub>|²−|h<sub>f∥</sub>|²,<br>
+    X<sub>LT</sub>=h<sub>nL</sub>h<sub>n∥</sub>*+h<sub>fL</sub>h<sub>f∥</sub>*.
+  </div>
+  <p>The kinematic factor and responses are:</p>
+  <div class="eq">
+    K=2[(E<sub>F</sub>−p<sub>F</sub>c<sub>Fq</sub>)/1000]√S[p*<sub>π</sub>/1000] / [(S−M²)M],<br>
+    σ<sub>T</sub>=KX<sub>T</sub>/2, &nbsp; σ<sub>L</sub>=KX<sub>L</sub>, &nbsp;
+    σ<sub>TT</sub>=KX<sub>TT</sub>/2, &nbsp; σ<sub>LT</sub>=K Re(X<sub>LT</sub>).
+  </div>
+  <p>The usual azimuthal sum is divided by <code>2 p*π q*</code>. In the disabled top-level setup, this model would turn on only if <code>k_eq&lt;500 MeV</code> on the <em>first</em> call, and <code>k_eq≥500</code> is clamped to 499.9 inside the routine. The strict interpolation tests exclude points exactly on table boundaries. These are implementation facts, not recommended behavior.</p>
+  <div class="warning"><strong>Restoration is not one-line safe.</strong> The old <code>sig_blok</code> call contains <code>ntup.sigcm1</code> instead of <code>ntup%sigcm1</code>, <code>1%e6</code> instead of <code>1.e6</code>, and <code>main.epsilon</code> instead of <code>main%epsilon</code>. The disabled multipole setup also includes a disabled <code>DATA low_w_flag/.FALSE./</code> initializer. These dormant paths require a deliberate code repair and validation, not mere uncommenting.</div>
+
+  <h3>5.5 Commented alternative transitions and flux choice</h3>
+  <h4>Older MAID join</h4>
+  <p>The current W&lt;2.0 GeV gate and 1.5→1.9 blend replaced these two commented lines:</p>
+  <div class="eq">if W&lt;2.3 GeV: &nbsp; a<sub>old</sub>=max[0,(W−1.7)/0.6], &nbsp; σ=a<sub>old</sub>σ<sub>high</sub>+(1−a<sub>old</sub>)σ<sub>MAID</sub>.</div>
+  <p>Thus the dormant version would be 100% MAID through 1.7 GeV, linearly blend to 100% high-W model at 2.3 GeV, and (because no upper clamp appears in the old factor) rely on the W&lt;2.3 gate to keep a&lt;1.</p>
+  <h4>Moving-target equivalent photon energy</h4>
+  <p>The active choice uses the struck mass in its denominator. The commented DJG 2000 expression instead uses the moving nucleon’s q-axis flux combination:</p>
+  <div class="eq">k<sub>eq,active</sub>=(S−M²)/(2M), &nbsp;
+    k<sub>eq,dormant</sub>=(S−M²)/[2(E<sub>F</sub>−p<sub>F</sub>c<sub>Fq</sub>)].</div>
+</section>
+
+<section id="loww">
+  <h2>6. Low-W MAID table and blending</h2>
+  <p>When W&lt;2.0 GeV, <code>peepi</code> calls <code>sigmaid</code>. That routine reads four external tables once; π⁰ uses <code>maidpi0p.dat</code> for <code>ipi=1</code> or <code>maidpi0n.dat</code> for <code>ipi=2</code>.</p>
+  <h3>5.1 Table selection—no interpolation</h3>
+  <div class="eq">
+    i<sub>Q</sub> = clamp(INT[(Q²+0.1)/0.2], 1, 25)<br>
+    i<sub>W</sub> = clamp(INT[(W−1.090)/0.020], 1, 46)<br>
+    i<sub>θ</sub> = one of six explicit cosθ* intervals, then clamped to [1,6].
+  </div>
+  <p>The six cosθ* intervals are [−0.20,0.20], [0.20,0.44], [0.44,0.63], [0.63,0.78], [0.78,0.90], and [0.90,1.00]. Boundary values can be overwritten by the later interval because the loop does not stop. Although the table array’s angular dimension is 23, this code accesses only indices 1–6.</p>
+
+  <h3>5.2 MAID unpolarized cross section</h3>
+  <p>It recomputes ε from W, Q², beam energy E₀, and a fixed mass 0.9383 GeV:</p>
+  <div class="eq">
+    ν=(W²−0.9383²+Q²)/(2·0.9383), &nbsp; E′=E₀−ν,<br>
+    s<sub>e</sub>²=Q²/(4E₀E′), &nbsp;
+    ε={1+2(1+ν²/Q²)s<sub>e</sub>²/(1−s<sub>e</sub>²)}<sup>−1</sup>.
+  </div>
+  <p>If W&lt;1.08 GeV, ν&gt;E₀, or s<sub>e</sub>² is outside (0,1], it returns zero. Otherwise, with table entries T<sub>j</sub>:</p>
+  <div class="eq">
+    w<sub>fact</sub>=1 for W≤1.232; otherwise (W−1.132)/0.100<br>
+    σ<sub>T</sub>=T₁/[max(0.2,Q²)·w<sub>fact</sub>], &nbsp;
+    σ<sub>L</sub>=T₂σ<sub>T</sub>, &nbsp; σ<sub>LT</sub>=T₃σ<sub>T</sub>, &nbsp; σ<sub>TT</sub>=T₄σ<sub>T</sub><br>
+    σ<sub>MAID,Ω*</sub>=σ<sub>T</sub>+εσ<sub>L</sub>+√[2ε(1+ε)]cosφ*σ<sub>LT</sub>+εcos(2φ*)σ<sub>TT</sub>.
+  </div>
+  <p>This result is in μb/sr and is converted to the model’s t–φ* convention:</p>
+  <div class="eq">σ<sub>MAID,tφ</sub> = σ<sub>MAID,Ω*</sub> / (2 p*<sub>π</sub> q*) &nbsp; [μb/MeV²/rad].</div>
+
+  <h3>5.3 Exact transition</h3>
+  <div class="eq">
+    a(W)=clamp[(W−1.5)/0.4,0,1]<br>
+    σ<sub>model</sub>=a σ<sub>π⁰,2021</sub>+(1−a)σ<sub>MAID,tφ</sub> &nbsp; for W&lt;2.0 GeV.
+  </div>
+  <table>
+    <thead><tr><th>W range</th><th>Actual result</th></tr></thead>
+    <tbody>
+      <tr><td>W&lt;1.08</td><td>MAID returns zero; since a=0, model result is zero.</td></tr>
+      <tr><td>1.08≤W≤1.50</td><td>100% MAID.</td></tr>
+      <tr><td>1.50&lt;W&lt;1.90</td><td>Linear MAID→2021 blend.</td></tr>
+      <tr><td>W≥1.90</td><td>100% 2021 proxy (the W&lt;2 block still runs until 2, but a=1).</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="conversion">
+  <h2>7. From model cross section to <code>peepi</code></h2>
+  <h3>6.1 Full Jacobian</h3>
+  <p><code>jacobians.f</code> analytically differentiates t and φ* with respect to the lab pion variables cosθ<sub>lab</sub> and φ<sub>lab</sub>. Its returned factor is:</p>
+  <div class="eq">J = | (∂t/∂cosθ<sub>lab</sub>)(∂φ*/∂φ<sub>lab</sub>) − (∂t/∂φ<sub>lab</sub>)(∂φ*/∂cosθ<sub>lab</sub>) |.</div>
+  <p>This converts d²σ/(dt dφ*) to the lab pion solid-angle cross section. The implementation is the general non-collinear/Fermi-motion expression at <code>jacobians.f:208–271</code>; <code>jac_old</code> is saved diagnostically but not used in <code>peepi</code>.</p>
+
+  <h3>6.2 Equivalent photon energy and flux</h3>
+  <div class="eq">
+    k<sub>eq</sub> = (W<sub>CM</sub>²−M<sub>struck</sub>²)/(2M<sub>struck</sub>)<br>
+    Γ = [α/(2π²)] · (E′/E) · [k<sub>eq</sub>/Q²] · 1/(1−ε),<br>
+    C<sub>F</sub> = [1/(1−p<sub>F,z</sub>p<sub>F</sub>/E<sub>F</sub>)] · (M<sub>struck</sub>/E<sub>F</sub>).
+  </div>
+  <p>Here α=1/137.0359895. Exactly as coded, <code>pferz</code> is the generated Fermi-direction z component in SIMC’s beam coordinate system; it is multiplied by the magnitude <code>pfer</code>. This differs from <code>tfcos</code>, the direction cosine along q.</p>
+  <h3>6.3 Returned value</h3>
+  <div class="eq">
+    <strong>peepi = σ<sub>model</sub> · J · Γ · C<sub>F</sub></strong><br>
+    = d⁵σ/(dE′ dΩ<sub>e′</sub> dΩ<sub>π,lab</sub>) &nbsp; in μb/MeV/sr².
+  </div>
+  <p>For a stationary free nucleon, p<sub>F</sub>=0 and E<sub>F</sub>=M, so C<sub>F</sub>=1.</p>
+</section>
+
+<section id="channels">
+  <h2>8. Configuration and downstream channel factors</h2>
+  <table>
+    <thead><tr><th>Flags</th><th>Meaning</th><th>What happens</th></tr></thead>
+    <tbody>
+      <tr><td><code>doing_pizero=1</code>, <code>which_pion=0</code></td><td>γ*p→π⁰p</td><td>π⁰p MAID at low W; common charged-pion-average proxy at high W.</td></tr>
+      <tr><td><code>doing_pizero=1</code>, <code>which_pion=1</code></td><td>γ*n→π⁰n</td><td>π⁰n MAID at low W; same proxy at high W.</td></tr>
+      <tr><td><code>doing_pizero=1</code>, <code>which_pion=2</code></td><td>π⁰Δ⁺</td><td>After <code>peepi</code>, <code>event.f</code> multiplies by 0.55 for hydrogen or deuterium.</td></tr>
+      <tr><td><code>doing_pizero=1</code>, <code>which_pion=3</code></td><td>π⁰Δ⁰</td><td>After <code>peepi</code>: zero for hydrogen; ×0.99 for deuterium.</td></tr>
+    </tbody>
+  </table>
+  <div class="warning"><strong>Scope boundary:</strong> those Δ factors are not inside <code>physics_pion.f</code>, but they change <code>main%sigcc</code> immediately after <code>peepi</code>, so they are essential to the actual exclusive π⁰ event weight. Target Z/N weighting occurs later in <code>event.f</code> and is separate from the per-nucleon cross section.</div>
+</section>
+
+<section id="calculator" class="calc">
+  <h2>9. Browser calculator for active and dormant analytic models</h2>
+  <p><strong>New:</strong> the expanded <a href="excl_pi0.html">interactive model explorer</a> adds an exact branch selector, physical π⁰p kinematics, hoverable φ/−t′/Q² plots, response separation, and CSV export. The compact calculator below is retained as a direct numerical cross-check.</p>
+  <p>This reproduces the active <code>sig_param_2021 → exclfit</code> π⁰ proxy and compares all three dormant analytic fits under the charged-channel routing a naïvely uncommented call would use. It does not reproduce MAID or the multipole model (both need external data files), nor the event-dependent Jacobian or flux.</p>
+  <div class="card">
+    <div class="grid2">
+      <div><label for="q2">Q² [GeV²]</label><input id="q2" type="number" step="any" value="3"></div>
+      <div><label for="w">W [GeV]</label><input id="w" type="number" step="any" value="2.2"></div>
+      <div><label for="t">t argument [GeV²] (absolute value is used)</label><input id="t" type="number" step="any" value="-0.3"></div>
+      <div><label for="eps">ε</label><input id="eps" type="number" step="any" value="0.6"></div>
+      <div><label for="theta">θ* [degrees]</label><input id="theta" type="number" step="any" value="20"></div>
+      <div><label for="phi">φ* [degrees]</label><input id="phi" type="number" step="any" value="0"></div>
+      <div><label for="mtar">Mstruck [GeV] (dormant-fit normalization)</label><input id="mtar" type="number" step="any" value="0.93827231"></div>
+      <div><label for="legacyCharge">Dormant-fit branch selected by which_pion</label><select id="legacyCharge" style="width:100%;padding:.56rem;margin:.2rem 0 .7rem;border:1px solid #aeb9b5;border-radius:6px;font:inherit"><option value="plus">which_pion=0: charged π+ branch</option><option value="minus">which_pion=1 or 3: charged π− branch</option></select></div>
+    </div>
+    <button type="button" onclick="calculate()">Calculate exact coded model</button>
+    <output id="result" aria-live="polite"></output>
+  </div>
+</section>
+
+<section id="cautions">
+  <h2>10. Reliability cautions visible in the implementation</h2>
+  <ol>
+    <li><strong>π⁰ is a proxy above the transition, not a dedicated fit.</strong> The source comment explicitly says the 2021 fit is to π⁺/π⁻ data.</li>
+    <li><strong>No validity range is enforced for the 2021 equations.</strong> Q²=0 is singular; fractional powers also require physical positive s. Extrapolation can yield unphysical or negative totals through interference.</li>
+    <li><strong>MAID lookup is stepwise.</strong> It clamps indices and performs no interpolation. The six-bin angular lookup accesses only the first six slots of a 23-slot table dimension.</li>
+    <li><strong>Two ε calculations coexist.</strong> The 2021 model uses <code>main%epsilon</code> from event kinematics; MAID recomputes ε with a fixed 0.9383 GeV mass and the supplied beam energy.</li>
+    <li><strong>The π⁰ scalar is averaged, but response bookkeeping is not.</strong> Because the π⁻ call occurs second, the <code>/excmn/</code> common-block values <code>sigl/sigt/sigttv/sigltv</code> end as the π⁻ responses, not π⁰ averages. The returned scalar cross section is averaged correctly.</li>
+    <li><strong>Potential coordinate sensitivity in the moving-target flux correction.</strong> The comment describes a z component relevant to the collision flux, while the expression uses the beam-coordinate <code>pferz*pfer</code>; the invariant-mass calculation separately uses the q-axis projection <code>tfcos</code>. This page reports that literally and does not silently reinterpret it.</li>
+    <li><strong>The CM Jacobian has singular-looking analytic denominators</strong> at special geometries (for example sinθ→0). No explicit guards appear in the routine.</li>
+  </ol>
+  <div class="fact"><strong>Reliability statement:</strong> The equations and branching above are reliable as a transcription of this exact source revision. Their phenomenological accuracy for NPS π⁰ kinematics cannot be established from code inspection alone; that requires validation against π⁰ data and event-level numerical tests.</div>
+</section>
+
+<section id="verify">
+  <h2>11. Reproduce this audit</h2>
+  <p>Run these read-only commands from any directory on the Hall C system:</p>
+  <pre><code># Active top-level calculation, blending, and flux
+nl -ba /group/nps/singhav/simc_gfortran_updated/physics_pion.f | sed -n '1,195p'
+
+# MAID table algorithm and the active 2021 parameterization
+nl -ba /group/nps/singhav/simc_gfortran_updated/physics_pion.f | sed -n '577,854p'
+
+# Full non-collinear boost and Jacobian
+nl -ba /group/nps/singhav/simc_gfortran_updated/jacobians.f | sed -n '1,282p'
+
+# π⁰ channel definitions and post-peepi Δ factors
+nl -ba /group/nps/singhav/simc_gfortran_updated/dbase.f | sed -n '15,30p;328,377p'
+nl -ba /group/nps/singhav/simc_gfortran_updated/event.f | sed -n '720,732p;1458,1500p'
+
+# Confirm the exact source bytes audited by this page
+sha256sum /group/nps/singhav/simc_gfortran_updated/physics_pion.f</code></pre>
+  <p>The final command should begin with <code>a22df0bd637d10f93db1efe2a1790eb282300b9191af84b16fddce46812895d4</code>. If it does not, the source changed and this page should be regenerated or re-audited.</p>
+</section>
+
+<section id="provenance">
+  <h2>Source provenance</h2>
+  <div class="card">
+    <p><strong>Repository commit:</strong> <code>55998ac382872d7489a76f997395fa90d7cf2c0d</code></p>
+    <p class="source"><strong>Main source:</strong> /group/nps/singhav/simc_gfortran_updated/physics_pion.f<br>SHA-256: a22df0bd637d10f93db1efe2a1790eb282300b9191af84b16fddce46812895d4</p>
+    <p class="source"><strong>Jacobian:</strong> /group/nps/singhav/simc_gfortran_updated/jacobians.f<br>SHA-256: 947e3282db44075e4ac0323f30f7cd2eb604f83f35cc607f2add852f4192f32b</p>
+    <p class="source"><strong>Call site / channel factors:</strong> /group/nps/singhav/simc_gfortran_updated/event.f<br>SHA-256: 2667d43c9de6333e0585eb0051d4252d14b7f2ce08ea93e36ecc33def7a3e851</p>
+    <p class="source"><strong>Channel configuration:</strong> /group/nps/singhav/simc_gfortran_updated/dbase.f<br>SHA-256: 97bd2e997e9d288721e63273a577f48414b6ed527bd3f29ec98f5104c272a476</p>
+  </div>
+</section>
+</main>
+</div>
+
+<footer>Prepared as a source-code explanation, not an endorsement of the model’s physics validity. Equations marked “as coded” intentionally preserve constants, branches, and approximations in the Fortran.</footer>
+
+<script>
+const PP=[1.60077,-0.01523,37.08142,-4.11060,23.26192,0.00983,0.87073,-5.77115,-271.08678,0.13766,-0.00855,0.27885,-1.13212,-1.50415,-6.34766,0.55769,-0.01709];
+const PM=[1.75169,0.11144,47.35877,-4.69434,1.60552,0.00800,0.44194,-2.29188,-41.67194,0.69475,0.02527,-0.50178,-1.22825,-1.16878,5.75825,-1.00355,0.05055];
+function fit(P,t,theta,phi,Q,S,eps){
+  const u=Math.abs(t), fpi=0/(1+P[0]*Q+P[1]*Q**2), A=Q*fpi**2;
+  const L=(P[2]+P[14]/Q)*u/(u+.02)**2*A*Math.exp(P[3]*u)/(S**P[10]+Math.sqrt(S)**P[16]);
+  const T=P[4]/Q*Math.exp(P[5]*Q**2)/(S**P[11]+Math.sqrt(S)**P[15])*Math.exp(P[13]*u);
+  const LT=P[6]/(1+P[9]*Q)*Math.exp(P[7]*u)*Math.sin(theta)/S**P[12];
+  const TT=P[8]/(1+Q)*Math.exp(-7*u)*Math.sin(theta)**2;
+  const s219=T+eps*L+eps*Math.cos(2*phi)*TT+Math.sqrt(2*eps*(1+eps))*Math.cos(phi)*LT;
+  const sig=s219*8.539/(S-.938**2)**2/(2*3.1415928)/1e6;
+  return {L,T,LT,TT,s219,sig};
+}
+function combine(T,L,LT,TT,theta,phi,eps,norm){
+  const sum=T+eps*L+eps*Math.cos(2*phi)*TT+Math.sqrt(2*eps*(1+eps))*Math.cos(phi)*LT;
+  return {T,L,LT,TT,sum,sig:sum*norm};
+}
+function legacyModels(t,theta,phi,Q,S,eps,M,isMinus){
+  const u=Math.abs(t), charge=isMinus?.25*(1+3*Math.exp(-10*u)):1;
+  let L=27.8*Math.exp(-11.5*u), T=50*u*Math.exp(-5*u), LT=0;
+  let TT=-(4*L+.5*T)*Math.sin(theta)**2;
+  let fpi=1/(1+1.65*Q+.5*Q**2);
+  L=L*(fpi**2*Q)/.1215; T=T/(.3+Q)*charge; TT=TT/(.3+Q)*charge;
+  const blok=combine(T,L,LT,TT,theta,phi,eps,15.333/(S-M**2)**2/(2*Math.PI)/1e6);
+
+  fpi=1/(1+1.77*Q+.05*Q**2);
+  L=350*Q*fpi**2*Math.exp((16-7.5*Math.log(Q))*(-t));
+  T=(4.5/Q+2/Q**2)*charge;
+  LT=(Math.exp(.79-3.4/Math.sqrt(Q)*t)+1.1-3.6/Q**2)*Math.sin(theta);
+  TT=-5/Q**2*(u/(u-.02)**2)*Math.sin(theta)**2*charge;
+  const p04=combine(T,L,LT,TT,theta,phi,eps,8.539/(S-M**2)**2/(2*Math.PI)/1e6);
+
+  fpi=1/(1+1.77*Q+.12*Q**2);
+  L=19.8*u/(u+.02)**2*Q*fpi**2*Math.exp(-3.66*u);
+  T=5.96/Q*Math.exp(-.013*Q**2)*charge;
+  LT=16.533/(1+Q)*Math.exp(-5.1437*u)*Math.sin(theta);
+  TT=-178.06/(1+Q)*Math.exp(-7.1381*u)*Math.sin(theta)**2*charge;
+  const p3000=combine(T,L,LT,TT,theta,phi,eps,8.539/(S-M**2)**2/(2*Math.PI)/1e6);
+  return {blok,p04,p3000};
+}
+function f(x){return Number.isFinite(x)?x.toExponential(8):String(x)}
+function calculate(){
+  const Q=+document.getElementById('q2').value, W=+document.getElementById('w').value;
+  const t=+document.getElementById('t').value, eps=+document.getElementById('eps').value;
+  const th=+document.getElementById('theta').value*Math.PI/180, ph=+document.getElementById('phi').value*Math.PI/180;
+  const M=+document.getElementById('mtar').value, isMinus=document.getElementById('legacyCharge').value==='minus';
+  const out=document.getElementById('result');
+  if(!(Q>0 && W>0 && M>0 && eps>=0 && eps<=1)){out.textContent='Use Q²>0, W>0, Mstruck>0, and 0≤ε≤1.';return;}
+  const p=fit(PP,t,th,ph,Q,W**2,eps), m=fit(PM,t,th,ph,Q,W**2,eps), avg=(p.sig+m.sig)/2;
+  const old=legacyModels(t,th,ph,Q,W**2,eps,M,isMinus);
+  out.textContent=`π+ proxy call: σT=${f(p.T)}, σL=${f(p.L)}, σLT=${f(p.LT)}, σTT=${f(p.TT)}\n`+
+    `π− proxy call: σT=${f(m.T)}, σL=${f(m.L)}, σLT=${f(m.LT)}, σTT=${f(m.TT)}\n\n`+
+    `F(P+) = ${f(p.sig)} μb/MeV²/rad\nF(P−) = ${f(m.sig)} μb/MeV²/rad\n`+
+    `π⁰ arithmetic mean = ${f(avg)} μb/MeV²/rad\n\n`+
+    `DORMANT charged-${isMinus?'π−':'π+'} branch (not genuine π⁰ models):\n`+
+    `sig_blok       = ${f(old.blok.sig)} μb/MeV²/rad\n`+
+    `sig_param04    = ${f(old.p04.sig)} μb/MeV²/rad\n`+
+    `sig_param_3000 = ${f(old.p3000.sig)} μb/MeV²/rad\n\n`+
+    (W<1.9?'Note: at this W, peepi would replace/blend this with MAID; this calculator shows only the 2021 core.':'At W≥1.9 GeV, this is the scalar model core used before Jacobian and flux.');
+}
+calculate();
+</script>
+</body>
+</html>

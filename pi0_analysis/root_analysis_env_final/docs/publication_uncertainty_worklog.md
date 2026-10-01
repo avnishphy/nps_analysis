@@ -115,7 +115,8 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
 
 | Proposal | Exact scope | User decision/date | Conditions | Implementation commit | Validation |
 |---|---|---|---|---|---|
-| ALG-001 | Parallel raw-observation forward-inference prototype for one setting; passive exports and run ledger; legacy defaults unchanged | Approved 2026-10-01 with explicit condition: do not touch efficiency calculations; defer them | Efficiency sources/definitions/models frozen; later approvals still required for detailed background, smearing, production default, and publication use | pending phase-one commit | Synthetic/passive-export checks pass; real-data shadow unresolved |
+| ALG-001 | Parallel raw-observation forward-inference prototype for one setting; passive exports and run ledger; legacy defaults unchanged | Approved 2026-10-01 with explicit condition: do not touch efficiency calculations; defer them | Efficiency sources/definitions/models frozen; later approvals still required for detailed background, smearing, production default, and publication use | `17a77208642f03479c53d3ca8709203364795f90` | Synthetic/passive-export checks pass; real-data shadow unresolved |
+| ALG-002 | Joint accepted-lattice timing/mass Poisson model, stratified by mode and multiplicity; timing pilot only | Awaiting user decision; not approved as of 2026-10-01 | Efficiency entirely excluded; no code or real-data run before approval | n/a | Prospective criteria in proposal |
 
 ## Chronological change record
 
@@ -292,3 +293,12 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
 - No experimental event or SIMC production file was processed. Real-data
   default-off/default-on equivalence and category reconciliation remain pending
   a user-selected one-run/one-setting shadow validation.
+- Phase-one commit:
+  `17a77208642f03479c53d3ca8709203364795f90`
+  (`feat: add opt-in raw observation export`).
+- Postcommit freeze verification passed all 31,047 MAIN file hashes and the
+  exact directory-entry manifest; the read-only audit checksum remains
+  `9f0df3ea13872358dc7766f7e0d75d29079e0418f846ecb841ab2ee536f64ddb`.
+- Prepared ALG-002 as the next dependency-ordered decision: an accepted-lattice
+  joint timing/mass Poisson pilot with explicit multiplicity/mode strata. It
+  excludes efficiency and is not implemented pending user approval.

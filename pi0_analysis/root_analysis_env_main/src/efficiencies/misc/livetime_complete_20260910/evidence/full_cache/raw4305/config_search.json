@@ -1,0 +1,476 @@
+{
+  "configs": [
+    {
+      "record": 5,
+      "ROC_bank_tag": 14,
+      "text_file": "config_text/record5_tag137.txt"
+    },
+    {
+      "record": 43,
+      "ROC_bank_tag": 15,
+      "text_file": "config_text/record43_tag137.txt"
+    },
+    {
+      "record": 44,
+      "ROC_bank_tag": 16,
+      "text_file": "config_text/record44_tag137.txt"
+    },
+    {
+      "record": 45,
+      "ROC_bank_tag": 17,
+      "text_file": "config_text/record45_tag137.txt"
+    },
+    {
+      "record": 46,
+      "ROC_bank_tag": 18,
+      "text_file": "config_text/record46_tag137.txt"
+    },
+    {
+      "record": 48,
+      "ROC_bank_tag": 10,
+      "text_file": "config_text/record48_tag137.txt"
+    },
+    {
+      "record": 49,
+      "ROC_bank_tag": 19,
+      "text_file": "config_text/record49_tag137.txt"
+    },
+    {
+      "record": 52,
+      "ROC_bank_tag": 11,
+      "text_file": "config_text/record52_tag137.txt"
+    },
+    {
+      "record": 53,
+      "ROC_bank_tag": 12,
+      "text_file": "config_text/record53_tag137.txt"
+    },
+    {
+      "record": 54,
+      "ROC_bank_tag": 13,
+      "text_file": "config_text/record54_tag137.txt"
+    }
+  ],
+  "matches": [
+    {
+      "tag": 137,
+      "text": "FADC250_TRG_MASK 65535",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "FADC250_TRG_WIDTH 255",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "FADC250_TRG_MINTOT 1",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "FADC250_TRG_MINMULT 1",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "FADC250_TRG_MODE_MASK 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 183,
+      "text": "COLPOS1                         -3.9999                         # Collimator Block 1",
+      "distinct_event_snapshots": 41
+    },
+    {
+      "tag": 183,
+      "text": "COLPOS2                         -4.2529                         # Collimator Block 2",
+      "distinct_event_snapshots": 41
+    },
+    {
+      "tag": 183,
+      "text": "COLPOS3                         -5.3999                         # Collimator Block 3",
+      "distinct_event_snapshots": 41
+    },
+    {
+      "tag": 183,
+      "text": "COLPOS4                         -5.3499                         # Collimator Block 4",
+      "distinct_event_snapshots": 41
+    },
+    {
+      "tag": 183,
+      "text": "COLPOS5                         -8.4999                         # Collimator Block 5",
+      "distinct_event_snapshots": 41
+    },
+    {
+      "tag": 183,
+      "text": "COLPOS6                         -4.6499                         # Collimator Block 6",
+      "distinct_event_snapshots": 41
+    },
+    {
+      "tag": 183,
+      "text": "COLPOS7                         -4.2999                         # Collimator Block 7",
+      "distinct_event_snapshots": 41
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_WIDTH 20",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_LATENCY 2560",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 0 1",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 0 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 1 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 1 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 2 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 2 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 3 1",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 3 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 4 1",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 4 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 5 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 5 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 6 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 6 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 7 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 7 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 8 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 8 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 9 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 9 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 10 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 10 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 11 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 11 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 12 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 12 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 13 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 13 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 14 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 14 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 15 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 15 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 16 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 16 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 17 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 17 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 18 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 18 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 19 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 19 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 20 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 20 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 21 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 21 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 22 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 22 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 23 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 23 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 24 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 24 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 25 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 25 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 26 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 26 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 27 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 27 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 28 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 28 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 29 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 29 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 30 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 30 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_PRESCALE 31 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_DELAY 31 0",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_ECALCLUSTER_CLUSTER_TRIGGER_THR 1600",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_ECALCLUSTER_CLUSTER_PAIR_TRIGGER_THR 800",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_ECALCLUSTER_CLUSTER_PAIR_TRIGGER_WIDTH 20",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_ECALCLUSTER_FADCMASK_PRESCALE 65535",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_LATENCY 2556",
+      "distinct_event_snapshots": 1
+    },
+    {
+      "tag": 137,
+      "text": "VTP_NPS_TRIG_LATENCY 2536",
+      "distinct_event_snapshots": 1
+    }
+  ]
+}

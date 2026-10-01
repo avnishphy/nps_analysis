@@ -1,0 +1,874 @@
+                    NPS-DVCS Run Plan Fall 2023
+     Charles Hyde, and the Neutral Particle Spectrometer Collaboration
+
+                         2023-09-03 10:45 am EDT (U.S.)
+
+
+Contents
+1 Production & Calibration Kinematics                                                                                                     3
+  1.1 Production Data Kinematics . . . . . . . . . . . . . . . . . . . . . . . . . . .                                                    3
+  1.2 Calorimeter Elastic Kinematics (electrons in NPS) . . . . . . . . . . . . . . .                                                     4
+  1.3 HMS Elastic Settings (electrons in HMS) . . . . . . . . . . . . . . . . . . . .                                                     4
+
+2 Commissioning at 5-Pass Beam                                                                                                             5
+  2.1 Beam & HMS Check-Out . . . . . . . . . . . . . . . . . . . . . . . . . . . .                                                         5
+  2.2 Coincidence DAQ Commissioning . . . . . . . . . . . . . . . . . . . . . . . .                                                        8
+  2.3 NPS Calorimeter Calibration: 5-Pass . . . . . . . . . . . . . . . . . . . . . .                                                      9
+
+3 HMS High-Momentum Optics Calibration                                                                                                    11
+  3.1 Setting KinC-x36-3 HMS Optics. . . . . . . . . . . . . . . . . . . . . . . . .                                                      11
+  3.2 Setting KinC-x25-3 HMS Optics. . . . . . . . . . . . . . . . . . . . . . . . .                                                      13
+
+4 Production 5-Pass Beam (Phase 1)                                                                                                        14
+  4.1 Setting KinC-x36-5. . . . . . . . . .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   14
+      4.1.1 KinC-x36-5 HMS Optics . .         .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   14
+      4.1.2 KinC-x36-5 Production . . .       .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   14
+  4.2 Setting KinC-x50-2. . . . . . . . . .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   15
+  4.3 Setting KinC-x50-3. . . . . . . . . .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   15
+  4.4 Setting KinC-x60-3. . . . . . . . . .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   15
+      4.4.1 KinC-x36-3 Production . . .       .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   15
+  4.5 Moeller Run . . . . . . . . . . . . .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   15
+  4.6 NPS Calibration at 5 Pass . . . . .     .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   15
+
+5 Production 4-Pass Beam (Phase 1)                                                                                                        15
+  5.1 NPS Calorimeter Elastic Calibration at 4 Pass                   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   15
+  5.2 Moeller at 4-Pass . . . . . . . . . . . . . . . .               .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   15
+  5.3 Setting KinC-x36-2. . . . . . . . . . . . . . . .               .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   15
+  5.4 Setting KinC-x50-1. . . . . . . . . . . . . . . .               .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   15
+  5.5 Setting KinC-x60-2. . . . . . . . . . . . . . . .               .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   15
+  5.6 Recalibrate Calo Before Small Angle Running                     .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   15
+
+
+                                              1
+   5.7   Setting KinC-x36-4. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .                                            15
+   5.8   Setting KinC-x25-2. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .                                            15
+
+6 5-Pass Beam (Phase 2)                                                                                                                 15
+  6.1 NPS Calorimeter 5-Pass Elastic Calibration                .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   16
+  6.2 Moeller . . . . . . . . . . . . . . . . . . . . .         .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   16
+  6.3 Setting KinC-x60-4. . . . . . . . . . . . . . .           .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   16
+  6.4 Setting KinC-x36-6. . . . . . . . . . . . . . .           .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   16
+  6.5 Setting KinC-x25-3. . . . . . . . . . . . . . .           .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   16
+  6.6 Setting KinC-x25-4. . . . . . . . . . . . . . .           .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   16
+  6.7 Final Moeller . . . . . . . . . . . . . . . . .           .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   16
+  6.8 Final 5-pass NPS Calorimeter Calibration .                .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   16
+
+7 Production 3-Pass Beam (Phase 1)                                                                                                      16
+  7.1 Production Setting KinC-x36-1. . . . .        .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   16
+  7.2 Setting KinC-x50-0. . . . . . . . . . . .     .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   17
+      7.2.1 KinC-x50-0 HMS Optics . . . .           .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   17
+      7.2.2 KinC-x50-0 Production . . . .           .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   17
+  7.3 Setting KinC-x60-1. . . . . . . . . . . .     .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   17
+  7.4 Moeller Run . . . . . . . . . . . . . . .     .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   18
+  7.5 NPS Calorimeter Elastic Recalibration         .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   18
+
+8 3-Pass Beam (Phase 2): Small Angle (Calo)                                                                                             18
+  8.1 NPS Calorimeter Elastic Calibration . . . .               .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   18
+  8.2 Setting KinC-x60-1, Second Half . . . . . . .             .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   18
+  8.3 Setting KinC-x36-4. . . . . . . . . . . . . . .           .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   18
+  8.4 Setting KinC-x36-6. . . . . . . . . . . . . . .           .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   19
+  8.5 Setting KinC-x25-1. . . . . . . . . . . . . . .           .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   19
+
+A Electron and Pion Singles Rates                                                                                                       20
+  A.1 HMS Cherenkov . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .                                                 20
+
+B Beam Delivery Schedule                                                                                                                21
+
+
+
+
+                                                2
+1     Production & Calibration Kinematics
+1.1      Production Data Kinematics
+
+Table 1: DVCS Production Kinematics, Commissioning, and Calibrations. Full production
+details are in the file DVCS-kin-NPS-2023 v0.xlsx located at https://hallcweb.jlab.
+org/wiki/index.php/NPS_Run_Plan_(2023). Expectation to take all data at 30 µAmp.
+Production run times are ‘PAC Days’. Accelerator schedule (Appendix B) has 225 calendar
+days, but not with proportional mix of 3-, 4-, and 5-pass running.
+                                                                     ′
+ Name        xB       Q2        E      ϵ       E’    θHMS    θCalo qMax  DCalo    H2      D2
+ KinC-               GeV2     GeV            GeV      deg     deg  GeV    m          Days
+ x25-1       0.24    2.10     6.397   0.470  1.734   25.13    8.68 4.63   6.0      1      1
+ x25-2       0.24    2.40     8.483   0.629  3.154   17.22    9.69 5.30   4.0      1      1
+ x25-3’      0.26    2.40    10.558   0.816  5.639   11.52   12.62 4.88   4.0      1      1
+ x25-4       0.25    3.00    10.558   0.663  4.163   15.01    9.37 6.36   6.0      1       1
+ x36-1       0.36    3.00     6.397   0.509  1.956   28.34   11.24 4.35   3.0     0.9 1.0
+ x36-2       0.36    3.00     8.483   0.747  4.042   17.01   14.36 4.35   3.0     0.4 0.5
+ x36-3       0.36    3.00    10.558   0.849  6.117   12.37   15.96 4.35   3.0    0.25 0.33
+ x36-4       0.36    4.00     8.483   0.515  2.562   24.77    9.89 5.83   4.0     1.0 1.0
+ x36-5       0.36    4.00    10.558   0.711  4.637   16.44   12.12 5.83   3.0    0.66 1.0
+ x36-6       0.36    5.50    10.558   0.402  2.416   26.85    7.40 8.05   4.0    1.66 2.0
+ x50-0       0.48    3.40     6.397   0.647  2.640   25.93   16.01 3.58   3.0     3.0 3.0
+ x50-1       0.48    3.40     8.483   0.818  4.726   16.75   18.98 3.58   3.0     1.5 1.5
+ x50-2       0.48    3.40    10.558   0.890  6.800   12.49   20.58 3.58   3.0    1.25 1.25
+ x50-3       0.48    4.80    10.558   0.767  5.253   16.92   15.45 5.12   3.0     2.5 2.5
+ x60-1       0.58    5.10     6.397   0.418  1.717   39.84   12.22 4.364  3.0     10      10
+ x60-2       0.58    5.10     8.483   0.697  3.803   22.93   16.57 4.364  3.0     7.5 7.5
+ x60-3       0.58    5.10    10.558   0.818  5.878   16.48   18.72 4.364  3.0     4.5 4.5
+ x60-4       0.58    6.00    10.558   0.741  5.052   19.31   16.09 5.182  3.0     7.5 7.5
+          Subtotals                                                              47.5 48.5
+          Subtotal H + D Production                                                  96.0
+          Initial Commissioning                                                       2.5
+          Calorimeter Calibrations (8 × 12hrs)                                        4.0
+          Moeller Runs (15 × 4hr)                                                     2.5
+          HMS Optics (18 × 4hr)                                                        3
+ Total                                                                               108
+
+
+
+
+                                            3
+1.2    Calorimeter Elastic Kinematics (electrons in NPS)
+
+Table 2: Coincidence elastic H(e, e′Calo pHMS ) settings. Count rates and run times assume
+30 µAmp beam current.
+
+
+                                            Three-Pass     Five-Pass      Four-Pass
+          Beam Energy                       6.397 GeV     10.558 GeV     8.483 GeV
+          HMS Proton Momentum               2.778 GeV      4.036 GeV     3.310 GeV
+          HMS Central Angle                   34.612◦        30.145◦       32.906◦
+          Nominal Calorimeter Angle            21.00◦          16◦           17.5◦
+          Calorimeter Distance (front)          8m             9m             9m
+          Nominal Electron Momentum         4.403 GeV      7.353 GeV     5.981 GeV
+          Nominal Q2                        3.742 GeV2    6.015 GeV2     4.696 GeV2
+          NPS Calo angles                      19.14◦        14.60◦          15.60
+                                               20.57◦        15.74◦          16.99
+                                               22.00◦        16.89◦          18.39
+          Count Rate per setting               66/sec        10/sec         29/sec
+          Total calibration time              7.5 hour      12 hour         9 hour
+
+
+
+
+1.3    HMS Elastic Settings (electrons in HMS)
+
+Table 3: HMS Elastic ep Calibration Settings. Count rate is at a luminisity of 5·1037 /cm2 /sec
+(Beam current 19.8 µAmp).
+
+
+              Setting                   1        2         3         4         5
+              Beam (GeV)           10.558   10.558    10.558    10.558    10.558
+               ′
+              kHMS  (GeV)           6.934    6.117     6.028     5.442     5.229
+              θHMS (deg)           17.531   20.694    21.058    23.587    24.573
+              Events (1000/hr)       31.5     6.66      5.67      2.06      1.44
+
+
+
+
+                                              4
+2     Commissioning at 5-Pass Beam
+Beam check-out procedures adapted from
+https://redmine.jlab.org/attachments/download/1494/10_549_GeV_Runplan.pdf.
+Initial configuration of spectrometers: Setting KinC x36 5:
+
+    1. HMS angle = 16.435 deg.
+
+    2. HMS momentum = −4.637 GeV/c (negative polarity, all magnets cycled).
+
+    3. HMS “Large” Collimator.
+
+    4. NPS Calorimeter distance 9.5 m. Angle 17 deg.
+
+    5. Carbon foil target at z = 0, thickness 0.5% radiation length.
+
+    6. Trigger Configuration
+       Trig. 1 (NPS VTP Single-Cluster) ∪ (NPS VTP Two-Cluster) ∪ (Delayed EDTM)
+       Trig. 2 (NPS LED)∪(NPS Cosmic)
+       Trig. 3 HMS 3/4 (Scint)
+       Trig. 4 HMS El-Real:
+       Trig. 5 (Trig.1) ∩ (Trig.3)
+       Trig. 6 (Trig.1) ∩ (Trig.4)
+      All of this trigger logic is performed in Counting House.
+      HMS triggers are described by Carlos Yero in https://hallcweb.jlab.org/doc-public/
+      ShowDocument?docid=1028.
+
+2.1     Beam & HMS Check-Out
+Initial NPS settings: Sweep magnet off, calorimeter at ≥ 20◦ . Calorimeter distance 9 m
+(§2.3). All changes of calorimeter distance must be done during day shift (week-day).
+
+    1. BPM Calibration vs. Harp Scan, Beam Centering on Carbon Hole
+       https://hallcweb.jlab.org/wiki/index.php/Beam_Checkout_Procedures
+       Coordinate with Dave Gaskell.
+
+    2. Fix Beam Angle at Target
+       Use the gui at: /home/cdaq/users/gaskelld/target_bpm/target_bpm.py Adjust
+       3H07Ax, y to remove slope while keeping 3H07Cx, y fixed. Recheck carbon hole and
+       iterate as necessary.
+
+
+    3. NPS Sweep Magnet Commissioning
+       Coordinate with Bogdan Wojtsekhowski and Jay Benesh.           R
+       Verify beam deflection at dump with required magnet current for Bdl = 0.3 Tm (468
+       A), and calorimeter central angles ≥ 7.4◦
+
+
+
+                                              5
+4. BCM Calibration
+   The Run Coordinator will schedule this with the Program Deputy (not crucial until
+   all other commissioning is complete). This requires MCC’s ability to reliably deliver
+   50 µA beam, so this calibration might have to wait at least a few days. The BCM
+   calibration procedure is at
+   https://hallcweb.jlab.org/doc-public/ShowDocument?docid=957
+   Coordinate with Dave Mack, analysis lead Christine Ploen.
+
+5. Beam Energy Calibration
+   This should be completed as soon as possible, this is vital to the DVCS Calorime-
+   ter calibration. The Run Coordinator will schedule this with the Program Deputy.
+   MCC sets up a clean dispersive tune. Shift Leader must make a full hclog entry of
+   the MCC data. Follow the “Hall C Beam Energy Measurement Procedure” at MCC
+   Ops Doc:MCC-PR-06-004.
+
+6. General verification of HMS detectors.
+   HMS Single Arm DAQ or Coic DAQ:
+   HMS CerMode10, other HMS FADCmode9.
+
+    (a) Defocus Q2 by +20% to fully illuminate focal plane. Use LD2 target. Set HMS 3/4
+        prescale to keep event rate below 1000/sec (expect 8 : 1 prescale). All other
+        prescales −1. EDTM rate 100 Hz. Start with a 5 min run, then a 1 hour run,
+        keep data files below 3M events. Keep event rate low enough for near 100%
+        efficiency.
+        Analysis lead: Mark Mathison. Verify that all Hodoscope bars are counting
+        and focal plane is illuminated. Check that timing spectra make sense. Contact
+        expert(s) if in doubt. Verify event rate after cuts are close to expectations ( Zheng
+        Huang).
+   (b) Return HMS-Q2 to nominal setting. Run for 1 hour. Keep prescales same as
+       defocussed setting and record equal sized files.
+    (c) PID checkout (HMS e/π). Analysis lead Wassim Hamdi, Mitch Kerver. Verify
+        in previous data electing events HMS 3/4 events in the MIP peak of the shower
+        counter should give a clear single photo-electron peak in the Cherenkov. Take
+        a 20 min run with HMS El-Real prescale 1 and others −1. Verify HMS El-Real
+        events provide a clean Poisson distribution (mean ≥ 12 photo-electrons) in the
+        Cherenkov withouth inefficience at low Chernkov amplitude.. Setting KinC x36 5
+        has an expected π : e ratio of 1 : 1. If unsure of PID quality either adjust threshold
+        in HMS El Real trigger and/or move spectrometer to a more favorable setting,
+        e.g. KinC-x50-2 or -3.
+   (d) Take a 10 minute run with all HMS FADC channels in mode10.
+
+7. Initial verification of HMS optics.
+
+    (a) Take a Sieve Slit run (HMS Single Arm) at setting KinC x36 5 (above).
+        HMS El Real prescale 1 : 1
+
+
+                                            6
+          HMS 3/4 prescale ∼ 16 : 1
+
+          Single foil 0.5%X0 = 0.114 g/cm2 carbon target.
+          NPS Sweep Magnet Off.
+          Expected average count rate per pinhole 0.46/sec at 30 µAmp.
+          One hour run, or scaled to beam current.
+          Details of the HMS Sieve at
+          https://hallcweb.jlab.org/DocDB/0011/001104/002/HMS-Sieve.pdf
+          Look at the HMS xFP vs yFP scatter-plots. Verify most holes have at least 200
+          events.
+          Analysis leads Holly Szumila-Vance, Christine Ploen, Joshua Crafts.
+          General information on HMS optics at
+          https://hallcweb.jlab.org/wiki/index.php/12_GeV_HMS_Optics_Data
+      (b) Verification of NPS fringe field on HMS optics.
+          Sieve Slit run at setting KinC x36 1
+          NPS angle = 12.12◦ .
+          NPS Sweep Magnet On, setting 0.3 Tm (468 A).
+          Single foil 0.5%X0 = 0.114 g/cm2 carbon target.
+          Beam Current 30 µAmp.
+          One Hour Run (0.108 C)
+
+
+  8. Full HMS optics
+     If either of the previous two runs show any problems with optics, then repeat with
+     “Optics Target”: two thin carbon foils (0.044 g/cm2 each) at z = ±8cm.
+     NPS Sweep Magnet on and off. 1.5 hour runs (0.16C each).
+The following items can be moved to after or in-between the calorimeter calibration runs of
+section § 2.3.
+  9. HMS Singles DAQ Check
+     This study, and items 10 and 11 can be deferred to the ’downtime’ during Calo elastic
+     calibration analysis and re-calibration.
+
+      (a) Deadtime vs. Prescale check, HMS Single-arm DAQ
+          Setting KinC x36 5 (NPS Calo at large angle). Expected HMS DIS single arm
+          rate (Dδ = ±8%) at 30µA is 2500/sec, with π : e ratio 1 : 1.
+          Take 10 min runs at 15 µA with HMS EL REAL prescale at 1 : 1 and HMS 3/4
+          prescale settings 128 : 1, 16 : 1, 4 : 1, & 1 : 1 (if rate allows). Quick analysis to
+          test if good electron yield corrected for deadtime is consistent.
+      (b) Deadtime vs. Rate study, HMS Single-arm DAQ
+           Beam Current 15 µA. EL REAL prescale at 1 : 1, others −1. Take 15 min runs
+          with EDTM rate 10 Hz, 100 Hz, 1000 Hz.
+          Increase beam to 30 µA. Take 15 min runs with HMS EL Real prescale settings
+          0, 1, 3, 4 (factors 1 : 1, 2 : 1, 5 : 1, 9 : 1). Adjust EDTM rate correspondingly to
+          10, 20, 50, 180 Hz
+
+                                              7
+ 10. Target Boiling Study, HMS Single-arm DAQ
+      Move NPS Calo to ∼ 20◦ .
+     HMS 3/4 prescale ∞. EDTM 10 Hz. HMS EL Real prescale 1 : 1.
+     Take 10 min runs at beam current 5, 15, 30, and 45 µA.
+     Second pass: Keep trigger rate constant. Take 15 min runs at constant rate as follows:
+
+       Beam µA                   5        10 15 25 45
+       HMS EL Real prescale GUI 0          1 2 3 4
+       EDTM rate (Hz)           10        20 30 50 90
+
+ 11. Moeller Measurement of Beam Polarization
+      Coordinate with experts: Dave Gaskell and William Henry.
+     Initial measurement expected to take 4 hours. Follow-up measurements (every 1-2
+     weeks) expected to take ∼ 1/2 shift. Precision goal is ±2%.
+
+2.2    Coincidence DAQ Commissioning
+Setting KinC x36 5 (above). Expected HMS DIS single arm rate (Dδ = ±8%) at 30µA
+is 2500/sec, π : e ratio is 1 : 1. Preferred distance of NPS calorimeter is 3.0 m. Due to
+downtime/scheduling issues of moving calorimeter, this can be done with Calo at 9 m. This
+simply means coincidence rate will be 9 times lower and π 0 → γγ efficiency will be reduced.
+After an initial check, perhaps some of this could/should be done after the first calorimeter
+calibration.
+Establish H(e, e′HMS γCalo ) coincidence timing with sweep magnet on.
+
+  1. Run with Beam Off (10 min), EDTM at ∼ 10 Hz in HMS and set NPS firmware to
+     readout waveforms of entire calorimeter to readout entire calorimeter for electronic
+     baseline/pedestal measurement.
+     Coincidence DAQ Prescales:
+       Trigger        Name        Prescale
+       1              NPS           ∞:1
+       2          Cosmic∩LED        ∞:1
+       3            HMS 3/4         1:1      Extract NPS FADC pedestal values for DC
+       4          HMS El-Real       ∞:1
+       5        (Trig.1)∩(Trig.3)   ∞:1
+       6        (Trig.1)∩(Trig.4)   ∞:1
+      anode current monitor. Do these values need to be input to firmware or EPICS script?
+
+  2. Start with Hydrogen target, low current run (5 µA) run (20 min) with waveform readout
+     of entire calorimeter.
+     Coincidence DAQ Prescales:
+
+
+
+
+                                             8
+      Trigger         Name          Prescale
+      1               NPS            ∞:1
+      2           Cosmic∩LED         ∞:1
+      3             HMS 3/4          ∞:1
+      4           HMS El-Real        ∞:1
+      5         (Trig.1)∩(Trig.3)    ∞:1
+      6         (Trig.1)∩(Trig.4)    1:1
+
+  3. Follow up with 20 min run at 30 µA and VTP trigger
+     Verify cluster finding in replay of FADC waveforms with VTP cluster finding.
+
+The remaining items should be completed after Calorimeter Calibration.
+
+  4. Set readout window offset and length. Take 15 min runs at 30 and 50 µA with ‘Number
+     of Samples After’ (NSA) parameter set to 4, 8, 12 to verify double pulse resolution and
+     high rate efficiency.
+
+  5. Take 15 min coincidence runs at 30 µA at VTP cluster trigger threshold of 300 MeV,
+     500 MeV, and 900 MeV. Readout threshold 300 MeV.
+
+  6. Take a 15 min run at 30 µA at VTP cluster trigger threshold at 500 MeV and readout
+     threshold 100 MeV. Compare event size with previous (500 ⊕ 300) run.
+
+  7. Verify γγ coincidence timing (two-clusters) in analysis, including both random contin-
+     uum and true coincidence peak. This should be done in production configuration with
+     Calorimeter at 3 m.
+
+2.3    NPS Calorimeter Calibration: 5-Pass
+Note that moving the calorimeter longitudinally must be coordinated with the technical
+staff, and can only be done during regular working hours. This is because it is necessary to
+use the crane to lift and move cable bundle.
+    Kinematic settings listed here are specific to 5-pass beam energy = 10.558 GeV. Consult
+with Charles Hyde for alternate kinematics if beam energy is significantly different.
+Switch HMS polarity to protons.
+Setting CaloCal 10.56
+Table 2 and https://hallcweb.jlab.org/wiki/images/2/22/NPS_ElasticCalibrations.
+pdf
+
+   • HMS Angle 30.145 deg;
+
+   • HMS Momentum +4.036 GeV;
+
+   • HMS Collimator “Large”;
+
+   • NPS Calo Angles 14.60◦ , 15.74◦ , 16.89◦
+
+   • Calorimeter distance from target: DCalo ∼ 9 m;
+
+
+                                                9
+   • Coincidence Trigger setting
+      Trigger        Name          Prescale
+      1              NPS            ∞:1
+      2              blank          ∞:1
+      3            HMS 3/4          ∞:1
+      4          HMS El-Real        ∞:1
+      5        (Trig.1)∩(Trig.3)    1:1
+      6        (Trig.1)∩(Trig.4)    ∞:1
+   • EDTM rate 10 Hz.
+
+   • NPS DAQ configuration: DTP cluster trigger threshold 500 MeV and readout threshold
+     100 MeV.
+
+   • Target: LH2 .
+
+Central electron energy in calorimeter will be 7.4 GeV.
+Data taking nb: HMS angle and momentum settings do not change:
+
+  0. Setting CaloCal-10.56-0
+
+       • NPS angle 14.60◦ (SHMS 30.87◦ )
+       • NPS Sweep Magnet setting: 200 A, 0.3 Tm (TBD)
+         Electrons will be deflected ∼ 14 cm vertical from nominal location projected from
+         protons in HMS
+       • Beam Current = 30 µAmp.
+       • Ensure background rates in Calo are acceptable. Verify DC anode current from
+         integral of FADC signals. Check Calo singles trigger rate
+       • 1 hour run (or 0.108 Coulomb).
+
+  1. Setting CaloCal-10.56-1
+
+       • NPS angle 14.60◦
+       • NPS Sweep Magnet Off Take 10 min runs at 7, 14, 21, and 30 µAmp.
+         Evaluate background levels:
+          (a) Anode DC current as measured by FADC integrals (in EPICS events).
+              Acceptable anode current is 30 µAmp. With 1 Volt full scale on 12 bit FADC,
+              least significant bit in one (4 ns) sample is 19.5 fC. Running integral (after
+              subtracting beam-off pedestal) must grow at less than 1.5G counts/sec.
+          (b) Mean number of clusters found per event. A 100 MeV background cluster is
+              a 1.4% effect on a 7 GeV electron cluster. Desirable to keep the multiplicity
+              of secondary clusters within 32 nsec triggering less than 2 per event (≤ 1%
+              pileup probability of two 25 block clusters). If readout window is 400 nsec
+              long, then total multiplicity (including primary electron) should be kept below
+              ∼ 15/event.
+
+                                              10
+         • 4.0 hour run (or 0.43 Coulomb). Expect 120K coincidence events.
+
+    2. Setting CaloCal-10.56-2
+
+         • NPS angle 15.74◦
+         • NPS Sweep Magnet Off
+         • Same beam current and integrated charge as Setting CaloCal-10.56-1
+
+    3. Setting CaloCal-10.56-3
+
+         • SHMS angle 16.89◦
+         • NPS Sweep Magnet Off
+         • Same beam current and integrated charge as Setting CaloCal-10.56-1
+
+Total beam time 13 hours (if at 30 µA).
+
+    The calibration data must be analyzed as quickly as possible (analysis lead: Hao Huang,
+Carlos Muñoz Camacho). New High Voltage settings established and then a second cali-
+bration set of calibration runs (CalCal-10.59-1 to -3) repeated to verify gain equalization.
+This second set of runs can be shorter, perhaps. The ‘downtime’ during calibration analysis
+should be filled with HMS single arm runs, such as the Deadtime, Target boiling studies,
+listed above, a Moeller run, or some of the HMS optics runs (for different kinematics) listed
+below.
+
+
+3     HMS High-Momentum Optics Calibration
+Calibrations needed at kHMS = −6.117, 5.442 GeV/c. These correspond to the DVCS set-
+tings KinC-x36-3 and KinC-x25-3, respectively. Other high-momentum settings at kHMS =
+6.800 GeV (KinC-x50-2) 5.253 GeV (KinC-x50-3) 5.878 GeV (KinC-x60-3) are tuned to pre-
+vious calibration points from the pionLT experiment.
+
+3.1     Setting KinC-x36-3 HMS Optics.
+Full HMS optics calibration required for kHMS = 6.117 GeV.
+
+    • (EBeam , xB , Q2 ) = 10.558 GeV, 0.36, 3.00 GeV2 )
+
+    • HMS angle = 12.373◦ ;
+
+    • HMS momentum = −6.117 GeV;
+
+    • HMS Collimator: “Sieve”;
+
+    • NPS angle = 15.96◦ .
+
+
+
+
+                                               11
+• HMS Single Arm DAQ.
+  Prescale GUI settings:
+  Trig-4 (HMS El-Real) prescale 1 : 1.
+  All others ∞ : 1.
+
+1. Optics-6.117-1, Single foil, NPS Sweep Off
+
+     • HMS Sieve Slit;
+     • NPS Sweep Magnet Off;
+     • Target: C 0.5%, 0.114 g/cm2 .
+     • Beam Current 30 µAmp;
+     • Expected HMS rate 2.2/sec/hole;
+     • Run Time 0.5 hour;
+
+2. Optics-6.117-2
+
+     • HMS Sieve Slit;
+     • NPS Sweep Magnet Off;
+     • Target: Optics foils ±8cm.
+     • Beam Current 30 µAmp;
+     • Expected HMS rate 0.9/sec/hole/foil;
+     • Run Time 1 hour;
+
+3. Optics-6.117-3
+
+     • HMS Sieve Slit;
+     • NPS Sweep Magnet On: 0.3 Tm;
+     • Target: C 0.5%, 0.114 g/cm2 .
+     • Prescale GUI settings: Single arm HMS
+     • Beam Current 30 µAmp (if higher, move SHMS to 37 deg);
+     • Expected HMS rate 2.2/sec/hole;
+     • Run Time 1.0 hour;
+
+4. Optics-6.117-4
+
+     • HMS Sieve Slit;
+     • NPS Sweep Magnet On: 0.3 Tm;
+     • Target: Optics foils ±8cm.
+     • Beam Current 30 µAmp (if higher, move SHMS to 20 deg);
+     • Expected HMS rate 0.9/sec/hole/foil;
+
+                                         12
+        • Run Time 1 hour;
+
+  5. Optics-6.117-5
+
+        • HMS Sieve Slit;
+        • NPS Sweep Magnet Off;
+        • Target: Optics foils ±3cm.
+        • Prescale GUI settings: Single arm HMS
+        • Beam Current 30 µAmp (if higher, move SHMS to 20 deg);
+        • Expected HMS rate 0.9/sec/hole/foil;
+        • Run Time 1 hour;
+
+  6. Optics-6.117-Elastic-0
+
+        • HMS Angle = 20.69◦ ;
+        • HMS Momentum = −6.117 GeV (electrons);
+        • NPS Sweep Magnet Off;
+        • HMS Collimator: “Large”;
+        • Target: LH2;
+        • Beam Current 30 µAmp. Expected elastic rate 104 /hour;
+        • Time: 0.5 hour
+          Repeat with HMS at 19.26◦ and 22.12◦ .
+
+  7. Optics-6.117-Elastic-1
+
+        • HMS Angle = 20.69◦ ;
+        • HMS Momentum = −6.117 GeV (electrons);
+        • NPS Sweep Magnet On;
+        • HMS Collimator: “Large”;
+        • Target: LH2;
+        • Beam Current 30 µAmp. Expected elastic rate 104 /hour;
+        • Time: 0.5 hour
+          Repeat with HMS at 19.26◦ and 22.12◦ .
+
+3.2    Setting KinC-x25-3 HMS Optics.
+The HMS energy, angle and NPS angle settings are very sensitive to the exact choice of
+central Q2 , xB values chosen for this setting. Both nominal and modified settings are listed
+in Table 4. The modified setting has the advantage of a slightly large separation angle
+between the SHMS and HMS carriages.
+   Repeat same sequence or measurements as for KinC-x36-3 (sec 3.1).
+
+                                             13
+Table 4: Kinematics of setting KinC-x25-3. Setting (1) is nominal, (2) is modified for larger
+        SHMS–HMS separation.
+                                              ′                                ′
+           Option      Eb    Q2        xB    kHMS  θHMS     θN P S   θSHM S   qMax
+                      GeV GeV2               GeV/c deg       deg       deg    GeV
+              1      10.558 0.25      2.40   5.442 11.73    11.95     28.25   5.08
+              2      10.558 0.26      2.40   5.639 11.52    12.62     28.92   4.88
+
+
+
+4       Production 5-Pass Beam (Phase 1)
+Scheduled for 48 calendar days after 7 days commissioning.
+All of these settings have the NPS Calorimeter a distance 3.0 m from target
+
+4.1     Setting KinC-x36-5.
+    • (EBeam , xB , Q2 ) = 10.558 GeV, 0.36, 4.00 GeV2 )
+
+    • HMS angle = 16.435◦ ;
+
+    • HMS momentum = −4.637 GeV;
+
+    • HMS Collimator: “Large”;
+
+    • NPS Sweep Magnet setting 0.3 Tm;
+
+    • Prescale GUI settings:
+      NPS ∩ [HMS El-Real] 1 : 1
+      All others ∞ : 1
+      NPS Calo threshold 500 MeV
+      Single or two cluster trigger?
+      Other Calo trigger settings TBD
+
+    • NPS Calo angle = 12.117◦ . SHMS = ?;
+
+4.1.1    KinC-x36-5 HMS Optics
+Already completed in commissioning. Additional runs as needed
+
+4.1.2    KinC-x36-5 Production
+1 day of running each on LH2 and LD2 target, including 10% of total beam charge on Dummy
+Target. No reverse field running required as π : e ratio is 1 : 1.
+
+
+
+
+                                               14
+4.2     Setting KinC-x50-2.
+4.3     Setting KinC-x50-3.
+4.4     Setting KinC-x60-3.
+4.4.1    KinC-x36-3 Production
+12 hours each on LH2 and LD2 targets.
+1 hour on dummy target.
+No reverse polarity running.
+
+4.5     Moeller Run
+4.6     NPS Calibration at 5 Pass
+Only a single set of measurements are required to assess radiation damage. After any ad-
+justments to HV are made, a second calibration will be done next at 4-pass.
+
+
+5       Production 4-Pass Beam (Phase 1)
+Total of 11 calendar days, including pass change starting on 10/30/2023.
+Petition PD to move Pass change to 5 pass from Friday 11/10/2023 to Monday 11/13/2023.
+
+5.1     NPS Calorimeter Elastic Calibration at 4 Pass
+5.2     Moeller at 4-Pass
+One shift for initial measurement.
+
+5.3     Setting KinC-x36-2.
+5.4     Setting KinC-x50-1.
+5.5     Setting KinC-x60-2.
+5.6      Recalibrate Calo Before Small Angle Running
+5.7     Setting KinC-x36-4.
+5.8     Setting KinC-x25-2.
+
+6       5-Pass Beam (Phase 2)
+Scheduled for 38 calendar days Nov 10 – Dec 18 plus 49 days Jan 12 – 39 Feb. Possibility
+of adding addition higher Q2 and/or higher xB setting. Listed kinematics starting with
+
+
+
+                                          15
+KinC-x60-4 are small angle settings, requiring 8 PAC days of production, plus two PAC
+days calibrations (Moeller, Calo, HMS Optics).
+
+6.1    NPS Calorimeter 5-Pass Elastic Calibration
+6.2    Moeller
+6.3    Setting KinC-x60-4.
+6.4    Setting KinC-x36-6.
+6.5    Setting KinC-x25-3.
+6.6    Setting KinC-x25-4.
+6.7    Final Moeller
+6.8    Final 5-pass NPS Calorimeter Calibration
+
+7     Production 3-Pass Beam (Phase 1)
+Total projected time is 33 PAC days + Moeller + NPS Calorimeter Calibration time. Setting
+KinC-36-5 could be split in half, with 10 days moved to phase 2 running.
+
+7.1    Production Setting KinC-x36-1.
+    • HMS angle = 29.51 deg.
+
+    • HMS momentum = 1.840 GeV/c (negative polarity, all magnets cycled).
+
+    • HMS “Large” Collimator.
+
+    • SHMS angle = 10.96 deg.
+
+    • NPS Sweep Magnet Current setting 200 A, 0.3 Tm.
+
+    • Prescale GUI settings: TBD.
+
+    • Beam Current 30 µAmp.
+
+Run 4 hours LH2, 4 hours LD2 alternating for a total of 2.3 Coulomb each target. Every 8
+hours take a 40 min dummy target run. Expected time to completion is 2.0 days.
+
+
+
+
+                                           16
+7.2     Setting KinC-x50-0.
+   • HMS angle = 25.931 deg.
+
+   • HMS momentum = −2.640 GeV/c (negative polarity, all magnets cycled).
+
+   • HMS “Large” Collimator.
+
+   • SHMS angle = 16.01 deg.
+
+   • NPS Sweep Magnet Current setting 0.3 Tm.
+
+   • Prescale GUI settings: TBD.
+
+   • Beam Current 30 µAmp.
+
+7.2.1   KinC-x50-0 HMS Optics
+   • HMS Sieve Slit
+
+   • Target: Single foil 0.5%X0 C at z = 0
+
+   • Single arm HMS trigger
+
+   • NPS Sweep Magnet Setting: 0.3 Tm
+
+   • Expected NPS rate 0.1/sec/hole.
+
+   • Run 1.5 Hours (0.16 C)
+
+If there are problems with optics, repeat with “Optics Target” and run for 2 hours.
+
+7.2.2   KinC-x50-0 Production
+Run 4 hours LH2, 4 hours LD2 at for a total of 7.9 Coulomb each target.
+Every 8 hours run 40 min on Dummy target.
+Predicted π/e ratio = 1.6. Reverse polarity running not required.
+Expected time to completion is 7 days.
+
+7.3     Setting KinC-x60-1.
+   • HMS angle = 39.84 deg.
+
+   • HMS momentum = −1.717 GeV/c (negative polarity, all magnets cycled).
+
+   • HMS “Large” Collimator.
+
+   • SHMS angle = 12.22 deg.
+
+   • NPS Sweep Magnet Current setting 0.3 Tm.
+
+
+                                             17
+    • Prescale GUI settings: TBD.
+    • Beam Current 30 µAmp.
+
+Run 4 hours LH2, 4 hours LD2 at for a total of 25.6 Coulomb per target (51.2 C total).
+Every 8 hours run for 40 min Dummy target (0.072 C).
+Reverse HMS polarity running desired, π : e = 11 : 1. After ∼ 25 C accumulated charge,
+reverse polarity of HMS and run for 2.6 C charge (approximately 1 day). Expected time to
+completion is 23 days.
+
+7.4    Moeller Run
+7.5    NPS Calorimeter Elastic Recalibration
+Repeat previous 3-pass calibration settings CaloCal-6.28-1, CaloCal-6.28-2, CaloCal-6.28-3.
+2.5 hour (0.27 Coulomb) each.
+    • HMS Angle 34.612 deg;
+    • HMS Momentum +2.778 GeV;
+    • HMS Collimator “Large”;
+    • SHMS Angles 19.138◦ , 20.570◦ , 21.003◦ ;
+    • Calorimeter distance from target: DCalo = 8 m;
+    • NPS Sweep Magnet current = 0.0 Amp or ?
+    • Coincidence Trigger setting
+    • Target: LH2 .
+One hour run at each angle setting (0.11 Coulomb/setting).
+
+
+8     3-Pass Beam (Phase 2): Small Angle (Calo)
+Estimated time is 18 days production, 1.5 days calibrations (2× Calo, 2× Moller, 3× HMS
+optics) for a total of 19.5 PAC days
+
+8.1    NPS Calorimeter Elastic Calibration
+8.2    Setting KinC-x60-1, Second Half
+10 days production
+
+8.3    Setting KinC-x36-4.
+2 days production.
+
+                                              18
+8.4   Setting KinC-x36-6.
+4 days production.
+
+8.5   Setting KinC-x25-1.
+2 days production.
+
+
+
+
+                            19
+A     Electron and Pion Singles Rates
+The inclusive HRS rates, estimated by Peter Bosted are listed in Table 5
+
+Table 5: Inclusive e− and π − rates in HMS, calculated by Peter Bosted. Note that the
+kinematics have been tweaked since Peter made this table. What is the assumed beam
+current?
+
+
+            x     Q2      W       E      ϵ     E’ θHMS      Ratee   Rateπ    π/e
+                 GeV2    GeV    GeV           GeV deg       1/sec   1/sec
+          0.20   2.00    2.98    6.4   0.29   1.07 31.3      0.9    226.9    266.8
+          0.20   2.00    2.98    8.5   0.64   3.17 15.7      11.5    90.6      7.8
+          0.20   2.00    2.98   10.6   0.78   5.27 10.9      44.5    49.8      1.1
+          0.20   3.00     3.6   10.6   0.45   2.61 19.0      0.4      18       44
+          0.36   3.00    2.49   10.6   0.85   6.16 12.3      25.1     3.7      0.1
+          0.36   3.00    2.49    6.4   0.51   1.96 28.3      1.2     19.5     16.2
+          0.36   3.00    2.49    8.5   0.75   4.06 17.0      7.9      6.9      0.9
+          0.36   3.00    2.49   10.6   0.85   6.16 12.3      25.1     3.7      0.1
+          0.36   4.00    2.83    8.5   0.52   2.58 24.7      1.1     12.1     10.7
+          0.36   4.00    2.83   10.6   0.71   4.68 16.3       5.2     4.5     0.9
+          0.36   5.50    3.26   10.6   0.41   2.46 26.6       0.4    12.1     27.0
+          0.50   3.40    2.07    8.5   0.83   4.88 16.5      7.3      1.1      0.1
+          0.50   3.40    2.07    6.4   0.67   2.78 25.3      1.6      2.5      1.6
+          0.50   3.40    2.07   10.6   0.90   6.98 12.3      20.3     0.6      0.0
+          0.50   4.80    2.38   10.6   0.79   5.48 16.5       3.6     0.5     0.2
+          0.60   5.10    2.07    6.4   0.46   1.87 38.1      0.1      1.4     10.8
+          0.60   5.10    2.07    8.5   0.72   3.97 22.4      0.9      0.3      0.4
+          0.60   5.10    2.07   10.6   0.83   6.07 16.2       2.8     0.1     0.1
+          0.60   6.00    2.21   10.6   0.76   5.27 18.9       1.1     0.1     0.1
+
+
+
+
+A.1     HMS Cherenkov
+In choosing the Cherenkov gas, we want to maximize the Cherenkov efficiency, while also
+excluding pions in all settings with a high π/e ratio. From Table 5, all of the settings with
+pi/e ≫ 1 occur for beam HMS energies < 5 GeV. Even for settings with π/e ratios ≈ 1 the
+HMS energies are 5.27, 4.88, and 5.27 GeV. CO2 gas at 1 atm pressure (or slightly below)
+provides a pion threshold of 4.9 GeV/c.
+    Current gas (from previous run) is C4 F8 O. At pressure 0.45 atm, effective pion threshold
+is 4.02 GeV. Reported number of photo-electrons at 0.4 atm (absolute) is 11.
+
+
+
+
+                                              20
+B     Beam Delivery Schedule
+Updated 15 Aug 2023, Further update 16 Aug, not fully implemented.
+Pass changes are limited by requirements of Halls A & B and desire for high polarization.
+
+    Date                    A               B                 C                 Days
+                      Name     Pass Name Pass Name Pass f (MHz)                 cal.
+    5 September       Install         Install       NPS      5       500
+    11 September    GEN-SBS      4       ↓            ↓      ↓        ↓
+    15 September         ↓            RG-D     5      ↓      ↓        ↓
+    17 October        Install            ↓            ↓      ↓        ↓
+    20 October      E12-15-006   3       ↓            ↓      ↓        ↓         48+7
+    30 October        Install            ↓          NPS      4       500
+    19 November          ↓               ↓            ↓      ↓        ↓           21
+    20 November          ↓            RG-K     4    NPS      5       500
+    17 December          ↓               ↓            ↓      ↓        ↓
+    18 December                     End of Beam 07:00 am                          28
+    12 January      Install           RG-K     3    NPS      5       500
+    29 February        ↓                 ↓            ↓      ↓        ↓           49
+    1 March       E12-17-004     2    Install       NPS      4       500
+    8 March            ↓              RG-E     5      ↓      ↓        ↓
+    25 March        Pass Change          ↓            ↓      ↓        ↓           24
+    26 March      E12-20-008     3       ↓             No Polarization?
+    29 March           ↓                 ↓                    ↓
+    30 March        Install              ↓          NPS      4       500
+    7 April            ↓                 ↓            ↓      ↓        ↓           9
+    8 April            ↓                 ↓          NPS      3       500
+    19 May             ↓                 ↓            ↓      ↓        ↓
+    20 May                          End of Beam 07:00 am                          42
+    NPS Summary (Calendar Days)                            Pass     Days
+    One day deducted for each Pass Change                    3        41
+                                                             4        43
+                                                             5       141
+
+
+
+
+                                            21
+

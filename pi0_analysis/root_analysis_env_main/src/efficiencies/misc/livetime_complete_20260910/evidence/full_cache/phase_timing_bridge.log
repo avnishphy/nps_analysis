@@ -1,0 +1,5 @@
+core_heldout {'total': 1825309, 'model_missing': 51, 'phase10': 1825244, 'phase25': 1825258, 'phase125': 1825258, 'phase500': 1825258}
+raw_tail {'total': 264, 'model_missing': 0, 'phase10': 226, 'phase25': 264, 'phase125': 264, 'phase500': 264}
+relative timing vs phase: slope ns/tick, intercept ns [-1.5165269588263077, 10.647785609982222] correlation -0.38237520557698174
+positive_outside_raw {'total': 9395, 'model_missing': 1, 'phase10': 11, 'phase25': 153, 'phase125': 1256, 'phase500': 5515}
+relative timing vs phase: slope ns/tick, intercept ns [-3.9987366137836933, 0.597821965047992] correlation -0.9997145413921127

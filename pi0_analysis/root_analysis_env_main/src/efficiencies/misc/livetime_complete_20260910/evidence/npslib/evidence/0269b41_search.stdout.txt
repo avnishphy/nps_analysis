@@ -1,0 +1,1 @@
+/group/nps/apps/NPSlib/0269b41/src/src/THcNPSCoinTime.h:78:  // Trigger time pTrig1 T1 (NPS VTP||EDTM) and T3 (HMS 3/4)

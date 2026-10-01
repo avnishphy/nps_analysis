@@ -1,0 +1,446 @@
+F2/EMC Collaboration Meeting
+
+    Live Time Calculations
+
+            Eric Pooser
+           Jefferson Lab
+
+            05/03/2018
+
+ On Behalf of the DAQ Working Group
+             DAQ Live Time Formalism
+• There exists a minimum time interval by which events can be separated
+• The DAQ is 'dead' for a time 𝜏 after each recorded trigger
+
+
+
+
+• In 'ROC lock' mode, the DAQ is a 'non-extendable' system
+   • Buffered mode does not behave in this manner
+• TDC’s account for the recorded events
+• Scalers account for the total number of input events
+                                  05/03/2019
+                    Eric Pooser       !2       F2/EMC Collaboration Meeting
+                        Hall-C EDTM System
+• Artificially inserted sequences of pulses allow for accurate corrections to be applied
+• By design, the EDTM is a real trigger as observed by the electronics and readout system
+• It is deployed into the circuit as close to the detectors for all components which are
+  involved in the trigger legs
+
+Input Rate ≡ρ           Random         Physics
+                                                                         Scalers                R
+   ρe + ρp = ρ           Pulses        Triggers
+                                                                                           LT =
+  Clocked
+                                                                                                ρ
+  Pulses
+                                     HMS & SHMS                                                     Trigger
+   EDTM
+                                     Trigger Logic                                                  Master
+                                                                                   or
+
+
+
+                                or                                                             or
+                                                           Scalers
+              Scalers
+                                                                Measured Rate              ≡R       TDCs
+
+                                        Slide Adapted from Carlos Yero
+                                                05/03/2019
+                         Eric Pooser                  !3        F2/EMC Collaboration Meeting
+                 DAQ Live Time Formalism
+• Define the following (Müller, NIM 112, 47-57 (1973)) :
+   • f(t) ≡ original interval density, ρ ≡ input rate
+    • F(t) ≡ dead time modified interval density, R ≡ output rate
+• In general, the F(t) for a given process must be known before the
+  corresponding count rate can be evaluated:
+                                                        ∞
+
+                                                    ∫0
+                                          R −1 =             tF(t)dt
+
+• The transformation from f(t) → F(t) for a non-extended system is:
+                                                             ∞    τ
+
+                           {                           }     ∑∫
+                 F(t) = U(t − τ)             f(t) +                   fk(x)f(t − x)dx
+                                   k=0 0
+• For a Poisson process of rate 𝜌 we have the following:
+                      ∞
+                                                                                   R     1
+                     ∫τ
+            −1                  −ρ(t−τ)            −1
+        R        =        tρe             dt = ρ        +τ             ∴             =
+                                                                                   ρ   1 + ρτ
+                                               05/03/2019
+                           Eric Pooser                  !4       F2/EMC Collaboration Meeting
+           DAQ Live Time Bench Test’s
+• Utilizing a Poisson pulse generator and the EDTM system, the non-
+  extended dead time model well describes the data taken on the bench
+
+
+
+
+                                     R     1
+                                       =        = LT
+                                     ρ   1 + ρτ
+
+
+                                05/03/2019
+                  Eric Pooser       !5       F2/EMC Collaboration Meeting
+                  Offline Analysis Method
+• Previous study accurately determined                  HMS: θ = 22.0, pc = -2.131
+  the total live time as measured by the                Run #          IBeam (µA)   PS1 Rate (Hz)
+  EDTM
+                                                        1437               65           7390
+    • Compared to the measured                          1438               40           4600
+       computer live time                               1439               30           3470
+                                                        1440               20           2730
+    • Infer electronic live time                        1441               10           1220
+                                                        1442                5           680
+    • EDTM Rate = 100 Hz                                1443                1           220
+                                                        1444               40           4640
+• Live time 'scan' was taken during the                 1445               50           5720
+  Spring 2018 commissioning run                         1446               60           6810
+
+     • Vary rates via luminosity                        SHMS: θ = 17.1, pc = +5.112
+• Singles runs were taken in both the
+                                                        Run #          IBeam (µA)   PS1 Rate (Hz)
+  HMS & SHMS
+                                                        2014               30           970
+    • Single arm DAQ’s                                  2015               20           670
+    • Single trigger type (PS1, 3/4)                    2016               10           370
+                                                        2017                5           240
+    • No Pre-scale                                      2018                1           130
+                                                        2019               40           1350
+    • ROC lock mode (buffer level 1)                    2020               50           1730
+                                                        2021               60           2130
+                                       05/03/2019
+                       Eric Pooser         !6       F2/EMC Collaboration Meeting
+  Setting Up the Replay: Decode All Events
+• Edit DEF-files to ensure that all events
+  are decoded
+    • DEF-files/(S)HMS/PRODUCTION/CUTS/
+• Event type definitions:
+    • (p)hstackana_rawdecode_cuts.def
+• Definition of TDC cuts:
+   • (p)hstackana_decode_cuts.def
+• Decoding structure:
+    • (p)hstackana_production_cuts.def
+• By default, any events containing a hit in
+  the EDTM TDC spectrum are not
+  decoded
+• Ensure that all events are being decoded
+  so that EDTM events are present
+
+                                   05/03/2019
+                     Eric Pooser       !7       F2/EMC Collaboration Meeting
+  Setting Up the Replay: Hit Selection Windows
+• Must define hit selection windows for
+  all trigger apparatus variables                   No Window Cuts
+  associated with live time calculation             With Window Cuts
+     • (p)hTRIGX_tdcTimeRaw
+     • (p)hEDTM_tdcTimeRaw
+
+              PARAM/TRIG/t(p)hms.param
+
+
+
+
+                                  05/03/2019
+                    Eric Pooser       !8       F2/EMC Collaboration Meeting
+  Setting Up the Analysis: Diagnostic Histograms
+• Create set of diagnostic histograms of variables
+  that are included in the live time calculations
+• Reference time subtracted TDC spectra
+                                                                                    ± 2 ns
+    • (p)hTRIGX_tdcTime
+    • (p)hEDTM_tdcTime
+• Beam current monitor read back
+• Determine appropriate cuts in order to properly
+  iterate both the TDC and scaler counters under
+  beam on conditions
+
+
+                I > 58 µA                                                           ± 2 ns
+
+
+
+
+                                        05/03/2019
+                        Eric Pooser         !9       F2/EMC Collaboration Meeting
+                 Live Time Definitions
+• Live time (LTE) as measured by the EDTM
+
+                                       TEDTM
+                                 LTE =
+                                       SEDTM
+
+• Computer Live Time for all events (CLTA) as measured by the trigger
+
+                                              TTRIG
+                                 CLTA =
+                                              STRIG
+
+• Computer live time for physics events (CLTP)
+
+                                     TTRIG − TEDTM
+                            CLTP =
+                                     STRIG − SEDTM
+
+
+                                     05/03/2019
+                   Eric Pooser          !10       F2/EMC Collaboration Meeting
+     Live Time Results: CLTP & CLTA
+
+
+
+
+              bρP             ρE τρp
+f (ρ) = a −         ⟹ ρE τ −
+            ρP + ρE          ρE + ρP
+
+
+
+
+                                  05/03/2019
+                  Eric Pooser          !11     F2/EMC Collaboration Meeting
+   Live Time Results: LTE & CLTP
+
+
+
+
+f (ρ) = a + bρ ⟹ ρE τ(1 − ρP τ)
+
+
+
+
+                            05/03/2019
+             Eric Pooser          !12    F2/EMC Collaboration Meeting
+              Offline Analysis: 0e595e7
+• Scripts to conduct offline
+  analysis of the live time
+  calculations are now in the
+  hallc-replay-f2xem repo
+• CALIBRATION/dead_time
+• README.md
+• These scripts were
+  developed specifically for the
+  live-time studies conducted
+  during the Fall 2017
+  commissioning period
+• Will not work right out of the
+  box for F2 although minimally
+  invasive changes are
+  required
+
+                                   05/03/2019
+                    Eric Pooser       !13       F2/EMC Collaboration Meeting
+        F2/EMC/X>1 Computer Live Time
+• CLT in the report file is calculated in two ways at the moment
+• Most recently added method (36f3d4c) utilizes software scalers that are
+  predicated on the event type contained in the CODA file
+• The event type associated with a physics trigger is unique to the trigger
+  configuration present for that run
+• If only one trigger type is present, then only one event type associated
+  with a physics trigger will exist
+• The TI firmware version present during F2 produced unreliable event
+  types when more than one trigger type was active
+• Prevents using ETs in CLT calculations when more than one trigger type
+  was being utilized ➛ Not the case for F2/EMC/X>1
+
+
+
+
+                                  05/03/2019
+                    Eric Pooser      !14       F2/EMC Collaboration Meeting
+        F2/EMC/X>1 Computer Live Time
+• The other method utilizes a software scaler which applies a one sided cut on
+  raw TDC variables as configured via the trigger apparatus and then
+  calculates the CLT in the usual manner ➛ Currently not correct
+• To calculate the CLT via TDCs in the report file correctly:
+     1. Define hit selection window around self timing raw TDC distributions
+     2. Define "cut" variables associated with self timing cuts around reference
+        time subtracted TDC variables and beam on conditions
+     3. Define ratio of software and hardware scalers in report file
+     4. Calculate CLT in the usual manner
+                                                                     TTRIG
+  DEF-files/SHMS/PRODUCTION/CUTS/pstackana_decode_cuts.def
+                                                                        CLT =
+                                                                                   STRIG
+
+
+
+                TEMPLATES/SHMS/PRODUCTION/pstackana_production.template
+                                       05/03/2019
+                     Eric Pooser          !15       F2/EMC Collaboration Meeting
+         F2/EMC/X>1 Computer Live Time
+• F2/EMC/X>1 all ran with single
+  trigger type
+    • EL-REAL ➛ p(h)TRIG2
+    • EL-CLEAN ➛ p(h)TRIG3
+• Extremely convenient as it greatly
+  simplifies the CLT calculation
+• SHMS 21° degree data look good
+• No difference observed in the ET
+  and TDC (albeit incomplete)
+  calculation of the CLT
+• Any high rate runs should be
+  carefully investigated if utilizing
+  the TDC method
+• Any short, low rate runs should
+  be checked for EDTM biasing
+
+                                        05/03/2019
+                       Eric Pooser         !16       F2/EMC Collaboration Meeting
+        F2/EMC/X>1 Electronic Live Time
+• Currently, the ELT is
+  calculated utilizing a method         Nmeasured (PRE100 − PRE150)
+                                                 =                  ≈ 1 − Rτ
+  utilized in the 6 GeV era              Ntotal       PRE100
+    • Vahe’s Thesis, 2010
+• Trigger scalers of varying
+  gate widths (50, 100, 150,
+  200 ns) are recorded
+• A linear extrapolation back to
+  zero gate width gives the total
+  number of triggers that were
+  incident to the electronics
+• Rates during F2/EMC were
+  not high enough for the ELT
+  to contribute to the overall
+  dead time
+
+
+                                    05/03/2019
+                    Eric Pooser        !17       F2/EMC Collaboration Meeting
+            F2/EMC/X>1 Total Live Time
+• The EDTM can be utilized to measure the total live time of the system
+• With knowing the CLT, one can infer the ELT ➛ TLT = CLT ⋅ ELT
+• The TLT can be measured offline or in the report file
+• Measured in identical way as the CLT was measured utilizing TDCs
+    1. Ensure that EDTM events are being decoded
+    2. Define hit selection window for the EDTM variable T.(s)hms.
+       (p)hEDTM_tdcTimeRaw in PARAM/TRIG/t(p)hms.param
+    3. Define a "cut" variable in DEF-files/SHMS/PRODUCTION/CUTS/
+       pstackana_decode_cuts.def on the self timing peak in the reference
+       time subtracted distribution T.(s)hms.(p)hEDTM_tdcTime
+    4. Be sure to place cut so as to include only beam on conditions
+    5. Define ratio of software scaler to hardware scaler to calculate the TLT
+                                         TEDTM
+                                   TLT =
+                                         SEDTM
+                                      05/03/2019
+                     Eric Pooser         !18       F2/EMC Collaboration Meeting
+                      Looking Forward
+• The CLT as calculated from ETs gives identical result to that of the
+  CLT as calculated from TDCs albeit the TDC calculation is
+  incomplete at the moment
+    • Relatively low rates and a clean trigger simplified things greatly
+• The ELT reported in the report file is calculated in the identical
+  manner as it was done during the 6 GeV era
+   • Given the rates for F2/XEM/X>1, EDT should not be an issue
+• Any high rate runs should be sanity checked for EDT
+• Any short, low rate runs where the EDTM could have biased the
+  CLT measurement should be sanity checked
+• Overall, the live time measurements look good to first order
+• So long and thanks for all the fish!
+
+
+                                 05/03/2019
+                   Eric Pooser      !19       F2/EMC Collaboration Meeting
+Hall-C F2/EMC Collaboration Meeting
+
+
+
+
+        Questions?
+Backup Slides
+
+                05/03/2019
+  Eric Pooser      !21       F2/EMC Collaboration Meeting
+     Setting Up the Replay: BCM Module
+                                                                                P.BCM4B.scalerCurrent
+• Add average BCM current values              103              htemp
+
+
+  into the event tree (T)
+                                                        Entries       2090
+                                                        Mean         39.79
+                                                        Std Dev      17.89
+
+
+• Execute full scaler replays to              102
+
+
+  obtain BCM current values in
+  scaler tree (TSP or TSH)                    10
+
+
+
+• Create BCM parameter files
+• Include BCM parameter file in                   1
+
+
+
+  DEF-file (P.bcm.* or H.bcm.*)
+                                                    0                 10          20        30          40           50
+                                                                                                         P.BCM4B.scalerCurrent
+                                                                               P.bcm.bcm4a.AvgCurrent
+
+• Include path to the BCM                     106
+                                                          Entries
+                                                                 htemp
+                                                                    4275756
+
+  parameter files in replay script
+                                                          Mean         48.33
+                                                          Std Dev      5.192
+
+
+
+
+• Add BCM module to replay scripts
+                                              105
+
+
+
+
+• Replay data to include average              104
+
+
+
+  BCM values into event tree                  103
+
+
+• Sanghwa's Slides
+                                              102
+                                                      0               10          20        30          40           50
+                                                                                                        P.bcm.bcm4a.AvgCurrent
+
+
+                                     05/03/2019
+                     Eric Pooser        !22             F2/EMC Collaboration Meeting
+Live Time Results: CLTA & CLT (Event Type)
+
+
+
+
+                        05/03/2019
+          Eric Pooser      !23       F2/EMC Collaboration Meeting
+Live Time Results: LTE & CLTA
+
+
+
+
+                   05/03/2019
+     Eric Pooser      !24       F2/EMC Collaboration Meeting
+              Slide Title
+
+
+
+
+                 05/03/2019
+Eric Pooser         !25       F2/EMC Collaboration Meeting
+

@@ -1,0 +1,137 @@
+[
+  {
+    "file": "doc1001.html",
+    "url": "https://hallcweb.jlab.org/doc-public/ShowDocument?docid=1001",
+    "final_url": "https://hallcweb.jlab.org/doc-public/ShowDocument?docid=1001",
+    "content_type": "text/html; charset=ISO-8859-1",
+    "status": "downloaded",
+    "bytes": 5501,
+    "sha256": "c610a8f07878e3cf96d32d26b68a7f9bdf17845ed72654386c53111e053e97e3"
+  },
+  {
+    "file": "doc1022.html",
+    "url": "https://hallcweb.jlab.org/doc-public/ShowDocument?docid=1022",
+    "final_url": "https://hallcweb.jlab.org/doc-public/ShowDocument?docid=1022",
+    "content_type": "text/html; charset=ISO-8859-1",
+    "status": "downloaded",
+    "bytes": 5666,
+    "sha256": "edd8ae598f67b9bd065bd693ce85c9836f5cb848040565918ee2cdc844ad57f3"
+  },
+  {
+    "file": "doc1028.html",
+    "url": "https://hallcweb.jlab.org/doc-public/ShowDocument?docid=1028",
+    "final_url": "https://hallcweb.jlab.org/doc-public/ShowDocument?docid=1028",
+    "content_type": "text/html; charset=ISO-8859-1",
+    "status": "downloaded",
+    "bytes": 6955,
+    "sha256": "2a03182ce5cc60121cc19a29319360b005297fbf56f79718aea24d37f5dd02f4"
+  },
+  {
+    "file": "doc1063.html",
+    "url": "https://hallcweb.jlab.org/doc-public/ShowDocument?docid=1063",
+    "final_url": "https://hallcweb.jlab.org/doc-public/ShowDocument?docid=1063",
+    "content_type": "text/html; charset=ISO-8859-1",
+    "status": "downloaded",
+    "bytes": 5963,
+    "sha256": "b7ff11dd1464486a2d33e7aa6dd1391dc7619496f3a781bd25020753460fdd10"
+  },
+  {
+    "file": "doc1110.html",
+    "url": "https://hallcweb.jlab.org/doc-public/ShowDocument?docid=1110",
+    "final_url": "https://hallcweb.jlab.org/doc-public/ShowDocument?docid=1110",
+    "content_type": "text/html; charset=ISO-8859-1",
+    "status": "downloaded",
+    "bytes": 5237,
+    "sha256": "654e9fe9eaa9bf8274a4729fee4f78a9f6222793eb12b040cae4a4c23c71b8ce"
+  },
+  {
+    "file": "nps_trigger_status_20230202.pdf",
+    "url": "https://wiki.jlab.org/cuawiki/images/9/90/NPS_Trigger_Status_Feb_2_2023.pdf",
+    "final_url": "https://wiki.jlab.org/cuawiki/images/9/90/NPS_Trigger_Status_Feb_2_2023.pdf",
+    "content_type": "application/pdf",
+    "status": "downloaded",
+    "bytes": 905340,
+    "sha256": "27547c116fa95ba35856a88b0568811cee738609b85748c85b31a409f24dba37"
+  },
+  {
+    "file": "nps_pi0_status_20250506.pdf",
+    "url": "https://indico.jlab.org/event/946/contributions/16518/attachments/12601/20084/Edited_SemiInclusive_Pi0_Status_May2025_styled_clean.pdf",
+    "final_url": "https://indico.jlab.org/event/946/contributions/16518/attachments/12601/20084/Edited_SemiInclusive_Pi0_Status_May2025_styled_clean.pdf",
+    "content_type": "application/pdf",
+    "status": "downloaded",
+    "bytes": 2716800,
+    "sha256": "1bba89306711dfb528ade0f87ed3ed39c10693b57f20c6aa3bbb1e59d6481f4c"
+  },
+  {
+    "file": "shms_instrument_draft_20240605.pdf",
+    "url": "https://mailman.jlab.org/pipermail/hallc/attachments/20240605/2611cf32/attachment-0001.pdf",
+    "final_url": "https://mailman.jlab.org/pipermail/hallc/attachments/20240605/2611cf32/attachment-0001.pdf",
+    "content_type": "application/pdf",
+    "status": "downloaded",
+    "bytes": 9960621,
+    "sha256": "32f1926cf672a4ef4f7a4a67036e9f1f1587de55aab55fc795071229cffe942a"
+  },
+  {
+    "file": "f2_livetime_20220217.pdf",
+    "url": "https://indico.jlab.org/event/517/contributions/9310/attachments/7536/10488/F2_HallCwinterCollaboration_2022.pdf",
+    "final_url": "https://indico.jlab.org/event/517/contributions/9310/attachments/7536/10488/F2_HallCwinterCollaboration_2022.pdf",
+    "content_type": "application/pdf",
+    "status": "downloaded",
+    "bytes": 4445710,
+    "sha256": "f48bd3da5f9145985027c3e2bd70cdd5c58def1a3d1672835257051a1cdc6ef1"
+  },
+  {
+    "file": "hallc_daq.html",
+    "url": "https://hallcweb.jlab.org/wiki/index.php?title=Hall_C_DAQ",
+    "final_url": "https://hallcweb.jlab.org/wiki/index.php?title=Hall_C_DAQ",
+    "content_type": "text/html; charset=UTF-8",
+    "status": "downloaded",
+    "bytes": 39453,
+    "sha256": "579b90b10093b8e93eabaf926bef79dc3643946b09d4887aa71ee37275b42250"
+  },
+  {
+    "file": "hallc_trigger_layout.html",
+    "url": "https://hallcweb.jlab.org/wiki/index.php?title=Hall_C_Trigger_Layout",
+    "final_url": "https://hallcweb.jlab.org/wiki/index.php?title=Hall_C_Trigger_Layout",
+    "content_type": "text/html; charset=UTF-8",
+    "status": "downloaded",
+    "bytes": 13723,
+    "sha256": "bb1402b7b614d3314522d677fd0d68a6bc4ef99bad9e0a7bcb4ef9547d286e23"
+  },
+  {
+    "file": "hallc_scalers.html",
+    "url": "https://hallcweb.jlab.org/wiki/index.php?title=Scalers",
+    "final_url": "https://hallcweb.jlab.org/wiki/index.php?title=Scalers",
+    "content_type": "text/html; charset=UTF-8",
+    "status": "downloaded",
+    "bytes": 14708,
+    "sha256": "0928f9f4c914604ee83ace136aa3086115899c33fbc5b1b7989c79a15e784e53"
+  },
+  {
+    "file": "hallc_livetime_studies.html",
+    "url": "https://hallcweb.jlab.org/wiki/index.php?title=Electronic%2FComputer_Live_Time_Studies",
+    "final_url": "https://hallcweb.jlab.org/wiki/index.php?title=Electronic%2FComputer_Live_Time_Studies",
+    "content_type": "text/html; charset=UTF-8",
+    "status": "downloaded",
+    "bytes": 13362,
+    "sha256": "4348c85820a4b5c2abd55822de83b1831c0461afc8bd126fc182bf90bb58b128"
+  },
+  {
+    "file": "nps_analysis_index.html",
+    "url": "https://wiki.jlab.org/cuawiki/index.php/NPS_RG1a_Analysis",
+    "final_url": "https://wiki.jlab.org/cuawiki/index.php/NPS_RG1a_Analysis",
+    "content_type": "text/html; charset=UTF-8",
+    "status": "downloaded",
+    "bytes": 22936,
+    "sha256": "b039658a46d3a10ecd0875910d01c7ece2c2710e3984ab5c8be83ac3849904d4"
+  },
+  {
+    "file": "nps_replay_readme.md",
+    "url": "https://raw.githubusercontent.com/JeffersonLab/nps_replay/develop/README.md",
+    "final_url": "https://raw.githubusercontent.com/JeffersonLab/nps_replay/develop/README.md",
+    "content_type": "text/plain; charset=utf-8",
+    "status": "downloaded",
+    "bytes": 1325,
+    "sha256": "7838ff72c8b99e2ce6c6d36b43b35b5bdec0b3deeb1fd5334150156de1477901"
+  }
+]

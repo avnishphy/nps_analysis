@@ -1,0 +1,226 @@
+#pragma once
+
+// Shared C++ schema rendered with values from xsec_config/xsec_config*.json.
+// --kin selects paths; the selected JSON preset sets physics defaults.
+#include "xsec_root.h"
+
+inline double xsec_first_edge(const std::vector<double>& edges) {
+    return edges.empty() ? std::numeric_limits<double>::quiet_NaN() : edges.front();
+}
+inline double xsec_last_edge(const std::vector<double>& edges) {
+    return edges.empty() ? std::numeric_limits<double>::quiet_NaN() : edges.back();
+}
+inline double xsec_first_xb_edge(const std::vector<std::vector<double>>& rows) {
+    return rows.empty() ? std::numeric_limits<double>::quiet_NaN() : xsec_first_edge(rows.front());
+}
+inline double xsec_last_xb_edge(const std::vector<std::vector<double>>& rows) {
+    return rows.empty() ? std::numeric_limits<double>::quiet_NaN() : xsec_last_edge(rows.front());
+}
+
+struct AnalysisConfig {
+    std::string configured_kinematic = @configured_kinematic@;
+
+    std::string simc_file = @simc_file@;
+    std::string data_file = @data_file@;
+    std::string simc_tree = @simc_tree@;
+    std::string data_tree = @data_tree@;
+
+    std::string out_root = @out_root@;
+    std::string out_csv  = @out_csv@;
+    
+    std::string out_slice_csv = @out_slice_csv@;
+    std::string out_dir  = @out_dir@;
+    std::string out_all_plots_pdf = @out_all_plots_pdf@;
+
+    double ebeam = @ebeam@; // GeV, set from Hall C beam energy used in the run period
+    // Electron-arm central angle in the matching original exclusive SIMC .hist.
+    double hms_theta_deg = @hms_theta_deg@;
+    double mp    = 0.9382720813;
+    double mpi0  = 0.1349768;
+
+    // The JSON preset sets every published bin. xB has one edge row per
+    // Q2 interval; all rows must have the same number of bins. The ratio
+    // method bins physical t, while the response method bins tprime.
+    std::vector<double> phi_bin_edges = @phi_bin_edges@;
+    std::vector<double> tprime_bin_edges = @tprime_bin_edges@;
+    std::vector<double> t_bin_edges = @t_bin_edges@;
+    std::vector<double> q2_bin_edges = @q2_bin_edges@;
+    std::vector<std::vector<double>> xb_bin_edges_by_q2 = @xb_bin_edges_by_q2@;
+    // Optional convex cut on reconstructed (xB, Q2), shared by data and SIMC.
+    std::vector<std::array<double, 2>> diamond_xb_q2_vertices = @diamond_xb_q2_vertices@;
+
+    // Existing analysis code uses counts and bounds. Derive them from the
+    // vectors above so no second bin definition needs editing.
+    int n_phi = static_cast<int>(phi_bin_edges.size()) - 1;
+    int n_tprime = static_cast<int>(tprime_bin_edges.size()) - 1;
+    int n_q2 = static_cast<int>(q2_bin_edges.size()) - 1;
+    int n_xb = xb_bin_edges_by_q2.empty() ? 0 : static_cast<int>(xb_bin_edges_by_q2.front().size()) - 1;
+    double phi_min = xsec_first_edge(phi_bin_edges), phi_max = xsec_last_edge(phi_bin_edges);
+    double tprime_min = xsec_first_edge(tprime_bin_edges), tprime_max = xsec_last_edge(tprime_bin_edges);
+    double q2_min = xsec_first_edge(q2_bin_edges), q2_max = xsec_last_edge(q2_bin_edges);
+    double xb_min = xsec_first_xb_edge(xb_bin_edges_by_q2);
+    double xb_max = xsec_last_xb_edge(xb_bin_edges_by_q2);
+
+    // Hydrogen yield retained relative to nominal pure-H luminosity, as
+    // confirmed in docs/physics_audit_demodelled_smearing_xsec_20260911.md.
+    // This is a yield-loss factor, not a signal fraction to multiply into data.
+    // Apply data_yield / tgt_contam. Set both to 1 and 0 for an uncorrected test;
+    // keep the historical values as defaults for reproducibility.
+    double tgt_contam     = @tgt_contam@;
+    double tgt_contam_err  = @tgt_contam_err@;
+
+    // Default signal region uses one reconstructed missing-mass window.
+    // Optional combined-data flags select the measured sample; the same
+    // stored ellipse/MCD geometry selects generated-exclusive SIMC.
+    double mmiss_lower_gev = @mmiss_lower_gev@;
+    double mmiss_upper_gev = @mmiss_upper_gev@;
+    // window (default), mcd or ellipse.
+    std::string mmiss_select = @mmiss_select@;
+    std::string mmiss_cut_file; // defaults to the combined-data debug text beside data_file
+    // Raw SIMC h10 source for vertex kinematics. The smeared exclusive
+    // event_id must point to the same raw entry; sigcm verifies this for
+    // every selected event before the vertex fields enter the response.
+    std::string vertex_simc_file;
+
+    // Numerical controls never introduce smoothing, truncation, or priors.
+    // Rank deficiency or failed MC-variance convergence stops extraction.
+    double rank_tolerance = @rank_tolerance@;
+    int mc_max_iterations = @mc_max_iterations@;
+    double mc_fit_tolerance = @mc_fit_tolerance@;
+    // Eq. 5.23 uses data sumw2 alone; finite MC is the historical extension.
+    std::string fit_variance_mode = @fit_variance_mode@;
+    // Explicit opt-in; the historical Gaussian objective remains the default.
+    std::string fit_objective = "gaussian";
+    std::string scaled_empty_scale = "auto"; // auto, slice, or global sensitivity check
+
+    // Optional constraint on the complete angular cross section, not on the
+    // signs of LT/TT. Apply to every active truth block, including guards,
+    // at its maximum observed vertex epsilon; zero cross section is allowed.
+    // Boundary-active fits require separate uncertainty inference; see POSITIVITY.md.
+    bool positive_xsec = @positive_xsec@;
+
+    // PARTONS is an optional native-model projection. It is evaluated at the
+    // response-weighted generated Q2, xB and physical t of each truth bin, then
+    // converted into the same CM units and Fourier basis as sigcm. This is
+    // a point projection, not acceptance/bin-migration folding.
+    bool partons_projection = false;
+    int partons_warmups = @partons_warmups@;
+    int partons_calls = @partons_calls@;
+    std::string partons_executable_path;
+
+    bool verbose = true;
+    bool prepare_joint_inputs = false; // Export observations/response; never fit.
+    bool prepare_forward_inputs = false; // Selected events before rectangular binning; never fit.
+    std::string joint_plot_input; // Imported joint coefficients; render without fitting.
+    bool diagnostics = true;
+    bool write_png = true;
+    bool write_pdf = true;
+
+    // Conventional data/SIMC ratio-method controls. They are unused by the
+    // response-fit method but live here so there is one configuration schema.
+    double simc_yield_scale = @simc_yield_scale@;
+    bool normalize_mmiss = @normalize_mmiss@;
+    std::string model_xsec_mode = @model_xsec_mode@;
+    // Ratio-method physical-t bins; tprime remains an optional phase-space cut.
+    double t_min = xsec_first_edge(t_bin_edges), t_max = xsec_last_edge(t_bin_edges);
+    std::string model_identifier = @model_identifier@;
+    bool fixed_default_model = false;
+    std::string model_free_parameters = @model_free_parameters@;
+    int model_max_iterations = @model_max_iterations@;
+    int model_max_evaluations = @model_max_evaluations@;
+    double model_tolerance = @model_tolerance@;
+
+    // Event-level SIMC CM model branch used for de-modeling weight:
+    //   w_base = full_weight / sigcm
+    // SIMC has siglab = sigcm * davejac * gtpr * fac. Dividing by sigcm
+    // removes only the model cross section while preserving the pion
+    // lab/CM Jacobian, SIMC flux convention, and Fermi-motion correction.
+    // Candidate branch names are searched in this order.
+    std::vector<std::string> model_xsec_candidates = @model_xsec_candidates@;
+};
+
+inline bool xsec_inside_diamond(const AnalysisConfig& cfg, double xb, double q2) {
+    const auto& vertices = cfg.diamond_xb_q2_vertices;
+    if (vertices.empty()) return true;
+    if (!std::isfinite(xb) || !std::isfinite(q2)) return false;
+    for (size_t i = 0; i < vertices.size(); ++i) {
+        const auto& a = vertices[i];
+        const auto& b = vertices[(i + 1) % vertices.size()];
+        const double cross = (b[0] - a[0]) * (q2 - a[1]) -
+                             (b[1] - a[1]) * (xb - a[0]);
+        if (cross < -1e-12) return false;
+    }
+    return true;
+}
+
+inline std::string xsec_diamond_vertices_text(const AnalysisConfig& cfg) {
+    if (cfg.diamond_xb_q2_vertices.empty()) return "none";
+    std::ostringstream out;
+    out << std::setprecision(17);
+    for (const auto& point : cfg.diamond_xb_q2_vertices)
+        out << " [" << point[0] << "," << point[1] << "]";
+    return out.str();
+}
+
+inline void validate_xsec_binning(const AnalysisConfig& cfg, bool physical_t = false) {
+    auto check = [](const std::vector<double>& edges, const char* name) {
+        if (edges.size() < 2)
+            throw std::runtime_error(std::string(name) + " needs at least two edges in xsec_config.h");
+        for (size_t i = 0; i < edges.size(); ++i) {
+            if (!std::isfinite(edges[i]) || (i && !(edges[i] > edges[i-1])))
+                throw std::runtime_error(std::string(name) + " edges must be finite and strictly increasing");
+        }
+    };
+    check(cfg.phi_bin_edges, "phi");
+    check(cfg.tprime_bin_edges, "tprime");
+    check(cfg.t_bin_edges, "physical t");
+    check(cfg.q2_bin_edges, "Q2");
+    if (cfg.xb_bin_edges_by_q2.size() != cfg.q2_bin_edges.size()-1)
+        throw std::runtime_error("xB needs one edge row for each Q2 bin");
+    for (const auto& row : cfg.xb_bin_edges_by_q2) {
+        check(row, "xB");
+        if (row.size() != cfg.xb_bin_edges_by_q2.front().size() ||
+            row.front() != cfg.xb_min || row.back() != cfg.xb_max)
+            throw std::runtime_error("xB rows must have the same count and outer edges");
+    }
+    const auto& vertices = cfg.diamond_xb_q2_vertices;
+    if (!vertices.empty()) {
+        if (vertices.size() != 4)
+            throw std::runtime_error("Diamond needs exactly four [xB, Q2] corners");
+        for (size_t i = 0; i < vertices.size(); ++i) {
+            const auto& a = vertices[i];
+            const auto& b = vertices[(i + 1) % vertices.size()];
+            const auto& c = vertices[(i + 2) % vertices.size()];
+            if (!(std::isfinite(a[0]) && std::isfinite(a[1]) && a[0] > 0 &&
+                  a[0] < 1 && a[1] > 0))
+                throw std::runtime_error("Diamond corners require 0 < xB < 1 and finite Q2 > 0");
+            const double cross = (b[0] - a[0]) * (c[1] - b[1]) -
+                                 (b[1] - a[1]) * (c[0] - b[0]);
+            if (cross <= 1e-12)
+                throw std::runtime_error("Diamond corners must form a convex CCW polygon");
+        }
+    }
+    const auto& selected_t = physical_t ? cfg.t_bin_edges : cfg.tprime_bin_edges;
+    if (cfg.n_phi != static_cast<int>(cfg.phi_bin_edges.size())-1 ||
+        cfg.n_tprime != static_cast<int>(selected_t.size())-1 ||
+        cfg.n_q2 != static_cast<int>(cfg.q2_bin_edges.size())-1 ||
+        cfg.n_xb != static_cast<int>(cfg.xb_bin_edges_by_q2.front().size())-1 ||
+        cfg.phi_min != cfg.phi_bin_edges.front() || cfg.phi_max != cfg.phi_bin_edges.back() ||
+        cfg.tprime_min != cfg.tprime_bin_edges.front() || cfg.tprime_max != cfg.tprime_bin_edges.back() ||
+        cfg.t_min != cfg.t_bin_edges.front() || cfg.t_max != cfg.t_bin_edges.back() ||
+        cfg.q2_min != cfg.q2_bin_edges.front() || cfg.q2_max != cfg.q2_bin_edges.back())
+        throw std::runtime_error("Bin counts and bounds must match xsec_config.h edge vectors");
+    if (cfg.n_phi < 3)
+        throw std::runtime_error("At least three phi bins are required for the angular fit");
+}
+
+inline AnalysisConfig make_simc_model_config() {
+    AnalysisConfig cfg;
+    cfg.n_tprime = static_cast<int>(cfg.t_bin_edges.size())-1;
+    cfg.out_root = "excl_xsec_pi0_analysis_simc_model_output.root";
+    cfg.out_csv = "excl_xsec_pi0_analysis_simc_model_summary.csv";
+    cfg.out_slice_csv = "excl_xsec_pi0_analysis_simc_model_slice_summary.csv";
+    cfg.out_dir = "output/KinC_x60_4b/xsec_simc_model";
+    cfg.out_all_plots_pdf = "all_generated_plots_simc_model.pdf";
+    return cfg;
+}

@@ -1,0 +1,605 @@
+
+
+
+
+
+
+JLab VME Pipeline TI Library: Data Readout
+
+
+
+
+
+
+  $(document).ready(function() { searchBox.OnSelectItem(0); });
+
+
+
+
+
+
+
+ 
+ 
+  
+   JLab VME Pipeline TI Library
+    3v11.3
+   
+   JLab VME Pipeline TI library
+  
+ 
+ 
+
+
+
+
+
+var searchBox = new SearchBox("searchBox", "search",false,'Search');
+
+  
+    
+      Main Page
+      Modules
+      Classes
+      Files
+      
+        
+        
+          
+          
+          
+            
+          
+        
+      
+    
+  
+
+
+
+ All Classes Functions Variables Groups
+
+
+
+
+
+
+
+
+  
+Modules |
+Functions  
+  
+Data Readout  
+
+
+
+
+Modules
+ Master Data Readout
+ 
+
+
+Functions
+int tiReadBlock (volatile unsigned int *data, int nwrds, int rflag)
+ Read a block of events from the TI.  More...
+ 
+int tiGenerateTriggerBank (volatile unsigned int *data)
+ Generate a fake trigger bank. Called by  if ERROR.  More...
+ 
+int tiReadTriggerBlock (volatile unsigned int *data)
+ Read a block from the TI and form it into a CODA Trigger Bank.  More...
+ 
+int tiGetBlockSyncFlag ()
+ Return the value of the sync event flag from the previous call to tiReadTriggerBlock.  More...
+ 
+int tiCheckTriggerBlock (volatile unsigned int *data)
+ Check the provided array for valid trigger block format.  More...
+ 
+int tiDecodeTriggerTypes (volatile unsigned int *data, int data_len, int nevents, unsigned int *evtypes)
+ Provided TI data (trigger block, or raw TI blocked data), decode the event types.  More...
+ 
+int tiDecodeTriggerType (volatile unsigned int *data, int data_len, int event)
+ Provided TI data (trigger block, or raw TI blocked data), decode the event type for the specified event of block.  More...
+ 
+int tiDecodeTSrev2Data (volatile unsigned int *data, int data_len, int *syncFlag, int *lateFail, int *evType)
+ Provided TI data (trigger block, or raw TI blocked data), decode the event type for the specified event of block.  More...
+ 
+unsigned int tiBReady ()
+ Returns the number of Blocks available for readout.  More...
+ 
+int tiGetSyncEventFlag ()
+ Return the value of the Synchronization flag, obtained from tiBReady. i.e. Return the value of the SyncFlag for the current readout block.  More...
+ 
+int tiGetSyncEventReceived ()
+ Return the value of whether or not the sync event has been received.  More...
+ 
+int tiGetReadoutEvents ()
+ Return the value of the number of readout events accepted.  More...
+ 
+int tiGetTriggerMissedFlag ()
+ Return the status of the trigger missed flag (trigger missed due to fifo full) This bit resets with a syncReset.  More...
+ 
+void tiResetBlockReadout ()
+ Decrement the hardware counter for blocks available, effectively simulating a readout from the data fifo.  More...
+ 
+int tiSyncResetRequest ()
+ Sync Reset Request is sent to TI-Master or TS.  More...
+ 
+int tiScanAndFillEvTypeScalers (volatile unsigned int *data, int nwords)
+ Scan the provided TI data array and fill the event type scalers.  More...
+ 
+
+Detailed Description
+Function Documentation
+
+
+
+      
+        
+          unsigned int tiBReady 
+          (
+          )
+          
+        
+      
+
+
+Returns the number of Blocks available for readout. 
+ReturnsNumber of blocks available for readout if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiCheckTriggerBlock 
+          (
+          volatile unsigned int * 
+          data)
+          
+        
+      
+
+
+Check the provided array for valid trigger block format. 
+Parameters
+  
+    data- local memory address to find trigger block
+  
+  
+
+ReturnsOK if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiDecodeTriggerType 
+          (
+          volatile unsigned int * 
+          data, 
+        
+        
+          
+          
+          int 
+          data_len, 
+        
+        
+          
+          
+          int 
+          event 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Provided TI data (trigger block, or raw TI blocked data), decode the event type for the specified event of block. 
+Parameters
+  
+    data- local memory address to find trigger block 
+    data_len- length of provided 'data' array 
+    events- which event of the block to obtain event type [1, 255]
+  
+  
+
+ReturnsEvent type if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiDecodeTriggerTypes 
+          (
+          volatile unsigned int * 
+          data, 
+        
+        
+          
+          
+          int 
+          data_len, 
+        
+        
+          
+          
+          int 
+          nevents, 
+        
+        
+          
+          
+          unsigned int * 
+          evtypes 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Provided TI data (trigger block, or raw TI blocked data), decode the event types. 
+Parameters
+  
+    data- local memory address to find trigger block 
+    data_len- length of provided 'data' array 
+    nevents- how many events in the block to record [1, 255] 
+    evtypes- where to store the event types.
+  
+  
+
+ReturnsNumber of event types stored if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiDecodeTSrev2Data 
+          (
+          volatile unsigned int * 
+          data, 
+        
+        
+          
+          
+          int 
+          data_len, 
+        
+        
+          
+          
+          int * 
+          syncFlag, 
+        
+        
+          
+          
+          int * 
+          lateFail, 
+        
+        
+          
+          
+          int * 
+          evType 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Provided TI data (trigger block, or raw TI blocked data), decode the event type for the specified event of block. 
+Parameters
+  
+    data- local memory address to find trigger block 
+    data_len- length of provided 'data' array 
+    syncFlag- local memory to store syncFlag 
+    lateFail- local memory to store lateFail 
+    evType- local memory to store event type
+  
+  
+
+ReturnsOK if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiGenerateTriggerBank 
+          (
+          volatile unsigned int * 
+          data)
+          
+        
+      
+
+
+Generate a fake trigger bank. Called by  if ERROR. 
+Parameters
+  
+    data- local memory address to place data
+  
+  
+
+ReturnsNumber of words generated to data if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiGetBlockSyncFlag 
+          (
+          )
+          
+        
+      
+
+
+Return the value of the sync event flag from the previous call to tiReadTriggerBlock. 
+ReturnstiBlockSyncFlag if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiGetReadoutEvents 
+          (
+          )
+          
+        
+      
+
+
+Return the value of the number of readout events accepted. 
+ReturnsNumber of readout events accepted 
+
+
+
+
+
+
+      
+        
+          int tiGetSyncEventFlag 
+          (
+          )
+          
+        
+      
+
+
+Return the value of the Synchronization flag, obtained from tiBReady. i.e. Return the value of the SyncFlag for the current readout block. 
+See AlsotiBReady 
+Returns
+1: if current readout block contains a Sync Event.
+0: Otherwise 
+
+
+
+
+
+
+
+
+      
+        
+          int tiGetSyncEventReceived 
+          (
+          )
+          
+        
+      
+
+
+Return the value of whether or not the sync event has been received. 
+Returns
+1: if sync event received
+0: Otherwise 
+
+
+
+
+
+
+
+
+      
+        
+          int tiGetTriggerMissedFlag 
+          (
+          )
+          
+        
+      
+
+
+Return the status of the trigger missed flag (trigger missed due to fifo full) This bit resets with a syncReset. 
+Returns1 if trigger has been missed, otherwise 0. 
+
+
+
+
+
+
+      
+        
+          int tiReadBlock 
+          (
+          volatile unsigned int * 
+          data, 
+        
+        
+          
+          
+          int 
+          nwrds, 
+        
+        
+          
+          
+          int 
+          rflag 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Read a block of events from the TI. 
+Parameters
+  
+    data- local memory address to place data 
+    nwrds- Max number of words to transfer 
+    rflag- Readout Flag
+0 - programmed I/O from the specified board
+1 - DMA transfer using Universe/Tempe DMA Engine (DMA VME transfer Mode must be setup prior)
+
+
+  
+  
+
+ReturnsNumber of words transferred to data if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiReadTriggerBlock 
+          (
+          volatile unsigned int * 
+          data)
+          
+        
+      
+
+
+Read a block from the TI and form it into a CODA Trigger Bank. 
+Parameters
+  
+    data- local memory address to place data
+  
+  
+
+ReturnsNumber of words transferred to data if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          void tiResetBlockReadout 
+          (
+          )
+          
+        
+      
+
+
+Decrement the hardware counter for blocks available, effectively simulating a readout from the data fifo. 
+See AlsotiDisableDataReadout 
+
+
+
+
+
+
+      
+        
+          int tiScanAndFillEvTypeScalers 
+          (
+          volatile unsigned int * 
+          data, 
+        
+        
+          
+          
+          int 
+          nwords 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Scan the provided TI data array and fill the event type scalers. 
+Parameters
+  
+    data- local memory location where to find TI data 
+    nwords- number of words to scan from 'data'
+  
+  
+
+ReturnsNumber of event types found if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiSyncResetRequest 
+          (
+          )
+          
+        
+      
+
+
+Sync Reset Request is sent to TI-Master or TS. 
+This option is available for multicrate systems when the synchronization is suspect. It should be exercised only during "sync events" where the requested sync reset will immediately follow all ROCs concluding their readout.
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+Generated by  
+
+ 1.8.5
+
+
+

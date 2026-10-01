@@ -1,0 +1,1154 @@
+
+
+
+
+
+
+JLab VME Pipeline TI Library: tiLib.h Source File
+
+
+
+
+
+
+  $(document).ready(function() { searchBox.OnSelectItem(0); });
+
+
+
+
+
+
+
+ 
+ 
+  
+   JLab VME Pipeline TI Library
+    3v11.3
+   
+   JLab VME Pipeline TI library
+  
+ 
+ 
+
+
+
+
+
+var searchBox = new SearchBox("searchBox", "search",false,'Search');
+
+  
+    
+      Main Page
+      Modules
+      Classes
+      Files
+      
+        
+        
+          
+          
+          
+            
+          
+        
+      
+    
+  
+  
+    
+      File List
+    
+  
+
+
+
+ All Classes Functions Variables Groups
+
+
+
+
+
+
+
+
+  
+tiLib.h  
+
+
+    1 /*----------------------------------------------------------------------------*
+    2  *  Copyright (c) 2012        Southeastern Universities Research Association, *
+    3  *                            Thomas Jefferson National Accelerator Facility  *
+    4  *                                                                            *
+    5  *    This software was developed under a United States Government license    *
+    6  *    described in the NOTICE file included as part of this distribution.     *
+    7  *                                                                            *
+    8  *    Authors: Bryan Moffit                                                   *
+    9  *             moffit@jlab.org                   Jefferson Lab, MS-12B3       *
+   10  *             Phone: (757) 269-5660             12000 Jefferson Ave.         *
+   11  *             Fax:   (757) 269-5800             Newport News, VA 23606       *
+   12  *                                                                            *
+   13  *----------------------------------------------------------------------------*
+   14  *
+   15  * Description:
+   16  *     Primitive trigger control for VME CPUs using the TJNAF Trigger
+   17  *     Supervisor (TI) card
+   18  *
+   19  *----------------------------------------------------------------------------*/
+   20 #ifndef TILIB_H
+   21 #define TILIB_H
+   22 
+   23 
+   24 #ifdef VXWORKS
+   25 extern int intLock();
+   26 extern int intUnlock();
+   27 int intLockKeya;
+   28 #define INTLOCK {               \
+   29     intLockKeya = intLock();            \
+   30 }
+   31 
+   32 #define INTUNLOCK {             \
+   33     intUnlock(intLockKeya);         \
+   34 }
+   35 #else
+   36 #define INTLOCK {               \
+   37     vmeBusLock();               \
+   38 }
+   39 #define INTUNLOCK {             \
+   40     vmeBusUnlock();             \
+   41 }
+   42 #endif
+   43 
+   44 struct TI_A24RegStruct
+   45 { volatile unsigned int boardID; volatile unsigned int fiber; volatile unsigned int intsetup; volatile unsigned int trigDelay; volatile unsigned int adr32; volatile unsigned int blocklevel; volatile unsigned int dataFormat; volatile unsigned int vmeControl; volatile unsigned int trigsrc; volatile unsigned int sync; volatile unsigned int busy; volatile unsigned int clock; volatile unsigned int trig1Prescale; volatile unsigned int blockBuffer; volatile unsigned int triggerRule; volatile unsigned int triggerWindow;          unsigned int blank0; volatile unsigned int tsInput;          unsigned int blank1; volatile unsigned int output; volatile unsigned int fiberSyncDelay; volatile unsigned int rocReadout; volatile unsigned int readoutAck;          unsigned int blank2[(0x64-0x5C)/4]; volatile unsigned int inputPrescale;          unsigned int blank3[(0x74-0x68)/4]; volatile unsigned int pulserEvType; volatile unsigned int syncCommand; volatile unsigned int syncDelay; volatile unsigned int syncWidth; volatile unsigned int triggerCommand; volatile unsigned int randomPulser; volatile unsigned int fixedPulser1; volatile unsigned int fixedPulser2; volatile unsigned int nblocks; volatile unsigned int syncHistory; volatile unsigned int runningMode; volatile unsigned int fiberLatencyMeasurement; volatile unsigned int fiberAlignment; volatile unsigned int livetime; volatile unsigned int busytime; volatile unsigned int GTPStatusA; volatile unsigned int GTPStatusB; volatile unsigned int GTPtriggerBufferLength; volatile unsigned int inputCounter; volatile unsigned int blockStatus[4]; volatile unsigned int adr24; volatile unsigned int syncEventCtrl; volatile unsigned int eventNumber_hi; volatile unsigned int eventNumber_lo; volatile unsigned int clockStatus; volatile unsigned int mgtResetStatus; volatile unsigned int rxAckStatus; volatile unsigned int rocEnable;          unsigned int blank5[(0xFC-0xF0)/4]; volatile unsigned int blocklimit; volatile unsigned int reset; volatile unsigned int fpDelay[2];          unsigned int blank6[(0x110-0x10C)/4]; volatile unsigned int busy_scaler1[7];          unsigned int blank7[(0x138-0x12C)/4]; volatile unsigned int triggerRuleMin;          unsigned int blank8; volatile unsigned int trigTable[(0x180-0x140)/4]; volatile unsigned int ts_scaler[6];          unsigned int blank9; volatile unsigned int busy_scaler2[9];          unsigned int blank10[(0x1D0-0x1C0)/4]; volatile unsigned int hfbr_tiID[8]; volatile unsigned int master_tiID;          unsigned int blank11[(0x2000-0x1F4)/4]; volatile unsigned int SWB_status[(0x2200-0x2000)/4];          unsigned int blank12[(0x2800-0x2200)/4]; volatile unsigned int SWA_status[(0x3000-0x2800)/4];          unsigned int blank13[(0xFFFC-0x3000)/4]; volatile unsigned int eJTAGLoad; volatile unsigned int JTAGPROMBase[(0x20000-0x10000)/4]; volatile unsigned int JTAGFPGABase[(0x30000-0x20000)/4]; volatile unsigned int SWA[(0x40000-0x30000)/4]; volatile unsigned int SWB[(0x50000-0x40000)/4];
+  126 };
+  127 
+  128 /* Define TI Modes of operation:     Ext trigger - Interrupt mode   0
+  129                                      TS  trigger - Interrupt mode   1
+  130                                      Ext trigger - polling  mode    2
+  131                                      TS  trigger - polling  mode    3  */
+  132 #define TI_READOUT_EXT_INT     0
+  133 #define TI_READOUT_TS_INT      1
+  134 #define TI_READOUT_EXT_POLL    2
+  135 #define TI_READOUT_TS_POLL     3
+  136 #define TI_READOUT_TSREV2_INT  4
+  137 #define TI_READOUT_TSREV2_POLL 5
+  138 #define TI_READOUT_BRIDGE_INT  6
+  139 #define TI_READOUT_BRIDGE_POLL 7
+  140 
+  141 /* Supported firmware version */
+  142 #define TI_SUPPORTED_FIRMWARE 0x113
+  143 #define TI_SUPPORTED_TYPE     3
+  144 
+  145 /* Firmware Masks */
+  146 #define TI_FIRMWARE_ID_MASK              0xFFFF0000
+  147 #define TI_FIRMWARE_TYPE_MASK            0x0000F000
+  148 #define TI_FIRMWARE_TYPE_REV2            0
+  149 #define TI_FIRMWARE_TYPE_PROD            1
+  150 #define TI_FIRMWARE_TYPE_MODTI           2
+  151 #define TI_FIRMWARE_TYPE_PROD2           3
+  152 #define TI_FIRMWARE_MAJOR_VERSION_MASK   0x00000FF0
+  153 #define TI_FIRMWARE_MINOR_VERSION_MASK   0x0000000F
+  154 
+  155 /* 0x0 boardID bits and masks */
+  156 #define TI_BOARDID_TYPE_TIDS         0x71D5
+  157 #define TI_BOARDID_TYPE_TI           0x7100
+  158 #define TI_BOARDID_TYPE_TS           0x7500
+  159 #define TI_BOARDID_TYPE_TD           0x7D00
+  160 #define TI_BOARDID_TYPE_MASK     0xFF000000
+  161 #define TI_BOARDID_PROD_MASK     0x00FF0000
+  162 #define TI_BOARDID_GEOADR_MASK   0x00001F00
+  163 #define TI_BOARDID_CRATEID_MASK  0x000000FF
+  164 
+  165 /* 0x4 fiber bits and masks */
+  166 #define TI_FIBER_1                        (1<<0)
+  167 #define TI_FIBER_2                        (1<<1)
+  168 #define TI_FIBER_3                        (1<<2)
+  169 #define TI_FIBER_4                        (1<<3)
+  170 #define TI_FIBER_5                        (1<<4)
+  171 #define TI_FIBER_6                        (1<<5)
+  172 #define TI_FIBER_7                        (1<<6)
+  173 #define TI_FIBER_8                        (1<<7)
+  174 #define TI_FIBER_ENABLE_P0                (1<<8)
+  175 #define TI_FIBER_ENABLED(x)           (1<<(x+1))
+  176 #define TI_FIBER_MASK                 0x000000FF
+  177 #define TI_FIBER_CONNECTED_1             (1<<16)
+  178 #define TI_FIBER_CONNECTED_2             (1<<17)
+  179 #define TI_FIBER_CONNECTED_3             (1<<18)
+  180 #define TI_FIBER_CONNECTED_4             (1<<19)
+  181 #define TI_FIBER_CONNECTED_5             (1<<20)
+  182 #define TI_FIBER_CONNECTED_6             (1<<21)
+  183 #define TI_FIBER_CONNECTED_7             (1<<22)
+  184 #define TI_FIBER_CONNECTED_8             (1<<23)
+  185 #define TI_FIBER_CONNECTED_TI(x)     (1<<(x+15))
+  186 #define TI_FIBER_CONNECTED_MASK       0x00FF0000
+  187 #define TI_FIBER_TRIGSRC_ENABLED_1       (1<<24)
+  188 #define TI_FIBER_TRIGSRC_ENABLED_2       (1<<25)
+  189 #define TI_FIBER_TRIGSRC_ENABLED_3       (1<<26)
+  190 #define TI_FIBER_TRIGSRC_ENABLED_4       (1<<27)
+  191 #define TI_FIBER_TRIGSRC_ENABLED_5       (1<<28)
+  192 #define TI_FIBER_TRIGSRC_ENABLED_6       (1<<29)
+  193 #define TI_FIBER_TRIGSRC_ENABLED_7       (1<<30)
+  194 #define TI_FIBER_TRIGSRC_ENABLED_8       (1<<31)
+  195 #define TI_FIBER_TRIGSRC_ENABLED_TI(x) (1<<(x+23))
+  196 #define TI_FIBER_TRIGSRC_ENABLED_MASK 0xFF000000
+  197 
+  198 /* 0x8 intsetup bits and masks */
+  199 #define TI_INTSETUP_VECTOR_MASK   0x000000FF
+  200 #define TI_INTSETUP_LEVEL_MASK    0x00000F00
+  201 #define TI_INTSETUP_ENABLE        (1<<16)
+  202 
+  203 /* 0xC trigDelay bits and masks */
+  204 #define TI_TRIGDELAY_TRIG1_DELAY_MASK 0x000000FF
+  205 #define TI_TRIGDELAY_TRIG1_WIDTH_MASK 0x0000FF00
+  206 #define TI_TRIGDELAY_TRIG2_DELAY_MASK 0x00FF0000
+  207 #define TI_TRIGDELAY_TRIG2_WIDTH_MASK 0xFF000000
+  208 #define TI_TRIGDELAY_TRIG1_64NS_STEP  (1<<7)
+  209 #define TI_TRIGDELAY_TRIG2_64NS_STEP  (1<<23)
+  210 
+  211 /* 0x10 adr32 bits and masks */
+  212 #define TI_ADR32_MBLK_ADDR_MAX_MASK  0x000003FE
+  213 #define TI_ADR32_MBLK_ADDR_MIN_MASK  0x003FC000
+  214 #define TI_ADR32_BASE_MASK       0xFF800000
+  215 
+  216 /* 0x14 blocklevel bits and masks */
+  217 #define TI_BLOCKLEVEL_MASK           0x000000FF
+  218 #define TI_BLOCKLEVEL_CURRENT_MASK   0x00FF0000
+  219 #define TI_BLOCKLEVEL_RECEIVED_MASK  0xFF000000
+  220 
+  221 
+  222 /* 0x18 dataFormat bits and masks */
+  223 #define TI_DATAFORMAT_TWOBLOCK_PLACEHOLDER    (1<<0)
+  224 #define TI_DATAFORMAT_TIMING_WORD             (1<<1)
+  225 #define TI_DATAFORMAT_HIGHERBITS_WORD         (1<<2)
+  226 #define TI_DATAFORMAT_FPINPUT_READOUT         (1<<3)
+  227 #define TI_DATAFORMAT_BCAST_BUFFERLEVEL_MASK  0xFF000000
+  228 
+  229 
+  230 
+  231 /* 0x1C vmeControl bits and masks */
+  232 #define TI_VMECONTROL_BERR                  (1<<0)
+  233 #define TI_VMECONTROL_TOKEN_TESTMODE        (1<<1)
+  234 #define TI_VMECONTROL_MBLK                  (1<<2)
+  235 #define TI_VMECONTROL_A32M                  (1<<3)
+  236 #define TI_VMECONTROL_A32                   (1<<4)
+  237 #define TI_VMECONTROL_ERROR_INT             (1<<7)
+  238 #define TI_VMECONTROL_I2CDEV_HACK           (1<<8)
+  239 #define TI_VMECONTROL_TOKENOUT_HI           (1<<9)
+  240 #define TI_VMECONTROL_FIRST_BOARD           (1<<10)
+  241 #define TI_VMECONTROL_LAST_BOARD            (1<<11)
+  242 #define TI_VMECONTROL_BUFFER_DISABLE        (1<<15)
+  243 #define TI_VMECONTROL_BLOCKLEVEL_UPDATE     (1<<21)
+  244 #define TI_VMECONTROL_USE_LOCAL_BUFFERLEVEL (1<<22)
+  245 #define TI_VMECONTROL_BUSY_ON_BUFFERLEVEL   (1<<23)
+  246 #define TI_VMECONTROL_COUNT_IN_GO_ENABLE    (1<<27)
+  247 #define TI_VMECONTROL_TS_COUNTER_CONTROL    (1<<28)
+  248 #define TI_VMECONTROL_SLOWER_TRIGGER_RULES  (1<<31)
+  249 
+  250 /* 0x20 trigsrc bits and masks */
+  251 #define TI_TRIGSRC_SOURCEMASK       0x0000FCFF
+  252 #define TI_TRIGSRC_P0               (1<<0)
+  253 #define TI_TRIGSRC_HFBR1            (1<<1)
+  254 #define TI_TRIGSRC_LOOPBACK         (1<<2)
+  255 #define TI_TRIGSRC_FPTRG            (1<<3)
+  256 #define TI_TRIGSRC_VME              (1<<4)
+  257 #define TI_TRIGSRC_TSINPUTS         (1<<5)
+  258 #define TI_TRIGSRC_TSREV2           (1<<6)
+  259 #define TI_TRIGSRC_PULSER           (1<<7)
+  260 #define TI_TRIGSRC_HFBR5            (1<<10)
+  261 #define TI_TRIGSRC_TRIG21           (1<<11)
+  262 #define TI_TRIGSRC_PART_1           (1<<12)
+  263 #define TI_TRIGSRC_PART_2           (1<<13)
+  264 #define TI_TRIGSRC_PART_3           (1<<14)
+  265 #define TI_TRIGSRC_PART_4           (1<<15)
+  266 #define TI_TRIGSRC_MONITOR_MASK     0xFFFF0000
+  267 #define TI_TRIGSRC_FORCE_SEND       0x00FC0000
+  268 #define TI_TRIGSRC_GO               0x90000000
+  269 
+  270 /* 0x24 sync bits and masks */
+  271 #define TI_SYNC_SOURCEMASK              0x000000FF
+  272 #define TI_SYNC_P0                      (1<<0)
+  273 #define TI_SYNC_HFBR1                   (1<<1)
+  274 #define TI_SYNC_HFBR5                   (1<<2)
+  275 #define TI_SYNC_FP                      (1<<3)
+  276 #define TI_SYNC_LOOPBACK                (1<<4)
+  277 #define TI_SYNC_USER_SYNCRESET_ENABLED  (1<<7)
+  278 #define TI_SYNC_HFBR1_CODE_MASK         0x00000F00
+  279 #define TI_SYNC_HFBR5_CODE_MASK         0x0000F000
+  280 #define TI_SYNC_LOOPBACK_CODE_MASK      0x000F0000
+  281 #define TI_SYNC_HISTORY_FIFO_MASK       0x00700000
+  282 #define TI_SYNC_HISTORY_FIFO_EMPTY      (1<<20)
+  283 #define TI_SYNC_HISTORY_FIFO_HALF_FULL  (1<<21)
+  284 #define TI_SYNC_HISTORY_FIFO_FULL       (1<<22)
+  285 #define TI_SYNC_MONITOR_MASK            0xFF000000
+  286 
+  287 /* 0x28 busy bits and masks */
+  288 #define TI_BUSY_SOURCEMASK      0x0000FFFF
+  289 #define TI_BUSY_SWA              (1<<0)
+  290 #define TI_BUSY_SWB              (1<<1)
+  291 #define TI_BUSY_P2               (1<<2)
+  292 #define TI_BUSY_FP_FTDC          (1<<3)
+  293 #define TI_BUSY_FP_FADC          (1<<4)
+  294 #define TI_BUSY_FP               (1<<5)
+  295 #define TI_BUSY_TRIGGER_LOCK     (1<<6)
+  296 #define TI_BUSY_LOOPBACK         (1<<7)
+  297 #define TI_BUSY_HFBR1            (1<<8)
+  298 #define TI_BUSY_HFBR2            (1<<9)
+  299 #define TI_BUSY_HFBR3            (1<<10)
+  300 #define TI_BUSY_HFBR4            (1<<11)
+  301 #define TI_BUSY_HFBR5            (1<<12)
+  302 #define TI_BUSY_HFBR6            (1<<13)
+  303 #define TI_BUSY_HFBR7            (1<<14)
+  304 #define TI_BUSY_HFBR8            (1<<15)
+  305 #define TI_BUSY_HFBR_MASK        0x0000FF00
+  306 #define TI_BUSY_MONITOR_MASK     0xFFFF0000
+  307 #define TI_BUSY_MONITOR_SWA      (1<<16)
+  308 #define TI_BUSY_MONITOR_SWB      (1<<17)
+  309 #define TI_BUSY_MONITOR_P2       (1<<18)
+  310 #define TI_BUSY_MONITOR_FP_FTDC  (1<<19)
+  311 #define TI_BUSY_MONITOR_FP_FADC  (1<<20)
+  312 #define TI_BUSY_MONITOR_FP       (1<<21)
+  313 #define TI_BUSY_MONITOR_TRIG_LOST (1<<22)
+  314 #define TI_BUSY_MONITOR_LOOPBACK (1<<23)
+  315 #define TI_BUSY_MONITOR_FIBER_BUSY(x) (1<<(x+23))
+  316 #define TI_BUSY_MONITOR_HFBR1    (1<<24)
+  317 #define TI_BUSY_MONITOR_HFBR2    (1<<25)
+  318 #define TI_BUSY_MONITOR_HFBR3    (1<<26)
+  319 #define TI_BUSY_MONITOR_HFBR4    (1<<27)
+  320 #define TI_BUSY_MONITOR_HFBR5    (1<<28)
+  321 #define TI_BUSY_MONITOR_HFBR6    (1<<29)
+  322 #define TI_BUSY_MONITOR_HFBR7    (1<<30)
+  323 #define TI_BUSY_MONITOR_HFBR8    (1<<31)
+  324 
+  325 /* 0x2C clock bits and mask  */
+  326 #define TI_CLOCK_INTERNAL          (0)
+  327 #define TI_CLOCK_HFBR5             (1)
+  328 #define TI_CLOCK_HFBR1             (2)
+  329 #define TI_CLOCK_FP                (3)
+  330 #define TI_CLOCK_MASK              0x0000000F
+  331 #define TI_CLOCK_BRIDGEMODE_MASK   0x000F0000
+  332 #define TI_CLOCK_BRIDGEMODE_ENABLE 0x00050000
+  333 #define TI_CLOCK_SC1_MASK          0x0F000000
+  334 
+  335 /* 0x30 trig1Prescale bits and masks */
+  336 #define TI_TRIG1PRESCALE_MASK          0x0000FFFF
+  337 
+  338 /* 0x34 blockBuffer bits and masks */
+  339 #define TI_BLOCKBUFFER_BUFFERLEVEL_MASK      0x000000FF
+  340 #define TI_BLOCKBUFFER_BLOCKS_READY_MASK     0x0000FF00
+  341 #define TI_BLOCKBUFFER_TRIGGERS_IN_BLOCK     0x001F0000
+  342 #define TI_BLOCKBUFFER_RO_NEVENTS_MASK       0x00E00000
+  343 #define TI_BLOCKBUFFER_BREADY_INT_MASK       0x0F000000
+  344 #define TI_BLOCKBUFFER_TRIGGER_MISSED        (1<<27)
+  345 #define TI_BLOCKBUFFER_BUSY_ON_BLOCKLIMIT    (1<<28)
+  346 #define TI_BLOCKBUFFER_SYNCRESET_REQUESTED   (1<<30)
+  347 #define TI_BLOCKBUFFER_SYNCEVENT             (1<<31)
+  348 
+  349 /* 0x38 triggerRule bits and masks */
+  350 #define TI_TRIGGERRULE_RULE1_MASK 0x000000FF
+  351 #define TI_TRIGGERRULE_RULE2_MASK 0x0000FF00
+  352 #define TI_TRIGGERRULE_RULE3_MASK 0x00FF0000
+  353 #define TI_TRIGGERRULE_RULE4_MASK 0xFF000000
+  354 
+  355 /* 0x3C triggerWindow bits and masks */
+  356 #define TI_TRIGGERWINDOW_COINC_MASK   0x000000FF
+  357 #define TI_TRIGGERWINDOW_INHIBIT_MASK 0x0000FF00
+  358 #define TI_TRIGGERWINDOW_TRIG21_MASK  0x01FF0000
+  359 #define TI_TRIGGERWINDOW_LEVEL_LATCH  (1<<31)
+  360 
+  361 /* 0x48 tsInput bits and masks */
+  362 #define TI_TSINPUT_MASK      0x0000003F
+  363 #define TI_TSINPUT_1         (1<<0)
+  364 #define TI_TSINPUT_2         (1<<1)
+  365 #define TI_TSINPUT_3         (1<<2)
+  366 #define TI_TSINPUT_4         (1<<3)
+  367 #define TI_TSINPUT_5         (1<<4)
+  368 #define TI_TSINPUT_6         (1<<5)
+  369 #define TI_TSINPUT_ALL       (0x3F)
+  370 
+  371 
+  372 /* 0x4C output bits and masks */
+  373 #define TI_OUTPUT_MASK                 0x0000FFFF
+  374 #define TI_OUTPUT_BLOCKS_READY_MASK    0x00FF0000
+  375 #define TI_OUTPUT_EVENTS_IN_BLOCK_MASK 0xFF000000
+  376 
+  377 /* 0x50 fiberSyncDelay bits and masks */
+  378 #define TI_FIBERSYNCDELAY_HFBR1_SYNCPHASE_MASK    0x000000FF
+  379 #define TI_FIBERSYNCDELAY_HFBR1_SYNCDELAY_MASK    0x0000FF00
+  380 #define TI_FIBERSYNCDELAY_LOOPBACK_SYNCDELAY_MASK 0x00FF0000
+  381 #define TI_FIBERSYNCDELAY_HFBR5_SYNCDELAY_MASK    0xFF000000
+  382 
+  383 /* 0x54 rocReadout bits and masks */
+  384 #define TI_ROCREADOUT_VME_NBLOCKS_READY_MASK  0x000000FF
+  385 #define TI_ROCREADOUT_ROC2_NBLOCKS_READY_MASK 0x0000FF00
+  386 #define TI_ROCREADOUT_ROC3_NBLOCKS_READY_MASK 0x00FF0000
+  387 #define TI_ROCREADOUT_ROC4_NBLOCKS_READY_MASK 0xFF000000
+  388 
+  389 /* 0x58 readoutAck bits and masks */
+  390 #define TI_READOUTACK_SENT_MASK  0xFFFF0000
+  391 #define TI_READOUTACK_VTP_MASK   0x0000FF00
+  392 #define TI_READOUTACK_LOCAL_MASK 0x000000FF
+  393 
+  394 /* 0x64 inputPrescale bits and masks */
+  395 #define TI_INPUTPRESCALE_FP1_MASK   0x0000000F
+  396 #define TI_INPUTPRESCALE_FP2_MASK   0x000000F0
+  397 #define TI_INPUTPRESCALE_FP3_MASK   0x00000F00
+  398 #define TI_INPUTPRESCALE_FP4_MASK   0x0000F000
+  399 #define TI_INPUTPRESCALE_FP5_MASK   0x000F0000
+  400 #define TI_INPUTPRESCALE_FP6_MASK   0x00F00000
+  401 #define TI_INPUTPRESCALE_FP_MASK(x) (0xF<<4*((x-1)))
+  402 
+  403 /* 0x74 pulserEvType bits and masks */
+  404 #define TI_PULSEREVTYPE_FIXED_MASK   0x00FF0000
+  405 #define TI_PULSEREVTYPE_RANDOM_MASK  0xFF000000
+  406 
+  407 /* 0x78 syncCommand bits and masks */
+  408 #define TI_SYNCCOMMAND_VME_CLOCKRESET      0x11
+  409 #define TI_SYNCCOMMAND_CLK250_RESYNC       0x22
+  410 #define TI_SYNCCOMMAND_AD9510_RESYNC       0x33
+  411 #define TI_SYNCCOMMAND_GTP_STATUSB_RESET   0x44
+  412 #define TI_SYNCCOMMAND_TRIGGERLINK_ENABLE  0x55
+  413 #define TI_SYNCCOMMAND_TRIGGERLINK_DISABLE 0x77
+  414 #define TI_SYNCCOMMAND_SYNCRESET_HIGH      0x99
+  415 #define TI_SYNCCOMMAND_TRIGGER_READY_RESET 0xAA
+  416 #define TI_SYNCCOMMAND_RESET_EVNUM         0xBB
+  417 #define TI_SYNCCOMMAND_SYNCRESET_LOW       0xCC
+  418 #define TI_SYNCCOMMAND_SYNCRESET           0xDD
+  419 #define TI_SYNCCOMMAND_SYNCRESET_4US       0xEE
+  420 #define TI_SYNCCOMMAND_SYNCCODE_MASK       0x000000FF
+  421 
+  422 /* 0x7C syncDelay bits and masks */
+  423 #define TI_SYNCDELAY_MASK              0x0000007F
+  424 
+  425 /* 0x80 syncWidth bits and masks */
+  426 #define TI_SYNCWIDTH_MASK              0x7F
+  427 #define TI_SYNCWIDTH_LONGWIDTH_ENABLE  (1<<7)
+  428 
+  429 /* 0x84 triggerCommand bits and masks */
+  430 #define TI_TRIGGERCOMMAND_VALUE_MASK      0x000000FF
+  431 #define TI_TRIGGERCOMMAND_CODE_MASK       0x00000F00
+  432 #define TI_TRIGGERCOMMAND_TRIG1           0x00000100
+  433 #define TI_TRIGGERCOMMAND_TRIG2           0x00000200
+  434 #define TI_TRIGGERCOMMAND_SYNC_EVENT      0x00000300
+  435 #define TI_TRIGGERCOMMAND_SET_BLOCKLEVEL  0x00000800
+  436 #define TI_TRIGGERCOMMAND_SET_BUFFERLEVEL 0x00000C00
+  437 
+  438 /* 0x88 randomPulser bits and masks */
+  439 #define TI_RANDOMPULSER_TRIG1_RATE_MASK 0x0000000F
+  440 #define TI_RANDOMPULSER_TRIG1_ENABLE    (1<<7)
+  441 #define TI_RANDOMPULSER_TRIG2_RATE_MASK 0x00000F00
+  442 #define TI_RANDOMPULSER_TRIG2_ENABLE    (1<<15)
+  443 
+  444 /* 0x8C fixedPulser1 bits and masks */
+  445 #define TI_FIXEDPULSER1_NTRIGGERS_MASK 0x0000FFFF
+  446 #define TI_FIXEDPULSER1_PERIOD_MASK    0x7FFF0000
+  447 #define TI_FIXEDPULSER1_PERIOD_RANGE   (1<<31)
+  448 
+  449 /* 0x90 fixedPulser2 bits and masks */
+  450 #define TI_FIXEDPULSER2_NTRIGGERS_MASK 0x0000FFFF
+  451 #define TI_FIXEDPULSER2_PERIOD_MASK    0x7FFF0000
+  452 #define TI_FIXEDPULSER2_PERIOD_RANGE   (1<<31)
+  453 
+  454 /* 0x94 nblocks bits and masks */
+  455 #define TI_NBLOCKS_COUNT_MASK           0x00FFFFFF
+  456 #define TI_NBLOCKS_EVENTS_IN_BLOCK_MASK 0xFF000000
+  457 
+  458 /* 0x98 syncHistory bits and masks */
+  459 #define TI_SYNCHISTORY_HFBR1_CODE_MASK     0x0000000F
+  460 #define TI_SYNCHISTORY_HFBR1_CODE_VALID    (1<<4)
+  461 #define TI_SYNCHISTORY_HFBR5_CODE_MASK     0x000001E0
+  462 #define TI_SYNCHISTORY_HFBR5_CODE_VALID    (1<<9)
+  463 #define TI_SYNCHISTORY_LOOPBACK_CODE_MASK  0x00003C00
+  464 #define TI_SYNCHISTORY_LOOPBACK_CODE_VALID (1<<14)
+  465 #define TI_SYNCHISTORY_TIMESTAMP_OVERFLOW  (1<<15)
+  466 #define TI_SYNCHISTORY_TIMESTAMP_MASK      0xFFFF0000
+  467 
+  468 /* 0x9C runningMode settings */
+  469 #define TI_RUNNINGMODE_ENABLE          0x71
+  470 #define TI_RUNNINGMODE_DISABLE         0x0
+  471 
+  472 /* 0xE0 clockStatus bits and masks */
+  473 #define TI_CLOCKSTATUS_250_MASK  0xFFFF0000
+  474 #define TI_CLOCKSTATUS_AUX_MASK  0x0000FFFF
+  475 
+  476 /* 0xE4 mgtResetStatus bits and masks */
+  477 #define TI_MGTRESETSTATUS_ENABLES_MASK 0xFF000000
+  478 #define TI_MGTRESETSTATUS_TX_TRIG_MASK 0x00FF0000
+  479 
+  480 /* 0xE8 rxAckStatus bits and masks */
+  481 #define TI_RXACKSTATUS_TRIG_ACK_MASK   0xFF000000
+  482 #define TI_RXACKSTATUS_RO_ACK_MASK     0x00FF0000
+  483 #define TI_RXACKSTATUS_DATABLOCKS_MASK 0x0000FF00
+  484 #define TI_RXACKSTATUS_BUSY_ACK_MASK   0x000000FF
+  485 
+  486 /* 0xA0 fiberLatencyMeasurement bits and masks */
+  487 #define TI_FIBERLATENCYMEASUREMENT_CARRYCHAIN_MASK 0x0000FFFF
+  488 #define TI_FIBERLATENCYMEASUREMENT_IODELAY_MASK    0x007F0000
+  489 #define TI_FIBERLATENCYMEASUREMENT_DATA_MASK       0xFF800000
+  490 
+  491 /* 0xA4 fiberAlignment bits and masks */
+  492 #define TI_FIBERALIGNMENT_HFBR1_IODELAY_MASK   0x000000FF
+  493 #define TI_FIBERALIGNMENT_HFBR1_SYNCDELAY_MASK 0x0000FF00
+  494 #define TI_FIBERALIGNMENT_HFBR5_IODELAY_MASK   0x00FF0000
+  495 #define TI_FIBERALIGNMENT_HFBR5_SYNCDELAY_MASK 0xFF000000
+  496 
+  497 /* 0xB0 GTPStatusA bits and masks */
+  498 #define TI_GTPSTATUSA_RESET_DONE_MASK 0x000000FF
+  499 #define TI_GTPSTATUSA_PLL_LOCK_MASK   0x00000F00
+  500 
+  501 /* 0xB4 GTPStatusB bits and masks */
+  502 #define TI_GTPSTATUSB_CHANNEL_BONDING_MASK         0x000000FF
+  503 #define TI_GTPSTATUSB_DATA_ERROR_MASK              0x0000FF00
+  504 #define TI_GTPSTATUSB_DISPARITY_ERROR_MASK         0x00FF0000
+  505 #define TI_GTPSTATUSB_DATA_NOT_IN_TABLE_ERROR_MASK 0xFF000000
+  506 
+  507 /* 0xB8 GTPtriggerBufferLength bits and masks */
+  508 #define TI_GTPTRIGGERBUFFERLENGTH_GLOBAL_LENGTH_MASK 0x000007FF
+  509 #define TI_GTPTRIGGERBUFFERLENGTH_SUBSYS_LENGTH_MASK 0x07FF0000
+  510 #define TI_GTPTRIGGERBUFFERLENGTH_IODELAY_READY      (1<<26)
+  511 #define TI_GTPTRIGGERBUFFERLENGTH_HFBR1_MGT_ERROR    (1<<28)
+  512 #define TI_GTPTRIGGERBUFFERLENGTH_CLK250_DCM_LOCK    (1<<29)
+  513 #define TI_GTPTRIGGERBUFFERLENGTH_CLK125_DCM_LOCK    (1<<30)
+  514 #define TI_GTPTRIGGERBUFFERLENGTH_VMECLK_DCM_LOCK    (1<<31)
+  515 
+  516 /* 0xC0 blockStatus bits and masks */
+  517 #define TI_BLOCKSTATUS_NBLOCKS_READY0    0x000000FF
+  518 #define TI_BLOCKSTATUS_NBLOCKS_NEEDACK0  0x0000FF00
+  519 #define TI_BLOCKSTATUS_NBLOCKS_READY1    0x00FF0000
+  520 #define TI_BLOCKSTATUS_NBLOCKS_NEEDACK1  0xFF000000
+  521 
+  522 /* 0xD0 adr24 bits and masks */
+  523 #define TI_ADR24_ADDRESS_MASK         0x0000001F
+  524 #define TI_ADR24_HARDWARE_SET_MASK    0x000003E0
+  525 #define TI_ADR24_GEOADDR_MASK         0x00007C00
+  526 #define TI_ADR24_TM_NBLOCKS_READY1    0x00FF0000
+  527 #define TI_ADR24_TM_NBLOCKS_NEEDACK1  0xFF000000
+  528 
+  529 /* 0xD4 syncEventCtrl bits and masks */
+  530 #define TI_SYNCEVENTCTRL_NBLOCKS_MASK 0x00FFFFFF
+  531 
+  532 /* 0xD8 eventNumber_hi bits and masks */
+  533 #define TI_PROMPT_TRIG_WIDTH_MASK     0x0000007F
+  534 #define TI_EVENTNUMBER_HI_MASK        0xFFFF0000
+  535 
+  536 
+  537 /* 0xEC rocEnable bits and masks */
+  538 #define TI_ROCENABLE_MASK                           0x000000FF
+  539 #define TI_ROCENABLE_ROC(x)                         (1<<(x))
+  540 #define TI_ROCENABLE_SYNCRESET_REQUEST_ENABLE_MASK  0x0007FC00
+  541 #define TI_ROCENABLE_SYNCRESET_REQUEST_MONITOR_MASK 0x1FF00000
+  542 
+  543 /* 0x100 reset bits and masks */
+  544 #define TI_RESET_I2C                  (1<<1)
+  545 #define TI_RESET_JTAG                 (1<<2)
+  546 #define TI_RESET_SFM                  (1<<3)
+  547 #define TI_RESET_SOFT                 (1<<4)
+  548 #define TI_RESET_FIBER                (1<<5)
+  549 #define TI_RESET_SYNC_HISTORY         (1<<6)
+  550 #define TI_RESET_BUSYACK              (1<<7)
+  551 #define TI_RESET_CLK250               (1<<8)
+  552 #define TI_RESET_CLK200               (1<<8)
+  553 #define TI_RESET_CLK125               (1<<9)
+  554 #define TI_RESET_MGT                  (1<<10)
+  555 #define TI_RESET_AUTOALIGN_HFBR1_SYNC (1<<11)
+  556 #define TI_RESET_AUTOALIGN_HFBR5_SYNC (1<<12)
+  557 #define TI_RESET_RAM_WRITE            (1<<12)
+  558 #define TI_RESET_FIBER_AUTO_ALIGN     (1<<13)
+  559 #define TI_RESET_IODELAY              (1<<14)
+  560 #define TI_RESET_MEASURE_LATENCY      (1<<15)
+  561 #define TI_RESET_TAKE_TOKEN           (1<<16)
+  562 #define TI_RESET_BLOCK_READOUT        (1<<17)
+  563 #define TI_RESET_FORCE_SYNCEVENT      (1<<20)
+  564 #define TI_RESET_MGT_RX_RESET         (1<<22)
+  565 #define TI_RESET_SYNCRESET_REQUEST    (1<<23)
+  566 #define TI_RESET_SCALERS_LATCH        (1<<24)
+  567 #define TI_RESET_SCALERS_RESET        (1<<25)
+  568 #define TI_RESET_FILL_TO_END_BLOCK    (1<<31)
+  569 
+  570 /* 0x104 fpDelay Masks */
+  571 #define TI_FPDELAY_MASK(x) (0x1FF<<(10*(x%3)))
+  572 
+  573 /* 0x138 triggerRuleMin bits and masks */
+  574 #define TI_TRIGGERRULEMIN_MIN2_MASK  0x00007F00
+  575 #define TI_TRIGGERRULEMIN_MIN2_EN    (1<<15)
+  576 #define TI_TRIGGERRULEMIN_MIN3_MASK  0x007F0000
+  577 #define TI_TRIGGERRULEMIN_MIN3_EN    (1<<23)
+  578 #define TI_TRIGGERRULEMIN_MIN4_MASK  0x7F000000
+  579 #define TI_TRIGGERRULEMIN_MIN4_EN    (1<<31)
+  580 
+  581 /* 0x1D0-0x1F0 TI ID bits and masks */
+  582 #define TI_ID_TRIGSRC_ENABLE_MASK     0x000000FF
+  583 #define TI_ID_CRATEID_MASK            0x0000FF00
+  584 #define TI_ID_BLOCKLEVEL_MASK         0x00FF0000
+  585 
+  586 /* Trigger Sources, used by tiSetTriggerSource  */
+  587 #define TI_TRIGGER_P0        0
+  588 #define TI_TRIGGER_HFBR1     1
+  589 #define TI_TRIGGER_FPTRG     2
+  590 #define TI_TRIGGER_TSINPUTS  3
+  591 #define TI_TRIGGER_TSREV2    4
+  592 #define TI_TRIGGER_RANDOM    5
+  593 #define TI_TRIGGER_PULSER    5
+  594 #define TI_TRIGGER_PART_1    6
+  595 #define TI_TRIGGER_PART_2    7
+  596 #define TI_TRIGGER_PART_3    8
+  597 #define TI_TRIGGER_PART_4    9
+  598 #define TI_TRIGGER_HFBR5    10
+  599 #define TI_TRIGGER_TRIG21   11
+  600 
+  601 /* Clock Sources, used by tiSetClockSource */
+  602 #define TI_CLKSRC_INTERNAL 0
+  603 #define TI_CLKSRC_HFBR1    1
+  604 #define TI_CLKSRC_HFBR5    5
+  605 #define TI_CLKSRC_BRIDGE   9
+  606 
+  607 /* Define default Interrupt vector and level */
+  608 #define TI_INT_VEC      0xec
+  609 #define TI_INT_LEVEL    5
+  610 
+  611 /* i2c data masks - 16bit data default */
+  612 #define TI_I2C_DATA_MASK             0x0000ffff
+  613 #define TI_I2C_8BIT_DATA_MASK        0x000000ff
+  614 
+  615 /* Data buffer bits and masks */
+  616 #define TI_DATA_TYPE_DEFINE_MASK           0x80000000
+  617 #define TI_WORD_TYPE_MASK                  0x78000000
+  618 #define TI_FILLER_WORD_TYPE                0x78000000
+  619 #define TI_BLOCK_HEADER_WORD_TYPE          0x00000000
+  620 #define TI_BLOCK_TRAILER_WORD_TYPE         0x08000000
+  621 #define TI_EMPTY_FIFO                      0xF0BAD0F0
+  622 #define TI_BLOCK_HEADER_CRATEID_MASK       0xFF000000
+  623 #define TI_BLOCK_HEADER_SLOTS_MASK         0x001F0000
+  624 #define TI_BLOCK_TRAILER_CRATEID_MASK      0x00FF0000
+  625 #define TI_BLOCK_TRAILER_SLOTS_MASK        0x1F000000
+  626 #define TI_BLOCK_TRAILER_WORD_COUNT_MASK   0x001FFFFF
+  627 #define TI_BLOCK_TRAILER_SYNCEVENT_FLAG    (1 << 21)
+  628 #define TI_DATA_BLKNUM_MASK                0x0000FF00
+  629 #define TI_DATA_BLKLEVEL_MASK              0x000000FF
+  630 #define TI_REG_HEADER_WORD_TYPE            (13 << 27)
+  631 #define TI_MODULE_ID                       (0 << 18)
+  632 
+  633 /* Bridge-mode definitions - Fiber port is Defined as Port 5 in firmware */
+  634 #define TI_SLAVE_FIBER_IN 5
+  635 #define TI_SYNC_BRIDGE    TI_SYNC_HFBR5
+  636 #define TI_TRIGGER_BRIDGE TI_TRIGGER_HFBR5
+  637 #define TI_CLOCK_BRIDGE   TI_CLOCK_HFBR5
+  638 
+  639 /* tiInit initialization flag bits */
+  640 #define TI_INIT_NO_INIT                 (1<<0)
+  641 #define TI_INIT_SLAVE_FIBER_5           (1<<1)
+  642 #define TI_INIT_SKIP_FIRMWARE_CHECK     (1<<2)
+  643 
+  644 /* Some pre-initialization routine prototypes */
+  645 int  tiSetFiberLatencyOffset_preInit(int flo);
+  646 int  tiSetCrateID_preInit(int cid);
+  647 int  tiSetFiberIn_preInit(int port);
+  648 
+  649 /* Function prototypes */
+  650 int  tiInit(unsigned int tAddr, unsigned int mode, int force);
+  651 unsigned int tiFind();
+  652 int  tiCheckAddresses();
+  653 void tiStatus(int pflag);
+  654 int  tiSetSlavePort(int port);
+  655 int  tiGetSlavePort();
+  656 void tiSlaveStatus(int pflag);
+  657 int  tiGetFirmwareVersion();
+  658 int  tiReload();
+  659 unsigned int tiGetSerialNumber(char **rSN);
+  660 int  tiClockResync();
+  661 int  tiReset();
+  662 int  tiSetCrateID(unsigned int crateID);
+  663 int  tiGetCrateID(int port);
+  664 int  tiGetPortTrigSrcEnabled(int port);
+  665 int  tiGetSlaveBlocklevel(int port);
+  666 int  tiSetBlockLevel(int blockLevel);
+  667 int  tiBroadcastNextBlockLevel(int blockLevel);
+  668 int32_t tiGetUseBroadcastBufferLevel();
+  669 int  tiGetNextBlockLevel();
+  670 int  tiGetCurrentBlockLevel();
+  671 int  tiSetInstantBlockLevelChange(int enable);
+  672 int  tiGetInstantBlockLevelChange();
+  673 int  tiSetTriggerSource(int trig);
+  674 int32_t tiGetTriggerSource();
+  675 int  tiSetTriggerSourceMask(int trigmask);
+  676 int  tiSetGoOutput(int enable);
+  677 int32_t tiGetGoOutput();
+  678 int  tiEnableTriggerSource();
+  679 int  tiForceSendTriggerSourceEnable();
+  680 int  tiDisableTriggerSource(int fflag);
+  681 int  tiSetSyncSource(unsigned int sync);
+  682 int32_t tiGetSyncSource();
+  683 int  tiSetEventFormat(int format);
+  684 int32_t tiGetEventFormat();
+  685 int  tiSetFPInputReadout(int enable);
+  686 int32_t tiGetFPInputReadout();
+  687 int  tiSoftTrig(int trigger, unsigned int nevents, unsigned int period_inc, int range);
+  688 int  tiSetRandomTrigger(int trigger, int setting);
+  689 int  tiDisableRandomTrigger();
+  690 int  tiReadBlock(volatile unsigned int *data, int nwrds, int rflag);
+  691 int  tiFakeTriggerBankOnError(int enable);
+  692 int  tiGenerateTriggerBank(volatile unsigned int *data);
+  693 int  tiReadTriggerBlock(volatile unsigned int *data);
+  694 int  tiGetBlockSyncFlag();
+  695 int  tiCheckTriggerBlock(volatile unsigned int *data);
+  696 int  tiDecodeTriggerTypes(volatile unsigned int *data, int data_len,
+  697               int nevents, unsigned int *evtypes);
+  698 int  tiDecodeTriggerType(volatile unsigned int *data, int data_len, int event);
+  699 int  tiDecodeTSrev2Data(volatile unsigned int *data, int data_len,
+  700             int *syncFlag, int *lateFail, int *evType);
+  701 
+  702 int  tiEnableFiber(unsigned int fiber);
+  703 int  tiDisableFiber(unsigned int fiber);
+  704 int  tiSetBusySource(unsigned int sourcemask, int rFlag);
+  705 int32_t tiGetBusySource();
+  706 int  tiSetTriggerLock(int enable);
+  707 int  tiGetTriggerLock();
+  708 void tiEnableBusError();
+  709 void tiDisableBusError();
+  710 int  tiSetPrescale(int prescale);
+  711 int  tiGetPrescale();
+  712 int  tiSetInputPrescale(int input, int prescale);
+  713 int  tiGetInputPrescale(int input);
+  714 int  tiSetTriggerPulse(int trigger, int delay, int width, int delay_step);
+  715 int32_t tiGetTriggerPulse(int32_t trigger, int32_t *delay, int32_t *width, int32_t *delay_step);
+  716 int  tiSetPromptTriggerWidth(int width);
+  717 int  tiGetPromptTriggerWidth();
+  718 void tiSetSyncDelayWidth(unsigned int delay, unsigned int width, int widthstep);
+  719 int32_t tiGetSyncDelayWidth(int32_t *delay, int32_t *width, int32_t *widthstep);
+  720 void tiTrigLinkReset();
+  721 int  tiSetSyncResetType(int type);
+  722 int32_t tiGetSyncResetType();
+  723 void tiSyncReset(int bflag);
+  724 void tiResetEB();
+  725 void tiSyncResetResync();
+  726 void tiClockReset();
+  727 int  tiSetAdr32(unsigned int a32base);
+  728 unsigned int tiGetAdr32();
+  729 int  tiDisableA32();
+  730 int  tiResetEventCounter();
+  731 unsigned long long int tiGetEventCounter();
+  732 int  tiSetBlockLimit(unsigned int limit);
+  733 unsigned int  tiGetBlockLimit();
+  734 unsigned int  tiBReady();
+  735 int  tiGetSyncEventFlag();
+  736 int  tiGetSyncEventReceived();
+  737 int  tiGetReadoutEvents();
+  738 int  tiEnableVXSSignals();
+  739 int  tiDisableVXSSignals();
+  740 int  tiSetBlockBufferLevel(unsigned int level);
+  741 int  tiGetBlockBufferLevel();
+  742 int  tiGetBroadcastBlockBufferLevel();
+  743 int  tiBusyOnBufferLevel(int enable);
+  744 int  tiUseBroadcastBufferLevel(int enable);
+  745 int  tiEnableTSInput(unsigned int inpMask);
+  746 int  tiDisableTSInput(unsigned int inpMask);
+  747 int32_t tiGetTSInput();
+  748 int  tiSetOutputPort(unsigned int set1, unsigned int set2, unsigned int set3, unsigned int set4);
+  749 int  tiSetClockSource(unsigned int source);
+  750 int  tiGetClockSource();
+  751 void tiSetFiberDelay(unsigned int delay, unsigned int offset);
+  752 void tiSetFiberSyncDelay(unsigned int syncDelay);
+  753 int  tiGetFiberDelay();
+  754 int  tiResetSlaveConfig();
+  755 int  tiAddSlave(unsigned int fiber);
+  756 int  tiRemoveSlave(unsigned int fiber);
+  757 int  tiAddSlaveMask(unsigned int fibermask);
+  758 int  tiSetTriggerHoldoff(int rule, unsigned int value, int timestep);
+  759 int  tiGetTriggerHoldoff(int rule);
+  760 int  tiGetTriggerHoldoffClock();
+  761 int  tiPrintTriggerHoldoff(int dflag);
+  762 int  tiSetTriggerHoldoffMin(int rule, unsigned int value);
+  763 int  tiGetTriggerHoldoffMin(int rule, int pflag);
+  764 
+  765 int  tiDisableDataReadout();
+  766 int  tiEnableDataReadout();
+  767 void tiResetBlockReadout();
+  768 
+  769 int  tiTriggerTableConfig(unsigned int *itable);
+  770 int  tiGetTriggerTable(unsigned int *otable);
+  771 int  tiTriggerTablePredefinedConfig(int mode);
+  772 int  tiDefineEventType(int trigMask, int hwTrig, int evType);
+  773 int  tiDefinePulserEventType(int fixed_type, int random_type);
+  774 int32_t tiGetPulserEventType(int32_t *fixed_type, int32_t *random_type);
+  775 int  tiLoadTriggerTable(int mode);
+  776 int32_t tiGetTriggerTableMode();
+  777 void tiPrintTriggerTable(int showbits);
+  778 int  tiSetTriggerWindow(int window_width);
+  779 int  tiGetTriggerWindow();
+  780 int  tiSetTriggerInhibitWindow(int window_width);
+  781 int  tiGetTriggerInhibitWindow();
+  782 int  tiSetTrig21Delay(int delay);
+  783 int  tiGetTrig21Delay();
+  784 int  tiSetTriggerLatchOnLevel(int enable);
+  785 int  tiGetTriggerLatchOnLevel();
+  786 int  tiLatchTimers();
+  787 unsigned int tiGetLiveTime();
+  788 unsigned int tiGetBusyTime();
+  789 int  tiLive(int sflag);
+  790 unsigned int tiGetTSscaler(int input, int latch);
+  791 unsigned int tiBlockStatus(int fiber, int pflag);
+  792 
+  793 int  tiGetFiberLatencyMeasurement();
+  794 int  tiSetUserSyncResetReceive(int enable);
+  795 int  tiGetLastSyncCodes(int pflag);
+  796 int  tiGetSyncHistoryBufferStatus(int pflag);
+  797 void tiResetSyncHistory();
+  798 void tiUserSyncReset(int enable, int pflag);
+  799 void tiPrintSyncHistory();
+  800 int  tiSetSyncEventInterval(int blk_interval);
+  801 int  tiGetSyncEventInterval();
+  802 int  tiForceSyncEvent();
+  803 int  tiSyncResetRequest();
+  804 int  tiGetSyncResetRequest();
+  805 int  tiEnableSyncResetRequest(unsigned int portMask, int self);
+  806 int  tiSyncResetRequestStatus(int pflag);
+  807 void tiTriggerReadyReset();
+  808 void tiTriggerLinkErrorReset();
+  809 unsigned int tiGetTriggerLinkStatus(int pflag);
+  810 
+  811 int  tiFillToEndBlock();
+  812 int  tiResetMGT();
+  813 
+  814 int  tiResetMGTRx();
+  815 int  tiResetFiber();
+  816 
+  817 int  tiSetTSInputDelay(int chan, int delay);
+  818 int  tiGetTSInputDelay(int chan);
+  819 int  tiPrintTSInputDelay();
+  820 unsigned int tiGetGTPBufferLength(int pflag);
+  821 
+  822 int  tiGetConnectedFiberMask();
+  823 int  tiGetTrigSrcEnabledFiberMask();
+  824 
+  825 unsigned int tiGetSWAStatus(int reg);
+  826 unsigned int tiGetSWBStatus(int reg);
+  827 int  tiGetGeoAddress();
+  828 
+  829 /* Library Interrupt/Polling routine prototypes */
+  830 int  tiIntConnect(unsigned int vector, VOIDFUNCPTR routine, unsigned int arg);
+  831 int  tiIntDisconnect();
+  832 int  tiAckConnect(VOIDFUNCPTR routine, unsigned int arg);
+  833 void tiIntAck();
+  834 int  tiIntEnable(int iflag);
+  835 void tiIntDisable();
+  836 unsigned int  tiGetIntCount();
+  837 unsigned int  tiGetAckCount();
+  838 
+  839 int  tiGetSWBBusy(int pflag);
+  840 unsigned int tiGetBusyCounter(int busysrc);
+  841 int  tiPrintBusyCounters();
+  842 
+  843 int  tiReadFiberFifo(int fiber, volatile unsigned int *data, int maxwords);
+  844 int  tiPrintFiberFifo(int fiber);
+  845 
+  846 /* Some token testing routines */
+  847 int  tiSetTokenTestMode(int mode);
+  848 int  tiSetTokenOutTest(int level);
+  849 
+  850 int  tiRocEnable(int roc);
+  851 int  tiRocEnableMask(int rocmask);
+  852 int  tiGetRocEnableMask();
+  853 int  tiReadScalers(volatile unsigned int *data, int latch);
+  854 
+  855 int  tiSetScalerMode(int mode, int control);
+  856 int32_t tiGetScalerMode(int32_t *mode, int32_t *control);
+  857 int  tiSetEvTypeScalers(int enable);
+  858 int32_t tiGetEvTypeScalersFlag();
+  859 void tiClearEvTypeScalers();
+  860 int  tiScanAndFillEvTypeScalers(volatile unsigned int *data, int nwords);
+  861 void tiPrintEvTypeScalers();
+  862 void tiUnload(int pflag);
+  863 int  tiWaitForIODelayReset(int nwait);
+  864 int  tiGetSC1();
+  865 int  tiPrintClockConfiguration();
+  866 void tiTriggerStatus(int pflag);
+  867 int  tiGetHWRegisters(unsigned int *data_buffer, unsigned int maxwords);
+  868 void tiPrintHWRegisters(int32_t formatFlag);
+  869 
+  870 #endif /* TILIB_H */
+TI_A24RegStruct::fibervolatile unsigned int fiberDefinition: tiLib.h:47
+tiSetSlavePortint tiSetSlavePort(int port)This routine provides the ability to switch the port that the TI Slave receives its Clock...Definition: tiLib.c:1338
+TI_A24RegStruct::blockStatusvolatile unsigned int blockStatus[4]Definition: tiLib.h:91
+tiGetCurrentBlockLevelint tiGetCurrentBlockLevel()Get the current block level. Definition: tiLib.c:2079
+TI_A24RegStruct::fiberLatencyMeasurementvolatile unsigned int fiberLatencyMeasurementDefinition: tiLib.h:83
+tiDisableA32int tiDisableA32()Disable A32. Definition: tiLib.c:4869
+tiGetSyncResetTypeint32_t tiGetSyncResetType()Get SyncReset type. Definition: tiLib.c:4629
+tiPrintBusyCountersint tiPrintBusyCounters()Print the BUSY counters for all busy sources. Definition: tiLib.c:9362
+tiIntDisconnectint tiIntDisconnect()Disable interrupts or kill the polling service thread. Definition: tiLib.c:8985
+tiGetBlockBufferLevelint tiGetBlockBufferLevel()Get the block buffer level, as programmed or broadcasted from the TS. Definition: tiLib.c:5259
+TI_A24RegStruct::blank11unsigned int blank11[(0x2000-0x1F4)/4]Definition: tiLib.h:116
+tiEnableFiberint tiEnableFiber(unsigned int fiber)Enable Fiber transceiver. Definition: tiLib.c:3900
+tiReadFiberFifoint tiReadFiberFifo(int fiber, volatile unsigned int *data, int maxwords)Read the fiber fifo from the TI. Definition: tiLib.c:9429
+TI_A24RegStruct::nblocksvolatile unsigned int nblocksDefinition: tiLib.h:80
+TI_A24RegStruct::blank2unsigned int blank2[(0x64-0x5C)/4]Definition: tiLib.h:69
+tiSetTrig21Delayint tiSetTrig21Delay(int delay)Set the delay of Trig1 relative to Trig2 when trigger source is 11. Definition: tiLib.c:7061
+tiUserSyncResetvoid tiUserSyncReset(int enable, int blflag)Control level of the SyncReset signal. Definition: tiLib.c:7748
+TI_A24RegStruct::blockBuffervolatile unsigned int blockBufferDefinition: tiLib.h:59
+tiAckConnectint tiAckConnect(VOIDFUNCPTR routine, unsigned int arg)Connect a user routine to be executed instead of the default TI interrupt/trigger latching acknowledg...Definition: tiLib.c:9067
+tiSetTriggerInhibitWindowint tiSetTriggerInhibitWindow(int window_width)Set the width of the input trigger inhibit window. Definition: tiLib.c:7004
+tiReadTriggerBlockint tiReadTriggerBlock(volatile unsigned int *data)Read a block from the TI and form it into a CODA Trigger Bank. Definition: tiLib.c:3316
+tiSetTriggerLatchOnLevelint tiSetTriggerLatchOnLevel(int enable)Set the trigger latch pattern readout in the data stream to include the Level of the input trigger OR...Definition: tiLib.c:7121
+tiSetTriggerLockint tiSetTriggerLock(int enable)Set the the trigger lock mode. Definition: tiLib.c:4078
+tiIntAckvoid tiIntAck()Acknowledge an interrupt or latched trigger. This &quot;should&quot; effectively release the &quot;Busy&quot; state of th...Definition: tiLib.c:9093
+tiSetTSInputDelayint tiSetTSInputDelay(int chan, int delay)Set the input delay for the specified front panel TSinput (1-6) Definition: tiLib.c:8435
+TI_A24RegStruct::rocEnablevolatile unsigned int rocEnableDefinition: tiLib.h:99
+TI_A24RegStruct::GTPStatusBvolatile unsigned int GTPStatusBDefinition: tiLib.h:88
+tiDisableDataReadoutint tiDisableDataReadout()Disable the necessity to readout the TI for every block. Definition: tiLib.c:6473
+TI_A24RegStruct::master_tiIDvolatile unsigned int master_tiIDDefinition: tiLib.h:115
+tiGetSC1int tiGetSC1()Return bitmask showing readback of SC1 dipswitches. Definition: tiLib.c:10096
+tiResetSyncHistoryvoid tiResetSyncHistory()Reset the SyncCommand history buffer. Definition: tiLib.c:7720
+tiEnableBusErrorvoid tiEnableBusError()Enable Bus Errors to terminate Block Reads. Definition: tiLib.c:4142
+TI_A24RegStruct::runningModevolatile unsigned int runningModeDefinition: tiLib.h:82
+tiSetTriggerSourceMaskint tiSetTriggerSourceMask(int trigmask)Set trigger sources with specified trigmask This routine is for special use when tiSetTriggerSource(...Definition: tiLib.c:2421
+tiSetBlockBufferLevelint tiSetBlockBufferLevel(unsigned int level)Set the block buffer level for the number of blocks in the system that need to be read out...Definition: tiLib.c:5207
+TI_A24RegStruct::trigDelayvolatile unsigned int trigDelayDefinition: tiLib.h:49
+tiGetReadoutEventsint tiGetReadoutEvents()Return the value of the number of readout events accepted. Definition: tiLib.c:5098
+TI_A24RegStruct::syncEventCtrlvolatile unsigned int syncEventCtrlDefinition: tiLib.h:93
+tiForceSendTriggerSourceEnableint tiForceSendTriggerSourceEnable()Force TI to send trigger source enabled bits to TI-master or TD. Definition: tiLib.c:2540
+tiSetTokenOutTestint tiSetTokenOutTest(int level)Set the level of the token out signal. Definition: tiLib.c:9570
+tiGetTriggerHoldoffint tiGetTriggerHoldoff(int rule)Get the value for a specified trigger rule. Definition: tiLib.c:6175
+tiIntConnectint tiIntConnect(unsigned int vector, VOIDFUNCPTR routine, unsigned int arg)Connect a user routine to the TI Interrupt or latched trigger, if polling. Definition: tiLib.c:8890
+tiGetTriggerHoldoffClockint tiGetTriggerHoldoffClock()Return status of slower clock for trigger rules. If Enabled, will slow down the timestep = 1 by a fac...Definition: tiLib.c:6229
+tiGetHWRegistersint tiGetHWRegisters(unsigned int *data_buffer, unsigned int maxwords)Routine to return the values stored at the TIs registers. Definition: tiLib.c:10379
+tiSetCrateID_preInitint tiSetCrateID_preInit(int cid)Set the CrateID to be used during initialization. Definition: tiLib.c:199
+TI_A24RegStruct::blocklimitvolatile unsigned int blocklimitDefinition: tiLib.h:101
+TI_A24RegStruct::blank3unsigned int blank3[(0x74-0x68)/4]Definition: tiLib.h:71
+TI_A24RegStruct::fpDelayvolatile unsigned int fpDelay[2]Definition: tiLib.h:103
+TI_A24RegStructDefinition: tiLib.h:44
+tiReadScalersint tiReadScalers(volatile unsigned int *data, int latch)Read all the scalers into an array. Definition: tiLib.c:9702
+TI_A24RegStruct::blank5unsigned int blank5[(0xFC-0xF0)/4]Definition: tiLib.h:100
+tiSetCrateIDint tiSetCrateID(unsigned int crateID)Set the crate ID. Definition: tiLib.c:1807
+TI_A24RegStruct::clockvolatile unsigned int clockDefinition: tiLib.h:57
+tiGetPromptTriggerWidthint tiGetPromptTriggerWidth()Get the width of the prompt trigger from OT#2. Definition: tiLib.c:4470
+tiGetTSInputDelayint tiGetTSInputDelay(int chan)Get the input delay for the specified front panel TSinput (1-6) Definition: tiLib.c:8474
+tiSetFiberDelayvoid tiSetFiberDelay(unsigned int delay, unsigned int offset)Set the fiber delay required to align the sync and triggers for all crates. Definition: tiLib.c:5715
+tiGetFPInputReadoutint32_t tiGetFPInputReadout()Get whether or not the latched pattern of FP Inputs in block readout. Definition: tiLib.c:2822
+tiGetSlaveBlocklevelint tiGetSlaveBlocklevel(int port)Get the blocklevel of the TI-Slave on the selected port. Definition: tiLib.c:1939
+tiAddSlaveint tiAddSlave(unsigned int fiber)Add and configurate a TI Slave for the TI Master. Definition: tiLib.c:5883
+tiTrigLinkResetvoid tiTrigLinkReset()Reset the trigger link. Definition: tiLib.c:4574
+tiReadBlockint tiReadBlock(volatile unsigned int *data, int nwrds, int rflag)Read a block of events from the TI. Definition: tiLib.c:3013
+tiSyncResetRequestStatusint tiSyncResetRequestStatus(int pflag)Status of SyncReset Request received bits. Definition: tiLib.c:8097
+tiSetFPInputReadoutint tiSetFPInputReadout(int enable)Set whether or not the latched pattern of FP Inputs in block readout. Definition: tiLib.c:2791
+tiSetBusySourceint tiSetBusySource(unsigned int sourcemask, int rFlag)Set the busy source with a given sourcemask sourcemask bits: Definition: tiLib.c:3994
+tiEnableVXSSignalsint tiEnableVXSSignals()Enable trigger and sync signals sent through the VXS to the Signal Distribution (SD) module...Definition: tiLib.c:5143
+tiGetSyncDelayWidthint32_t tiGetSyncDelayWidth(int32_t *delay, int32_t *width, int32_t *widthstep)Get the delay time and width of the Sync signal. Definition: tiLib.c:4547
+TI_A24RegStruct::eJTAGLoadvolatile unsigned int eJTAGLoadDefinition: tiLib.h:121
+tiTriggerReadyResetvoid tiTriggerReadyReset()Reset the registers that record the triggers enabled status of TI Slaves. Definition: tiLib.c:8165
+tiResetSlaveConfigint tiResetSlaveConfig()Reset the configuration of TI Slaves on the TI-Master. Definition: tiLib.c:5847
+tiSetSyncSourceint tiSetSyncSource(unsigned int sync)Set the Sync source mask. Definition: tiLib.c:2614
+tiRemoveSlaveint tiRemoveSlave(unsigned int fiber)Remove a TI Slave. Definition: tiLib.c:5935
+tiResetMGTRxint tiResetMGTRx()Reset the MGT Rx CDR. Definition: tiLib.c:8390
+tiWaitForIODelayResetint tiWaitForIODelayReset(int nwait)Check TI Ready for specified number of times after iodelay reset. Definition: tiLib.c:10057
+tiSetPromptTriggerWidthint tiSetPromptTriggerWidth(int width)Set the width of the prompt trigger from OT#2. Definition: tiLib.c:4439
+tiGetPulserEventTypeint32_t tiGetPulserEventType(int32_t *fixed_type, int32_t *random_type)Return the event type for the TI Master&#39;s fixed and random internal trigger. Definition: tiLib.c:6789
+TI_A24RegStruct::clockStatusvolatile unsigned int clockStatusDefinition: tiLib.h:96
+TI_A24RegStruct::triggerRuleMinvolatile unsigned int triggerRuleMinDefinition: tiLib.h:107
+TI_A24RegStruct::blocklevelvolatile unsigned int blocklevelDefinition: tiLib.h:51
+tiSetTriggerPulseint tiSetTriggerPulse(int trigger, int delay, int width, int delay_step)Set the characteristics of a specified trigger. Definition: tiLib.c:4323
+tiPrintFiberFifoint tiPrintFiberFifo(int fiber)Read the fiber fifo from the TI and print to standard out. Definition: tiLib.c:9477
+tiGetTSscalerunsigned int tiGetTSscaler(int input, int latch)Get the current counter for the specified TS Input. Definition: tiLib.c:7312
+tiGetSerialNumberunsigned int tiGetSerialNumber(char **rSN)Get the Module Serial Number. Definition: tiLib.c:1714
+TI_A24RegStruct::rxAckStatusvolatile unsigned int rxAckStatusDefinition: tiLib.h:98
+tiGetBusySourceint32_t tiGetBusySource()Get the busy sourcemask. Definition: tiLib.c:4049
+tiIntDisablevoid tiIntDisable()Disable interrupts or latching triggers. Definition: tiLib.c:9228
+tiSetInstantBlockLevelChangeint tiSetInstantBlockLevelChange(int enable)Set TS to instantly change blocklevel when broadcast is received. Definition: tiLib.c:2121
+tiBReadyunsigned int tiBReady()Returns the number of Blocks available for readout. Definition: tiLib.c:5019
+tiGetUseBroadcastBufferLevelint32_t tiGetUseBroadcastBufferLevel()Get the status of enabling the use of the broadcasted buffer level, instead of the value set locally ...Definition: tiLib.c:5379
+tiSetAdr32int tiSetAdr32(unsigned int a32base)Routine to set the A32 Base. Definition: tiLib.c:4775
+tiSetFiberSyncDelayvoid tiSetFiberSyncDelay(unsigned int syncDelay)Set the fiber delay required to align the sync and triggers for all crates. Definition: tiLib.c:5755
+tiGetEvTypeScalersFlagint32_t tiGetEvTypeScalersFlag()Return the flag for Enabling/disabling recording of event type scalers. Definition: tiLib.c:9891
+tiSyncResetvoid tiSyncReset(int blflag)Generate a Sync Reset signal. This signal is sent to the loopback and all configured TI Slaves...Definition: tiLib.c:4655
+tiSetClockSourceint tiSetClockSource(unsigned int source)Set the clock to the specified source. Definition: tiLib.c:5559
+tiGetBlockSyncFlagint tiGetBlockSyncFlag()Return the value of the sync event flag from the previous call to tiReadTriggerBlock. Definition: tiLib.c:3503
+tiGenerateTriggerBankint tiGenerateTriggerBank(volatile unsigned int *data)Generate a fake trigger bank. Called by  if ERROR. Definition: tiLib.c:3283
+TI_A24RegStruct::blank6unsigned int blank6[(0x110-0x10C)/4]Definition: tiLib.h:104
+TI_A24RegStruct::blank12unsigned int blank12[(0x2800-0x2200)/4]Definition: tiLib.h:118
+TI_A24RegStruct::syncCommandvolatile unsigned int syncCommandDefinition: tiLib.h:73
+TI_A24RegStruct::vmeControlvolatile unsigned int vmeControlDefinition: tiLib.h:53
+TI_A24RegStruct::livetimevolatile unsigned int livetimeDefinition: tiLib.h:85
+TI_A24RegStruct::busyvolatile unsigned int busyDefinition: tiLib.h:56
+tiEnableTSInputint tiEnableTSInput(unsigned int inpMask)Enable/Disable trigger inputs labelled TS#1-6 on the Front Panel. Definition: tiLib.c:5417
+tiSetBlockLevelint tiSetBlockLevel(int blockLevel)Set the number of events per block. Definition: tiLib.c:1976
+tiSetSyncDelayWidthvoid tiSetSyncDelayWidth(unsigned int delay, unsigned int width, int widthstep)Set the delay time and width of the Sync signal. Definition: tiLib.c:4496
+tiTriggerStatusvoid tiTriggerStatus(int pflag)Print some trigger status information to standard out. Definition: tiLib.c:10197
+tiGetTriggerLockint tiGetTriggerLock()Get the current setting of the trigger lock mode. Definition: tiLib.c:4111
+tiGetSlavePortint tiGetSlavePort()Returns the port of which the TI Slave has been configured (or will be) Definition: tiLib.c:1448
+tiGetSyncEventIntervalint tiGetSyncEventInterval()Get the SyncEvent Block interval. Definition: tiLib.c:7905
+tiGetCrateIDint tiGetCrateID(int port)Get the crate ID of the selected port. Definition: tiLib.c:1843
+TI_A24RegStruct::syncWidthvolatile unsigned int syncWidthDefinition: tiLib.h:75
+tiSlaveStatusvoid tiSlaveStatus(int pflag)Print a summary of all fiber port connections to potential TI Slaves. Definition: tiLib.c:1464
+tiDisableVXSSignalsint tiDisableVXSSignals()Disable trigger and sync signals sent through the VXS to the Signal Distribution (SD) module...Definition: tiLib.c:5173
+tiGetSyncEventReceivedint tiGetSyncEventReceived()Return the value of whether or not the sync event has been received. Definition: tiLib.c:5080
+TI_A24RegStruct::busytimevolatile unsigned int busytimeDefinition: tiLib.h:86
+tiClearEvTypeScalersvoid tiClearEvTypeScalers()Clear the event type scalers. Definition: tiLib.c:9912
+tiSetTriggerHoldoffint tiSetTriggerHoldoff(int rule, unsigned int value, int timestep)Set the value for a specified trigger rule. Definition: tiLib.c:6065
+TI_A24RegStruct::blank0unsigned int blank0Definition: tiLib.h:62
+tiUseBroadcastBufferLevelint tiUseBroadcastBufferLevel(int enable)Enable/Disable the use of the broadcasted buffer level, instead of the value set locally with ...Definition: tiLib.c:5347
+tiSoftTrigint tiSoftTrig(int trigger, unsigned int nevents, unsigned int period_inc, int range)Set and enable the &quot;software&quot; trigger. Definition: tiLib.c:2856
+tiSetSyncResetTypeint tiSetSyncResetType(int type)Set type of SyncReset to send to TI Slaves. Definition: tiLib.c:4608
+tiSetRandomTriggerint tiSetRandomTrigger(int trigger, int setting)Set the parameters of the random internal trigger. Definition: tiLib.c:2932
+tiPrintSyncHistoryvoid tiPrintSyncHistory()Print to standard out the history buffer of Sync Commands received. Definition: tiLib.c:7787
+TI_A24RegStruct::adr32volatile unsigned int adr32Definition: tiLib.h:50
+TI_A24RegStruct::syncvolatile unsigned int syncDefinition: tiLib.h:55
+tiTriggerTablePredefinedConfigint tiTriggerTablePredefinedConfig(int mode)Configure trigger tabled to be loaded with a predefined trigger table (mapping TS inputs to trigger t...Definition: tiLib.c:6621
+TI_A24RegStruct::resetvolatile unsigned int resetDefinition: tiLib.h:102
+TI_A24RegStruct::busy_scaler2volatile unsigned int busy_scaler2[9]Definition: tiLib.h:112
+tiGetEventFormatint32_t tiGetEventFormat()Get the event format. Definition: tiLib.c:2747
+TI_A24RegStruct::blank1unsigned int blank1Definition: tiLib.h:64
+tiStatusvoid tiStatus(int pflag)Print some status information of the TI to standard out. Definition: tiLib.c:881
+tiAddSlaveMaskint tiAddSlaveMask(unsigned int fibermask)Add and configure TI Slaves by using a mask for the TI-Master. Definition: tiLib.c:5995
+tiLatchTimersint tiLatchTimers()Latch the Busy and Live Timers. Definition: tiLib.c:7177
+TI_A24RegStruct::boardIDvolatile unsigned int boardIDDefinition: tiLib.h:46
+tiDisableFiberint tiDisableFiber(unsigned int fiber)Disnable Fiber transceiver. Definition: tiLib.c:3943
+TI_A24RegStruct::trigTablevolatile unsigned int trigTable[(0x180-0x140)/4]Definition: tiLib.h:109
+TI_A24RegStruct::JTAGFPGABasevolatile unsigned int JTAGFPGABase[(0x30000-0x20000)/4]Definition: tiLib.h:123
+tiGetFiberDelayint tiGetFiberDelay()Get the fiber delay required to align the sync and triggers for all crates. Definition: tiLib.c:5792
+tiForceSyncEventint tiForceSyncEvent()Force a sync event (type = 0). Definition: tiLib.c:7940
+tiCheckTriggerBlockint tiCheckTriggerBlock(volatile unsigned int *data)Check the provided array for valid trigger block format. Definition: tiLib.c:3518
+tiGetTrig21Delayint tiGetTrig21Delay()Get the delay of Trig1 relative to Trig2 when trigger source is 11. Definition: tiLib.c:7092
+tiSetBlockLimitint tiSetBlockLimit(unsigned int limit)Set the block number at which triggers will be disabled automatically. Definition: tiLib.c:4943
+tiGetTSInputint32_t tiGetTSInput()Return the enable trigger inputs as a bit mask. Definition: tiLib.c:5490
+tiPrintHWRegistersvoid tiPrintHWRegisters(int32_t formatFlag)Print TIs HW registers to standard out. Definition: tiLib.c:10424
+tiPrintEvTypeScalersvoid tiPrintEvTypeScalers()Print, to standard out, the current values of the event type scalers. Definition: tiLib.c:10015
+TI_A24RegStruct::hfbr_tiIDvolatile unsigned int hfbr_tiID[8]Definition: tiLib.h:114
+tiGetAdr32unsigned int tiGetAdr32()Routine to get the A32 Base. Definition: tiLib.c:4846
+TI_A24RegStruct::inputCountervolatile unsigned int inputCounterDefinition: tiLib.h:90
+TI_A24RegStruct::rocReadoutvolatile unsigned int rocReadoutDefinition: tiLib.h:67
+tiSyncResetRequestint tiSyncResetRequest()Sync Reset Request is sent to TI-Master or TS. Definition: tiLib.c:7980
+tiFakeTriggerBankOnErrorint tiFakeTriggerBankOnError(int enable)Option to generate a fake trigger bank when  finds an ERROR. Enabled by library default. Definition: tiLib.c:3261
+TI_A24RegStruct::blank13unsigned int blank13[(0xFFFC-0x3000)/4]Definition: tiLib.h:120
+tiGetTriggerTableModeint32_t tiGetTriggerTableMode()Return trigger table mode. Definition: tiLib.c:6879
+TI_A24RegStruct::SWB_statusvolatile unsigned int SWB_status[(0x2200-0x2000)/4]Definition: tiLib.h:117
+tiResetMGTint tiResetMGT()Reset the MGT. Definition: tiLib.c:8363
+tiEnableDataReadoutint tiEnableDataReadout()Enable readout the TI for every block. Definition: tiLib.c:6500
+tiGetClockSourceint tiGetClockSource()Get the current clock source. Definition: tiLib.c:5665
+TI_A24RegStruct::eventNumber_hivolatile unsigned int eventNumber_hiDefinition: tiLib.h:94
+TI_A24RegStruct::trig1Prescalevolatile unsigned int trig1PrescaleDefinition: tiLib.h:58
+TI_A24RegStruct::triggerCommandvolatile unsigned int triggerCommandDefinition: tiLib.h:76
+tiGetTriggerLatchOnLevelint tiGetTriggerLatchOnLevel()Get the trigger latch pattern readout in the data stream to include the Level of the input trigger OR...Definition: tiLib.c:7149
+tiFillToEndBlockint tiFillToEndBlock()Generate non-physics triggers until the current block is filled. This feature is useful for &quot;end of r...Definition: tiLib.c:8336
+tiGetGoOutputint32_t tiGetGoOutput()Return status of flag used to enable GO output. Definition: tiLib.c:2482
+tiSetUserSyncResetReceiveint tiSetUserSyncResetReceive(int enable)Enable/Disable operation of User SyncReset. Definition: tiLib.c:7612
+tiGetSWAStatusunsigned int tiGetSWAStatus(int reg)Return the value from the SWa fast link register. Definition: tiLib.c:8635
+tiDecodeTriggerTypeint tiDecodeTriggerType(volatile unsigned int *data, int data_len, int event)Provided TI data (trigger block, or raw TI blocked data), decode the event type for the specified eve...Definition: tiLib.c:3748
+tiScanAndFillEvTypeScalersint tiScanAndFillEvTypeScalers(volatile unsigned int *data, int nwords)Scan the provided TI data array and fill the event type scalers. Definition: tiLib.c:9984
+tiSetTriggerHoldoffMinint tiSetTriggerHoldoffMin(int rule, unsigned int value)Set the value for the minimum time of specified trigger rule. Definition: tiLib.c:6346
+tiClockResyncint tiClockResync()Resync the 250 MHz Clock. Definition: tiLib.c:1759
+tiDefinePulserEventTypeint tiDefinePulserEventType(int fixed_type, int random_type)Define the event type for the TI Master&#39;s fixed and random internal trigger. Definition: tiLib.c:6751
+tiSetScalerModeint tiSetScalerMode(int mode, int control)Set control over the TS inputs scalers. Definition: tiLib.c:9778
+TI_A24RegStruct::SWA_statusvolatile unsigned int SWA_status[(0x3000-0x2800)/4]Definition: tiLib.h:119
+tiDisableBusErrorvoid tiDisableBusError()Disable Bus Errors to terminate Block Reads. Definition: tiLib.c:4166
+tiPrintClockConfigurationint tiPrintClockConfiguration()Print clock configuration to standard out. Definition: tiLib.c:10121
+tiGetLiveTimeunsigned int tiGetLiveTime()Return the current &quot;live&quot; time of the module. Definition: tiLib.c:7200
+TI_A24RegStruct::fiberSyncDelayvolatile unsigned int fiberSyncDelayDefinition: tiLib.h:66
+TI_A24RegStruct::eventNumber_lovolatile unsigned int eventNumber_loDefinition: tiLib.h:95
+TI_A24RegStruct::inputPrescalevolatile unsigned int inputPrescaleDefinition: tiLib.h:70
+tiSetInputPrescaleint tiSetInputPrescale(int input, int prescale)Set the prescale factor for the selected input. Definition: tiLib.c:4249
+tiGetTriggerInhibitWindowint tiGetTriggerInhibitWindow()Get the width of the input trigger inhibit window. Definition: tiLib.c:7034
+tiDisableRandomTriggerint tiDisableRandomTrigger()Disable random trigger generation. Definition: tiLib.c:2984
+tiBusyOnBufferLevelint tiBusyOnBufferLevel(int enable)Set the TI to be BUSY if number of stored blocks is equal to the set block buffer level...Definition: tiLib.c:5317
+tiGetSWBStatusunsigned int tiGetSWBStatus(int reg)Return the value from the SWB fast link register. Definition: tiLib.c:8665
+tiSetTokenTestModeint tiSetTokenTestMode(int mode)Turn on Token out test mode. Definition: tiLib.c:9539
+tiSyncResetResyncvoid tiSyncResetResync()Generate a Sync Reset Resync signal. This signal is sent to the loopback and all configured TI Slaves...Definition: tiLib.c:4711
+TI_A24RegStruct::syncDelayvolatile unsigned int syncDelayDefinition: tiLib.h:74
+tiClockResetvoid tiClockReset()Generate a Clock Reset signal. This signal is sent to the loopback and all configured TI Slaves...Definition: tiLib.c:4732
+tiGetBusyTimeunsigned int tiGetBusyTime()Return the current &quot;busy&quot; time of the module. Definition: tiLib.c:7224
+tiBroadcastNextBlockLevelint tiBroadcastNextBlockLevel(int blockLevel)Broadcast the next block level (to be changed at the end of the next sync event, or during a call to ...Definition: tiLib.c:1994
+tiGetBroadcastBlockBufferLevelint tiGetBroadcastBlockBufferLevel()Get the block buffer level, as broadcasted from the TS. Definition: tiLib.c:5290
+TI_A24RegStruct::syncHistoryvolatile unsigned int syncHistoryDefinition: tiLib.h:81
+tiGetAckCountunsigned int tiGetAckCount()Return current acknowledge count. Definition: tiLib.c:9268
+tiGetGTPBufferLengthunsigned int tiGetGTPBufferLength(int pflag)Return value of buffer length from GTP. Definition: tiLib.c:8540
+tiSetOutputPortint tiSetOutputPort(unsigned int set1, unsigned int set2, unsigned int set3, unsigned int set4)Set (or unset) high level for the output ports on the front panel labelled as O#1-4. Definition: tiLib.c:5519
+tiSetFiberLatencyOffset_preInitint tiSetFiberLatencyOffset_preInit(int flo)Set the Fiber Latency Offset to be used during initialization. Definition: tiLib.c:176
+TI_A24RegStruct::adr24volatile unsigned int adr24Definition: tiLib.h:92
+tiDecodeTSrev2Dataint tiDecodeTSrev2Data(volatile unsigned int *data, int data_len, int *syncFlag, int *lateFail, int *evType)Provided TI data (trigger block, or raw TI blocked data), decode the event type for the specified eve...Definition: tiLib.c:3798
+tiSetTriggerWindowint tiSetTriggerWindow(int window_width)Set the window of the input trigger coincidence window. Definition: tiLib.c:6951
+tiGetTriggerPulseint32_t tiGetTriggerPulse(int32_t trigger, int32_t *delay, int32_t *width, int32_t *delay_step)Return the characteristics of a specified trigger. Definition: tiLib.c:4393
+tiGetFiberLatencyMeasurementint tiGetFiberLatencyMeasurement()Return measured fiber length. Definition: tiLib.c:7596
+TI_A24RegStruct::triggerWindowvolatile unsigned int triggerWindowDefinition: tiLib.h:61
+TI_A24RegStruct::blank7unsigned int blank7[(0x138-0x12C)/4]Definition: tiLib.h:106
+tiGetSyncResetRequestint tiGetSyncResetRequest()Determine if a TI has requested a Sync Reset. Definition: tiLib.c:8009
+tiGetConnectedFiberMaskint tiGetConnectedFiberMask()Returns the mask of fiber channels that report a &quot;connected&quot; status from a TI. Definition: tiLib.c:8562
+tiLoadTriggerTableint tiLoadTriggerTable(int mode)Load a predefined trigger table (mapping TS inputs to trigger types). Definition: tiLib.c:6834
+tiTriggerTableConfigint tiTriggerTableConfig(unsigned int *itable)Configure trigger table to be loaded with a user provided array. Definition: tiLib.c:6552
+TI_A24RegStruct::randomPulservolatile unsigned int randomPulserDefinition: tiLib.h:77
+tiDisableTriggerSourceint tiDisableTriggerSource(int fflag)Disable trigger sources. Definition: tiLib.c:2572
+tiReloadint tiReload()Reload the firmware on the FPGA. Definition: tiLib.c:1653
+tiBlockStatusunsigned int tiBlockStatus(int fiber, int pflag)Show block Status of specified fiber. Definition: tiLib.c:7361
+tiResetEBvoid tiResetEB()Generate a Sync signal to reset only event buffers. This signal is sent to the loopback and all confi...Definition: tiLib.c:4688
+tiGetPrescaleint tiGetPrescale()Get the current prescale factor. Definition: tiLib.c:4222
+TI_A24RegStruct::JTAGPROMBasevolatile unsigned int JTAGPROMBase[(0x20000-0x10000)/4]Definition: tiLib.h:122
+tiGetTrigSrcEnabledFiberMaskint tiGetTrigSrcEnabledFiberMask()Returns the mask of fiber channels that report a &quot;connected&quot; status from a TI has it&#39;s trigger sour...Definition: tiLib.c:8599
+TI_A24RegStruct::mgtResetStatusvolatile unsigned int mgtResetStatusDefinition: tiLib.h:97
+tiIntEnableint tiIntEnable(int iflag)Enable interrupts or latching triggers (depending on set TI mode) Definition: tiLib.c:9144
+TI_A24RegStruct::GTPStatusAvolatile unsigned int GTPStatusADefinition: tiLib.h:87
+tiEnableSyncResetRequestint tiEnableSyncResetRequest(unsigned int portMask, int self)Configure which ports (and self) to enable response of a SyncReset request. Definition: tiLib.c:8047
+TI_A24RegStruct::fixedPulser1volatile unsigned int fixedPulser1Definition: tiLib.h:78
+TI_A24RegStruct::busy_scaler1volatile unsigned int busy_scaler1[7]Definition: tiLib.h:105
+TI_A24RegStruct::blank10unsigned int blank10[(0x1D0-0x1C0)/4]Definition: tiLib.h:113
+tiGetEventCounterunsigned long long int tiGetEventCounter()Returns the event counter (48 bit) Definition: tiLib.c:4915
+tiSetFiberIn_preInitint tiSetFiberIn_preInit(int port)Set the Fiber In port to be used during initialization of TI Slave. Definition: tiLib.c:223
+tiSetEvTypeScalersint tiSetEvTypeScalers(int enable)Enable/disable recording of scalers associated with the bits in the event type. Definition: tiLib.c:9864
+tiDefineEventTypeint tiDefineEventType(int trigMask, int hwTrig, int evType)Define a specific trigger pattern as a hardware trigger (trig1/trig2/syncevent) and Event Type...Definition: tiLib.c:6703
+tiGetSyncHistoryBufferStatusint tiGetSyncHistoryBufferStatus(int pflag)Get the status of the SyncCommand History Buffer. Definition: tiLib.c:7678
+tiGetTriggerSourceint32_t tiGetTriggerSource()Get the trigger source. Definition: tiLib.c:2342
+TI_A24RegStruct::tsInputvolatile unsigned int tsInputDefinition: tiLib.h:63
+tiResetFiberint tiResetFiber()Reset the Fiber Tranceivers. Definition: tiLib.c:8411
+TI_A24RegStruct::blank9unsigned int blank9Definition: tiLib.h:111
+TI_A24RegStruct::SWAvolatile unsigned int SWA[(0x40000-0x30000)/4]Definition: tiLib.h:124
+tiPrintTSInputDelayint tiPrintTSInputDelay()Print Front Panel TSinput Delays to Standard Out. Definition: tiLib.c:8504
+TI_A24RegStruct::outputvolatile unsigned int outputDefinition: tiLib.h:65
+tiPrintTriggerTablevoid tiPrintTriggerTable(int showbits)Print trigger table to standard out. Definition: tiLib.c:6898
+tiGetNextBlockLevelint tiGetNextBlockLevel()Get the block level that will be updated on the end of the block readout. Definition: tiLib.c:2050
+tiDisableTSInputint tiDisableTSInput(unsigned int inpMask)Disable trigger inputs labelled TS#1-6 on the Front Panel. Definition: tiLib.c:5455
+tiGetSWBBusyint tiGetSWBBusy(int pflag)Return status of Busy from SWB. Definition: tiLib.c:9292
+tiGetIntCountunsigned int tiGetIntCount()Return current readout count. Definition: tiLib.c:9252
+tiFindunsigned int tiFind()Find the TI within the prescribed &quot;GEO Slot to A24 VME Address&quot; range from slot 3 to 21...Definition: tiLib.c:730
+TI_A24RegStruct::GTPtriggerBufferLengthvolatile unsigned int GTPtriggerBufferLengthDefinition: tiLib.h:89
+tiResetEventCounterint tiResetEventCounter()Reset the L1A counter, as incremented by the TI. Definition: tiLib.c:4893
+tiResetint tiReset()Perform a soft reset of the TI. Definition: tiLib.c:1785
+TI_A24RegStruct::triggerRulevolatile unsigned int triggerRuleDefinition: tiLib.h:60
+TI_A24RegStruct::dataFormatvolatile unsigned int dataFormatDefinition: tiLib.h:52
+TI_A24RegStruct::pulserEvTypevolatile unsigned int pulserEvTypeDefinition: tiLib.h:72
+tiGetInputPrescaleint tiGetInputPrescale(int input)Get the current prescale factor for the selected input. Definition: tiLib.c:4290
+tiGetBusyCounterunsigned int tiGetBusyCounter(int busysrc)Return BUSY counter for specified Busy Source. Definition: tiLib.c:9335
+tiGetBlockLimitunsigned int tiGetBlockLimit()Returns the value that is currently programmed as the block limit. Definition: tiLib.c:4966
+tiTriggerLinkErrorResetvoid tiTriggerLinkErrorReset()Reset the registers that record bit errors recorded on the trigger link. Definition: tiLib.c:8215
+tiGetTriggerHoldoffMinint tiGetTriggerHoldoffMin(int rule, int pflag)Get the value for a specified trigger rule minimum busy. Definition: tiLib.c:6414
+tiGetGeoAddressint tiGetGeoAddress()Return geographic address as provided from a VME-64X crate. Definition: tiLib.c:8695
+tiSetTriggerSourceint tiSetTriggerSource(int trig)Set the trigger source This routine will set a library variable to be set in the TI registers at a ca...Definition: tiLib.c:2187
+TI_A24RegStruct::trigsrcvolatile unsigned int trigsrcDefinition: tiLib.h:54
+tiGetSyncEventFlagint tiGetSyncEventFlag()Return the value of the Synchronization flag, obtained from tiBReady. i.e. Return the value of the Sy...Definition: tiLib.c:5059
+TI_A24RegStruct::intsetupvolatile unsigned int intsetupDefinition: tiLib.h:48
+tiGetSyncSourceint32_t tiGetSyncSource()Get the Sync source mask. Definition: tiLib.c:2653
+tiSetSyncEventIntervalint tiSetSyncEventInterval(int blk_interval)Set the value of the syncronization event interval. Definition: tiLib.c:7864
+tiEnableTriggerSourceint tiEnableTriggerSource()Enable trigger sources Enable trigger sources set by tiSetTriggerSource(...) or tiSetTriggerSourceMas...Definition: tiLib.c:2505
+tiGetLastSyncCodesint tiGetLastSyncCodes(int pflag)Return last SyncCommand received. Definition: tiLib.c:7640
+tiGetFirmwareVersionint tiGetFirmwareVersion()Get the Firmware Version. Definition: tiLib.c:1614
+tiSetEventFormatint tiSetEventFormat(int format)Set the event format. Definition: tiLib.c:2686
+tiGetTriggerTableint tiGetTriggerTable(unsigned int *otable)Get the current trigger table stored in local memory (not necessarily on TI). Definition: tiLib.c:6578
+tiLiveint tiLive(int sflag)Calculate the live time (percentage) from the live and busy time scalers. Definition: tiLib.c:7250
+TI_A24RegStruct::blank8unsigned int blank8Definition: tiLib.h:108
+TI_A24RegStruct::readoutAckvolatile unsigned int readoutAckDefinition: tiLib.h:68
+TI_A24RegStruct::SWBvolatile unsigned int SWB[(0x50000-0x40000)/4]Definition: tiLib.h:125
+tiSetPrescaleint tiSetPrescale(int prescale)Set the prescale factor for the external trigger. Definition: tiLib.c:4193
+TI_A24RegStruct::fiberAlignmentvolatile unsigned int fiberAlignmentDefinition: tiLib.h:84
+tiInitint tiInit(unsigned int tAddr, unsigned int mode, int iFlag)Initialize the TIp register space into local memory, and setup registers given user input...Definition: tiLib.c:266
+tiGetScalerModeint32_t tiGetScalerMode(int32_t *mode, int32_t *control)Returns the settings for the scaling of ts inputs. Definition: tiLib.c:9830
+tiGetPortTrigSrcEnabledint tiGetPortTrigSrcEnabled(int port)Get the trigger sources enabled bits of the selected port. Definition: tiLib.c:1893
+tiGetInstantBlockLevelChangeint tiGetInstantBlockLevelChange()Get Status of instant blocklevel change when broadcast is received. Definition: tiLib.c:2149
+tiDecodeTriggerTypesint tiDecodeTriggerTypes(volatile unsigned int *data, int data_len, int nevents, unsigned int *evtypes)Provided TI data (trigger block, or raw TI blocked data), decode the event types. ...Definition: tiLib.c:3651
+tiResetBlockReadoutvoid tiResetBlockReadout()Decrement the hardware counter for blocks available, effectively simulating a readout from the data f...Definition: tiLib.c:6528
+TI_A24RegStruct::ts_scalervolatile unsigned int ts_scaler[6]Definition: tiLib.h:110
+tiGetTriggerWindowint tiGetTriggerWindow()Get the window of the input trigger coincidence window. Definition: tiLib.c:6981
+tiSetGoOutputint tiSetGoOutput(int enable)Enable/Disable use of O#4 as the &#39;GO&#39; output level, enabled when trigger sources are enabled...Definition: tiLib.c:2457
+tiGetTriggerLinkStatusunsigned int tiGetTriggerLinkStatus(int pflag)Get the error status bits for the trigger link. Definition: tiLib.c:8252
+TI_A24RegStruct::fixedPulser2volatile unsigned int fixedPulser2Definition: tiLib.h:79
+
+
+
+Generated by  
+
+ 1.8.5
+
+
+

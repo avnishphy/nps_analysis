@@ -1,0 +1,49 @@
+Setting up NPS offline replay environment
+
+****************************************************
+>>>>  IMPORTANT: After loading this module, do  <<<<
+>>>>    cd $REPLAYDIR                           <<<<
+****************************************************
+
+Loading nps_replay/5.28.24
+  Loading requirement: pythia6/6.4.28 pythia8/8.317 root/6.30.04 evio/5.3
+    analyzer/1.7.12 hcana/1.1 NPSlib/fddb8e9_1.1.0
+
+Processing export_cached.C(4259)...
+START 4259 0 /cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4259_0_1_-1.root
+Podd::MultiFileRun  "RUN_4259"
+Run number:   4259
+Run date:     Thu Feb  8 22:11:46 2024
+Data version: 3
+Requested event range: all
+Analyzed events:       58600
+Assume Date:           0
+Database read:         1
+Initialized:           1
+Opened:                0
+Date set/read/req:     1 1 1
+Run num set/read/req:  1 1 1
+Run type set/read/req: 1 1 1
+Prescales set/rd/req:  0 0 0
+DAQInfo set/rd/req:    1 1 0
+Run parameters: 
+ Beam: 
+  Energy      = 10.5435 +/- 0 GeV
+  Momentum    = 10.5435 GeV/c
+  Mass/Charge = 0.000511/-1 GeV/c^2
+ Target: 
+  Mass:       = 0 GeV/c^2
+ DAQ:
+  Prescale factors: (1-12)
+   -1/-1/-1/-1/-1/5/0/0/0/0/0/0
+Search paths:
+  .
+  ./raw
+  ./raw/../raw.copiedtotape
+  ./cache
+  /net/cdaq/cdaql1data/coda/data/raw
+File name:   nps_coin_4259.dat.0
+Default stream: 
+  nps_coin_4259.dat.0
+EXPORTED 4259 0 TSH 478 28
+EXPORTED 4259 0 T 58600 19

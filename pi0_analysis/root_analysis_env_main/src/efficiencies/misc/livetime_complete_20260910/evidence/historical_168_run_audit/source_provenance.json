@@ -1,0 +1,128 @@
+[
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/config/nps_dvcs_all_kins_main.csv",
+    "snapshot": "snapshot/nps_dvcs_all_kins_main.csv",
+    "sha256": "f3ee5f17956e0291a5c6f10f0b96b9cfaee222a8155012d9fa7be6814bee61c8",
+    "mtime": 1780424649.9719431
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/efficiency_stuff/efficiency_KinC_x60_4b.csv",
+    "snapshot": "snapshot/efficiency_KinC_x60_4b.csv",
+    "sha256": "d8ae13f5977bae855cd4adb5d41d2098811ee83831bea45b21ae8f9906b371fd",
+    "mtime": 1787349808.8079116
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/efficiency_stuff/selection_report_KinC_x60_4b.csv",
+    "snapshot": "snapshot/selection_report_KinC_x60_4b.csv",
+    "sha256": "9f2cbaeaf503c1e239ff42fb292bffe10813186d8d06eefd8af0bcbba2909b50",
+    "mtime": 1787349809.1539187
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/efficiency_stuff/plots/efficiency_multipanel_vs_run_KinC_x60_4b_lh2.png",
+    "snapshot": "snapshot/efficiency_multipanel_vs_run_KinC_x60_4b_lh2.png",
+    "sha256": "c637aca3e82c31aa2ecccaa169eef9073660acde195461301135b990bcc73810",
+    "mtime": 1787596304.4136791
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_tracking_eff.h",
+    "snapshot": "snapshot/hms_tracking_eff.h",
+    "sha256": "b052791e109d9188881c5acfde31e4674edc03490e5573fd735c9a0215a5eafc",
+    "mtime": 1782960206.043295
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/newgen_edtm_livetime.h",
+    "snapshot": "snapshot/newgen_edtm_livetime.h",
+    "sha256": "88d5a235b998c3717a6e81035fd206abae040c00026d863dacfc6adb51f2496a",
+    "mtime": 1782956640.2252872
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_pid_eff.h",
+    "snapshot": "snapshot/hms_pid_eff.h",
+    "sha256": "af380dd033474db70864703cc5d1bebdf1f28c2cf2bc47af69e5a96c23a50555",
+    "mtime": 1782960324.822639
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_cal_eff_tag_cer.h",
+    "snapshot": "snapshot/hms_cal_eff_tag_cer.h",
+    "sha256": "7774355eb5696a195a284c70ba220713a58fe4f6954cae0a87f0740cf935101a",
+    "mtime": 1782960325.5266528
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/efficiency_types.h",
+    "snapshot": "snapshot/efficiency_types.h",
+    "sha256": "83e08fc4f28115129ce73039cccb19ec4dc029d2774412ed9c4454e4f13d9fdb",
+    "mtime": 1787335226.4318502
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/prescale_beamtime_helper.h",
+    "snapshot": "snapshot/prescale_beamtime_helper.h",
+    "sha256": "91154b5163b70620cb25e0f7f9da4f2b5e464ec9d719f61a4589967f2f619b6e",
+    "mtime": 1787335226.1078432
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/root_file_discovery.h",
+    "snapshot": "snapshot/root_file_discovery.h",
+    "sha256": "506fa635704f7a267e847c5de20455bb660933bad40f3f1f2209df55865aee61",
+    "mtime": 1775250612.8598897
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/NPS_selection_helper.h",
+    "snapshot": "snapshot/NPS_selection_helper.h",
+    "sha256": "2c59235ba398ce164f4c01bc44d576be79e76ab68967580703589e2a31c93741",
+    "mtime": 1788465825.794539
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/good_event_selection_helper.h",
+    "snapshot": "snapshot/good_event_selection_helper.h",
+    "sha256": "6565d2a89d88c79263cf14b586115c73219ce114fa20f4dc80939542271f124e",
+    "mtime": 1783975988.9940615
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/eff_math_utils.h",
+    "snapshot": "snapshot/eff_math_utils.h",
+    "sha256": "81a5a0a35aa8d1ab057d26ed4156036313554839325347cb3428a726171d2e63",
+    "mtime": 1775254732.231819
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_cer_eff_tag_cal.h",
+    "snapshot": "snapshot/hms_cer_eff_tag_cal.h",
+    "sha256": "91649b2e26986968bffe6bc12e2ff7226383b4c3e5df51db58a89ec377156a21",
+    "mtime": 1782960326.251667
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/nps_hel_select.h",
+    "snapshot": "snapshot/nps_hel_select.h",
+    "sha256": "f56c78cfb6d9daab79e987b0d44b0f2a38b57efca163394f718e88f617b21f34",
+    "mtime": 1783975385.2900627
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_pid_common.h",
+    "snapshot": "snapshot/hms_pid_common.h",
+    "sha256": "8ba6249ec0adbdcee6db59b145003773e38d8a59ef3ed25f089b8793c87dadc3",
+    "mtime": 1787334532.213951
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/config_csv_helper.h",
+    "snapshot": "snapshot/config_csv_helper.h",
+    "sha256": "e5457b640d404c24d3eb35c48075c619e91494741adf11e2b3efc975aa65e62e",
+    "mtime": 1775250605.6487553
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_hodo_3of4_eff.h",
+    "snapshot": "snapshot/hms_hodo_3of4_eff.h",
+    "sha256": "61bfcdc5848e0a03e1060833d422e4d3fc109a686f4c0fc55f5376a2392196f0",
+    "mtime": 1787334532.5119576
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/hms_event_context.h",
+    "snapshot": "snapshot/hms_event_context.h",
+    "sha256": "c528c9c90a7b652eba79fa9bcbaabf736953ea79aabf4e35958db929f3ddfdfa",
+    "mtime": 1787334319.1183782
+  },
+  {
+    "source": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/compute_efficiencies_stuff.cxx",
+    "snapshot": "snapshot/compute_efficiencies_stuff.cxx",
+    "sha256": "a70d0def3b60f20b6aefd1a36fa8d67cc482346315fe1955f2cd51464fb569ae",
+    "mtime": 1787335226.7638574
+  }
+]

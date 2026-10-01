@@ -56,6 +56,7 @@
     #include <array>
     #include <map>
     #include <cctype>
+    #include <cerrno>
     #include <sys/stat.h>
     #include <omp.h>
 
@@ -102,6 +103,7 @@
     #include "Math/QuasiRandom.h"
 
     // Include project headers LAST (these depend on std and ROOT)
+    #include "smearing_response_config.h"
     #include "../analysis/utils.C"
     #include "../analysis/nps_helper.h"
     #include "../analysis/nps_time_bg.h"
@@ -121,8 +123,8 @@
     // ============================================================================
     //                         USER CONFIGURATION SECTION
     // ============================================================================
-    // All user-configurable parameters are in this section for easy access.
-    // Modify these values to customize the analysis behavior.
+    // Fitter-only parameters are in this section. Shared fixed response settings
+    // are defined in smearing_response_config.h.
     //
     // RECOMMENDED CONFIGURATION (for most analyses):
     //   - ENERGY_SMEARING_HISTOGRAM = HIST_BOTH (Use BOTH M_γγ and M_miss)
@@ -138,6 +140,39 @@
     // ============================================================================
 
     namespace Config {
+        using SmearingResponseConfig::ENABLE_ELECTRON_MOMENTUM_SCALING;
+        using SmearingResponseConfig::ENABLE_ENERGY_DEPENDENT_MU;
+        using SmearingResponseConfig::ENABLE_ENERGY_DEPENDENT_SIGMA_POS;
+        using SmearingResponseConfig::ENABLE_MGG_LINEAR_ENERGY_CORRECTION;
+        using SmearingResponseConfig::ENABLE_POSITION_SMEARING;
+        using SmearingResponseConfig::ENABLE_TRUNCATED_LANDAU;
+        using SmearingResponseConfig::ENERGY_MEAN_MODEL;
+        using SmearingResponseConfig::ENERGY_SMEAR_SHAPE;
+        using SmearingResponseConfig::INTERPOLATED_MAP_NBINS_X;
+        using SmearingResponseConfig::INTERPOLATED_MAP_NBINS_Y;
+        using SmearingResponseConfig::LANDAU_FWHM_TO_SCALE;
+        using SmearingResponseConfig::LANDAU_MAX_FWHM_ABOVE_MPV;
+        using SmearingResponseConfig::LANDAU_MAX_REDRAWS;
+        using SmearingResponseConfig::LANDAU_SCALE_DENOMINATOR_MIN;
+        using SmearingResponseConfig::MGG_LINEAR_FACTOR_MAX;
+        using SmearingResponseConfig::MGG_LINEAR_FACTOR_MIN;
+        using SmearingResponseConfig::MGG_LINEAR_INVERSE_DENOMINATOR_MIN;
+        using SmearingResponseConfig::MGG_LINEAR_PIVOT_GEV;
+        using SmearingResponseConfig::MGG_LINEAR_SLOPE;
+        using SmearingResponseConfig::MGG_LINEAR_USE_INVERSE;
+        using SmearingResponseConfig::MU_ENERGY_MIN_GEV;
+        using SmearingResponseConfig::NONPOSITIVE_CLAMP;
+        using SmearingResponseConfig::PRODUCER_FALLBACK_SIGMA;
+        using SmearingResponseConfig::RESOLUTION_A_DEFAULT;
+        using SmearingResponseConfig::RESOLUTION_B_DEFAULT;
+        using SmearingResponseConfig::RESOLUTION_C_DEFAULT;
+        using SmearingResponseConfig::SIGMA_POS_ENERGY_E0_GEV;
+        using SmearingResponseConfig::SIGMA_POS_ENERGY_MIN_GEV;
+        using SmearingResponseConfig::SMEAR_SHAPE_GAUSSIAN;
+        using SmearingResponseConfig::SMEAR_SHAPE_LANDAU;
+        using SmearingResponseConfig::SECTION_BOUNDARY_TOLERANCE_CM;
+        using SmearingResponseConfig::USE_SIMPLE_STOCHASTIC_MODEL;
+
         // ========================================================================
         // PHYSICS SETTINGS
         // ========================================================================
@@ -148,48 +183,9 @@
         double NPS_Z_NPS_CM = std::numeric_limits<double>::quiet_NaN();
         double NPS_THETA_NPS_DEG = std::numeric_limits<double>::quiet_NaN();
         
-        // Y mispointing offset (cm) - must match simc_pi0_analysis.C
-        const double Y_MISPOINT = 0.086273;  // SIMC infile for x36_5 spec%e%offset%y
-        
-        // Clamp value for non-positive energy smearing draws (GeV)
-        const double NONPOSITIVE_CLAMP = 1e-6;
-
-        // Optional linear pair-energy correction versus reconstructed m_gg:
-        //   E_corr = E_smear * f(m_gg), where
-        //   f(m_gg) = 1 / (1 + slope * (m_gg - pivot))  when use_inverse=true
-        //           =     (1 + slope * (m_gg - pivot))  when use_inverse=false
-        // This is applied equally to both photons after per-photon smearing.
-        const bool ENABLE_MGG_LINEAR_ENERGY_CORRECTION = false;
-        const double MGG_LINEAR_SLOPE = -40.0;          // GeV^-1
-        const double MGG_LINEAR_PIVOT_GEV = 0.135;    // GeV
-        const bool MGG_LINEAR_USE_INVERSE = false;
-        const double MGG_LINEAR_FACTOR_MIN = 0.85;
-        const double MGG_LINEAR_FACTOR_MAX = 1.15;
-        
         // ========================================================================
         // ENERGY RESOLUTION MODEL
         // ========================================================================
-        // Energy-smearing PDF shape for per-photon response tails.
-        //   0: Gaussian  -> sigma interpreted as standard-deviation coefficient
-        //   1: Landau    -> sigma interpreted as FWHM coefficient
-        constexpr int SMEAR_SHAPE_GAUSSIAN = 0;
-        constexpr int SMEAR_SHAPE_LANDAU = 1;
-        const int ENERGY_SMEAR_SHAPE = SMEAR_SHAPE_GAUSSIAN;  // RECOMMENDED: Landau for more realistic tails, Gaussian for simpler model and faster computation
-
-        // Conversion used in Landau mode:
-        //   FWHM ~= LANDAU_FWHM_TO_SCALE * (Landau scale parameter)
-        // The exact factor depends on parameterization; 4.0 is a robust practical default.
-        const double LANDAU_FWHM_TO_SCALE = 4.0;
-
-        // Best-practice Landau sampling controls:
-        //  - Resample a finite number of times to avoid non-physical tails dominating the fit.
-        //  - Enforce E > NONPOSITIVE_CLAMP and (optionally) an upper tail cap.
-        // The cap is expressed in units of FWHM above the scaled energy mean:
-        //   E_max = E_scaled + LANDAU_MAX_FWHM_ABOVE_MPV * FWHM(E_scaled)
-        const bool ENABLE_TRUNCATED_LANDAU = true;
-        const int LANDAU_MAX_REDRAWS = 64;
-        const double LANDAU_MAX_FWHM_ABOVE_MPV = 8.0;
-
         // RNG seed used for deterministic smearing in every chi2 evaluation.
         // Resetting the RNG to this seed at the start of each evaluation ensures
         // that the chi2 surface is smooth and reproducible — identical random draws
@@ -211,14 +207,6 @@
         //   - σ ≈ 1.0 if A,B,C are correct for your detector
         //   - Use only if you know your detector's resolution parameters
         //
-        const bool USE_SIMPLE_STOCHASTIC_MODEL = true;  // true = Model 1, false = Model 2
-        
-        // Model 2 constants (only used if USE_SIMPLE_STOCHASTIC_MODEL = false)
-        // Reference values from Wasim's NIM paper draft (E in GeV, ⊕ means quadrature sum):
-        const double RESOLUTION_A_DEFAULT = 0.97;  // Stochastic term starting value (0.97%)
-        const double RESOLUTION_B_DEFAULT = 1.1;   // Noise term starting value (1.1%)
-        const double RESOLUTION_C_DEFAULT = 1.14;  // Constant term starting value (1.14%)
-        
         // ========================================================================
         // ========================================================================
         // OPTIMIZATION STRATEGY SELECTION
@@ -241,8 +229,8 @@
         //   - Higher W_MPI0: If M_γγ has better statistics or precision
         //
         const double W_MPI0 = 1.0;   // Weight for invariant mass chi2 (M_γγ)
-        const double W_MMISS = 0.0;  // Weight for missing mass chi2 (M_miss)
-        const double W_MPGG2 = 1.0;  // Weight for (p_target + γγ)^2 chi2
+        const double W_MMISS = 1.0;  // Weight for missing mass chi2 (M_miss)
+        const double W_MPGG2 = 0.0;  // Weight for (p_target + γγ)^2 chi2
         const double W_MPGG2_ENERGY = 1.0;  // Energy scaling factor for mpgg2 calculation: E -> w_mpgg2_energy * E
         
         // ========================================================================
@@ -293,7 +281,6 @@
         //   then compensates with sigma instead, producing a wrong/poor result.
         const double MU_MIN = 0.95;
         const double MU_MAX = 1.12;
-        const int MU_NSTEPS = 100;  // Fine sampling for precise energy scale
 
         // Energy-dependent photon energy-scale model:
         //   mu_eff(E) = a + b*E + c*ln(E)
@@ -306,9 +293,6 @@
         //   a = 0 and c = 0 are forced, only b is fitted.
         //   This reduces to E_sc = b * E in scalar-mu mode.
         //
-        const bool ENABLE_ENERGY_DEPENDENT_MU = true;  // RECOMMENDED: true for best calibration fidelity, false for simpler model and faster computation
-        const double MU_ENERGY_MIN_GEV = 0.2;  // energy floor for ln(E) evaluation
-
         // Initial / seed values for (a, b, c) when ENABLE_ENERGY_DEPENDENT_MU = true.
         // In disabled mode these are irrelevant; only b=1 is used as the mu seed.
         const double MU_ENERGY_A_INIT = 0.0;   // constant offset (GeV)
@@ -336,7 +320,6 @@
         //   3-term model: σ dimensionless, ~1.0 if A,B,C are correct
         const double SIGMA_MIN = USE_SIMPLE_STOCHASTIC_MODEL ? 0.01 : 0.5;
         const double SIGMA_MAX = USE_SIMPLE_STOCHASTIC_MODEL ? 0.08 : 2.0;
-        const int SIGMA_NSTEPS = 80;  // Fine sampling for resolution
 
         // ========================================================================
         // VISUALIZATION PERFORMANCE CONTROLS
@@ -369,17 +352,8 @@
         // RECOMMENDATION: ENABLE (true) for complete detector calibration
         //                 The fit will find sigma_pos ≈ 0 if position effects are negligible
         //
-        const bool ENABLE_POSITION_SMEARING = true;    // RECOMMENDED: true
         const double SIGMA_POS_MIN = 0.0;   // cm (start from zero)
         const double SIGMA_POS_MAX = 0.8;   // cm (NPS: ~0.5-1.5 cm typical, but allow range)
-        const int SIGMA_POS_NSTEPS = 100;    // Sufficient sampling for clear minimum
-
-        // Optional energy-dependent position smearing:
-        //   sigma_pos_eff(E) = sigma_pos_ref * sqrt(E0 / E)
-        // where sigma_pos_ref is the fitted sigma_pos value at reference energy E0.
-        const bool ENABLE_ENERGY_DEPENDENT_SIGMA_POS = false;
-        const double SIGMA_POS_ENERGY_E0_GEV = 2.0;
-        const double SIGMA_POS_ENERGY_MIN_GEV = 0.2;
 
         // ========================================================================
         // OPTIONAL ELECTRON MOMENTUM SCALING (Missing-mass only)
@@ -390,16 +364,8 @@
         //
         // This parameter is global over the full calorimeter face (never section-wise).
         // Set ENABLE_ELECTRON_MOMENTUM_SCALING = false to keep electron momentum unchanged.
-        const bool ENABLE_ELECTRON_MOMENTUM_SCALING = false;  // RECOMMENDED: false unless you have specific reasons to suspect electron momentum scale issues
         const bool ENABLE_FINAL_GLOBAL_PE_SCALE_STAGE4 = false;  // If false, keep per-section p_e_scale from coupled sweeps and skip final global p_e_scale fit
         const double GLOBAL_PE_SCALE_DEFAULT = 1.0;              // initial seed for global p_e_scale fit
-
-        // Initial seeds used before global two-step fit:
-        //   Step 1: fit (mu, sigma) with selected combined objective
-        //   Step 2: final global p_e_scale fit with M_miss only, keeping (mu, sigma, sigma_pos) fixed
-        const double GLOBAL_PE_FIT_MU = 1.0;
-        const double GLOBAL_PE_FIT_SIGMA = 0.02;
-        const double GLOBAL_PE_FIT_SIGMA_POS = 0.0;
 
         const double PE_SCALE_MIN = 0.98;
         const double PE_SCALE_MAX = 1.02;
@@ -475,8 +441,8 @@
         //   false (default): use all events
         //   true: multiply data/sim weights by their configured exclusivity branch
         const bool APPLY_IS_EXCLUSIVE_SELECTION = true;
-        const char* DATA_EXCLUSIVITY_BRANCH = "is_exclusive_ellipse_combined";
-        const char* SIM_EXCLUSIVITY_BRANCH  = "is_exclusive_ellipse";
+        const char* DATA_EXCLUSIVITY_BRANCH = "is_exclusive_mcd_combined";
+        const char* SIM_EXCLUSIVITY_BRANCH  = "is_exclusive";
 
         // SIMC event weighting:
         //   false: use the raw SIMC full_weight branch
@@ -512,6 +478,26 @@
         const size_t FAST_PULL_CACHE_TOTAL_BUDGET_BYTES = 1024ull * 1024ull * 1024ull;
         const bool VALIDATE_FAST_OBJECTIVE = true;
         const int FAST_SOBOL_BATCH_SIZE = 8;
+
+        // Test/operations override for the memory ceiling only.  It never changes
+        // events, replicas, response arithmetic, or RNG values; a smaller budget
+        // selects the exact uncached RNG fallback.
+        inline size_t fast_pull_cache_total_budget_bytes() {
+            const char* raw = std::getenv("NPS_FAST_PULL_CACHE_BUDGET_BYTES");
+            if (!raw || !raw[0]) return FAST_PULL_CACHE_TOTAL_BUDGET_BYTES;
+            char* end = nullptr;
+            const char* first = raw;
+            while (std::isspace(static_cast<unsigned char>(*first))) ++first;
+            errno = 0;
+            const unsigned long long parsed = std::strtoull(raw, &end, 10);
+            if (*first == '-' || errno != 0 || end == raw || (end && *end != '\0') ||
+                parsed > std::numeric_limits<size_t>::max()) {
+                cerr << "[WARN] Ignoring invalid NPS_FAST_PULL_CACHE_BUDGET_BYTES="
+                     << raw << endl;
+                return FAST_PULL_CACHE_TOTAL_BUDGET_BYTES;
+            }
+            return static_cast<size_t>(parsed);
+        }
 
         // Section fit orchestration.
         // Iterative coupled sweep model:
@@ -553,6 +539,7 @@
         const string CLOSURE_SUMMARY_CSV_FILENAME = "smearing_closure_summary.csv";
         const string SWEEP_HISTORY_CSV_FILENAME = "smearing_sweep_history.csv";
         const string OBJECTIVE_BREAKDOWN_CSV_FILENAME = "smearing_objective_breakdown.csv";
+        const string RESPONSE_LOOKUP_COMPARISON_CSV_FILENAME = "smearing_response_lookup_comparison.csv";
         const string CACHE_FINGERPRINT_FILENAME = "smearing_config_fingerprint.txt";
         const string CHI2_PDF_FILENAME = "chi2_scans.pdf";
         const string INTERPOLATED_SUFFIX = "_interpolated";
@@ -562,24 +549,9 @@
         // ========================================================================
         // This section helps verify your configuration intent.
         // 
-        // FOR THE CURRENT COUPLED-SWEEP PROFILE, verify these settings:
-        //   - ITERATIVE_SECTION_SWEEPS set intentionally
-        //   - Sobol multistart + MIGRAD/HESSE/profile
-        //   - ENERGY_SMEARING_HISTOGRAM = HIST_BOTH
-        //   - ENABLE_POSITION_SMEARING = false
-        //   - ENABLE_ELECTRON_MOMENTUM_SCALING = false
-        //   - W_MPI0, W_MMISS, and W_MPGG2 set intentionally for your strategy
-        //
-        // CURRENT DEFAULTS IN THIS FILE:
-        //   - iterative coupled section sweeps
-        //   - ENERGY_SMEARING_HISTOGRAM = HIST_BOTH
-        //   - ENABLE_POSITION_SMEARING = false
-        //   - W_MPI0 = 2.0, W_MMISS = 1.0, W_MPGG2 = 1.0
-        //
-        // CAUTION:
-        //   ✗ ENERGY_SMEARING_HISTOGRAM = HIST_MMISS_ONLY (M_miss only)
-        //   ✗ very wide a/c bounds can create unphysical low-energy response
-        //   See MISSING_MASS_FITTING_ISSUE.txt for detailed physics explanation
+        // Shared detector-response defaults are defined in
+        // smearing_response_config.h. Fit objectives and optimizer controls remain
+        // local to this file.
         // ========================================================================
 
         inline const char* histogram_mode_label() {
@@ -913,140 +885,6 @@
         cout << "Smearing metadata manifest saved to " << filename << "\n";
     }
 
-    inline double computeEnergyResolution(double E_scaled, double sigma,
-                                          double res_A, double res_B, double res_C);
-
-    struct ModelParameter {
-        string name;
-        double value;
-        double min_value;
-        double max_value;
-        string unit;
-        string description;
-
-        bool isValid() const {
-            return std::isfinite(value) && value >= min_value && value <= max_value;
-        }
-    };
-
-    struct SmearingModel1D {
-        enum class Type {
-            Constant,
-            Linear,
-            Polynomial,
-            APlusBEPlusCLnE
-        };
-
-        Type type = Type::APlusBEPlusCLnE;
-        string name = "a_plus_bE_plus_clnE";
-        vector<ModelParameter> parameters;
-        double x_floor = Config::MU_ENERGY_MIN_GEV;
-
-        double evaluate(double x) const {
-            const double x_safe = std::max(x, x_floor);
-            if (type == Type::Constant) {
-                return parameters.empty() ? 0.0 : parameters[0].value;
-            }
-            if (type == Type::Linear) {
-                const double a = parameters.size() > 0 ? parameters[0].value : 0.0;
-                const double b = parameters.size() > 1 ? parameters[1].value : 1.0;
-                return a + b * x_safe;
-            }
-            if (type == Type::Polynomial) {
-                double y = 0.0;
-                double xp = 1.0;
-                for (const auto &p : parameters) {
-                    y += p.value * xp;
-                    xp *= x_safe;
-                }
-                return y;
-            }
-            const double a = parameters.size() > 0 ? parameters[0].value : 0.0;
-            const double b = parameters.size() > 1 ? parameters[1].value : 1.0;
-            const double c = parameters.size() > 2 ? parameters[2].value : 0.0;
-            return a + b * x_safe + c * std::log(x_safe);
-        }
-
-        bool isValid() const {
-            if (!(x_floor > 0.0) || !std::isfinite(x_floor)) return false;
-            for (const auto &p : parameters) {
-                if (!p.isValid()) return false;
-            }
-            return true;
-        }
-    };
-
-    struct PhotonSmearingParameters {
-        double energy_mean_a = 0.0;
-        double energy_mean_b = 1.0;
-        double energy_mean_c = 0.0;
-        double energy_sigma = 0.0;
-        double position_sigma = 0.0;
-        double res_A = Config::RESOLUTION_A_DEFAULT;
-        double res_B = Config::RESOLUTION_B_DEFAULT;
-        double res_C = Config::RESOLUTION_C_DEFAULT;
-    };
-
-    inline SmearingModel1D makeEnergyMeanModel(double a, double b, double c) {
-        SmearingModel1D model;
-        model.type = SmearingModel1D::Type::APlusBEPlusCLnE;
-        model.name = "a_plus_bE_plus_clnE";
-        model.x_floor = Config::MU_ENERGY_MIN_GEV;
-        model.parameters = {
-            {"a", a, Config::MU_A_MIN, Config::MU_A_MAX, "GeV", "constant reconstructed-energy offset"},
-            {"b", b, Config::MU_MIN, Config::MU_MAX, "dimensionless", "linear energy-response coefficient"},
-            {"c", c, Config::MU_C_MIN, Config::MU_C_MAX, "GeV", "logarithmic energy-response coefficient"}
-        };
-        return model;
-    }
-
-    struct PhotonSmearingModel {
-        PhotonSmearingParameters params;
-        SmearingModel1D energy_mean_model;
-
-        explicit PhotonSmearingModel(const PhotonSmearingParameters &p)
-            : params(p), energy_mean_model(makeEnergyMeanModel(p.energy_mean_a,
-                                                               p.energy_mean_b,
-                                                               p.energy_mean_c)) {}
-
-        double meanEnergy(double E) const {
-            double E_mean = energy_mean_model.evaluate(E);
-            if (!std::isfinite(E_mean) || E_mean <= 0.0) return Config::NONPOSITIVE_CLAMP;
-            return E_mean;
-        }
-
-        double sigmaEnergy(double E_mean) const {
-            if (!(params.energy_sigma > 0.0) || !std::isfinite(params.energy_sigma)) return 0.0;
-            return computeEnergyResolution(E_mean, params.energy_sigma,
-                                           params.res_A, params.res_B, params.res_C);
-        }
-
-        double sigmaPosition(double E_mean) const {
-            if (!(params.position_sigma > 0.0) || !std::isfinite(params.position_sigma)) return 0.0;
-            if (!Config::ENABLE_ENERGY_DEPENDENT_SIGMA_POS) return params.position_sigma;
-            const double E_for_pos = std::max(E_mean, Config::SIGMA_POS_ENERGY_MIN_GEV);
-            return params.position_sigma * sqrt(Config::SIGMA_POS_ENERGY_E0_GEV / E_for_pos);
-        }
-    };
-
-    // ============================================================================
-	    // HMS ELECTRON CUTS (for simulation - consistent with simc_pi0_analysis.C)
-    // NOTE: These cuts are applied in simc_pi0_analysis.C, not in this script.
-    //       This function is kept for reference/documentation purposes only.
-    // ============================================================================
-    // Same cuts as in simc_pi0_analysis.C - simulation doesn't have npesum/etotnorm
-    inline bool hms_electron_cuts_simulation(double h_delta, double h_gtr_th,
-                                            double h_gtr_ph, double h_react_z) noexcept
-    {
-        // Simulation doesn't have npesum and etotnorm, so we skip those cuts
-        if (h_react_z < -8.0 || h_react_z > 8.0) return false;
-        if (h_delta < -15.0 || h_delta > 15.0) return false;
-        if (h_gtr_th < -0.1 || h_gtr_th > 0.1) return false;
-        if (h_gtr_ph < -0.04 || h_gtr_ph > 0.04) return false;
-        return true;
-    }
-
-
     // Helper structures
     struct Section {
         int ix, iy;               // grid indices
@@ -1159,8 +997,7 @@
 
     // Prepare all parameter-dependent response terms once per event/photon and
     // objective evaluation. Smear draws then change only the stochastic pulls.
-    // This is algebraically identical to PhotonSmearingModel, but avoids building
-    // vectors and strings in the event x Nsmear hot loop.
+    // This avoids rebuilding parameter-dependent terms in the event x Nsmear hot loop.
     inline PreparedPhotonSmear preparePhotonSmearCached(double E_safe, double log_E_safe,
                                                          double x, double y,
                                                          double mu_a, double mu_b, double mu_c,
@@ -1190,7 +1027,9 @@
         }
 
         if (Config::ENERGY_SMEAR_SHAPE == Config::SMEAR_SHAPE_LANDAU) {
-            out.landau_scale = out.sigma_E / max(Config::LANDAU_FWHM_TO_SCALE, 1e-9);
+            out.landau_scale = out.sigma_E /
+                               max(Config::LANDAU_FWHM_TO_SCALE,
+                                   Config::LANDAU_SCALE_DENOMINATOR_MIN);
             out.landau_max = max(E_sc + Config::LANDAU_MAX_FWHM_ABOVE_MPV * out.sigma_E,
                                  Config::NONPOSITIVE_CLAMP);
         }
@@ -1400,7 +1239,7 @@
 
         double factor = 1.0 + Config::MGG_LINEAR_SLOPE * (mgg - Config::MGG_LINEAR_PIVOT_GEV);
         if (Config::MGG_LINEAR_USE_INVERSE) {
-            if (std::abs(factor) < 1e-9) return;
+            if (std::abs(factor) < Config::MGG_LINEAR_INVERSE_DENOMINATOR_MIN) return;
             factor = 1.0 / factor;
         }
 
@@ -1562,7 +1401,8 @@
 
         int binIndex(double x) const {
             if (!(x >= xmin) || !(x < xmax)) return -1;
-            int bin = static_cast<int>((x - xmin) * bins_per_unit);
+            // Match ROOT's fixed-axis arithmetic at representable bin edges.
+            int bin = static_cast<int>(nbins * (x - xmin) / (xmax - xmin));
             if (bin < 0 || bin >= nbins) return -1;
             return bin;
         }
@@ -1633,6 +1473,13 @@
         return metrics;
     }
 
+    struct FastObjectiveSnapshot {
+        FastHistogram1D mpi0;
+        FastHistogram1D mmiss;
+        FastHistogram1D mpgg2;
+        ObjectiveBreakdown breakdown;
+    };
+
     inline void fillUnsmearedHistogramsForNormalization(const vector<ClusterPair> &simEvents,
                                                         TH1D &hmpi0,
                                                         TH1D &hmmiss,
@@ -1674,10 +1521,62 @@
         }
     }
 
-    // Optimizer-only evaluator. It preserves legacy event/RNG ordering while
+    // Immutable-context evaluator for optimization and objective diagnostics.
+    // The referenced event buffer must outlive this object and must not mutate.
+    // Cached invariants depend on event order, energies, positions, momenta,
+    // weights, geometry, histogram definitions and Nsmear. Cached Gaussian pulls
+    // additionally depend on the response shape and deterministic seed. External
+    // section coefficients remain in each immutable ClusterPair; coupled sweeps
+    // therefore construct a new evaluator after every coefficient update.
+    //
+    // It preserves legacy event/RNG ordering while
     // replacing repeated ROOT histogram construction and repeated response-model
     // setup with flat accumulators and prepared per-event response terms.
     class FastObjectiveEvaluator {
+        // Same operations as nps::missing_mass_proton_pi0. Beam/rotation are
+        // fixed for this evaluator; photon directions are shared with M_gg.
+        struct MissingMassGeometry {
+            Vec4 incoming;
+            double cosine;
+            double sine;
+
+            MissingMassGeometry() {
+                const double beam = Config::BEAM_ENERGY;
+                const double pbeam = std::sqrt(std::max(0.0, beam * beam -
+                    nps::kElectronMass_GeV * nps::kElectronMass_GeV));
+                incoming = nps::add4({beam, 0.0, 0.0, pbeam},
+                                    {nps::kProtonMass_GeV, 0.0, 0.0, 0.0});
+                const double theta = Config::NPS_THETA_NPS_DEG * nps::kDeg2Rad;
+                cosine = std::cos(theta);
+                sine = std::sin(theta);
+            }
+
+            Vec4 photon(double energy, const PhotonDirection &direction) const {
+                const PhotonMomentum p = computePhotonMomentum(energy, direction);
+                return {energy, cosine * p.px - sine * p.pz, p.py,
+                        sine * p.px + cosine * p.pz};
+            }
+
+            double evaluate(const ElectronKinematics &electron,
+                            double e1, double e2,
+                            const PhotonDirection &direction1,
+                            const PhotonDirection &direction2) const {
+                const Vec4 pion = nps::add4(photon(e1, direction1), photon(e2, direction2));
+                const Vec4 outgoing = nps::add4(
+                    {electron.Ee, electron.px, electron.py, electron.pz}, pion);
+                return nps::safe_sqrt(nps::mass2_4vec(nps::sub4(incoming, outgoing)));
+            }
+        };
+
+        // Preserve photon4vector's zero-length fallback for missing mass only.
+        static PhotonDirection missingMassDirection(const PhotonDirection &direction,
+                                                    double x, double y) {
+            if (Config::NPS_Z_NPS_CM * Config::NPS_Z_NPS_CM == 0.0 &&
+                x * x + y * y == 0.0)
+                return {0.0, 0.0, 1.0};
+            return direction;
+        }
+
     public:
         FastObjectiveEvaluator(const vector<ClusterPair> &events,
                                const TH1D &hdata_mpi0,
@@ -1697,10 +1596,14 @@
         }
 
         bool usesPullCache() const { return use_pull_cache_; }
+        size_t pullCacheBytes() const {
+            return pull_cache_.size() * sizeof(GaussianPairPulls);
+        }
 
         ObjectiveBreakdown evaluateBreakdown(double mu_a, double mu_b, double mu_c,
                                              double sigma, double sigma_pos,
-                                             double p_e_scale) const {
+                                             double p_e_scale,
+                                             FastObjectiveSnapshot* snapshot = nullptr) const {
             ObjectiveBreakdown out;
             FastHistogram1D sim_mpi0(data_mpi0_.nbins, data_mpi0_.xmin, data_mpi0_.xmax);
             FastHistogram1D sim_mmiss(data_mmiss_.nbins, data_mmiss_.xmin, data_mmiss_.xmax);
@@ -1738,11 +1641,10 @@
                 if (fill_mmiss_) {
                     e_kin = scaleElectronKinematicsFromMomentum(
                         ev.px_e, ev.py_e, ev.pz_e, p_e_scale);
-                    const double mmiss_u = nps::missing_mass_proton_pi0(
-                        Config::BEAM_ENERGY,
-                        e_kin.Ee, e_kin.px, e_kin.py, e_kin.pz,
-                        ev.e1, ev.e2, ev.x1, ev.y1, ev.x2, ev.y2,
-                        Config::NPS_Z_NPS_CM, Config::NPS_THETA_NPS_DEG);
+                    const double mmiss_u = missing_mass_.evaluate(
+                        e_kin, ev.e1, ev.e2,
+                        missingMassDirection(invariant.direction1, ev.x1, ev.y1),
+                        missingMassDirection(invariant.direction2, ev.x2, ev.y2));
                     if (data_mmiss_.contains(mmiss_u)) norm_mmiss += ev.weight;
                 }
 
@@ -1762,13 +1664,16 @@
                         E1_sm, E2_sm, x1_sm, y1_sm, x2_sm, y2_sm);
 
                     SharedDiphotonKinematics diphoton;
-                    if (fill_mpi0_ || fill_mpgg2_) {
-                        const PhotonDirection direction1 = prepared1.smear_position
+                    PhotonDirection direction1, direction2;
+                    if (fill_mpi0_ || fill_mmiss_ || fill_mpgg2_) {
+                        direction1 = prepared1.smear_position
                             ? computePhotonDirection(x1_sm, y1_sm, z_nps)
                             : invariant.direction1;
-                        const PhotonDirection direction2 = prepared2.smear_position
+                        direction2 = prepared2.smear_position
                             ? computePhotonDirection(x2_sm, y2_sm, z_nps)
                             : invariant.direction2;
+                    }
+                    if (fill_mpi0_ || fill_mpgg2_) {
                         diphoton = computeSharedDiphotonKinematics(
                             E1_sm, E2_sm, direction1, direction2,
                             Config::W_MPGG2_ENERGY);
@@ -1778,11 +1683,10 @@
                         sim_mpi0.fill(diphoton.mgg, invariant.weight_per_smear);
                     }
                     if (fill_mmiss_) {
-                        const double mmiss = nps::missing_mass_proton_pi0(
-                            Config::BEAM_ENERGY,
-                            e_kin.Ee, e_kin.px, e_kin.py, e_kin.pz,
-                            E1_sm, E2_sm, x1_sm, y1_sm, x2_sm, y2_sm,
-                            Config::NPS_Z_NPS_CM, Config::NPS_THETA_NPS_DEG);
+                        const double mmiss = missing_mass_.evaluate(
+                            e_kin, E1_sm, E2_sm,
+                            missingMassDirection(direction1, x1_sm, y1_sm),
+                            missingMassDirection(direction2, x2_sm, y2_sm));
                         sim_mmiss.fill(mmiss, invariant.weight_per_smear);
                     }
                     if (fill_mpgg2_) {
@@ -1790,7 +1694,15 @@
                     }
                 }
             }
-            return finalizeBreakdown(sim_mpi0, sim_mmiss, sim_mpgg2, norm_mmiss);
+            const ObjectiveBreakdown breakdown =
+                finalizeBreakdown(sim_mpi0, sim_mmiss, sim_mpgg2, norm_mmiss);
+            if (snapshot) {
+                snapshot->mpi0 = sim_mpi0;
+                snapshot->mmiss = sim_mmiss;
+                snapshot->mpgg2 = sim_mpgg2;
+                snapshot->breakdown = breakdown;
+            }
+            return breakdown;
         }
 
         double evaluateSelected(double mu_a, double mu_b, double mu_c,
@@ -1804,13 +1716,18 @@
         // Evaluate Sobol candidates in small cache-friendly groups. Each candidate
         // still accumulates in event -> smear order and sees the identical cached
         // Gaussian pull. Landau/uncached modes deliberately use the scalar path.
-        vector<double> evaluateSelectedBatch(const vector<array<double, 6>> &points) const {
-            vector<double> values(points.size(), 0.0);
+        vector<ObjectiveBreakdown> evaluateBreakdownBatch(
+            const vector<array<double, 6>> &points,
+            vector<FastObjectiveSnapshot>* snapshots = nullptr) const {
+            vector<ObjectiveBreakdown> values(points.size());
+            if (snapshots) snapshots->assign(points.size(), FastObjectiveSnapshot());
             if (points.empty()) return values;
             if (!use_pull_cache_ || Config::FAST_SOBOL_BATCH_SIZE < 2) {
                 for (size_t i = 0; i < points.size(); ++i) {
                     const auto &p = points[i];
-                    values[i] = evaluateSelected(p[0], p[1], p[2], p[3], p[4], p[5]);
+                    values[i] = evaluateBreakdown(
+                        p[0], p[1], p[2], p[3], p[4], p[5],
+                        snapshots ? &(*snapshots)[i] : nullptr);
                 }
                 return values;
             }
@@ -1857,11 +1774,10 @@
                         if (fill_mmiss_) {
                             electron[j] = scaleElectronKinematicsFromMomentum(
                                 ev.px_e, ev.py_e, ev.pz_e, p[5]);
-                            const double mmiss_u = nps::missing_mass_proton_pi0(
-                                Config::BEAM_ENERGY,
-                                electron[j].Ee, electron[j].px, electron[j].py, electron[j].pz,
-                                ev.e1, ev.e2, ev.x1, ev.y1, ev.x2, ev.y2,
-                                Config::NPS_Z_NPS_CM, Config::NPS_THETA_NPS_DEG);
+                            const double mmiss_u = missing_mass_.evaluate(
+                                electron[j], ev.e1, ev.e2,
+                                missingMassDirection(invariant.direction1, ev.x1, ev.y1),
+                                missingMassDirection(invariant.direction2, ev.x2, ev.y2));
                             if (data_mmiss_.contains(mmiss_u)) states[j].norm_mmiss += ev.weight;
                         }
                     }
@@ -1878,13 +1794,16 @@
                                 E1_sm, E2_sm, x1_sm, y1_sm, x2_sm, y2_sm);
 
                             SharedDiphotonKinematics diphoton;
-                            if (fill_mpi0_ || fill_mpgg2_) {
-                                const PhotonDirection direction1 = prepared1[j].smear_position
+                            PhotonDirection direction1, direction2;
+                            if (fill_mpi0_ || fill_mmiss_ || fill_mpgg2_) {
+                                direction1 = prepared1[j].smear_position
                                     ? computePhotonDirection(x1_sm, y1_sm, z_nps)
                                     : invariant.direction1;
-                                const PhotonDirection direction2 = prepared2[j].smear_position
+                                direction2 = prepared2[j].smear_position
                                     ? computePhotonDirection(x2_sm, y2_sm, z_nps)
                                     : invariant.direction2;
+                            }
+                            if (fill_mpi0_ || fill_mpgg2_) {
                                 diphoton = computeSharedDiphotonKinematics(
                                     E1_sm, E2_sm, direction1, direction2,
                                     Config::W_MPGG2_ENERGY);
@@ -1893,11 +1812,10 @@
                                 states[j].mpi0.fill(diphoton.mgg, invariant.weight_per_smear);
                             }
                             if (fill_mmiss_) {
-                                const double mmiss = nps::missing_mass_proton_pi0(
-                                    Config::BEAM_ENERGY,
-                                    electron[j].Ee, electron[j].px, electron[j].py, electron[j].pz,
-                                    E1_sm, E2_sm, x1_sm, y1_sm, x2_sm, y2_sm,
-                                    Config::NPS_Z_NPS_CM, Config::NPS_THETA_NPS_DEG);
+                                const double mmiss = missing_mass_.evaluate(
+                                    electron[j], E1_sm, E2_sm,
+                                    missingMassDirection(direction1, x1_sm, y1_sm),
+                                    missingMassDirection(direction2, x2_sm, y2_sm));
                                 states[j].mmiss.fill(mmiss, invariant.weight_per_smear);
                             }
                             if (fill_mpgg2_) {
@@ -1908,10 +1826,27 @@
                 }
 
                 for (size_t j = 0; j < count; ++j) {
-                    values[begin + j] = selectObjective(finalizeBreakdown(
+                    values[begin + j] = finalizeBreakdown(
                         states[j].mpi0, states[j].mmiss, states[j].mpgg2,
-                        states[j].norm_mmiss));
+                        states[j].norm_mmiss);
+                    if (snapshots) {
+                        FastObjectiveSnapshot& snapshot = (*snapshots)[begin + j];
+                        snapshot.mpi0 = states[j].mpi0;
+                        snapshot.mmiss = states[j].mmiss;
+                        snapshot.mpgg2 = states[j].mpgg2;
+                        snapshot.breakdown = values[begin + j];
+                    }
                 }
+            }
+            return values;
+        }
+
+        vector<double> evaluateSelectedBatch(const vector<array<double, 6>> &points) const {
+            const vector<ObjectiveBreakdown> breakdowns = evaluateBreakdownBatch(points);
+            vector<double> values;
+            values.reserve(breakdowns.size());
+            for (const auto& breakdown : breakdowns) {
+                values.push_back(selectObjective(breakdown));
             }
             return values;
         }
@@ -1945,6 +1880,7 @@
         };
 
         const vector<ClusterPair> &events_;
+        const MissingMassGeometry missing_mass_;
         vector<EventInvariant> invariants_;
         FastHistogram1D data_mpi0_;
         FastHistogram1D data_mmiss_;
@@ -2057,7 +1993,7 @@
             if (count > std::numeric_limits<size_t>::max() / sizeof(GaussianPairPulls)) return;
             const size_t bytes = count * sizeof(GaussianPairPulls);
             const int workers = omp_in_parallel() ? max(1, omp_get_num_threads()) : 1;
-            const size_t budget = Config::FAST_PULL_CACHE_TOTAL_BUDGET_BYTES /
+            const size_t budget = Config::fast_pull_cache_total_budget_bytes() /
                                   static_cast<size_t>(workers);
             if (bytes > budget) return;
 
@@ -2771,6 +2707,30 @@
             double mu_a_dummy = 0.0, mu_c_dummy = 0.0;
             getInterpolatedParams(x, y, mu_a_dummy, mu, mu_c_dummy, sigma, sigma_pos);
         }
+
+        // Match the producer's lookup of the persisted 100x100 maps: accept both
+        // physical boundaries, use TAxis/FindBin-equivalent fixed-bin selection,
+        // clamp under/overflow to an in-range bin, then consume that bin's value.
+        // The persisted bin value is getInterpolatedParams evaluated at bin center.
+        bool getProducerHistogramLookupParams(double x, double y,
+                                              double &mu_a, double &mu_b,
+                                              double &mu_c, double &sigma,
+                                              double &sigma_pos) const {
+            if (!(x >= x_min_ && x <= x_max_ && y >= y_min_ && y <= y_max_)) {
+                return false;
+            }
+            auto producer_bin_center = [](double value, double lo, double hi, int nbins) {
+                int bin = static_cast<int>(std::floor((value - lo) * nbins / (hi - lo))) + 1;
+                bin = std::max(1, std::min(nbins, bin));
+                return lo + (static_cast<double>(bin) - 0.5) * (hi - lo) / nbins;
+            };
+            const double map_x = producer_bin_center(
+                x, x_min_, x_max_, Config::INTERPOLATED_MAP_NBINS_X);
+            const double map_y = producer_bin_center(
+                y, y_min_, y_max_, Config::INTERPOLATED_MAP_NBINS_Y);
+            getInterpolatedParams(map_x, map_y, mu_a, mu_b, mu_c, sigma, sigma_pos);
+            return true;
+        }
         
         // Load calibration from CSV file
         bool loadFromCSV(const string &filename) {
@@ -2821,7 +2781,7 @@
         }
         
         // Save interpolated map to 2D histogram (for visualization)
-        void saveAsHistogram(const string &filename,
+        bool saveAsHistogram(const string &filename,
                              const string &run_tag = "",
                              const string &created_at_local = "") const {
             TDirectory *save_dir = gDirectory;
@@ -2834,14 +2794,19 @@
                      << filename << endl;
                 TH1::AddDirectory(original_adddir_status);
                 if (save_dir) save_dir->cd();
-                return;
+                return false;
             }
             fout.cd();
             if (!run_tag.empty()) TNamed("run_tag", run_tag.c_str()).Write();
             if (!created_at_local.empty()) TNamed("created_at_local", created_at_local.c_str()).Write();
+            const char* pipeline_run_id = std::getenv("NPS_PIPELINE_RUN_ID");
+            const char* nominal_identity = std::getenv("NPS_NOMINAL_INPUT_IDENTITY");
+            TNamed("pipeline_run_id", pipeline_run_id ? pipeline_run_id : "standalone").Write();
+            TNamed("nominal_input_identity", nominal_identity ? nominal_identity : "unrecorded").Write();
             TNamed("interpolated_output_file", filename.c_str()).Write();
 
-            int nbinsx = 100, nbinsy = 100;
+            const int nbinsx = Config::INTERPOLATED_MAP_NBINS_X;
+            const int nbinsy = Config::INTERPOLATED_MAP_NBINS_Y;
 
             TH2D *h_mu_a = new TH2D("h_mu_a_interp",
                 "Interpolated #mu_{a} map (const offset);x [cm];y [cm]",
@@ -2895,7 +2860,7 @@
 	                }
 	            }
 
-	            TNamed("smearing_model_energy_mean", "a_plus_bE_plus_clnE").Write();
+	            TNamed("smearing_model_energy_mean", Config::ENERGY_MEAN_MODEL).Write();
 	            TNamed("energy_mean_convention", "reconstructed_energy_GeV").Write();
 	            TNamed("energy_mean_formula", "E_mean = a + b*E_safe + c*ln(E_safe/1 GeV)").Write();
 	            TNamed("energy_log_floor_GeV", Form("%.8g", Config::MU_ENERGY_MIN_GEV)).Write();
@@ -2961,11 +2926,20 @@
             delete h_sigma_pos;
             for (TH2D *h : response_ratio_maps) delete h;
 
-	            fout.Close();
+            fout.Flush();
+            const bool write_ok = fout.GetBytesWritten() > 0 &&
+                                  !fout.TestBit(TFile::kWriteError);
+            fout.Close();
             TH1::AddDirectory(original_adddir_status);
             if (save_dir) save_dir->cd();
 
+            if (!write_ok) {
+                cerr << "ERROR: Failed while writing interpolated calibration map file "
+                     << filename << endl;
+                return false;
+            }
             cout << "Saved interpolated calibration maps to " << filename << endl;
+            return true;
         }
         
         // Print parameters at a specific position
@@ -3070,67 +3044,110 @@
         const double mu_scan_step = (Config::MU_MAX - Config::MU_MIN) / (mu_scan_points - 1);
         const double sigma_scan_step = (Config::SIGMA_MAX - Config::SIGMA_MIN) / (sigma_scan_points - 1);
 
-        // 2D chi2 landscape: scan mu_b (x-axis) vs sigma (y-axis), holding a,c fixed
+        vector<array<double, 6>> points;
+        enum class ScanKind { Grid2D, MuSlice, SigmaSlice, SigmaPosSlice };
+        vector<ScanKind> kinds;
+        points.reserve(static_cast<size_t>(mu_scan_points) * sigma_scan_points +
+                       2 * slice_points + (do_position_scan ? sigma_pos_scan_points : 0));
+        kinds.reserve(points.capacity());
+
+        // Preserve every legacy point and its original ordering.
         for (int i_mu = 0; i_mu < mu_scan_points; ++i_mu) {
             double mu = Config::MU_MIN + i_mu * mu_scan_step;
             for (int i_sig = 0; i_sig < sigma_scan_points; ++i_sig) {
                 double sig = Config::SIGMA_MIN + i_sig * sigma_scan_step;
-                double chi2 = eval_chi2_selected(mu_a0, mu, mu_c0, sig, sigma_pos0, p_e_scale0,
-                                                simEvents,
-                                                hdata_mpi0, hdata_mmiss, hdata_mpgg2, rng, Nsmear,
-                                                Config::RESOLUTION_A_DEFAULT,
-                                                Config::RESOLUTION_B_DEFAULT,
-                                                Config::RESOLUTION_C_DEFAULT,
-                                                Config::W_MPI0, Config::W_MMISS, Config::W_MPGG2);
-                res.scan_data.mu_2d.push_back(mu);
-                res.scan_data.sigma_2d.push_back(sig);
-                res.scan_data.chi2_2d.push_back(chi2);
+                points.push_back({mu_a0, mu, mu_c0, sig, sigma_pos0, p_e_scale0});
+                kinds.push_back(ScanKind::Grid2D);
             }
         }
 
-        // 1D chi2 vs mu_b slice
         const double mu_slice_step = (Config::MU_MAX - Config::MU_MIN) / (slice_points - 1);
         for (int i = 0; i < slice_points; ++i) {
             double mu = Config::MU_MIN + i * mu_slice_step;
-            double chi2 = eval_chi2_selected(mu_a0, mu, mu_c0, sigma0, sigma_pos0, p_e_scale0,
-                                            simEvents,
-                                            hdata_mpi0, hdata_mmiss, hdata_mpgg2, rng, Nsmear,
-                                            Config::RESOLUTION_A_DEFAULT,
-                                            Config::RESOLUTION_B_DEFAULT,
-                                            Config::RESOLUTION_C_DEFAULT,
-                                            Config::W_MPI0, Config::W_MMISS, Config::W_MPGG2);
-            res.scan_data.mu_values.push_back(mu);
-            res.scan_data.chi2_vs_mu.push_back(chi2);
+            points.push_back({mu_a0, mu, mu_c0, sigma0, sigma_pos0, p_e_scale0});
+            kinds.push_back(ScanKind::MuSlice);
         }
 
-        // 1D chi2 vs sigma slice
         const double sigma_slice_step = (Config::SIGMA_MAX - Config::SIGMA_MIN) / (slice_points - 1);
         for (int i = 0; i < slice_points; ++i) {
             double sigma = Config::SIGMA_MIN + i * sigma_slice_step;
-            double chi2 = eval_chi2_selected(mu_a0, mu0, mu_c0, sigma, sigma_pos0, p_e_scale0,
-                                            simEvents,
-                                            hdata_mpi0, hdata_mmiss, hdata_mpgg2, rng, Nsmear,
-                                            Config::RESOLUTION_A_DEFAULT,
-                                            Config::RESOLUTION_B_DEFAULT,
-                                            Config::RESOLUTION_C_DEFAULT,
-                                            Config::W_MPI0, Config::W_MMISS, Config::W_MPGG2);
-            res.scan_data.sigma_values.push_back(sigma);
-            res.scan_data.chi2_vs_sigma.push_back(chi2);
+            points.push_back({mu_a0, mu0, mu_c0, sigma, sigma_pos0, p_e_scale0});
+            kinds.push_back(ScanKind::SigmaSlice);
         }
 
         if (do_position_scan) {
             const double sigma_pos_scan_step = (Config::SIGMA_POS_MAX - Config::SIGMA_POS_MIN) / (sigma_pos_scan_points - 1);
             for (int i = 0; i < sigma_pos_scan_points; ++i) {
                 double s_pos = Config::SIGMA_POS_MIN + i * sigma_pos_scan_step;
-                double chi2 = eval_chi2_selected(mu_a0, mu0, mu_c0, sigma0, s_pos, p_e_scale0,
-                                                simEvents,
-                                                hdata_mpi0, hdata_mmiss, hdata_mpgg2, rng, Nsmear,
-                                                Config::RESOLUTION_A_DEFAULT,
-                                                Config::RESOLUTION_B_DEFAULT,
-                                                Config::RESOLUTION_C_DEFAULT,
-                                                Config::W_MPI0, Config::W_MMISS, Config::W_MPGG2);
-                res.scan_data.sigma_pos_values.push_back(s_pos);
-                res.scan_data.chi2_vs_sigma_pos.push_back(chi2);
+                points.push_back({mu_a0, mu0, mu_c0, sigma0, s_pos, p_e_scale0});
+                kinds.push_back(ScanKind::SigmaPosSlice);
+            }
+        }
+
+        auto legacy_eval = [&](const array<double, 6>& p) {
+            return eval_chi2_selected(p[0], p[1], p[2], p[3], p[4], p[5],
+                                      simEvents, hdata_mpi0, hdata_mmiss, hdata_mpgg2,
+                                      rng, Nsmear,
+                                      Config::RESOLUTION_A_DEFAULT,
+                                      Config::RESOLUTION_B_DEFAULT,
+                                      Config::RESOLUTION_C_DEFAULT,
+                                      Config::W_MPI0, Config::W_MMISS, Config::W_MPGG2);
+        };
+        FastObjectiveEvaluator fast(simEvents, hdata_mpi0, hdata_mmiss, hdata_mpgg2,
+                                    Nsmear,
+                                    Config::RESOLUTION_A_DEFAULT,
+                                    Config::RESOLUTION_B_DEFAULT,
+                                    Config::RESOLUTION_C_DEFAULT);
+        bool use_fast = true;
+        if (Config::VALIDATE_FAST_OBJECTIVE && !points.empty()) {
+            const size_t checks[] = {0, points.size() / 2, points.size() - 1};
+            for (size_t index : checks) {
+                const auto& p = points[index];
+                const double legacy = legacy_eval(p);
+                const double accelerated = fast.evaluateSelected(
+                    p[0], p[1], p[2], p[3], p[4], p[5]);
+                const double tolerance = 1e-9 + 1e-10 * max(1.0, fabs(legacy));
+                if (!std::isfinite(accelerated) || !std::isfinite(legacy) ||
+                    fabs(accelerated - legacy) > tolerance) {
+                    use_fast = false;
+                    #pragma omp critical(console)
+                    cerr << "[WARN] Visualization fast-evaluator validation failed; "
+                         << "using the legacy evaluator for all scan points in this section."
+                         << endl;
+                    break;
+                }
+            }
+        }
+
+        vector<double> values;
+        if (use_fast) {
+            values = fast.evaluateSelectedBatch(points);
+        } else {
+            values.reserve(points.size());
+            for (const auto& p : points) values.push_back(legacy_eval(p));
+        }
+
+        for (size_t i = 0; i < points.size(); ++i) {
+            const auto& p = points[i];
+            const double chi2 = values[i];
+            switch (kinds[i]) {
+                case ScanKind::Grid2D:
+                    res.scan_data.mu_2d.push_back(p[1]);
+                    res.scan_data.sigma_2d.push_back(p[3]);
+                    res.scan_data.chi2_2d.push_back(chi2);
+                    break;
+                case ScanKind::MuSlice:
+                    res.scan_data.mu_values.push_back(p[1]);
+                    res.scan_data.chi2_vs_mu.push_back(chi2);
+                    break;
+                case ScanKind::SigmaSlice:
+                    res.scan_data.sigma_values.push_back(p[3]);
+                    res.scan_data.chi2_vs_sigma.push_back(chi2);
+                    break;
+                case ScanKind::SigmaPosSlice:
+                    res.scan_data.sigma_pos_values.push_back(p[4]);
+                    res.scan_data.chi2_vs_sigma_pos.push_back(chi2);
+                    break;
             }
         }
     }
@@ -4246,6 +4263,17 @@
         if (fsim.IsZombie()) { cerr << "Cannot open sim file " << sim_file << endl; return 4; }
         TTree *tsim = dynamic_cast<TTree*>(fsim.Get(sim_tree_name.c_str()));
         if (!tsim) { cerr << "Cannot find sim tree '" << sim_tree_name << "' in " << sim_file << endl; return 5; }
+        const char* expected_pipeline_run_id = std::getenv("NPS_PIPELINE_RUN_ID");
+        const char* expected_nominal_identity = std::getenv("NPS_NOMINAL_INPUT_IDENTITY");
+        if (expected_pipeline_run_id && expected_pipeline_run_id[0]) {
+            TNamed* producer_run = dynamic_cast<TNamed*>(fsim.Get("pipeline_run_id"));
+            TNamed* producer_kind = dynamic_cast<TNamed*>(fsim.Get("producer_output_kind"));
+            if (!producer_run || std::string(producer_run->GetTitle()) != expected_pipeline_run_id ||
+                !producer_kind || std::string(producer_kind->GetTitle()) != "nominal") {
+                cerr << "Nominal simulation provenance does not match the current pipeline run." << endl;
+                return 5;
+            }
+        }
 
         // ===== DATA TREE BRANCHES =====
         Double_t d_cluster_x_1, d_cluster_y_1, d_cluster_e_1;
@@ -4869,11 +4897,17 @@
 
 	        // Output file
 	        TFile fout(out_file.c_str(), "RECREATE");
+	        if (fout.IsZombie()) {
+	            cerr << "[ERROR] Cannot create fitter ROOT output: " << out_file << endl;
+	            return 7;
+	        }
 	        fout.cd();
 	        TNamed("run_tag", run_tag.c_str()).Write();
+	        TNamed("pipeline_run_id", expected_pipeline_run_id ? expected_pipeline_run_id : "standalone").Write();
+	        TNamed("nominal_input_identity", expected_nominal_identity ? expected_nominal_identity : "unrecorded").Write();
 	        TNamed("created_at_local", created_at_local.c_str()).Write();
 	        TNamed("timestamped_output_file", timestamped_out_file.c_str()).Write();
-	        TNamed("smearing_model_energy_mean", "a_plus_bE_plus_clnE").Write();
+	        TNamed("smearing_model_energy_mean", Config::ENERGY_MEAN_MODEL).Write();
 	        TNamed("energy_mean_convention", "reconstructed_energy_GeV").Write();
 	        TNamed("energy_mean_formula", "E_mean = a + b*E_safe + c*ln(E_safe/1 GeV)").Write();
 	        TNamed("energy_log_floor_GeV", Form("%.8g", Config::MU_ENERGY_MIN_GEV)).Write();
@@ -4926,6 +4960,8 @@
         string closure_summary_csv_file = sibling_output_path(Config::CLOSURE_SUMMARY_CSV_FILENAME);
         string sweep_history_csv_file = sibling_output_path(Config::SWEEP_HISTORY_CSV_FILENAME);
         string objective_breakdown_csv_file = sibling_output_path(Config::OBJECTIVE_BREAKDOWN_CSV_FILENAME);
+        string response_lookup_comparison_csv_file =
+            sibling_output_path(Config::RESPONSE_LOOKUP_COMPARISON_CSV_FILENAME);
         string cache_fingerprint_file = sibling_output_path(Config::CACHE_FINGERPRINT_FILENAME);
         auto archive_supporting_outputs = [&]() {
             const vector<string> sources = {
@@ -4936,6 +4972,7 @@
                 closure_summary_csv_file,
                 sweep_history_csv_file,
                 objective_breakdown_csv_file,
+                response_lookup_comparison_csv_file,
                 cache_fingerprint_file
             };
             for (const string &src : sources) {
@@ -4981,6 +5018,25 @@
             source_path_for_hash = __FILE__;
             source_hash = hash_file(source_path_for_hash);
         }
+        string response_config_path =
+            "src/simulation_smearing/smearing_response_config.h";
+        unsigned long long response_config_hash = hash_file(response_config_path);
+        if (response_config_hash == 0ull) {
+            const string compiled_source_path = __FILE__;
+            const size_t source_slash = compiled_source_path.find_last_of("/\\");
+            response_config_path = source_slash == string::npos
+                ? "smearing_response_config.h"
+                : compiled_source_path.substr(0, source_slash + 1) +
+                      "smearing_response_config.h";
+            response_config_hash = hash_file(response_config_path);
+        }
+        ostringstream response_config_hash_text;
+        response_config_hash_text << std::hex << response_config_hash;
+        const string response_config_hash_token =
+            "|response_config=" + response_config_hash_text.str();
+        source_hash = fnv1a_update(source_hash,
+                                   response_config_hash_token.data(),
+                                   response_config_hash_token.size());
         ostringstream cache_fp;
         cache_fp << "cache_version=section_sweep_mass_plots_v1\n"
                  << "source_path=" << source_path_for_hash << "\n"
@@ -5069,22 +5125,79 @@
                     return false;
                 }
 
+                FastObjectiveEvaluator stage4_evaluator(
+                    sim_events_global_stage4,
+                    hdata_summary_mpi0, hdata_global_mmiss, hdata_summary_mpgg2,
+                    Nsmear,
+                    Config::RESOLUTION_A_DEFAULT,
+                    Config::RESOLUTION_B_DEFAULT,
+                    Config::RESOLUTION_C_DEFAULT);
+                auto legacy_stage4 = [&](double pe) {
+                    TRandom3 rng_eval(456789);
+                    return eval_chi2_mmiss_only(0.0, 1.0, 0.0, 0.0, 0.0, pe,
+                                                sim_events_global_stage4,
+                                                hdata_global_mmiss, rng_eval, Nsmear,
+                                                Config::RESOLUTION_A_DEFAULT,
+                                                Config::RESOLUTION_B_DEFAULT,
+                                                Config::RESOLUTION_C_DEFAULT);
+                };
+                bool use_fast_stage4 = true;
+                if (Config::VALIDATE_FAST_OBJECTIVE) {
+                    const double validation_scales[] = {
+                        Config::PE_SCALE_MIN,
+                        min(max(io_global_p_e_scale, Config::PE_SCALE_MIN), Config::PE_SCALE_MAX),
+                        Config::PE_SCALE_MAX
+                    };
+                    for (double pe : validation_scales) {
+                        const double legacy = legacy_stage4(pe);
+                        const double accelerated = stage4_evaluator.evaluateBreakdown(
+                            0.0, 1.0, 0.0, 0.0, 0.0, pe).mmiss.chi2;
+                        const double tolerance = 1e-9 + 1e-10 * max(1.0, fabs(legacy));
+                        if (!std::isfinite(accelerated) || !std::isfinite(legacy) ||
+                            fabs(accelerated - legacy) > tolerance) {
+                            use_fast_stage4 = false;
+                            cerr << "[WARN] " << tag
+                                 << ": fast p_e evaluator validation failed; using legacy path."
+                                 << endl;
+                            break;
+                        }
+                    }
+                }
+                auto stage4_eval = [&](double pe) {
+                    return use_fast_stage4
+                        ? stage4_evaluator.evaluateBreakdown(
+                              0.0, 1.0, 0.0, 0.0, 0.0, pe).mmiss.chi2
+                        : legacy_stage4(pe);
+                };
+                auto stage4_batch = [&](const vector<double>& scales) {
+                    vector<double> values;
+                    values.reserve(scales.size());
+                    if (!use_fast_stage4) {
+                        for (double pe : scales) values.push_back(legacy_stage4(pe));
+                        return values;
+                    }
+                    vector<array<double, 6>> points;
+                    points.reserve(scales.size());
+                    for (double pe : scales) points.push_back({0.0, 1.0, 0.0, 0.0, 0.0, pe});
+                    const auto breakdowns = stage4_evaluator.evaluateBreakdownBatch(points);
+                    for (const auto& breakdown : breakdowns) values.push_back(breakdown.mmiss.chi2);
+                    return values;
+                };
+
                 double best_chi2_global = 1e300;
-                TRandom3 rng_stage4(12345);
                 double best_scale = io_global_p_e_scale;
 
                 int PE_COARSE = max(9, Config::PE_SCALE_NSTEPS / Config::COARSE_GRID_DIVISOR);
                 double pe_step = (Config::PE_SCALE_MAX - Config::PE_SCALE_MIN) / (PE_COARSE - 1);
+                vector<double> coarse_scales;
+                coarse_scales.reserve(PE_COARSE);
                 for (int i = 0; i < PE_COARSE; ++i) {
-                    double pe = Config::PE_SCALE_MIN + i * pe_step;
-                    double chi2 = eval_chi2_mmiss_only(0.0, 1.0, 0.0, 0.0, 0.0, pe,
-                                                    sim_events_global_stage4,
-                                                    hdata_global_mmiss,
-                                                    rng_stage4,
-                                                    Nsmear,
-                                                    Config::RESOLUTION_A_DEFAULT,
-                                                    Config::RESOLUTION_B_DEFAULT,
-                                                    Config::RESOLUTION_C_DEFAULT);
+                    coarse_scales.push_back(Config::PE_SCALE_MIN + i * pe_step);
+                }
+                const vector<double> coarse_values = stage4_batch(coarse_scales);
+                for (int i = 0; i < PE_COARSE; ++i) {
+                    const double pe = coarse_scales[i];
+                    const double chi2 = coarse_values[i];
                     if (chi2 < best_chi2_global) {
                         best_chi2_global = chi2;
                         best_scale = pe;
@@ -5096,17 +5209,16 @@
                 while (refine_step >= 1e-4 && refine_iter < Config::MAX_REFINEMENT_ITERATIONS) {
                     double grid_best_scale = best_scale;
                     double grid_best_chi2 = best_chi2_global;
+                    vector<double> refine_scales;
                     for (double pe = max(Config::PE_SCALE_MIN, best_scale - 2 * refine_step);
                         pe <= min(Config::PE_SCALE_MAX, best_scale + 2 * refine_step) + 1e-15;
                         pe += refine_step) {
-                        double chi2 = eval_chi2_mmiss_only(0.0, 1.0, 0.0, 0.0, 0.0, pe,
-                                                        sim_events_global_stage4,
-                                                        hdata_global_mmiss,
-                                                        rng_stage4,
-                                                        Nsmear,
-                                                        Config::RESOLUTION_A_DEFAULT,
-                                                        Config::RESOLUTION_B_DEFAULT,
-                                                        Config::RESOLUTION_C_DEFAULT);
+                        refine_scales.push_back(pe);
+                    }
+                    const vector<double> refine_values = stage4_batch(refine_scales);
+                    for (size_t i = 0; i < refine_scales.size(); ++i) {
+                        const double pe = refine_scales[i];
+                        const double chi2 = refine_values[i];
                         if (chi2 < grid_best_chi2) {
                             grid_best_chi2 = chi2;
                             grid_best_scale = pe;
@@ -5121,15 +5233,7 @@
                 {
                     auto chi2_eval = [&](double /*mu_a*/, double /*mu_b*/, double /*mu_c*/,
                                         double /*sigma*/, double /*sigma_pos*/, double p_e_scale) {
-                        TRandom3 rng_eval(456789);
-                        return eval_chi2_mmiss_only(0.0, 1.0, 0.0, 0.0, 0.0, p_e_scale,
-                                                    sim_events_global_stage4,
-                                                    hdata_global_mmiss,
-                                                    rng_eval,
-                                                    Nsmear,
-                                                    Config::RESOLUTION_A_DEFAULT,
-                                                    Config::RESOLUTION_B_DEFAULT,
-                                                    Config::RESOLUTION_C_DEFAULT);
+                        return stage4_eval(p_e_scale);
                     };
                     MigradRefineResult mr = run_migrad_refinement(chi2_eval,
                                                                 0.0, 1.0, 0.0, 0.0, 0.0, best_scale,
@@ -5420,17 +5524,42 @@
             vector<ClusterPair> global_events = build_global_events_with_fit(src_results,
                                                                              src_success,
                                                                              out_interpolated_count);
-            TRandom3 rng_global_obj(910247);
-            ObjectiveBreakdown breakdown = eval_objective_breakdown(
-                0.0, 1.0, 0.0,
-                0.0, 0.0,
-                global_p_e_scale,
-                global_events,
-                hdata_summary_mpi0, hdata_summary_mmiss, hdata_summary_mpgg2,
-                rng_global_obj, nsmear_eval,
-                Config::RESOLUTION_A_DEFAULT,
-                Config::RESOLUTION_B_DEFAULT,
-                Config::RESOLUTION_C_DEFAULT);
+            ObjectiveBreakdown legacy_breakdown;
+            if (Config::VALIDATE_FAST_OBJECTIVE) {
+                TRandom3 rng_global_obj(910247);
+                legacy_breakdown = eval_objective_breakdown(
+                    0.0, 1.0, 0.0,
+                    0.0, 0.0,
+                    global_p_e_scale,
+                    global_events,
+                    hdata_summary_mpi0, hdata_summary_mmiss, hdata_summary_mpgg2,
+                    rng_global_obj, nsmear_eval,
+                    Config::RESOLUTION_A_DEFAULT,
+                    Config::RESOLUTION_B_DEFAULT,
+                    Config::RESOLUTION_C_DEFAULT);
+            }
+            FastObjectiveEvaluator fast_global(global_events,
+                                               hdata_summary_mpi0,
+                                               hdata_summary_mmiss,
+                                               hdata_summary_mpgg2,
+                                               nsmear_eval,
+                                               Config::RESOLUTION_A_DEFAULT,
+                                               Config::RESOLUTION_B_DEFAULT,
+                                               Config::RESOLUTION_C_DEFAULT);
+            ObjectiveBreakdown breakdown = fast_global.evaluateBreakdown(
+                0.0, 1.0, 0.0, 0.0, 0.0, global_p_e_scale);
+            const double legacy_selected = legacy_breakdown.total(
+                Config::W_MPI0, Config::W_MMISS, Config::W_MPGG2);
+            const double fast_selected = breakdown.total(
+                Config::W_MPI0, Config::W_MMISS, Config::W_MPGG2);
+            const double tolerance = 1e-9 + 1e-10 * max(1.0, fabs(legacy_selected));
+            if (Config::VALIDATE_FAST_OBJECTIVE &&
+                (!std::isfinite(fast_selected) || !std::isfinite(legacy_selected) ||
+                 fabs(fast_selected - legacy_selected) > tolerance)) {
+                cerr << "[WARN] Global diagnostic fast-evaluator validation failed; "
+                     << "using legacy evaluation for this immutable sweep context." << endl;
+                breakdown = legacy_breakdown;
+            }
             if (out_breakdown) *out_breakdown = breakdown;
             return breakdown.total(Config::W_MPI0, Config::W_MMISS, Config::W_MPGG2);
         };
@@ -6824,19 +6953,53 @@
                             << "nsmear\n";
         for (int is = 0; is < nsec; ++is) {
             if (!fit_success[is]) continue;
-            TRandom3 rng_final_chi2(8000 + is);
-            ObjectiveBreakdown bd = eval_objective_breakdown(fit_results[is].mu_a,
-                                                fit_results[is].mu,
-                                                fit_results[is].mu_c,
-                                                fit_results[is].sigma,
-                                                fit_results[is].sigma_pos,
-                                                fit_results[is].p_e_scale,
-                                                sim_events_per_section[is],
-                                                *hdata_sec[is], *hdata_mmiss_sec[is], *hdata_mpgg2_sec[is],
-                                                rng_final_chi2, Nsmear,
-                                                Config::RESOLUTION_A_DEFAULT,
-                                                Config::RESOLUTION_B_DEFAULT,
-                                                Config::RESOLUTION_C_DEFAULT);
+            ObjectiveBreakdown legacy_bd;
+            if (Config::VALIDATE_FAST_OBJECTIVE) {
+                TRandom3 rng_final_chi2(8000 + is);
+                legacy_bd = eval_objective_breakdown(fit_results[is].mu_a,
+                                                    fit_results[is].mu,
+                                                    fit_results[is].mu_c,
+                                                    fit_results[is].sigma,
+                                                    fit_results[is].sigma_pos,
+                                                    fit_results[is].p_e_scale,
+                                                    sim_events_per_section[is],
+                                                    *hdata_sec[is], *hdata_mmiss_sec[is], *hdata_mpgg2_sec[is],
+                                                    rng_final_chi2, Nsmear,
+                                                    Config::RESOLUTION_A_DEFAULT,
+                                                    Config::RESOLUTION_B_DEFAULT,
+                                                    Config::RESOLUTION_C_DEFAULT);
+            }
+            FastObjectiveEvaluator final_evaluator(sim_events_per_section[is],
+                                                   *hdata_sec[is], *hdata_mmiss_sec[is],
+                                                   *hdata_mpgg2_sec[is], Nsmear,
+                                                   Config::RESOLUTION_A_DEFAULT,
+                                                   Config::RESOLUTION_B_DEFAULT,
+                                                   Config::RESOLUTION_C_DEFAULT);
+            ObjectiveBreakdown fast_bd = final_evaluator.evaluateBreakdown(
+                fit_results[is].mu_a, fit_results[is].mu, fit_results[is].mu_c,
+                fit_results[is].sigma, fit_results[is].sigma_pos,
+                fit_results[is].p_e_scale);
+            auto breakdown_close = [](const ObjectiveBreakdown& a,
+                                      const ObjectiveBreakdown& b) {
+                const double values_a[] = {a.mpi0.chi2, a.mmiss.chi2, a.mpgg2.chi2,
+                                           a.mpi0.sim_integral, a.mmiss.sim_integral,
+                                           a.mpgg2.sim_integral};
+                const double values_b[] = {b.mpi0.chi2, b.mmiss.chi2, b.mpgg2.chi2,
+                                           b.mpi0.sim_integral, b.mmiss.sim_integral,
+                                           b.mpgg2.sim_integral};
+                for (size_t i = 0; i < sizeof(values_a) / sizeof(values_a[0]); ++i) {
+                    const double tolerance = 1e-9 + 1e-10 * max(1.0, fabs(values_a[i]));
+                    if (!std::isfinite(values_a[i]) || !std::isfinite(values_b[i]) ||
+                        fabs(values_a[i] - values_b[i]) > tolerance) return false;
+                }
+                return true;
+            };
+            ObjectiveBreakdown bd = fast_bd;
+            if (Config::VALIDATE_FAST_OBJECTIVE && !breakdown_close(legacy_bd, fast_bd)) {
+                cerr << "[WARN] Final diagnostic fast-evaluator validation failed for "
+                     << sections[is].name() << "; using legacy breakdown." << endl;
+                bd = legacy_bd;
+            }
             fit_results[is].chi2 = selected_objective_from_breakdown(bd);
 
             bool good_fit = (fit_results[is].chi2_per_ndf() <= Config::MAX_CHI2_PER_NDF);
@@ -7240,6 +7403,17 @@
                                     Config::MPGG2_NBINS, Config::MPGG2_MIN, Config::MPGG2_MAX);
         hs_c_mgg->Sumw2(); hs_c_mmiss->Sumw2(); hs_c_mpgg2->Sumw2();
 
+        TH1D *hi_c_mgg = new TH1D("hi_c_mgg_producer_lookup",
+                                   ";M_{#gamma#gamma} [GeV/c^{2}];Counts",
+                                   Config::MGGAMMA_NBINS, Config::MGGAMMA_MIN, Config::MGGAMMA_MAX);
+        TH1D *hi_c_mmiss = new TH1D("hi_c_mmiss_producer_lookup",
+                                     ";M_{miss} [GeV/c^{2}];Counts",
+                                     Config::MMISS_NBINS, Config::MMISS_MIN, Config::MMISS_MAX);
+        TH1D *hi_c_mpgg2 = new TH1D("hi_c_mpgg2_producer_lookup",
+                                     ";(p_{target}+#gamma#gamma)^{2} [GeV^{2}];Counts",
+                                     Config::MPGG2_NBINS, Config::MPGG2_MIN, Config::MPGG2_MAX);
+        hi_c_mgg->Sumw2(); hi_c_mmiss->Sumw2(); hi_c_mpgg2->Sumw2();
+
         // Fill combined data from unique summary histograms (strict BOTH photons in geometry)
         hd_c_mgg->Sumw2();
         hd_c_mmiss->Sumw2();
@@ -7349,6 +7523,48 @@
                 << " photon coefficient lookups used interpolated fallback due to unfitted sections." << endl;
         }
 
+        // Build the second comparison from the same unique events. Start with
+        // the exact producer section fallback above, then override each in-range
+        // response field with the value sampled from the persisted-map bin.
+        vector<ClusterPair> sim_events_global_with_producer_map =
+            sim_events_global_with_fit;
+        for (auto& gev : sim_events_global_with_producer_map) {
+            double ma = gev.mu_a1_ext;
+            double mb = gev.mu1_ext;
+            double mc = gev.mu_c1_ext;
+            double sigma = gev.sigma1_ext;
+            double sigma_pos = gev.sigma_pos1_ext;
+            if (all_sections_cal_map.getProducerHistogramLookupParams(
+                    gev.x1, gev.y1, ma, mb, mc, sigma, sigma_pos)) {
+                gev.mu_a1_ext = std::isfinite(ma) ? ma : gev.mu_a1_ext;
+                gev.mu1_ext = std::isfinite(mb) ? mb : gev.mu1_ext;
+                gev.mu_c1_ext = std::isfinite(mc) ? mc : gev.mu_c1_ext;
+                gev.sigma1_ext = (std::isfinite(sigma) && sigma >= 0.0)
+                    ? sigma : gev.sigma1_ext;
+                gev.sigma_pos1_ext = (std::isfinite(sigma_pos) && sigma_pos >= 0.0)
+                    ? sigma_pos : gev.sigma_pos1_ext;
+            }
+            ma = gev.mu_a2_ext;
+            mb = gev.mu2_ext;
+            mc = gev.mu_c2_ext;
+            sigma = gev.sigma2_ext;
+            sigma_pos = gev.sigma_pos2_ext;
+            if (all_sections_cal_map.getProducerHistogramLookupParams(
+                    gev.x2, gev.y2, ma, mb, mc, sigma, sigma_pos)) {
+                gev.mu_a2_ext = std::isfinite(ma) ? ma : gev.mu_a2_ext;
+                gev.mu2_ext = std::isfinite(mb) ? mb : gev.mu2_ext;
+                gev.mu_c2_ext = std::isfinite(mc) ? mc : gev.mu_c2_ext;
+                gev.sigma2_ext = (std::isfinite(sigma) && sigma >= 0.0)
+                    ? sigma : gev.sigma2_ext;
+                gev.sigma_pos2_ext = (std::isfinite(sigma_pos) && sigma_pos >= 0.0)
+                    ? sigma_pos : gev.sigma_pos2_ext;
+            }
+            if (!Config::ENABLE_POSITION_SMEARING) {
+                gev.sigma_pos1_ext = 0.0;
+                gev.sigma_pos2_ext = 0.0;
+            }
+        }
+
         // Fill unsmeared and smeared combined histograms in one pass (global unique events)
         TRandom3 rng_combined(42);
         const double z_nps_comb = Config::NPS_Z_NPS_CM;
@@ -7380,19 +7596,32 @@
                                     Config::RESOLUTION_A_DEFAULT,
                                     Config::RESOLUTION_B_DEFAULT,
                                     Config::RESOLUTION_C_DEFAULT);
+        TRandom3 rng_combined_producer_map(42);
+        fillSmearedHistogramsAtParams(sim_events_global_with_producer_map,
+                                    *hi_c_mgg, *hi_c_mmiss, *hi_c_mpgg2,
+                                    0.0, 1.0, 0.0,
+                                    0.0, 0.0,
+                                    global_p_e_scale,
+                                    rng_combined_producer_map,
+                                    Nsmear,
+                                    Config::RESOLUTION_A_DEFAULT,
+                                    Config::RESOLUTION_B_DEFAULT,
+                                    Config::RESOLUTION_C_DEFAULT);
 
         // Normalize the unsmeared simulation to data first, then apply the same
         // scale factor to the smeared histogram. This keeps smearing-induced
         // migration into/out of the plotted window visible in the diagnostics.
-        auto scaleUnsmearedAndSmearedToData = [](TH1D* hu, TH1D* hs, const TH1D* hd) {
+        auto scaleUnsmearedAndSmearedToData = [](TH1D* hu, TH1D* hs, TH1D* hi,
+                                                 const TH1D* hd) {
             if (hu->Integral() <= 0.0 || hd->Integral() <= 0.0) return;
             const double scale = hd->Integral() / hu->Integral();
             hu->Scale(scale);
             hs->Scale(scale);
+            hi->Scale(scale);
         };
-        scaleUnsmearedAndSmearedToData(hu_c_mgg,   hs_c_mgg,   hd_c_mgg);
-        scaleUnsmearedAndSmearedToData(hu_c_mmiss, hs_c_mmiss, hd_c_mmiss);
-        scaleUnsmearedAndSmearedToData(hu_c_mpgg2, hs_c_mpgg2, hd_c_mpgg2);
+        scaleUnsmearedAndSmearedToData(hu_c_mgg, hs_c_mgg, hi_c_mgg, hd_c_mgg);
+        scaleUnsmearedAndSmearedToData(hu_c_mmiss, hs_c_mmiss, hi_c_mmiss, hd_c_mmiss);
+        scaleUnsmearedAndSmearedToData(hu_c_mpgg2, hs_c_mpgg2, hi_c_mpgg2, hd_c_mpgg2);
 
         // ---- Summary diagnostics: attribute all-sections mismatch by section ----
         vector<double> mismatch_score(nsec, 0.0);
@@ -7522,6 +7751,100 @@
             c_obs->Print(pdf_file.c_str());
             writeCanvasToDir(diagnostic_canvas_dir, c_obs, "c_obs_summary");
             delete c_obs;
+        }
+
+        // Additive diagnostic: preserve the existing section-response summary
+        // above, and show producer-map lookup separately using identical events,
+        // weights, cuts, normalization, Nsmear and deterministic pulls.
+        {
+            ofstream lookup_csv(response_lookup_comparison_csv_file.c_str());
+            if (!lookup_csv.good()) {
+                cerr << "[ERROR] Cannot create response-lookup comparison CSV: "
+                     << response_lookup_comparison_csv_file << endl;
+                return 7;
+            }
+            lookup_csv << "observable,n_events,nsmear,section_integral,producer_map_integral,"
+                       << "l1_abs_bin_difference,max_abs_bin_difference,max_abs_pull_difference,"
+                       << "chi2_data_section,chi2_data_producer_map\n";
+
+            TCanvas *c_lookup = new TCanvas(
+                "c_response_lookup_comparison",
+                "Section coefficients vs producer interpolated-map lookup", 1600, 600);
+            c_lookup->Divide(3, 1);
+            auto draw_lookup = [&](int pad, TH1D* hd, TH1D* hs, TH1D* hi,
+                                   const char* observable, const char* title) {
+                c_lookup->cd(pad);
+                gPad->SetLeftMargin(0.13);
+                gPad->SetBottomMargin(0.14);
+                hd->SetLineColor(kBlack);
+                hd->SetMarkerColor(kBlack);
+                hd->SetMarkerStyle(20);
+                hd->SetMarkerSize(0.65);
+                hs->SetLineColor(kRed + 1);
+                hs->SetLineWidth(2);
+                hi->SetLineColor(kBlue + 1);
+                hi->SetLineStyle(2);
+                hi->SetLineWidth(2);
+                const double ymax = 1.20 * max(hd->GetMaximum(),
+                                                max(hs->GetMaximum(), hi->GetMaximum()));
+                hd->SetTitle(Form("%s;%s;Weighted counts", title,
+                                  hd->GetXaxis()->GetTitle()));
+                hd->SetMinimum(0.0);
+                hd->SetMaximum(ymax > 0.0 ? ymax : 1.0);
+                hd->Draw("E1");
+                hs->Draw("HIST SAME");
+                hi->Draw("HIST SAME");
+                hd->Draw("E1 SAME");
+                TLegend* legend = new TLegend(0.43, 0.70, 0.89, 0.89);
+                legend->SetBit(kCanDelete);
+                legend->SetBorderSize(1);
+                legend->SetFillColor(kWhite);
+                legend->SetTextSize(0.030);
+                legend->AddEntry(hd, "Data", "lep");
+                legend->AddEntry(hs, "Simulation: section coefficients", "l");
+                legend->AddEntry(hi, "Simulation: producer interpolated map", "l");
+                legend->Draw();
+
+                double l1 = 0.0;
+                double max_abs = 0.0;
+                double max_pull = 0.0;
+                for (int ib = 1; ib <= hs->GetNbinsX(); ++ib) {
+                    const double diff = fabs(hs->GetBinContent(ib) - hi->GetBinContent(ib));
+                    l1 += diff;
+                    max_abs = max(max_abs, diff);
+                    const double variance = pow(hs->GetBinError(ib), 2) +
+                                            pow(hi->GetBinError(ib), 2);
+                    if (variance > 0.0) max_pull = max(max_pull, diff / sqrt(variance));
+                }
+                const HistObjectiveMetrics section_metrics = computeChi2MetricsFromHist(*hs, *hd);
+                const HistObjectiveMetrics interp_metrics = computeChi2MetricsFromHist(*hi, *hd);
+                lookup_csv << observable << "," << sim_events_summary.size() << "," << Nsmear
+                           << "," << hs->Integral() << "," << hi->Integral()
+                           << "," << l1 << "," << max_abs << "," << max_pull
+                           << "," << section_metrics.chi2 << "," << interp_metrics.chi2
+                           << "\n";
+            };
+            draw_lookup(1, hd_c_mgg, hs_c_mgg, hi_c_mgg,
+                        "mgg", "M_{#gamma#gamma}: response lookup comparison");
+            draw_lookup(2, hd_c_mmiss, hs_c_mmiss, hi_c_mmiss,
+                        "mmiss", "M_{miss}: response lookup comparison");
+            draw_lookup(3, hd_c_mpgg2, hs_c_mpgg2, hi_c_mpgg2,
+                        "mpgg2", "M_{p#gamma#gamma}^{2}: response lookup comparison");
+            lookup_csv.close();
+            if (!lookup_csv.good()) {
+                cerr << "[ERROR] Failed while writing response-lookup comparison CSV: "
+                     << response_lookup_comparison_csv_file << endl;
+                return 7;
+            }
+            c_lookup->Print(pdf_file.c_str());
+            writeCanvasToDir(diagnostic_canvas_dir, c_lookup,
+                             "c_response_lookup_comparison");
+            writeHistToDir(diagnostic_map_dir, hi_c_mgg);
+            writeHistToDir(diagnostic_map_dir, hi_c_mmiss);
+            writeHistToDir(diagnostic_map_dir, hi_c_mpgg2);
+            delete c_lookup;
+            cout << "Producer lookup comparison metrics saved to "
+                 << response_lookup_comparison_csv_file << endl;
         }
 
         // ---- Summary page: Section-level attribution of all-sections mismatch ----
@@ -7999,6 +8322,8 @@
             txt->AddText(" ");
             txt->AddText("Note: all-sections histograms use unique global event buffers with BOTH photons in geometry.");
             txt->AddText("All-sections smearing assigns coefficients per photon from its own base-grid section.");
+            txt->AddText("Additional lookup page compares section coefficients with producer-style 100x100 map bins.");
+            txt->AddText("Both response curves reuse identical events, weights, cuts, normalization and random pulls.");
 
             txt->Draw();
             c_final->Print(pdf_file.c_str());
@@ -8012,6 +8337,7 @@
         delete hd_c_mgg;  delete hd_c_mmiss;  delete hd_c_mpgg2;
         delete hu_c_mgg;  delete hu_c_mmiss;  delete hu_c_mpgg2;
         delete hs_c_mgg;  delete hs_c_mmiss;  delete hs_c_mpgg2;
+        delete hi_c_mgg;  delete hi_c_mmiss;  delete hi_c_mpgg2;
         for (int is = 0; is < nsec; ++is) {
             delete hs_owner_mgg[is];
             delete hs_owner_mmiss[is];
@@ -8031,10 +8357,18 @@
             cout << "Cache fingerprint saved to " << cache_fingerprint_file << "\n";
         }
 
+        const int fitter_bytes_written = fout.Write();
+        const bool fitter_write_ok = fitter_bytes_written > 0 &&
+                                     !fout.TestBit(TFile::kWriteError);
         fout.Close();
+        if (!fitter_write_ok) {
+            cerr << "[ERROR] Failed while writing fitter ROOT output: " << out_file << endl;
+            return 7;
+        }
         copyFileIfDifferent(out_file, timestamped_out_file, "fitter ROOT output");
         csv.close();
-        cout << "All done. Results written to "<<out_file<<" and "<<csv_file<<endl;
+        cout << "Fitter ROOT and section CSV written; validating interpolated-map production next."
+             << endl;
         
         // ============================================================================
         // Create interpolated calibration map for smooth parameter variation
@@ -8055,7 +8389,9 @@
         }
         
         // Save 2D interpolated maps for visualization
-        calMap.saveAsHistogram(interp_file, run_tag, created_at_local);
+        if (!calMap.saveAsHistogram(interp_file, run_tag, created_at_local)) {
+            return 7;
+        }
         copyFileIfDifferent(interp_file, timestamped_interp_file, "interpolated ROOT output");
         archive_supporting_outputs();
         writeSmearingManifest(metadata_manifest_file,
@@ -8105,6 +8441,9 @@
             cout << "double smeared_x = cluster_x + rng.Gaus(0.0, sigma_pos);\n";
             cout << "double smeared_y = cluster_y + rng.Gaus(0.0, sigma_pos);\n";
         }
+
+        cout << "All done. Results written to " << out_file << ", " << csv_file
+             << " and " << interp_file << endl;
         
         return 0;
     }

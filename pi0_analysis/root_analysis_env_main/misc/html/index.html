@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="A source-grounded introduction to the Hall C NPS exclusive pi0 analysis workflow.">
+  <title>NPS π⁰ Analysis · Start here</title><link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body data-page="home">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="topbar"><div class="nav-shell">
+  <a class="brand" href="index.html"><span class="brand-mark">π</span><span>NPS π⁰ analysis</span></a>
+  <button class="icon-button menu-button" data-menu-toggle aria-label="Open navigation">☰</button>
+  <nav class="site-nav" aria-label="Primary">
+    <a data-page="home" href="index.html">Start</a><a data-page="analysis" href="analysis.html">Data</a>
+    <a data-page="eff" href="efficiencies.html">Corrections</a><a data-page="sim" href="simulation.html">Simulation</a>
+    <a data-page="xsec" href="extraction.html">Cross sections</a><a data-page="results" href="results.html">Latest plots</a>
+    <a data-page="ops" href="operations.html">Runbook</a>
+  </nav><button class="icon-button" data-theme-toggle>◑ Light</button>
+</div></header>
+
+<main id="main">
+<section class="hero"><div class="hero-inner">
+  <div class="kicker">Hall C · Neutral Particle Spectrometer</div>
+  <h1>From two photons to an exclusive π⁰ cross section.</h1>
+  <p>This site introduces the staged NPS analysis in <code>root_analysis_env_main</code>: what enters, what each stage calculates, where corrections appear, how simulation is calibrated, and what the extracted observables do—and do not—mean.</p>
+  <div class="hero-actions"><a class="button primary" href="#journey">Follow the workflow ↓</a><a class="button" href="results.html">See current plots</a><a class="button" href="operations.html#quickstart">Run one setting</a></div>
+  <div class="stamp">SOURCE SNAPSHOT · commit 535df7f75d416dec90bf7b39dfca78a942083912 · audited 2026-09-22</div>
+</div></section>
+
+<div class="page-layout"><aside class="toc"><strong>On this page</strong><a href="#question">Physics question</a><a href="#apparatus">What is measured</a><a href="#journey">Full journey</a><a href="#objects">Core objects</a><a href="#status">Current status</a><a href="#reading">How to use this site</a></aside>
+<div class="content">
+<section id="question">
+  <div class="eyebrow">The measurement</div><h2>Exclusive neutral-pion electroproduction</h2>
+  <p class="lede">The channel is (e p → e′ p′ π⁰), followed by (π⁰ → γγ). HMS measures the scattered electron. NPS reconstructs the two photons. The recoil proton is inferred through missing mass.</p>
+  <div class="grid three">
+    <article class="card"><div class="number">1</div><h3>Electron arm</h3><p>HMS supplies the scattered-electron momentum and direction, defining (Q²), energy transfer ν, Bjorken (x_B), and the virtual-photon direction.</p></article>
+    <article class="card"><div class="number">2</div><h3>Photon calorimeter</h3><p>NPS clusters electromagnetic showers. Two accepted clusters provide (E_1,E_2), directions, opening angle, and the reconstructed γγ four-vector.</p></article>
+    <article class="card"><div class="number">3</div><h3>Exclusive closure</h3><p>The γγ invariant mass identifies π⁰ candidates; the missing mass (M_X(e p→e′γγX)) tests whether the unobserved state is a proton.</p></article>
+  </div>
+  <div class="equation">m<sub>γγ</sub>² = 2E₁E₂(1−cosθ₁₂) &nbsp;&nbsp;·&nbsp;&nbsp; M<sub>X</sub>² = (p<sub>e</sub>+p<sub>p</sub>−p<sub>e′</sub>−p<sub>γ1</sub>−p<sub>γ2</sub>)²</div>
+</section>
+
+<section id="apparatus">
+  <div class="eyebrow">Information flow</div><h2>The detectors answer complementary questions</h2>
+  <div class="grid two">
+    <div class="card"><h3>HMS: “What virtual photon was exchanged?”</h3><p>Tracking, gas Čerenkov, calorimeter, hodoscope, trigger/scaler and beam-current information establish a clean electron sample and the exposure correction. Acceptance defaults include (|δ|≤10%), (|x′|≤0.1), (|y′|≤0.04), (|z|≤8) cm, NPE&gt;4, and (0.8&lt;E/p≤1.2).</p></div>
+    <div class="card"><h3>NPS: “Is there a π⁰ compatible photon pair?”</h3><p>Clusters are filtered by energy, position, timing and run-dependent dead-block masks, then paired. Global defaults use (E_gamma&gt;1.5) GeV and the fiducial window x∈[−26,26] cm, y∈[−32,32] cm; KinC_x36_5 variants override the energy threshold to 1.6 GeV.</p></div>
+  </div>
+</section>
+
+<section id="journey">
+  <div class="eyebrow">End-to-end map</div><h2>One analysis, seven linked stages</h2>
+  <div class="pipeline" aria-label="Analysis pipeline">
+    <div class="stage"><b>01</b><span>Configure</span><small>Run table, kinematics, cuts, dead blocks</small></div>
+    <div class="stage"><b>02</b><span>Analyze runs</span><small>HMS + NPS selection, pair physics, backgrounds</small></div>
+    <div class="stage"><b>03</b><span>Correct exposure</span><small>Charge, prescale, livetime, tracking and hodoscope</small></div>
+    <div class="stage"><b>04</b><span>Combine</span><small>Attach per-run scale and merge physics trees</small></div>
+    <div class="stage"><b>05</b><span>Simulate</span><small>SIMC kinematics/radiation → Geant4 detector response</small></div>
+    <div class="stage"><b>06</b><span>Smear residuals</span><small>Fit section response; publish deterministic maps</small></div>
+    <div class="stage"><b>07</b><span>Extract σ</span><small>Data/SIMC ratio or global migration-response fit</small></div>
+  </div>
+  <p>Stages are not interchangeable. The data tree carries reconstructed physics and a mass-based signal weight. The combined tree adds exposure corrections. Simulation supplies acceptance, migration, radiation and model information. Extraction finally connects corrected data yields to virtual-photon response coefficients.</p>
+</section>
+
+<section id="objects">
+  <div class="eyebrow">What moves between stages</div><h2>The four central data products</h2>
+  <div class="table-wrap"><table><thead><tr><th>Object</th><th>Contains</th><th>Consumed by</th></tr></thead><tbody>
+    <tr><td><code>diagnostics_run&lt;run&gt;.root</code></td><td>Per-event <code>physics</code> tree plus histograms/canvases; includes kinematics, cluster data, <code>pi0_weight</code>, exclusivity flags and run diagnostics.</td><td>Combination, plots, run QA</td></tr>
+    <tr><td><code>efficiency_&lt;kin&gt;.csv</code></td><td>Charge, prescale, beam time, tracking/PID/hodoscope efficiencies, NewGen EDTM livetime and errors.</td><td>Branch combination</td></tr>
+    <tr><td><code>combined_branches_&lt;target&gt;.root</code></td><td>Merged per-run physics events with <code>scale</code>, charge, livetime, efficiency and provenance branches.</td><td>Smearing and cross-section extraction</td></tr>
+    <tr><td>Smearing/SIMC ROOT products</td><td>Selected simulated events, nominal/smeared reconstructed variables, generator weights, <code>sigcm</code>, truth coordinates and response maps.</td><td>Data/MC checks and both extractors</td></tr>
+  </tbody></table></div>
+</section>
+
+<section id="status">
+  <div class="eyebrow">Scientific status</div><h2>What is established—and what remains conditional</h2>
+  <div class="grid two">
+    <div class="card"><h3><span class="status">Implemented and validated</span></h3><ul><li>Per-run data processing and explicit output contracts</li><li>Frozen efficiency/livetime stage and uncertainty columns</li><li>Deterministic smearing pipeline with staged validation and atomic publication</li><li>Conventional SIMC-model extraction and global response-fit extraction</li><li>Generated→reconstructed migration diagnostics and synthetic closure tests</li></ul></div>
+    <div class="card"><h3><span class="status caution">Physics caveats remain</span></h3><ul><li>High-W π⁰ generator model is a provisional average of charged-pion fits</li><li>Residual smearing can be confounded with the accepted physics population</li><li>Data and MC reconstructed selections must remain genuinely equivalent</li><li>Radiative treatment for the neutral-pion channel needs a dedicated decision</li><li>Reported uncertainties omit several detector/model/radiative systematics</li></ul></div>
+  </div>
+  <div class="callout danger"><strong>Interpretation rule.</strong> A pipeline that runs successfully has passed software and contract checks. That alone is not a complete physics validation. The site marks measured implementation facts, approximations and open physics decisions separately.</div>
+</section>
+
+<section id="reading">
+  <div class="eyebrow">Suggested path</div><h2>Read in the same order as the data</h2>
+  <div class="grid three">
+    <a class="card" href="analysis.html" style="text-decoration:none"><h3>Data reconstruction →</h3><p>Inputs, cuts, photon pairing, accidental/combinatorial background, π⁰ weights and output trees.</p></a>
+    <a class="card" href="efficiencies.html" style="text-decoration:none"><h3>Corrections →</h3><p>Good-current ranges, detector efficiencies, livetime, prescale and per-run normalization.</p></a>
+    <a class="card" href="simulation.html" style="text-decoration:none"><h3>Simulation →</h3><p>Canonical kinematics, SIMC, Geant4 and the residual response-smearing fit.</p></a>
+    <a class="card" href="extraction.html" style="text-decoration:none"><h3>Cross sections →</h3><p>Fourier convention, ratio method, response matrix, migration and covariance.</p></a>
+    <a class="card" href="results.html" style="text-decoration:none"><h3>Latest plots →</h3><p>A curated offline gallery from current data, efficiency, smearing and extraction outputs.</p></a>
+    <a class="card" href="operations.html" style="text-decoration:none"><h3>Runbook →</h3><p>Commands, directory map, output contracts, validations and common failure modes.</p></a>
+  </div>
+</section>
+</div></div>
+</main>
+<footer class="footer"><div class="footer-inner"><span>Hall C NPS π⁰ analysis introduction</span><span>Source-grounded snapshot · 2026-09-22 · offline capable</span></div></footer>
+<script src="assets/js/site.js"></script>
+</body></html>

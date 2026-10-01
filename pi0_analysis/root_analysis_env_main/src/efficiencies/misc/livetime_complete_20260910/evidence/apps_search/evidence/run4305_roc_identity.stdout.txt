@@ -1,0 +1,7 @@
+15:10Feb2024 12:11:19: PEB1 INFO:       DataChannel Adapter: channel npsvme5 is a fifo = false
+17:10Feb2024 12:11:19: PEB1 INFO:       DataChannel Emu: creating input channel npsvme5
+25:10Feb2024 12:11:19: PEB1 INFO:       DataChannel Adapter: channel ROC5 is a fifo = false
+27:10Feb2024 12:11:19: PEB1 INFO:       DataChannel Emu: creating input channel ROC5
+4065:10Feb2024 12:33:32: ROC1 INFO: ended after 560647 blocks (560647 events) 
+4078:10Feb2024 12:33:37: ROC3 INFO: ended after 560647 blocks (560647 events) 
+5173:10Feb2024 12:33:37: ROC5 INFO: ended after 560647 blocks (560647 events) 

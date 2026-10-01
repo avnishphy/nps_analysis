@@ -1,0 +1,124 @@
+[
+  {
+    "run": 4253,
+    "selection": "whole available files, raw-window candidates with selected-trigger raw TDC >1",
+    "relative_center_ns": -3093.18518,
+    "core_quantiles_ns": [
+      -3093.47816,
+      -3093.18518,
+      -3092.11092
+    ],
+    "absolute_time_tail_candidates": 14,
+    "tails_recovered_with_relative_2ns": 1,
+    "tail_relative_times_ns": [
+      -3045.72242,
+      -3092.6968799999995,
+      -3090.54836,
+      -3041.23006,
+      -3059.88312,
+      -3087.22792,
+      -3088.39984,
+      -3060.76206,
+      -3088.59516,
+      -3070.52806,
+      -3044.0622,
+      -3088.4975,
+      -3088.4975,
+      -3090.15772
+    ]
+  },
+  {
+    "run": 4255,
+    "selection": "whole available files, raw-window candidates with selected-trigger raw TDC >1",
+    "relative_center_ns": -3093.18518,
+    "core_quantiles_ns": [
+      -3093.47816,
+      -3093.18518,
+      -3092.79454
+    ],
+    "absolute_time_tail_candidates": 3,
+    "tails_recovered_with_relative_2ns": 1,
+    "tail_relative_times_ns": [
+      -3073.3602,
+      -3092.50156,
+      -3091.0366599999998
+    ]
+  },
+  {
+    "run": 4259,
+    "selection": "whole available files, raw-window candidates with selected-trigger raw TDC >1",
+    "relative_center_ns": -3093.18518,
+    "core_quantiles_ns": [
+      -3093.47816,
+      -3093.18518,
+      -3091.86247296
+    ],
+    "absolute_time_tail_candidates": 0,
+    "tails_recovered_with_relative_2ns": 0,
+    "tail_relative_times_ns": []
+  },
+  {
+    "run": 4301,
+    "selection": "whole available files, raw-window candidates with selected-trigger raw TDC >1",
+    "relative_center_ns": -3113.98676,
+    "core_quantiles_ns": [
+      -3114.27974,
+      -3113.98676,
+      -3113.49846
+    ],
+    "absolute_time_tail_candidates": 6,
+    "tails_recovered_with_relative_2ns": 1,
+    "tail_relative_times_ns": [
+      -3076.7783,
+      -3101.8769199999997,
+      -3074.6297799999998,
+      -2795.81048,
+      -3109.0060999999996,
+      -3112.03356
+    ]
+  },
+  {
+    "run": 4305,
+    "selection": "whole available files, raw-window candidates with selected-trigger raw TDC >1",
+    "relative_center_ns": -3113.98676,
+    "core_quantiles_ns": [
+      -3114.27974,
+      -3113.98676,
+      -3113.5961199999997
+    ],
+    "absolute_time_tail_candidates": 4,
+    "tails_recovered_with_relative_2ns": 0,
+    "tail_relative_times_ns": [
+      -3109.4943999999996,
+      -3089.4741,
+      -3107.9318399999997,
+      -3092.8922
+    ]
+  },
+  {
+    "run": 4350,
+    "selection": "whole available files, raw-window candidates with selected-trigger raw TDC >1",
+    "relative_center_ns": -3113.8891,
+    "core_quantiles_ns": [
+      -3114.3774,
+      -3113.8891,
+      -3113.49846
+    ],
+    "absolute_time_tail_candidates": 12,
+    "tails_recovered_with_relative_2ns": 3,
+    "tail_relative_times_ns": [
+      -3109.39674,
+      -3108.5177999999996,
+      -3109.39674,
+      -3108.90844,
+      -3108.5178,
+      -3101.6816,
+      -3111.9359,
+      -3111.9359,
+      -3107.15056,
+      -3079.5127799999996,
+      -3111.9359,
+      -3111.74058
+    ]
+  }
+]

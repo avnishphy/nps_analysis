@@ -1,0 +1,14 @@
+START catalog_coverage.py
+DONE catalog_coverage.py
+START audit.py
+DONE audit.py
+START acceptance_tests.py
+START clock_scaler_checks.py
+START event_clock_checks.py
+DONE clock_scaler_checks.py
+START phase_timing_bridge.py
+DONE acceptance_tests.py
+DONE event_clock_checks.py
+DONE phase_timing_bridge.py
+START make_refresh_figures.py
+DONE make_refresh_figures.py

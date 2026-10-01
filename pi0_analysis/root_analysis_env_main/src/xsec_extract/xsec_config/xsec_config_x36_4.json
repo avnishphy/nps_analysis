@@ -1,0 +1,76 @@
+{
+  "configured_kinematic": "KinC_x36_4",
+  "simc_file": "/lustre24/expphy/volatile/hallc/nps/singhav/nps_smearing/smear_x36_4/smearing_output/KinC_x36_4/root/simc_pi0_analysis_output_smeared.root",
+  "data_file": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/KinC_x36_4/root/combined_branches_LH2.root",
+  "simc_tree": "simulation",
+  "data_tree": "physics",
+  "out_root": "excl_xsec_pi0_analysis_no_simc_model_output.root",
+  "out_csv": "excl_xsec_pi0_analysis_no_simc_model_summary.csv",
+  "out_slice_csv": "excl_xsec_pi0_analysis_no_simc_model_slice_summary.csv",
+  "out_dir": "output_pi0_xsec_no_simc_model",
+  "out_all_plots_pdf": "all_generated_plots_no_simc_model.pdf",
+  "ebeam": 8.455,
+  "hms_theta_deg": 24.78,
+  "hms_p_gev": 2.562,
+  "phi_bins": 12,
+  "tprime_bin_edges": [
+    -0.75,
+    -0.55,
+    -0.40,
+    -0.25,
+    -0.13,
+    0.0
+  ],
+  "q2_bin_edges": [
+    3.3,
+    4.7
+  ],
+  "xb_bin_edges_by_q2": [
+    [
+      0.29,
+      0.44
+    ]
+  ],
+  "diamond_xb_q2_vertices": [
+    [
+      0.28536635126633153,
+      3.243861779409012
+    ],
+    [
+      0.33822268816213624,
+      3.6193121389727954
+    ],
+    [
+      0.43953011480920373,
+      4.698466077676237
+    ],
+    [
+      0.3721482218990109,
+      4.244414308310078
+    ]
+  ],
+  "t_bin_edges": [-2.0, -1.5, -1.0, -0.5, 0.0],
+  "tgt_contam": 0.584,
+  "tgt_contam_err": 0.014,
+  "mmiss_lower_gev": 0.8,
+  "mmiss_upper_gev": 1.1,
+  "mmiss_select": "window",
+  "rank_tolerance": 1e-10,
+  "mc_max_iterations": 30,
+  "mc_fit_tolerance": 1e-06,
+  "fit_variance_mode": "finite-mc",
+  "positive_xsec": false,
+  "partons_warmups": 10000,
+  "partons_calls": 100000,
+  "simc_yield_scale": 1.0,
+  "normalize_mmiss": false,
+  "model_xsec_mode": "sigcm",
+  "model_identifier": "SIMC_sig_param_2021_pi0_W_ge_2",
+  "model_free_parameters": "plus.p5,plus.p7,plus.p9",
+  "model_max_iterations": 1000,
+  "model_max_evaluations": 10000,
+  "model_tolerance": 1e-06,
+  "model_xsec_candidates": [
+    "sigcm"
+  ]
+}

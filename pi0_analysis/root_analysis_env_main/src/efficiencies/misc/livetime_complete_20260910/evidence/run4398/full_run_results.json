@@ -1,0 +1,265 @@
+{
+  "scope": "All six updated segments; matched real-snapshot coverage, not a certified total-livetime correction.",
+  "total_events": 3222394,
+  "first_event": 1,
+  "last_event": 3222394,
+  "snapshots": 2233,
+  "removed_duplicate_rows": [
+    {
+      "segment": 0,
+      "row": 354,
+      "event_boundary": 542585.0,
+      "clock": 674.895349
+    },
+    {
+      "segment": 1,
+      "row": 357,
+      "event_boundary": 1088335.0,
+      "clock": 1335.746254
+    },
+    {
+      "segment": 2,
+      "row": 307,
+      "event_boundary": 1620152.0,
+      "clock": 1896.120995
+    },
+    {
+      "segment": 3,
+      "row": 433,
+      "event_boundary": 2177226.0,
+      "clock": 2703.597047
+    },
+    {
+      "segment": 4,
+      "row": 343,
+      "event_boundary": 2720868.0,
+      "clock": 3335.110223
+    },
+    {
+      "segment": 5,
+      "row": 439,
+      "event_boundary": 3222395.0,
+      "clock": 4160.053707
+    }
+  ],
+  "counter_resets": {
+    "H.EDTM.scaler": 0,
+    "H.hTRIG4.scaler": 0,
+    "H.hL1ACCP.scaler": 0,
+    "H.BCM4A.scalerCharge": 0
+  },
+  "boundary_range": [
+    1.0,
+    3222394.0
+  ],
+  "clock_range": [
+    21.96317,
+    4160.053707
+  ],
+  "uncovered_head_events": 0,
+  "uncovered_tail_events": 1,
+  "uncovered_tail_EDTM_raw": 0,
+  "fixed_current_window_uA": [
+    33.3625,
+    45.1375
+  ],
+  "naive_per_segment": [
+    {
+      "segment": 0,
+      "E": 19341,
+      "D": 19310.0
+    },
+    {
+      "segment": 1,
+      "E": 19105,
+      "D": 19151.0
+    },
+    {
+      "segment": 2,
+      "E": 19830,
+      "D": 19849.0
+    },
+    {
+      "segment": 3,
+      "E": 18352,
+      "D": 18366.0
+    },
+    {
+      "segment": 4,
+      "E": 19071,
+      "D": 19092.0
+    },
+    {
+      "segment": 5,
+      "E": 16887,
+      "D": 16978.0
+    }
+  ],
+  "naive_sum_ratio": 0.9985808809181701,
+  "estimators": [
+    {
+      "selection": "all covered",
+      "intervals": 2232,
+      "time_s": 4138.090537,
+      "charge_uC": 121517.99088231158,
+      "N": 3222393,
+      "A": 3222393,
+      "S": 3224917,
+      "D": 165335,
+      "E_raw": 165245,
+      "E_tight": 165237,
+      "EDTM_raw": 0.999455650648683,
+      "EDTM_tight": 0.9994072640396771,
+      "CLTA": 0.9992173441983158,
+      "CLTP_raw": 0.9992044664924816,
+      "CLTP_tight": 0.999207081228743,
+      "HW_all": 0.9992173441983158,
+      "HW_subtract_sent": 0.9991750507095414,
+      "conditional_sigma_EDTM": 5.9857626082846685e-05,
+      "conditional_sigma_CLTP": 1.6092038116994134e-05
+    },
+    {
+      "selection": "I > 2 uA",
+      "intervals": 1904,
+      "time_s": 3487.965819000001,
+      "charge_uC": 120852.1397458728,
+      "N": 3195613,
+      "A": 3195613,
+      "S": 3198137,
+      "D": 139360,
+      "E_raw": 139270,
+      "E_tight": 139262,
+      "EDTM_raw": 0.9993541905855339,
+      "EDTM_tight": 0.999296785304248,
+      "CLTA": 0.9992107905321129,
+      "CLTP_raw": 0.9992042571262959,
+      "CLTP_tight": 0.999206872550696,
+      "HW_all": 0.9992107905321129,
+      "HW_subtract_sent": 0.9991748336017957,
+      "conditional_sigma_EDTM": 7.101043046290248e-05,
+      "conditional_sigma_CLTP": 1.6096271491798487e-05
+    },
+    {
+      "selection": "fixed production current",
+      "intervals": 1562,
+      "time_s": 2821.898169999999,
+      "charge_uC": 109930.29954513177,
+      "N": 2893284,
+      "A": 2893284,
+      "S": 2895694,
+      "D": 112746,
+      "E_raw": 112658,
+      "E_tight": 112650,
+      "EDTM_raw": 0.9992194845049935,
+      "EDTM_tight": 0.9991485285509021,
+      "CLTA": 0.9991677297393993,
+      "CLTP_raw": 0.9991656329906272,
+      "CLTP_tight": 0.9991685076400997,
+      "HW_all": 0.9991677297393993,
+      "HW_subtract_sent": 0.9991340118464305,
+      "conditional_sigma_EDTM": 8.686593530278694e-05,
+      "conditional_sigma_CLTP": 1.7278098853295253e-05
+    },
+    {
+      "selection": "stable production current",
+      "intervals": 1541,
+      "time_s": 2779.9909909999997,
+      "charge_uC": 108446.88605110437,
+      "N": 2853986,
+      "A": 2853985,
+      "S": 2856371,
+      "D": 111072,
+      "E_raw": 110984,
+      "E_tight": 110976,
+      "EDTM_raw": 0.9992077211178335,
+      "EDTM_tight": 0.9991356957649092,
+      "CLTA": 0.9991650244313501,
+      "CLTP_raw": 0.9991632969669242,
+      "CLTP_tight": 0.9991662110393076,
+      "HW_all": 0.999164674336772,
+      "HW_subtract_sent": 0.9991308779116592,
+      "conditional_sigma_EDTM": 8.817455206630878e-05,
+      "conditional_sigma_CLTP": 1.742015897260671e-05
+    }
+  ],
+  "segments": [
+    {
+      "segment": 0,
+      "events": 542584,
+      "first_event": 1,
+      "last_event": 542584,
+      "first_real_scaler_event": 1,
+      "last_real_scaler_event": 541321,
+      "first_clock": 21.96317,
+      "last_clock": 674.895349,
+      "scaler_rows": 355,
+      "real_scaler_rows": 354,
+      "event_gaps": 0
+    },
+    {
+      "segment": 1,
+      "events": 545750,
+      "first_event": 542585,
+      "last_event": 1088334,
+      "first_real_scaler_event": 543410,
+      "last_real_scaler_event": 1087131,
+      "first_clock": 676.895892,
+      "last_clock": 1335.746254,
+      "scaler_rows": 358,
+      "real_scaler_rows": 357,
+      "event_gaps": 0
+    },
+    {
+      "segment": 2,
+      "events": 531817,
+      "first_event": 1088335,
+      "last_event": 1620151,
+      "first_real_scaler_event": 1089091,
+      "last_real_scaler_event": 1618231,
+      "first_clock": 1337.746812,
+      "last_clock": 1896.120995,
+      "scaler_rows": 308,
+      "real_scaler_rows": 307,
+      "event_gaps": 0
+    },
+    {
+      "segment": 3,
+      "events": 557074,
+      "first_event": 1620152,
+      "last_event": 2177225,
+      "first_real_scaler_event": 1620305,
+      "last_real_scaler_event": 2175194,
+      "first_clock": 1898.12182,
+      "last_clock": 2703.597047,
+      "scaler_rows": 434,
+      "real_scaler_rows": 433,
+      "event_gaps": 0
+    },
+    {
+      "segment": 4,
+      "events": 543642,
+      "first_event": 2177226,
+      "last_event": 2720867,
+      "first_real_scaler_event": 2177253,
+      "last_real_scaler_event": 2718988,
+      "first_clock": 2705.597194,
+      "last_clock": 3335.110223,
+      "scaler_rows": 344,
+      "real_scaler_rows": 343,
+      "event_gaps": 0
+    },
+    {
+      "segment": 5,
+      "events": 501527,
+      "first_event": 2720868,
+      "last_event": 3222394,
+      "first_real_scaler_event": 2721024,
+      "last_real_scaler_event": 3222394,
+      "first_clock": 3337.112175,
+      "last_clock": 4160.053707,
+      "scaler_rows": 440,
+      "real_scaler_rows": 439,
+      "event_gaps": 0
+    }
+  ]
+}

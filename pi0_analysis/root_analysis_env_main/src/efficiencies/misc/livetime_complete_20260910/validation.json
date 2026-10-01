@@ -1,0 +1,68 @@
+{
+  "edition": "2026-09-10",
+  "production_runs": 43,
+  "production_segments": 183,
+  "production_events": 77838384,
+  "trigger_prescale_cohorts": {
+    "TI6_p1": 4,
+    "TI6_p5": 1,
+    "TI4_p1": 33,
+    "TI4_p2": 5
+  },
+  "ratios_recomputed_from_frozen_counts": 43,
+  "refinement_rows_checked": 43,
+  "counter_defect_flags": [
+    4303,
+    4305
+  ],
+  "fixed_yield_charge_raw_normalization_percent": {
+    "min": [
+      -0.7666205856478592,
+      4493
+    ],
+    "max": [
+      0.6910718754159273,
+      4308
+    ]
+  },
+  "current_figures": 19,
+  "new_figure_pairs": 11,
+  "unchanged_diagnostic_pairs": 7,
+  "original_NewGen_png_unchanged": true,
+  "preserved_archive_file_counts": {
+    "full_cache": 2271,
+    "run4398": 62,
+    "coda": 38,
+    "apps_search": 47,
+    "npslib": 54,
+    "routing": 11,
+    "refinements": 5,
+    "historical_168_run_audit": 403,
+    "historical_beamer": 149
+  },
+  "old_top_docs_backups_verified": 5,
+  "live_top_doc_states": {
+    "LIVETIME_4398_INVESTIGATION.md": "pre-update",
+    "LIVETIME_KinC_x60_4b_LH2.md": "pre-update",
+    "LIVETIME_REFRESH_CHECKPOINT.md": "pre-update",
+    "LIVETIME_RESEARCH_LOG.md": "pre-update",
+    "SOURCES_LIVETIME_4398.md": "pre-update"
+  },
+  "pdfs": {
+    "report": {
+      "pages": 38,
+      "words_within_page": 9599,
+      "overfull_boxes": 0,
+      "latex_warnings": 0
+    },
+    "presentation": {
+      "pages": 62,
+      "words_within_page": 6202,
+      "overfull_boxes": 0,
+      "latex_warnings": 0
+    }
+  },
+  "new_markdown_local_links_checked": 113,
+  "missing_links": [],
+  "validation_scope": "Documentation build and frozen-output audit, no new ROOT/raw read or production correction change."
+}

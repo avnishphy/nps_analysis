@@ -1,0 +1,39 @@
+Setting up NPS offline replay environment
+
+****************************************************
+>>>>  IMPORTANT: After loading this module, do  <<<<
+>>>>    cd $REPLAYDIR                           <<<<
+****************************************************
+
+Loading nps_replay/5.28.24
+  Loading requirement: pythia6/6.4.28 pythia8/8.317 root/6.30.04 evio/5.3
+    analyzer/1.7.12 hcana/1.1 NPSlib/fddb8e9_1.1.0
+
+Processing raw_extract.C(0)...
+RAW_USER 1 tag 65489 words 5
+RAW_USER 2 tag 182 words 1745
+RAW_USER 3 tag 182 words 1745
+RAW_USER 4 tag 65490 words 5
+RAW_USER 5 tag 137 words 2257
+RAW_USER 6 tag 182 words 1745
+RAW_USER 7 tag 182 words 1745
+RAW_USER 8 tag 135 words 3103
+RAW_USER 9 tag 135 words 3112
+RAW_USER 10 tag 135 words 3112
+RAW_USER 11 tag 182 words 1745
+RAW_USER 12 tag 135 words 3112
+RAW_USER 13 tag 135 words 3112
+RAW_USER 14 tag 135 words 3112
+RAW_USER 15 tag 135 words 3112
+RAW_USER 16 tag 135 words 3112
+RAW_USER 17 tag 182 words 1745
+RAW_USER 18 tag 135 words 3112
+RAW_USER 19 tag 135 words 3112
+RAW_PROGRESS 100163 physics 100000 banks 119
+RAW_PROGRESS 200292 physics 200000 banks 268
+RAW_PROGRESS 300378 physics 300000 banks 365
+RAW_PROGRESS 400465 physics 400000 banks 464
+RAW_PROGRESS 500584 physics 500000 banks 601
+
+Normal end of file /cache/hallc/c-nps/raw/nps_coin_4305.dat.0 encountered
+RAW_COMPLETE records 561307 physics 560647 scaler banks 660

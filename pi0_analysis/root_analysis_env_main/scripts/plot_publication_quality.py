@@ -29,12 +29,11 @@ warnings.filterwarnings("ignore")
 
 DEFAULT_SUMMARY_CSV = (
     "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/"
-    "root_analysis_env_main/output/KinC_x36_5_yaopeng_08gev/KinC_x36_5/"
-    "summary/summary_all_runs.csv"
+    "root_analysis_env_main/output/KinC_x60_4b/summary/summary_all_runs.csv"
 )
 DEFAULT_EFFICIENCY_CSV = (
     "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/"
-    "root_analysis_env_main/output/efficiency_stuff/efficiency_KinC_x36_5.csv"
+    "root_analysis_env_main/output/efficiency_stuff/efficiency_KinC_x60_4b.csv"
 )
 
 FIGURE_DPI = 300

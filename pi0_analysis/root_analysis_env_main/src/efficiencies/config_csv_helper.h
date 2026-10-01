@@ -96,6 +96,7 @@ inline bool load_config_csv(const std::string& csv_path,
   const int run_idx = find_header_index(headers, "run_number");
   const int kin_idx = find_header_index(headers, "Kin_old");
   const int type_idx = find_header_index(headers, "Type");
+  const int target_idx = find_header_index(headers, "target");
   const int prescale_idx = find_header_index(headers, "prescale");
 
   if (run_idx < 0 || kin_idx < 0 || type_idx < 0 || prescale_idx < 0) {
@@ -132,6 +133,9 @@ inline bool load_config_csv(const std::string& csv_path,
     row.run_number = run_number;
     row.kin_old = trim_copy(fields[kin_idx]);
     row.run_type = trim_copy(fields[type_idx]);
+    // Target is optional for other callers; the livetime launcher requires it.
+    if (target_idx >= 0 && static_cast<int>(fields.size()) > target_idx)
+      row.target = trim_copy(fields[target_idx]);
     row.prescale_token = trim_copy(fields[prescale_idx]);
 
     if (row.kin_old.empty()) {

@@ -1,0 +1,943 @@
+ Not-so-obvious Sources of Deadtime in
+Our Nominally Deadtime-free Hodo Trigger
+
+   going beyond the hand-waving ansatz that the paddle DT
+      in this complex 4-5 stage trigger is simply Rate*50ns
+
+
+                         D. Mack
+                       Feb 25, 2021
+Never presented: Reducing Electronic Deadtime in the Hodo Trigger - https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1061 June 2000
+• Nice timing diagrams. Mostly correct discussion. I did not understand the detailed source of electronic DT though.
+• Made the point that by overlapping S1X, S1Y, S2X, S2Y we could increase margin for error from ~15ns to ~40ns .
+• The present trigger works for physics down to beta ~ 0.5 particles, and even for cosmics, so what would be the added value?
+              After alignment, one could safely reduce the gate widths, which I assumed would reduce the electronic deadtime.
+
+
+
+
+ Eric Pooser, Dec 2019, https://logbooks.jlab.org/entry/3752072                                                                      2
+Never presented: Reducing Electronic Deadtime in the Hodo Trigger - https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1061 June 2000
+• Nice timing diagrams. Mostly correct discussion. I did not understand the detailed source of electronic DT though.
+• Made the point that by overlapping S1X, S1Y, S2X, S2Y we could increase margin for error from ~15ns to ~40ns . (see plots below)
+• The present trigger works for physics down to beta ~ 0.5 particles, and even for cosmics, so what would be the added value?
+              After alignment, one could safely reduce the gate widths, which I assumed would reduce the electronic deadtime.
+
+
+
+
+                                                                                                            S1Y
+
+                                                                                                            S2X
+
+                                                                                                            S1X
+
+                                                                                                            S2Y
+
+
+
+
+                                                                                                                                     3
+Never presented: Reducing Electronic Deadtime in the Hodo Trigger - https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1061 June 2000
+• Nice timing diagrams. Mostly correct discussion. I did not understand the detailed source of electronic DT though.
+• Made the point that by overlapping S1X, S1Y, S2X, S2Y we could increase margin for error from ~15ns to ~40ns . (see plots below)
+• The present trigger works for physics down to beta ~ 0.5 particles, and even for cosmics, so what would be the added value?
+              After alignment, one could safely reduce the gate widths, which I assumed would reduce the electronic deadtime.
+
+
+
+
+                                                                                                            S1Y    Looks like there’s very little
+                                                                                                                   overlap but that’s wrong.
+                                                                                                            S2X    The dominant jitter is
+                                                                                                                   from light transit time in
+                                                                                                                   paddles which is
+                                                                                                            S1X    correlated in S1Y and S2Y,
+                                                                                                                   correlated in S1X and S2X,
+                                                                                                            S2Y    uncorrelated in X and Y.
+
+                                                                                                                   Let me clean it up by
+                                                                                                                   plotting only the latest Y
+                                                                                                                   signals which are the
+                                                                                                                   tightest constraint.
+                                                                                                                                      4
+Never presented: Reducing Electronic Deadtime in the Hodo Trigger - https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1061 June 2000
+• Nice timing diagrams. Mostly correct discussion. I did not understand the detailed source of electronic DT though.
+• Made the point that by overlapping S1X, S1Y, S2X, S2Y we could increase margin for error from ~15ns to ~40ns . (see plots below)
+• The present trigger works for physics down to beta ~ 0.5 particles, and even for cosmics, so what would be the added value?
+              After alignment, one could safely reduce the gate widths, which I assumed would reduce the electronic deadtime.
+
+
+
+
+                                                                                                            S1Y
+                                                                                                                   Within the approximations
+                                                                                                                   I made, it looks like the
+                                                                                                            S2X
+                                                                                                                   overlap is a solid ~17ns .
+
+                                                                                                            S1X    (For beta = 0.5 particles,
+                                                                                                                   this may drop to ~10ns.)
+
+
+                                                                                                            S2Y
+
+
+
+
+                                                                                                                                     5
+Never presented: Reducing Electronic Deadtime in the Hodo Trigger - https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1061 June 2000
+• Nice timing diagrams. Mostly correct discussion. I did not understand the detailed source of electronic DT though.
+• Made the point that by overlapping S1X, S1Y, S2X, S2Y we could increase margin for error from ~15ns to ~40ns . (see plots below)
+• The present trigger works for physics down to beta ~ 0.5 particles, and even for cosmics, so what would be the added value?
+              After alignment, one could safely reduce the gate widths, which I assumed would reduce the electronic deadtime.
+
+
+
+
+                                                                                                            S1Y
+                                                                                                                    Within the approximations
+                                                                                                                    I made, it looks like the
+                                                                                                            S2X
+                                                                                                                    overlap is a solid ~17ns .
+
+                                                                                                            S1X     (For beta = 0.5 particles,
+                                                                                                                    this may drop to ~10ns.)
+
+
+                                                                                                            S2Y
+
+                                                                                                              Note the broken symmetry:
+                                                                                                              Easiest way to lose the trigger
+                                                                                                              is to have the early gates S1Y
+                                                                                                              and S2X slide earlier. 6
+Never presented: Reducing Electronic Deadtime in the Hodo Trigger - https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1061 June 2000
+• Nice timing diagrams. Mostly correct discussion. I did not understand the detailed source of electronic DT though.
+• Made the point that by overlapping S1X, S1Y, S2X, S2Y we could increase margin for error from ~15ns to ~40ns . (see plots below)
+• The present trigger works for physics down to beta ~ 0.5 particles, and even for cosmics, so what would be the added value?
+              After alignment, one could safely reduce the gate widths, which I assumed would reduce the electronic deadtime.
+
+
+
+
+                                                                                                                    If gates are aligned, it
+                                                                                                                    would look roughly like
+                                                                                                                    this*, with ~40ns overlap.
+                                                                                                            S1Y     Cosmics will shift S2 rel
+                                                                                                                    S1 earlier by ~12ns, still
+                                                                                                            S2X     leaving ~28ns overlap.
+
+                                                                                                            S1X     *since S1X will no longer
+                                                                                                                    define the timing, this plot
+                                                                                                                    assumes the scope trigger is
+                                                                                                            S2Y     a jitter-free, magical detector.
+                                                                                                                    It’s not going to look quite
+                                                                                                                    like this on the scope when
+                                                                                                                    triggering on S1X.
+
+
+
+                                                                                                                                         7
+Presented work: Combinatorics in Estimating the Hodo 3of4 Trigger Live Time https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1063
+June 2020
+
+•   Calculations later in June reproduced Carlos’s ~7% DT for 100ns wide gates, and suggested the DT would be only ~2% at 1 MHz with the
+    newer 50ns gates.
+•   Mark suggested some corrections for coherent tracks (which I haven’t attempted).
+•   EDTM really seemed the right way to determine the electronic LT, and since we roughly seemed to understand the hodo 3of4 livetime, I
+    dropped this as low priority.
+
+
+
+
+                                                                                                                                     8
+                                                          Recent
+Mark J recently noted another added value to aligning the gates: the 3of4 timing will no longer jump by ~20ns when a plane is missing.
+
+
+
+
+                                                                                                                                 9
+                                                              Recent
+Mark J recently noted another added value to aligning the gates: the 3of4 timing will no longer jump by ~20ns when a plane is missing.
+
+
+
+Brad is on board as long as I don’t talk about reducing the gate widths too much lol.
+
+
+
+
+I spent a lot of time after A1n/d2n playing with the electronics and thinking about deadtime. So it’s a good time to ask:
+
+                                         Would aligning the gates reduce the hodo 3of4 deadtime?
+
+     I think so. I don’t have a full simulation. But in the following slides I’ll explain the real sources of deadtime in the hodo trigger.
+
+                                                                                                                                         10
+                                             Electronics Diagram
+Carlos Yero https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1028
+
+
+
+
+                                                                            11
+                                             Electronics Diagram
+Carlos Yero https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1028
+
+
+
+
+        Analog pulse in →                                                   Digital pre-trigger out →
+
+
+
+
+                                                                                              12
+                                                  Electronics Diagram
+Carlos Yero https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1028
+
+
+
+
+            Analog pulse in →                                               Digital pre-trigger out →
+
+                                        1. TOT
+                                      Discriminator
+
+
+I’ll discuss TOT vs Updating later.
+      Let’s not get distracted:
+discriminator DT is a higher order
+contribution to the hodo3of4 DT
+ because the rate is spread over
+           O(10) paddles.
+
+
+
+
+                                                                                              13
+                                             Electronics Diagram
+Carlos Yero https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1028
+
+
+
+
+            Analog pulse in →                                               Digital pre-trigger out →
+
+                                                 2. Overlap
+This contains the critical high rate or
+ high occupancy node which limits
+                                                    Logic
+the bandwidth due to the formation                Module
+    of S1XOR+ and the - version.
+
+  In a 2nd stage, the module forms
+     the much lower rate object
+    S1X == S1XOR+ .AND. S1XOR-
+
+  What is confusing is that although
+ this module has no DT from a logic
+ point of view, it still drops edges (or
+drops pulses) which can lead to DT in
+      the downstream updating
+             discriminator.
+                                                                                              14
+                                             Electronics Diagram
+Carlos Yero https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1028
+
+
+
+
+            Analog pulse in →                                                Digital pre-trigger out →
+
+  This is an updating discriminator
+      with a width set to 50ns.
+It will only update if it sees 2 edges                      3. Gate Width-
+    separated by less than 50 ns.
+                                                            Standardizing
+ That is probably impossible due to                         Discriminators
+ upstream bandwidth limitations in
+          the S1XOR+ and -.
+
+ We may want a TOT discriminator
+here. (Admittedly, it’s weird to use a
+ TOT discriminator with logic, but I
+think that will drop the hodo trigger
+   DT by an order of magnitude.)
+
+                                                                                               15
+                                             Electronics Diagram
+Carlos Yero https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1028
+
+
+
+
+        Analog pulse in →                                                                 Digital pre-trigger out →
+
+                                                                                                   There are 4 inputs.
+                                                                              4.3of4
+                                                                                 Coin.    3of4 is robust: OK to lose 1 paddle.
+                                                                            coincidence
+                                                                              Module
+
+
+
+
+                                                                                                                  16
+                                             Electronics Diagram
+Carlos Yero https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1028
+
+
+
+
+        Analog pulse in →                                                                 Digital pre-trigger out →
+
+                                                                                                   There are 4 inputs.
+                                                                               3of4       3of4 is robust: OK to lose 1 paddle.
+                                                                            coincidence
+                                                                                           Takes loss of 2 paddles to lose the
+                                                                                             trigger, but barring systematic
+                                                                                          hardware problems that’s usually a
+                                                                                                    2nd order effect.
+                                                                                          DT would rarely be an issue if hodo
+                                                                                            rates were purely due to tracks.
+
+
+
+
+                                                                                                                  17
+                                             Electronics Diagram
+Carlos Yero https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1028
+
+
+
+
+        Analog pulse in →                                                                 Digital pre-trigger out →
+
+                                                                                                   There are 4 inputs.
+                                                                               3of4       3of4 is robust: OK to lose 1 paddle.
+                                                                            coincidence
+                                                                                           Takes loss of 2 paddles to lose the
+                                                                                             trigger, but barring systematic
+                                                                                          hardware problems that’s usually a
+                                                                                                    2nd order effect.
+                                                                                          DT would rarely be an issue if hodo
+                                                                                            rates were purely due to tracks.
+
+                                                                                           Unfortunately, hodo rates can be
+                                                                                                  10x the track rates.
+                                                                                            At 1 MHz, a plane may be dead
+                                                                                                 O(5)% of the time, so
+                                                                                               nd
+                                                                                              2 order effects cannot be
+                                                                                                      neglected.
+                                                                                                                  18
+This is how they are used at the moment.
+Might not be optimal. Doesn’t matter much yet.
+
+
+
+                         1. Time Over Threshold (TOT) Discriminator
+
+                                     (alt. Updating Discriminator)
+
+
+
+
+                                                                      19
+                                    Hodo Discriminators in Use
+
+
+
+                    Spectrometer               Hodo Discriminators         Usage
+                    SHMS                       80% PS 7106                 Time Over Threshold
+                                               20% Lecroy 3412
+                    HMS                        Lecroy 3412 (E)             Time Over Threshold
+
+
+
+
+*threshold hysteresis is 4mV for the PS 7106,
+                         5 (6)mV for the Lecroy 3412 (E)
+
+(I can explain threshold hysteresis later. Don’t want to get side-tracked. It increases the analog DT somewhat.)
+
+
+
+                                                                                                                   20
+                                      Action of the Updating Discriminator
+                                                     1 pulse
+   Grey is the dead band where a second pulse, assuming similar shape and magnitude, will not be recognized.
+
+
+                         Pulse of interest
+
+
+threshold
+
+
+
+
+                                                   50ns gate
+
+
+
+                                             When analog input crosses threshold,
+                                             it opens an output gate for 50ns.
+                                                                                                               21
+                                           Action of the Updating Discriminator
+                                                         2 pulses
+
+
+                       Earlier noise hit                Pulse of interest
+
+
+threshold
+
+
+
+
+                                                      73ns gate (could go as large as 2*50 = 100ns)
+
+ If there was an earlier noise hit which opened the gate, when the POI arrives, the gate forgets what it was doing and stretches for 50ns.
+ The POI can still potentially generate a coincidence later, which is why updating discriminators are thought of as deadtimeless.
+
+ Obvious caveats are 1) the timing of this channel – set by the leading edge - is now corrupted, and 2) the scaler will only count once.
+                                                                                                                                        22
+                Maybe less obvious: Deadtime for logic is not the same as deadtime for leading edges that produce scaler rates.
+                              Analog Deadtime in an Updating Discriminator
+                                                2 pulses
+    Note: I lowered the threshold!
+
+
+                      Earlier noise hit                Pulse of interest
+
+threshold
+
+
+
+                                                                           In this example, only ~30ns of TRUE for the POI, not the full 50ns
+
+
+
+
+                                              same old 50ns gate
+
+
+A discriminator is simple: it has no algorithm for “seeing” pulses. It simply opens the gate when the input voltage exceeds a threshold.
+But before the discriminator can “re-arm”, the tail of previous pulse has to drop below threshold.
+   With lowered threshold, the POI is ignored. The gate will not be stretched. In Updating mode, hodo analog DT is roughly 15-20ns.
+     If there is not enough margin for error in the downstream logic, this channel/paddle can fail to contribute to the 3of4 trigger.
+                                                                                                                                        23
+                              Analog Deadtime in an Updating Discriminator
+                                                2 pulses
+    Note: I lowered the threshold!
+
+
+                      Earlier noise hit                Pulse of interest
+
+threshold
+
+
+
+                                                                           In this example, only ~30ns of TRUE for the POI, not the full 50ns
+
+                                                                                                         Let me re-emphasize:
+                                                                                                  the DT in the discriminators at this
+                                                                                                  stage is next higher order because
+                                                                                                the rate is spread over O(10) paddles.
+                                              same old 50ns gate
+
+
+A discriminator is simple: it has no algorithm for “seeing” pulses. It simply opens the gate when the input voltage exceeds a threshold.
+But before the discriminator can “re-arm”, the tail of previous pulse has to drop below threshold.
+   With lowered threshold, the POI is ignored. The gate will not be stretched. In Updating mode, hodo analog DT is roughly 15-20ns.
+     If there is not enough margin for error in the downstream logic, this channel/paddle can fail to contribute to the 3of4 trigger.
+                                                                                                                                         24
+                 Action of the Time Over Threshold (TOT) Discriminator
+                                        1 pulse
+Note: same plot as for Updating Discriminator, but larger dead band.
+
+
+                    Pulse of interest
+
+
+
+
+                                              50ns gate
+
+
+
+                                        When analog input crosses threshold,
+                                        it opens an output gate for 50ns.
+                                                                               25
+                  Analog Deadtime in Time Over Threshold (TOT) Discriminator
+                                 2 pulses, one a little earlier
+
+
+                        Earlier noise hit                Pulse of interest                              In the TOT mode the output will equal
+                                                                                                        the Time-over-Threshold of the input
+                                                                                                        or the pre-set 50ns gate width,
+threshold
+                                                                                                        whichever is larger.
+
+
+
+
+                                                   Still a 50ns gate
+
+
+ If there was an earlier noise hit which opened the gate, when the POI arrives as drawn, it frigging ignores the POI.
+                                                  In TOT mode, there’s a dead window of 30-35ns.
+
+            This means the gate is biased early, and might even fail to contribute to the hodo 3of4 coincidence if there’s not enough slop.
+                                                                                                                                        26
+                        Action of the Time Over Threshold (TOT) Discriminator
+                                       2 pulses, one even earlier
+
+
+                        Earlier noise hit                                                              Pulse of interest
+
+threshold
+
+
+
+                                                                                 In this example, only ~15ns of TRUE for the POI, not the full 50ns
+
+
+
+
+                                                      50-70ns gate
+
+
+  If there was an earlier noise hit, and the POI is still above threshold when the original gate closing, the gate will be extended until the POI drops
+  below threshold.
+  This is a lame form of “deadtimeless” operation. The gate extended less than 20ns (the nominal was 50ns).
+             This means the gate is biased early, and might even fail to contribute to the hodo 3of4 coincidence if there’s not enough slop.27
+                       Analog Deadtime for Updating Discriminators
+
+
+
+
+Analog deadtime estimates need to be data-driven because they depend on the pulse height distribution.
+
+In the hodoscopes, I think it’s in the range 15-20ns for most good pulses (for min.ion., ignoring Landau tails), and somewhat smaller for
+noise pulses. It would be worse for beta = 0.5 protons due to very large pulse heights.
+
+The above photo is a moderately sized calorimeter sum pulse with an analog DT of almost 200 ns. (They can reach at least 1.5V!)    28
+This was an unexpectedly challenging source of scaler DT when I was determining the SHMS scaler-based lumi slopes.
+                                                    Analog Deadtime
+
+                                                                                         Without a detailed model of the entire
+                                                                                         Hodo3of4 logic chain, I think the take-away
+                                                                                         is that to keep analog DT low, one wants the margin
+                                                                                         for error in the Hodo trigger to be at least
+                                                                                         20nsec for updating, or 30nsec for TOT.
+                                                                                         Either is guaranteed if we align the gates.
+
+
+
+
+Analog deadtime estimates need to be data-driven because they depend on the pulse height distribution.
+
+In the hodoscopes, I think it’s in the range 15-20ns for most good pulses (for min.ion., ignoring Landau tails), and somewhat smaller for
+noise pulses. It would be worse for beta = 0.5 protons due to very large pulse heights.
+
+The above photo is a moderately sized calorimeter sum pulse with an analog DT of almost 200 ns. (They can reach at least 1.5V!)    29
+This was an unexpectedly challenging source of scaler DT when I was determining the SHMS scaler-based lumi slopes.
+2. Logic Overlap Module
+  (looking only at S1X)
+
+
+
+
+                          30
+                                                     Logic Overlap Module
+                                                            1 paddle
+The output logic is based on overlap. There is no fixed output gate width. These are the only truly deadtimeless electronics in the chain.
+
+Assume a single S1X paddle, then the 50 ns wide discriminator outputs from the last step first form these 50ns wide quantities:
+                             POI
+Input S1XOR+
+
+
+
+
+ Input S1XOR-
+
+
+
+
+     (I exaggerated the timing offset between the two PMTs so it will be easier to see the next step.)
+
+
+                                                                                                                                       31
+                                                   Logic Overlap Module
+                                                          1 paddle
+   Depending on how long the paddles are, plus small transit time and cable offsets, the S1X output will be 40-50ns wide.
+
+
+                           POI
+Input S1XOR+
+
+
+
+
+ Input S1XOR-
+
+
+
+
+ Output “S1X”
+      ==
+   S1XOR+
+    .AND.
+   S1XOR-
+                                                                                                                            32
+                                             Logic Overlap Module
+                                     1 paddle + 1 pmt hit in another paddle
+   With an earlier noise hit in S1X-, then S1XOR- stretches, and we get a similar S1X output which in this example is 50ns wide.
+   (It would have been 40ns wide in this example if I’d put the noise hit in S1X+.)
+
+                           POI
+Input S1XOR+
+
+
+
+
+Input S1XOR-
+
+
+
+
+                                                                                                         The gate is still true during the
+ Output “S1X”                                                                                                    POI as desired.
+      ==                                                                                                The caveats about corrupt timing
+   S1XOR+                                                                                                and scaler counting still apply,
+    .AND.                                                                                                     albeit even more so.
+   S1XOR-
+                                                                                                                                     33
+                                                   Logic Overlap Module
+                                                         2 paddles
+       With an earlier paddle hit, the overlap can get up to 70ns wide for TOT, or 100ns wide for Updating.
+
+
+                           POI
+Input S1XOR+
+
+
+
+
+Input S1XOR-
+
+
+
+
+                                                                                                        The gate is still true during the
+ Output “S1X”                                                                                                   POI as desired.
+      ==                                                                                               The caveats about corrupt timing
+   S1XOR+                                                                                               and scaler counting still apply,
+    .AND.                                                                                                    albeit even more so.
+   S1XOR-
+                                                                                                                                    34
+3. Gate Width-Standardizing Discriminators
+
+
+
+
+                                             35
+ It’s a PS 758, not a PS 752,
+ but the action is the same.
+
+
+
+ The PS manual does not explicitly
+ lie, but it is very confusing about
+ its supposed “deadtimeless” nature.
+
+
+
+
+ Mark, Brad, and I had an email
+ discussion on this last year and
+ concluded it was all good.
+
+
+What could possibly go wrong?
+
+                                       36
+Virtually all outputs get standardized to     This module is deadtimeless in the limited
+50ns.                                         sense of an updating discriminator:
+                                              if you give it two short pulses with leading
+(Here is an example with a 90ns input.)       edges 25ns apart, then the output will
+                                              stretch to a total width of
+                                              25+50 = 75nsec. I did that. Works fine.
+This means any nominally “deadtimeless”,
+extra-wide gates from the upstream            But in this application we have a single
+electronics get truncated.                    input from the overlap logic module which
+                                              is 40-70 nsec wide, and the discriminator
+If there is not enough slop, this can cause   gate widths further upstream are 50ns or
+“truncation deadtime”.                        wider.
+
+                                              So it would be very difficult to ever find the
+                                              leading edges of two S1X pulses within 50ns
+                                              of one another to enable this gate to
+                                              stretch. Maybe not impossible.
+
+                                              The gate will not stretch in the most
+                                              common examples I gave on previous slides.
+
+                                              (In hindsight, Eric P’s photo on slide 2 shows
+                                              not a single stretched gate.)
+
+                                                                                 37
+                                                   Logic Overlap Module
+                                                         2 paddles
+       With an earlier paddle hit, the overlap can get up to 70ns wide for TOT, or 100ns wide for Updating.
+
+
+                           POI
+Input S1XOR+
+
+
+
+
+Input S1XOR-
+
+
+
+
+ Output “S1X”             What happens to this gate when
+      ==                        it is standardized?
+   S1XOR+
+    .AND.
+   S1XOR-
+                                                                                                              38
+                                                 Logic Overlap Module
+                                                       2 paddles
+       With an earlier paddle hit, the overlap can get up to 70ns wide for TOT, or 100ns wide for Updating.
+
+
+                           POI
+Input S1XOR+
+
+
+
+
+Input S1XOR-
+
+
+
+
+ Output “S1X”     Back to 50ns. Biased 20n early.
+      ==         Might miss the 3of4 coincidence.
+   S1XOR+
+    .AND.
+   S1XOR-
+                                                                                                              39
+                                                 Logic Overlap Module
+                                                       2 paddles
+       With an earlier paddle hit, the overlap can get up to 70ns wide for TOT, or 100ns wide for Updating.
+
+
+                           POI
+Input S1XOR+
+
+
+
+
+Input S1XOR-
+
+
+
+
+ Output “S1X”     Back to 50ns. Biased 20n early.
+      ==         Might miss the 3of4 coincidence.
+   S1XOR+
+    .AND.
+   S1XOR-
+                                                                                                              40
+                                                 Logic Overlap Module
+                                                       2 paddles
+       With an earlier paddle hit, the overlap can get up to 70ns wide for TOT, or 100ns wide for Updating.
+
+
+                           POI
+Input S1XOR+
+
+
+
+
+Input S1XOR-
+
+
+
+
+ Output “S1X”                                                        A TOT discriminator, set to some
+                  Back to 50ns. Biased 20n early.
+      ==                                                              arbitrarily high threshold, will
+                 Might miss the 3of4 coincidence.
+   S1XOR+                                                            preserve the length of the gate
+    .AND.                                                                    like we intended.
+   S1XOR-
+                                                                                                              41
+               Electronics Diagram – The Whole Hodo3of4 Elephant
+Carlos Yero https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1028
+
+
+
+
+        Analog pulse in →                                                                  Digital pre-trigger out →
+
+                                                 2. Overlap                    4.3of4
+                                                                                  Coin.
+                                 1. TOT or
+                                                    Logic                    coincidence
+                                                                               Module
+                                  Updating
+                                                  Module 3. Gate Width-
+                                Discriminator
+                                                            Standardizing
+                                                            Discriminators
+Normal widths:
+           ~15ns                    50ns         40-50ns         50ns
+
+1st order pileup widths:
+TOT:          “”                  50-70ns        40-70ns         50ns
+
+(Updating     “”                  50-100ns       40-100ns        50ns)
+                                                                                                             42
+               Electronics Diagram – The Whole Hodo3of4 Elephant
+Carlos Yero https://hallcweb.jlab.org/doc-private/ShowDocument?docid=1028
+
+
+
+
+        Analog pulse in →                                                                        Digital pre-trigger out →
+
+                                                  2. Overlap                         4.3of4
+                                                                                        Coin.
+                                 1. TOT or
+                                                     Logic                         coincidence
+                                                                                     Module
+                                  Updating
+                                                   Module 3. Gate Width-
+                                Discriminator
+                                                             Standardizing
+                                                             Discriminators
+                               35ns deadtime
+         deadtimeless        but rate is spread            High rate nodes with
+                              over half a dozen            truncation deadtime.
+                           paddles/discriminators.         Need a TOT disc here.
+                            Updating disc would
+                                 help a bit.
+                                                High rate OR and
+                                                   AND nodes,                                                      43
+                                                but deadtimeless
+                                                          Summary
+Slop in existing, staggered hodo 3of4 trigger using 50nsec wide gates is ~20nsec. This is seemingly adequate for most physics even
+for beta as low as 0.5 . The hodoscope DT is probably a few % at 1 MHz though, but it could be a few times 0.1% .
+
+The question asked was, if we align the gates hence increasing the slop to ~40nsec, will the hodoscope DT decrease?
+Answering this requires a detailed understanding of the sources of DT.
+
+One source of DT is “analog deadtime”. This may be larger in principle in the present TOT mode compared to the Updating mode. But it can
+never be smaller than the vaguely-defined pulse width of ~15nsec.
+
+Another source of DT is “truncation deadtime” due to the re-standardization of S1X, S1Y, S2X, S2Y signals to 50nsec. This basically discards
+a large fraction of the benefits of the upstream electronics which are deadtime-resistant (the discriminators) or truly deadtimeless
+(the overlap logic).
+
+I suspect aligning the gates to increase the slop from ~20nsec to ~40nsec will reduce DT. The present staggered gates are hard/impossible to
+analyze without a full simulation though.
+
+I suspect with the existing truncation in place, there’d be little gain in switching the front-end discriminators from TOT to Update mode (the
+longer, lower DT pulses in Update mode will just get chopped back all the harder by the standardization).
+
+I suggest switching the standardization stage to TOT. The minimum widths will be 50ns like someone apparently wanted, but the gates
+will stretch when required. What we have is not a disaster (only ~2% DT at high rates) but we I think this one change will make it negligible.
+
+Total disclosure: Mark/hcana will get up to ~2% additional doubly piled-up triggers.
+                                                                                                                                     44
+                        Extras
+
+3 slides demonstrating the point of threshold hysteresis
+
+
+
+
+                                                           45
+                              Hysteresis in an Updating Discriminator part 1
+                                                 1 pulse
+   Grey is the dead band where a second pulse, assuming similar shape and magnitude, will not be recognized.
+
+
+                         Pulse of interest
+
+
+threshold
+
+
+
+
+                                             Deadband without hysteresis
+
+
+
+
+                                                    50ns gate
+
+
+
+                                              When analog input crosses threshold,
+                                              it opens an output gate for 50ns.
+                                                                                                               46
+                              Hysteresis in an Updating Discriminator part 2
+                                                 1 pulse
+   Grey is the dead band where a second pulse, assuming similar shape and magnitude, will not be recognized.
+
+
+                            threshold for re-arming.
+
+threshold
+
+
+
+
+                                          Deadband with hysteresis – discriminator will not rearm until input goes ~5mV below threshold.
+
+
+
+
+                                                  50ns gate
+
+
+
+
+                                                                                                                                 47
+                              Hysteresis in an Updating Discriminator part 3
+                                                 1 pulse
+   Grey is the dead band where a second pulse, assuming similar shape and magnitude, will not be recognized.
+
+
+                            threshold for re-arming.
+
+threshold
+
+
+
+                                          The point? In the narrow yellow band, without threshold hysteresis, a mV scale noise spike would
+                                          immediately retrigger the discriminator. With hysteresis, the noise would need to be ~5mV.
+                                          Hysteresis may also help suppress retriggering on systematic wiggles in the tail due to reflections.
+
+
+                                                  50ns gate
+                                                                                                  This is one of those things that the
+                                                                                                  customer doesn’t even know is there,
+                                                                                                  but needs very badly.
+
+
+
+                                                                                                                                     48
+

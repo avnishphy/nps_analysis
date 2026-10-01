@@ -21,16 +21,20 @@
 #include <TLine.h>
 #include <TLatex.h>
 #include <TLegend.h>
+#include <TLegendEntry.h>
+#include <TGaxis.h>
 #include <TSystem.h>
 #include <TStyle.h>
 #include <TPaveText.h>
 #include <TH2D.h>
 #include "nps_helper.h"
 #include "nps_time_bg.h"
-#include "nps_comb_bg.h"
+// #include "nps_comb_bg.h"  // Legacy polynomial combinatorial subtraction.
+#include "nps_comb_bg_pepsi.h"  // PEPSI-motivated positive Fermi background.
 #include "nps_mmiss_cor.h"
 #include "acceptance_cuts.h"
 #include "nps_2d_mass_cut.h"
+#include "nps_plot_diagnostics.h"
 #include "nps_dead_block.h"
 
 // Suppress empty-body warning in physics_var.h
@@ -2158,6 +2162,9 @@ void nps_analysis_main(const TString &kinematic_in = "",
         return h;
         };
 
+        npsplot::Diagnostics plot_diagnostics;
+        logmsg(INFO, Form("Run %d: plot x ranges: %s", run, plot_diagnostics.range_source.c_str()));
+
         struct CutDebugPlot {
             TH1D* hist = nullptr;
             TString label;
@@ -2183,12 +2190,18 @@ void nps_analysis_main(const TString &kinematic_in = "",
         return h;
         };
 
-        auto fill_cut_hist = [](TH1D* h, double value, double weight = 1.0) {
-        if (h && std::isfinite(value) && std::isfinite(weight)) h->Fill(value, weight);
+        auto fill_cut_hist = [&](TH1D* h, double value, double weight = 1.0) {
+        if (h && std::isfinite(value) && std::isfinite(weight)) {
+            h->Fill(value, weight);
+            plot_diagnostics.fill(h, value, weight);
+        }
         };
 
-        auto fill_debug_hist_2d = [](TH2D* h, double x, double y, double weight = 1.0) {
-        if (h && std::isfinite(x) && std::isfinite(y) && std::isfinite(weight)) h->Fill(x, y, weight);
+        auto fill_debug_hist_2d = [&](TH2D* h, double x, double y, double weight = 1.0) {
+        if (h && std::isfinite(x) && std::isfinite(y) && std::isfinite(weight)) {
+            h->Fill(x, y, weight);
+            plot_diagnostics.fill(h, x, y, weight);
+        }
         };
 
         const HMSDataCuts& hms_debug_cuts = acceptance_cuts->hms_data();
@@ -2215,8 +2228,8 @@ void nps_analysis_main(const TString &kinematic_in = "",
         TH1D *h_cut_cer_npe = makeCut1D("h_cut_cer_npe", "HMS Cherenkov npe sum;NPE sum;Events", 220, 0.1, 20.0);
         TH1D *h_cut_cal_etotnorm = makeCut1D("h_cut_cal_etotnorm", "HMS calorimeter E/p;E_{tot}/p;Events", 220, 0.0, 2.0);
         TH1D *h_cut_cluster_e = makeCut1D("h_cut_cluster_e", "NPS cluster energy;E_{clus} [GeV];Clusters", 220, 0.1, 8.0);
-        TH1D *h_cut_cluster_x = makeCut1D("h_cut_cluster_x", "NPS cluster x;x [cm];Clusters", 120, -34.0, 34.0);
-        TH1D *h_cut_cluster_y = makeCut1D("h_cut_cluster_y", "NPS cluster y;y [cm];Clusters", 120, -40.0, 40.0);
+        TH1D *h_cut_cluster_x = makeCut1D("h_cut_cluster_x", "NPS cluster x;x [cm];Clusters", 34, -34.0, 34.0);
+        TH1D *h_cut_cluster_y = makeCut1D("h_cut_cluster_y", "NPS cluster y;y [cm];Clusters", 40, -40.0, 40.0);
         TH1D *h_cut_cluster_t = makeCut1D("h_cut_cluster_t", "NPS cluster time;t [ns];Clusters", 220, 120.0, 180.0);
         TH1D *h_cut_pair_dt = makeCut1D("h_cut_pair_dt", "Photon pair time difference;t_{1}-t_{2} [ns];Pairs", 220, -35.0, 35.0);
         TH1D *h_cut_mmiss_corr = makeCut1D("h_cut_mmiss_corr", "Corrected missing mass;M_{miss}^{corr} [GeV];Events", 220, 0.0, 2.0);
@@ -2228,7 +2241,12 @@ void nps_analysis_main(const TString &kinematic_in = "",
         TH2D *h_debug_fp_slopes = make2D("h_debug_fp_slopes", "HMS focal-plane slopes;x'_{fp} [rad];y'_{fp} [rad]", 180, -0.15, 0.15, 180, -0.08, 0.08);
         TH2D *h_debug_target_xy = make2D("h_debug_target_xy", "HMS target position;h.gtr.x [cm];h.gtr.y [cm]", 180, -5.0, 5.0, 180, -5.0, 5.0);
         TH2D *h_debug_target_slopes = make2D("h_debug_target_slopes", "HMS target slopes;h.gtr.th [rad];h.gtr.ph [rad]", 180, -0.16, 0.16, 180, -0.08, 0.08);
-        TH2D *h_debug_cluster_xy = make2D("h_debug_cluster_xy", "NPS cluster position;x [cm];y [cm]", 120, -34.0, 34.0, 120, -40.0, 40.0);
+        TH2D *h_debug_cluster_xy = make2D("h_debug_cluster_xy", "NPS cluster position;x [cm];y [cm]", 34, -34.0, 34.0, 40, -40.0, 40.0);
+
+        TH1D *h_nclusters = make1D("h_nclusters","NPS clusters per event;N_{clus};Events",
+                                  MAX_CLUS_INPUT + 1, -0.5, MAX_CLUS_INPUT + 0.5);
+        // Sum actual multiplicities, independent of histogram flow/display limits.
+        double nclusters_before_total = 0.0, nclusters_after_total = 0.0;
 
         const double cluster_time_center_ns = nps_debug_cuts.time_center_ns;
         std::vector<CutDebugPlot> cut_debug_plots = {
@@ -2251,6 +2269,7 @@ void nps_analysis_main(const TString &kinematic_in = "",
             {h_cut_gtr_ph, "HMS y' target", true, hms_debug_cuts.gtr_ph_min, true, hms_debug_cuts.gtr_ph_max},
             {h_cut_cer_npe, "HMS Cherenkov", true, hms_debug_cuts.cer_npe_sum_min, false, 0.0},
             {h_cut_cal_etotnorm, "HMS calorimeter", true, hms_debug_cuts.cal_etotnorm_min, true, hms_debug_cuts.cal_etotnorm_max},
+            {h_nclusters, "NPS clusters per event (nclust)", false, 0.0, false, 0.0},
             {h_cut_cluster_e, "NPS cluster energy", true, nps_debug_cuts.energy_min, false, 0.0},
             {h_cut_cluster_x, "NPS cluster x", true, nps_debug_cuts.x_min, true, nps_debug_cuts.x_max},
             {h_cut_cluster_y, "NPS cluster y", true, nps_debug_cuts.y_min, true, nps_debug_cuts.y_max},
@@ -2270,6 +2289,13 @@ void nps_analysis_main(const TString &kinematic_in = "",
             {h_debug_cluster_xy, "NPS cluster x vs y", true}
         };
 
+        for (const auto& plot : cut_debug_plots)
+            if (plot.hist != h_cut_pair_dt)
+                plot_diagnostics.register_after(plot.hist);
+        for (const auto& plot : cut_debug_2d_plots) plot_diagnostics.register_after(plot.hist);
+        TH1D* h_cut_pair_dt_before = plot_diagnostics.clone(h_cut_pair_dt, "_before_selection");
+        plot_diagnostics.after[h_cut_pair_dt_before] = h_cut_pair_dt;
+
         auto write_cut_debug_pdf = [&](const TString& pdf_path,
                                        const std::vector<CutDebugPlot>& plots,
                                        const std::vector<Debug2DPlot>& plots_2d) {
@@ -2284,19 +2310,27 @@ void nps_analysis_main(const TString &kinematic_in = "",
             c_cut_debug->Clear();
             c_cut_debug->Divide(2, 2);
             for (std::size_t j = 0; j < 4 && (i + j) < plots.size(); ++j) {
-                const CutDebugPlot& plot = plots[i + j];
+                CutDebugPlot plot = plots[i + j];
+                const bool pair_plot = plot.hist == h_cut_pair_dt;
+                if (pair_plot) {
+                    plot.hist = h_cut_pair_dt_before;
+                    plot.label = "Candidate vs selected pairs";
+                }
                 c_cut_debug->cd(static_cast<int>(j + 1));
                 gPad->SetLeftMargin(0.12);
                 gPad->SetBottomMargin(0.12);
-                gPad->SetTopMargin(0.10);
+                gPad->SetTopMargin(0.16);
                 gPad->SetRightMargin(0.05);
                 gPad->SetTicks(1, 1);
                 if (!plot.hist) continue;
+                auto* view = static_cast<TH1D*>(plot.hist->Clone(Form("%s_view", plot.hist->GetName())));
+                view->SetDirectory(nullptr); view->SetBit(TObject::kCanDelete);
+                view->SetTitle(""); // The run/stage header below supplies the title.
 
                 latex.SetTextSize(0.040);
                 if (!plot.available) {
-                    plot.hist->Draw("AXIS");
-                    latex.DrawLatex(0.15, 0.93, Form("Run %d  %s", run, plot.label.Data()));
+                    view->Draw("AXIS");
+                    latex.DrawLatex(0.15, 0.96, Form("Run %d  %s", run, plot.label.Data()));
                     latex.SetTextColor(kRed + 1);
                     latex.DrawLatex(0.33, 0.50, "Branch unavailable");
                     latex.SetTextColor(kBlack);
@@ -2305,39 +2339,116 @@ void nps_analysis_main(const TString &kinematic_in = "",
 
                 // Crop display to populated structure while retaining configured cut lines.
                 // Histogram contents, underflow/overflow, and event selection remain unchanged.
-                const int nbins = plot.hist->GetNbinsX();
-                const double peak = plot.hist->GetMaximum();
-                const double visible_threshold = std::max(1.0, 1.0e-3 * peak);
-                int first_bin = 1;
-                int last_bin = nbins;
-                while (first_bin <= nbins && plot.hist->GetBinContent(first_bin) < visible_threshold) ++first_bin;
-                while (last_bin >= 1 && plot.hist->GetBinContent(last_bin) < visible_threshold) --last_bin;
-                if (first_bin > last_bin) {
-                    first_bin = 1;
-                    last_bin = nbins;
-                }
-                auto include_cut_bin = [&](double x) {
-                    if (x < plot.hist->GetXaxis()->GetXmin() || x > plot.hist->GetXaxis()->GetXmax()) return;
-                    const int cut_bin = std::max(1, std::min(nbins, plot.hist->GetXaxis()->FindFixBin(x)));
-                    first_bin = std::min(first_bin, cut_bin);
-                    last_bin = std::max(last_bin, cut_bin);
-                };
-                if (plot.has_min) include_cut_bin(plot.min_value);
-                if (plot.has_max) include_cut_bin(plot.max_value);
-                const int pad_bins = std::max(2, (last_bin - first_bin + 1) / 20);
-                first_bin = std::max(1, first_bin - pad_bins);
-                last_bin = std::min(nbins, last_bin + pad_bins);
-                plot.hist->GetXaxis()->SetRange(first_bin, last_bin);
+                const auto bins = plot_diagnostics.display_bins(plot.hist,
+                    plot.has_min ? plot.min_value : NAN, plot.has_max ? plot.max_value : NAN);
+                const int first_bin = plot.hist == h_nclusters ? 1 : bins.first;
+                const int last_bin = bins.second;
+                view->GetXaxis()->SetRange(first_bin, last_bin);
 
                 double visible_ymax = 0.0;
                 for (int b = first_bin; b <= last_bin; ++b) {
                     visible_ymax = std::max(visible_ymax, plot.hist->GetBinContent(b));
                 }
-                plot.hist->SetMaximum(1.20 * std::max(1.0, visible_ymax));
-                plot.hist->SetMinimum(0.0);
-                plot.hist->Draw("HIST");
+                view->SetMaximum(1.20 * std::max(1.0, visible_ymax));
+                view->SetMinimum(0.0);
+                if (plot.hist == h_cut_cluster_e || plot.hist == h_cut_mmiss_corr) {
+                    // An explicit frame sets exactly 0.4 GeV even when it cuts
+                    // through an energy bin. Keep the histogram and its counts.
+                    TH1F* frame = gPad->DrawFrame(0.4, 0.0,
+                        view->GetXaxis()->GetBinUpEdge(last_bin), view->GetMaximum());
+                    frame->GetXaxis()->ImportAttributes(view->GetXaxis());
+                    frame->GetYaxis()->ImportAttributes(view->GetYaxis());
+                    frame->GetXaxis()->SetTitle(view->GetXaxis()->GetTitle());
+                    frame->GetYaxis()->SetTitle(view->GetYaxis()->GetTitle());
+                    view->Draw("HIST SAME");
+                } else if (plot.hist != h_nclusters) {
+                    view->Draw("HIST");
+                }
+                const std::string histogram_name = plot.hist->GetName();
+                const char* stage = pair_plot ? "pair selection" :
+                    (plot.hist == h_cut_mmiss_corr ? "de-correlation" :
+                    (histogram_name.find("cluster") != std::string::npos ? "NPS cluster cuts" : "HMS cuts"));
+                if (plot.hist == h_nclusters) {
+                    auto* after_clusters = plot_diagnostics.after.at(h_nclusters);
+                    auto* after_view = static_cast<TH1D*>(after_clusters->Clone(Form("%s_view", after_clusters->GetName())));
+                    after_view->SetDirectory(nullptr); after_view->SetBit(TObject::kCanDelete);
+                    after_view->SetTitle(""); after_view->SetStats(0);
+                    const auto after_bins = plot_diagnostics.display_bins(after_clusters);
+                    const int after_last_bin = after_bins.second;
+                    after_view->GetXaxis()->SetRange(1, after_last_bin);
+                    const double before_lo = view->GetXaxis()->GetBinLowEdge(first_bin);
+                    const double before_hi = view->GetXaxis()->GetBinUpEdge(last_bin);
+                    const double after_lo = after_view->GetXaxis()->GetBinLowEdge(1);
+                    const double after_hi = after_view->GetXaxis()->GetBinUpEdge(after_last_bin);
+                    double after_max = 0.0;
+                    for (int b = 1; b <= after_last_bin; ++b)
+                        after_max = std::max(after_max, after_clusters->GetBinContent(b));
+                    const double left_max = 1.20 * std::max(1.0, after_max);
+                    const double right_max = view->GetMaximum();
+                    gPad->SetRightMargin(0.18); gPad->SetTopMargin(0.28); gPad->SetTicks(0, 0);
+                    after_view->SetMinimum(0.0); after_view->SetMaximum(left_max);
+                    after_view->SetLineColor(kRed+1); after_view->SetLineWidth(2); after_view->SetFillStyle(0);
+                    after_view->GetXaxis()->SetTitle("N_{clus} (after cuts)");
+                    after_view->GetXaxis()->SetAxisColor(kRed+1);
+                    after_view->GetXaxis()->SetLabelColor(kRed+1);
+                    after_view->GetXaxis()->SetTitleColor(kRed+1);
+                    after_view->GetYaxis()->SetTitle("Events / bin (after cuts)");
+                    after_view->GetYaxis()->SetAxisColor(kRed+1);
+                    after_view->GetYaxis()->SetLabelColor(kRed+1);
+                    after_view->GetYaxis()->SetTitleColor(kRed+1);
+                    after_view->Draw("HIST");
+                    // Map only the disposable before display to the bottom/left
+                    // coordinates. Top/right axes retain its actual multiplicities/counts.
+                    view->Scale(left_max / right_max);
+                    const double xscale = (after_hi - after_lo) / (before_hi - before_lo);
+                    const double mapped_min = after_lo + (view->GetXaxis()->GetXmin() - before_lo) * xscale;
+                    const double mapped_max = after_lo + (view->GetXaxis()->GetXmax() - before_lo) * xscale;
+                    view->GetXaxis()->SetLimits(mapped_min, mapped_max);
+                    view->SetLineColor(kBlue); view->SetLineWidth(2); view->SetFillStyle(0);
+                    view->Draw("HIST SAME");
+                    auto* right_axis = new TGaxis(after_hi, 0.0, after_hi, left_max,
+                                                 0.0, right_max, 510, "+L");
+                    right_axis->SetBit(TObject::kCanDelete);
+                    right_axis->SetLineColor(kBlue); right_axis->SetLabelColor(kBlue);
+                    right_axis->SetTitleColor(kBlue); right_axis->SetTitle("Events / bin (before cuts)");
+                    right_axis->SetLabelFont(42); right_axis->SetTitleFont(42);
+                    right_axis->SetLabelSize(0.030); right_axis->SetTitleSize(0.035);
+                    right_axis->SetTitleOffset(1.15); right_axis->Draw();
+                    auto* top_axis = new TGaxis(after_lo, left_max, after_hi, left_max,
+                                               before_lo, before_hi, 510, "-L");
+                    top_axis->SetBit(TObject::kCanDelete);
+                    top_axis->SetLineColor(kBlue); top_axis->SetLabelColor(kBlue);
+                    top_axis->SetTitleColor(kBlue); top_axis->SetTitle("N_{clus} (before cuts)");
+                    top_axis->SetLabelFont(42); top_axis->SetTitleFont(42);
+                    top_axis->SetLabelSize(0.030); top_axis->SetTitleSize(0.035);
+                    top_axis->CenterTitle(); top_axis->SetTitleOffset(1.0); top_axis->Draw();
+                    auto* legend = new TLegend(0.36, 0.49, 0.81, 0.71);
+                    legend->SetFillStyle(0); legend->SetBorderSize(0); legend->SetTextSize(0.025);
+                    auto add_cluster_stats = [&](TH1D* source, TH1D* display,
+                                                 const char* label, double total) {
+                        // Use original counts across all bins, including overflow.
+                        // Subtract singleton clusters from the exact producer total.
+                        const double clusters_ge2 = total - source->GetBinContent(source->FindBin(1.0));
+                        const double events_ge2 = source->Integral(source->FindBin(2.0), source->GetNbinsX() + 1);
+                        const double events_eq2 = source->GetBinContent(source->FindBin(2.0));
+                        legend->AddEntry(display, Form("%s: %.0f clusters", label, total), "l");
+                        auto* count_entry = legend->AddEntry(static_cast<TObject*>(nullptr),
+                            Form("Clusters in N_{clus} #geq 2 events: %.0f", clusters_ge2), "");
+                        count_entry->SetTextColor(display->GetLineColor());
+                        const TString ratio = events_ge2 > 0.0
+                            ? TString::Format("Event ratio N_{clus}=2 / N_{clus}#geq2: %.2f%%", 100.0 * events_eq2 / events_ge2)
+                            : TString("Event ratio N_{clus}=2 / N_{clus}#geq2: N/A");
+                        auto* ratio_entry = legend->AddEntry(static_cast<TObject*>(nullptr), ratio.Data(), "");
+                        ratio_entry->SetTextColor(display->GetLineColor());
+                    };
+                    legend->AddEntry(view, Form("Before: %.0f clusters", nclusters_before_total), "l");
+                    add_cluster_stats(after_clusters, after_view, "After NPS cluster cuts", nclusters_after_total);
+                    legend->Draw();
+                } else {
+                    plot_diagnostics.draw_after(plot.hist, stage);
+                }
 
-                const double yline = plot.hist->GetMaximum();
+                const double yline = view->GetMaximum();
                 auto draw_cut_line = [&](double x, int style) {
                     TLine* line = new TLine(x, 0.0, x, yline);
                     line->SetLineColor(kRed + 1);
@@ -2348,7 +2459,7 @@ void nps_analysis_main(const TString &kinematic_in = "",
                 if (plot.has_min) draw_cut_line(plot.min_value, 2);
                 if (plot.has_max) draw_cut_line(plot.max_value, 2);
 
-                latex.DrawLatex(0.15, 0.93, Form("Run %d  %s", run, plot.label.Data()));
+                latex.DrawLatex(0.15, 0.96, Form("Run %d  %s", run, plot.label.Data()));
                 latex.SetTextSize(0.030);
                 TString cut_text;
                 if (plot.has_min && plot.has_max) {
@@ -2360,67 +2471,42 @@ void nps_analysis_main(const TString &kinematic_in = "",
                 } else {
                     cut_text = "Cut: none";
                 }
-                latex.DrawLatex(0.15, 0.87, cut_text.Data());
-                latex.DrawLatex(0.56, 0.87,
-                                Form("Entries %.0f  UF %.0f  OF %.0f",
-                                     plot.hist->GetEntries(),
-                                     plot.hist->GetBinContent(0),
-                                     plot.hist->GetBinContent(nbins + 1)));
+                if (pair_plot) cut_text = "Timing reference; selection depends on multiplicity";
+                if (plot.hist == h_nclusters)
+                    cut_text = "After HMS: energy, position, timing and dead-block cuts";
+                latex.DrawLatex(0.15, 0.90, cut_text.Data());
             }
             c_cut_debug->Print(pdf_path.Data());
         }
 
-        for (std::size_t i = 0; i < plots_2d.size(); i += 4) {
+        // Two variables per page: before on the left, after on the right.
+        for (std::size_t i = 0; i < plots_2d.size(); i += 2) {
             c_cut_debug->Clear();
             c_cut_debug->Divide(2, 2);
-            for (std::size_t j = 0; j < 4 && (i + j) < plots_2d.size(); ++j) {
+            for (std::size_t j = 0; j < 2 && (i + j) < plots_2d.size(); ++j) {
                 const Debug2DPlot& plot = plots_2d[i + j];
-                c_cut_debug->cd(static_cast<int>(j + 1));
-                gPad->SetLeftMargin(0.12);
-                gPad->SetBottomMargin(0.12);
-                gPad->SetTopMargin(0.10);
-                gPad->SetRightMargin(0.15);
-                gPad->SetTicks(1, 1);
                 if (!plot.hist) continue;
-
-                latex.SetTextSize(0.040);
-                if (!plot.available) {
-                    plot.hist->Draw("AXIS");
-                    latex.DrawLatex(0.15, 0.93, Form("Run %d  %s", run, plot.label.Data()));
-                    latex.SetTextColor(kRed + 1);
-                    latex.DrawLatex(0.33, 0.50, "Branch unavailable");
-                    latex.SetTextColor(kBlack);
-                    continue;
-                }
-
-                const int nbins_x = plot.hist->GetNbinsX();
-                const int nbins_y = plot.hist->GetNbinsY();
-                const double threshold = std::max(1.0, 1.0e-3 * plot.hist->GetMaximum());
-                int first_x = nbins_x;
-                int last_x = 1;
-                int first_y = nbins_y;
-                int last_y = 1;
-                bool found = false;
-                for (int bx = 1; bx <= nbins_x; ++bx) {
-                    for (int by = 1; by <= nbins_y; ++by) {
-                        if (plot.hist->GetBinContent(bx, by) < threshold) continue;
-                        found = true;
-                        first_x = std::min(first_x, bx);
-                        last_x = std::max(last_x, bx);
-                        first_y = std::min(first_y, by);
-                        last_y = std::max(last_y, by);
+                const char* stage = plot.hist == h_debug_cluster_xy ? "NPS cluster cuts" : "HMS cuts";
+                for (int side = 0; side < 2; ++side) {
+                    c_cut_debug->cd(static_cast<int>(2*j + side + 1));
+                    gPad->SetLeftMargin(0.12);
+                    gPad->SetBottomMargin(0.12);
+                    gPad->SetTopMargin(0.16);
+                    gPad->SetRightMargin(0.15);
+                    gPad->SetTicks(1, 1);
+                    TH2D* view = plot_diagnostics.draw_2d(plot.hist, side == 1, plot.available);
+                    latex.SetTextSize(0.040);
+                    latex.DrawLatex(0.15, 0.96, Form("Run %d  %s", run, plot.label.Data()));
+                    latex.SetTextSize(0.030);
+                    latex.DrawLatex(0.15, 0.90, Form("%s %s", side ? "After" : "Before", stage));
+                    if (plot.available) {
+                        latex.DrawLatex(0.65, 0.90, Form("Entries %.0f", view->GetEntries()));
+                    } else {
+                        latex.SetTextColor(kRed + 1);
+                        latex.DrawLatex(0.33, 0.50, "Branch unavailable");
+                        latex.SetTextColor(kBlack);
                     }
                 }
-                if (found) {
-                    const int pad_x = std::max(2, (last_x - first_x + 1) / 20);
-                    const int pad_y = std::max(2, (last_y - first_y + 1) / 20);
-                    plot.hist->GetXaxis()->SetRange(std::max(1, first_x - pad_x), std::min(nbins_x, last_x + pad_x));
-                    plot.hist->GetYaxis()->SetRange(std::max(1, first_y - pad_y), std::min(nbins_y, last_y + pad_y));
-                }
-                plot.hist->Draw("COLZ");
-                latex.DrawLatex(0.15, 0.93, Form("Run %d  %s", run, plot.label.Data()));
-                latex.SetTextSize(0.030);
-                latex.DrawLatex(0.70, 0.93, Form("Entries %.0f", plot.hist->GetEntries()));
             }
             c_cut_debug->Print(pdf_path.Data());
         }
@@ -2493,11 +2579,10 @@ void nps_analysis_main(const TString &kinematic_in = "",
         logmsg(INFO, Form("Wrote cut-debug PDF to %s", pdf_path.Data()));
         };
 
-        TH1D *h_nclusters = make1D("h_nclusters","NPS clusters per event;N_{clus};Events",21, -0.5, 20.5);
         TH1D *h_clustE = make1D("h_clustE","Cluster energy;E_{clus} [GeV];Counts",200, 0.0, 4.0);
         TH1D *h_clustT = make1D("h_clustT","Cluster time; t [ns];Counts",200, 120, 180);
         TH2D *h_clustE_vs_T = make2D("h_clustE_vs_T","Cluster E vs t; t [ns];E [GeV]",200,120,180,200,0,8);
-        TH2D *h_clustXY = make2D("h_clustXY","Cluster X vs Y; X [cm]; Y [cm]",30,-30,30,36,-36,36);
+        TH2D *h_clustXY = make2D("h_clustXY","Cluster X vs Y; X [cm]; Y [cm]",34,-34,34,40,-40,40);
         TH1D *h_clustE_sum = make1D("h_clustE_sum","Sum cluster E per event;E_{sum} [GeV];Events",200,0,9);
         TH1D *h_opening_angle = make1D("h_opening_angle","Opening angle between two photons;#theta_{open} [rad];Counts",200,0,0.5);
         TH1D *h_photon_Eratio = make1D("h_photon_Eratio","Photon energy ratio E1/E2;E1/E2;Counts",100,0,5);
@@ -2682,6 +2767,8 @@ void nps_analysis_main(const TString &kinematic_in = "",
                     continue;
                 }
 
+                plot_diagnostics.stage_pass = acceptance_cuts->pass_hms_data(
+                    edtmtdc, hdelta, HgtrTh, HgtrPh, hcernpeSum, hcaletotnorm, hreactz);
                 fill_cut_hist(h_cut_edtm_tdc, edtmtdc);
                 if (has_react_x) fill_cut_hist(h_cut_react_x, hreactx);
                 if (has_react_y) fill_cut_hist(h_cut_react_y, hreacty);
@@ -2714,6 +2801,10 @@ void nps_analysis_main(const TString &kinematic_in = "",
                 bool do_debug = (debug_count < 10);
 
                 // If vectors were used for clusters, copy into arrays (safe)
+                // Preserve input multiplicity for diagnostics before the processing cap.
+                const bool vector_clusters = clusE_vec && clusX_vec && clusY_vec && clusT_vec;
+                const double nclust_input = vector_clusters
+                    ? static_cast<double>(clusE_vec->size()) : nclust_dbl;
                 int nclust = 0;
                 if (clusE_vec && clusX_vec && clusY_vec && clusT_vec) {
                     nclust = (int) std::min<size_t>(clusE_vec->size(), MAX_CLUS);
@@ -2757,7 +2848,24 @@ void nps_analysis_main(const TString &kinematic_in = "",
                 ++n_pass_hms;
 
                 // fill nclusters
-                h_nclusters->Fill(nclust);
+                h_nclusters->Fill(nclust_input);
+                nclusters_before_total += nclust_input;
+                // Recount all input clusters for this diagnostic, including those
+                // beyond MAX_CLUS. Keep every HMS event, even when none pass.
+                int nclust_after_cuts = 0;
+                for (int i = 0; i < nclust_input; ++i) {
+                    if (vector_clusters && (i >= clusX_vec->size() || i >= clusY_vec->size() || i >= clusT_vec->size())) continue;
+                    const double energy = vector_clusters ? (*clusE_vec)[i] : clusE[i];
+                    const double x = vector_clusters ? (*clusX_vec)[i] : clusX[i];
+                    const double y = vector_clusters ? (*clusY_vec)[i] : clusY[i];
+                    const double time = vector_clusters ? (*clusT_vec)[i] + branch_map.cluster_time_offset_ns : clusT[i];
+                    if (!std::isfinite(energy) || !std::isfinite(x) || !std::isfinite(y) || !std::isfinite(time)) continue;
+                    if (!dead_block_mask.rejects_xy(x, y) &&
+                        acceptance_cuts->pass_nps_cluster(energy, x, y, time, cluster_time_halfwidth_ns))
+                        ++nclust_after_cuts;
+                }
+                plot_diagnostics.after.at(h_nclusters)->Fill(nclust_after_cuts);
+                nclusters_after_total += nclust_after_cuts;
                 if (nclust < 2) continue;
 
                 ++n_ge2_hms;
@@ -2780,6 +2888,8 @@ void nps_analysis_main(const TString &kinematic_in = "",
                 const int n_after = nps::packClusters(clusE, clusX, clusY, clusT, nclust);
 
                 for (int i=0; i<n_after; ++i) {
+                    plot_diagnostics.stage_pass = !dead_block_mask.rejects_xy(clusX[i], clusY[i]) &&
+                        acceptance_cuts->pass_nps_cluster(clusE[i], clusX[i], clusY[i], clusT[i], cluster_time_halfwidth_ns);
                     fill_cut_hist(h_cut_cluster_e, clusE[i]);
                     fill_cut_hist(h_cut_cluster_x, clusX[i]);
                     fill_cut_hist(h_cut_cluster_y, clusY[i]);
@@ -2833,6 +2943,13 @@ void nps_analysis_main(const TString &kinematic_in = "",
                 const double Ee = sqrt(max(0.0, p_e_mom*p_e_mom + nps::kElectronMass_GeV*nps::kElectronMass_GeV));
 
                 // select pair for pi0
+                // Observe the same eligible cluster list without changing the
+                // production pair-ranking/timing rules (including two clusters).
+                for (std::size_t a = 0; a < good_idx.size(); ++a)
+                    for (std::size_t b = a + 1; b < good_idx.size(); ++b) {
+                        const double dt = clusT[good_idx[a]] - clusT[good_idx[b]];
+                        if (std::isfinite(dt)) h_cut_pair_dt_before->Fill(dt);
+                    }
                 int sel_i = -1;
                 int sel_j = -1;
                 if (!choose_pi0_pair(good_idx,
@@ -2913,6 +3030,7 @@ void nps_analysis_main(const TString &kinematic_in = "",
                                                                 clusX[sel_j], clusY[sel_j],
                                                                 run_z_nps_cm, -run_nps_theta_deg);
 
+                plot_diagnostics.stage_pass = acceptance_cuts->pass_weighted_exclusive(mm_p_corr);
                 fill_cut_hist(h_cut_mmiss_corr, mm_p_corr);
 
                 if (good_idx.size()==2) h_mmiss_2->Fill(mm_p);
@@ -3076,7 +3194,7 @@ void nps_analysis_main(const TString &kinematic_in = "",
             h_coin_bgsub,
             outPlotDir.Data(),
             run,
-            4,        // polynomial order
+            4,        // legacy output-name tag; ignored by PEPSI/Fermi model
             0.01, 0.11,  // left bg windows
             0.15, 0.40,  // right bg windows
             true      // draw diagnostics inside helper
@@ -3301,8 +3419,10 @@ void nps_analysis_main(const TString &kinematic_in = "",
         // 2D mmiss_all:mpi0_all exclusivity flags.
         // These do not remove events; they add branch-level selectors.
         // -----------------------------------------------
+        std::string ellipse_diagnostic_failure;
         {
             std::vector<nps2d::Point> mass_cut_points;
+            std::vector<int> decorrelation_flags;
             std::vector<Long64_t> mass_cut_event_ids;
             mass_cut_points.reserve(treeData.size());
             mass_cut_event_ids.reserve(treeData.size());
@@ -3315,6 +3435,7 @@ void nps_analysis_main(const TString &kinematic_in = "",
                 p.mmiss = entry.mmiss_all;
                 p.weight = entry.pi0_weight;
                 mass_cut_points.push_back(p);
+                decorrelation_flags.push_back(entry.is_exclusive);
                 mass_cut_event_ids.push_back(kv.first);
             }
 
@@ -3323,6 +3444,14 @@ void nps_analysis_main(const TString &kinematic_in = "",
             mass_cut_cfg.tag = Form("mass_cut_run%d", run);
             mass_cut_cfg.write_debug = true;
             nps2d::Result mass_cut_result = nps2d::evaluate_mass_cuts(mass_cut_points, mass_cut_cfg);
+            ellipse_diagnostic_failure = npsplot::ellipse_failure(mass_cut_result.params, mass_cut_cfg);
+            plot_diagnostics.mass_status = ellipse_diagnostic_failure.empty() ? "ellipse qualified" :
+                ellipse_diagnostic_failure + "; diagnostic fallback=de-correlation; production flags unchanged";
+            if (!ellipse_diagnostic_failure.empty())
+                logmsg(WARN, Form("Run %d: %s; diagnostic fallback=de-correlation (is_exclusive)",
+                    run, ellipse_diagnostic_failure.c_str()));
+            npsplot::draw_mass_comparison(mass_cut_points, decorrelation_flags,
+                mass_cut_result, mass_cut_cfg, ellipse_diagnostic_failure);
             if (mass_cut_result.params.valid) {
                 Long64_t n_ellipse = 0;
                 Long64_t n_mcd = 0;
@@ -3349,11 +3478,7 @@ void nps_analysis_main(const TString &kinematic_in = "",
                         TH1D* h_all,
                         TH1D* h_weighted,
                         TH1D* h_excl_weighted,
-                        const char* output_stem,
-                        double lx1 = 0.6,
-                        double ly1 = 0.6,
-                        double lx2 = 0.88,
-                        double ly2 = 0.88) -> TCanvas* {
+                        const char* output_stem) -> TCanvas* {
             TCanvas *c = new TCanvas(canvas_name, canvas_title, 800, 600);
             style_canvas(c);
 
@@ -3364,18 +3489,46 @@ void nps_analysis_main(const TString &kinematic_in = "",
             h_excl_weighted->SetLineColor(kRed);
             h_excl_weighted->SetLineWidth(2);
 
-            set_overlay_y_range({h_all, h_weighted, h_excl_weighted});
-            h_all->Draw("HIST");
+            TH1D* h_ellipse = plot_diagnostics.clone(h_weighted, "_ellipse_compare");
+            TH1D* h_mcd = plot_diagnostics.clone(h_weighted, "_mcd_compare");
+            const std::map<std::string, double TreeEntry::*> fields = {
+                {"Q2", &TreeEntry::Q2}, {"W", &TreeEntry::W}, {"t", &TreeEntry::t},
+                {"tmin", &TreeEntry::tmin}, {"pt", &TreeEntry::pt}, {"s", &TreeEntry::s},
+                {"xB", &TreeEntry::xB}, {"z", &TreeEntry::z}, {"theta", &TreeEntry::theta}, {"phi", &TreeEntry::phi}};
+            for (const auto& item : treeData) {
+                const TreeEntry& entry = item.second;
+                const double value = entry.*fields.at(output_stem);
+                if (!std::isfinite(value) || !std::isfinite(entry.pi0_weight) || entry.pi0_weight <= 0.0) continue;
+                if (entry.is_exclusive_ellipse) h_ellipse->Fill(value, entry.pi0_weight);
+                if (entry.is_exclusive_mcd) h_mcd->Fill(value, entry.pi0_weight);
+            }
+            h_ellipse->SetLineColor(kMagenta+2); h_mcd->SetLineColor(kGreen+2);
+            const auto display = plot_diagnostics.display_bins(h_all);
+            // Keep the stored physics histogram's axis/statistics unchanged;
+            // the pad owns this display copy and its zoom.
+            TH1D* h_display = static_cast<TH1D*>(h_all->Clone(Form("%s_display", h_all->GetName())));
+            h_display->SetDirectory(nullptr); h_display->SetBit(TObject::kCanDelete);
+            h_display->GetXaxis()->SetRange(display.first, display.second);
+            set_overlay_y_range({h_display, h_weighted, h_excl_weighted, h_ellipse, h_mcd},
+                h_display->GetXaxis()->GetBinLowEdge(display.first), h_display->GetXaxis()->GetBinUpEdge(display.second));
+            h_display->Draw("HIST");
             h_weighted->Draw("HIST SAME");
             h_excl_weighted->Draw("HIST SAME");
+            h_ellipse->Draw("HIST SAME"); h_mcd->Draw("HIST SAME");
 
-            TLegend *leg = new TLegend(lx1, ly1, lx2, ly2);
+            TLegend *leg = new TLegend(0.53, 0.68, 0.88, 0.88);
             leg->SetBorderSize(0);
             leg->SetFillColor(0);
             leg->AddEntry(h_all, "All", "l");
             leg->AddEntry(h_weighted, "Weighted", "l");
-            leg->AddEntry(h_excl_weighted, "Weighted+Exclusive", "l");
+            leg->AddEntry(h_excl_weighted, "Weighted + de-correlation", "l");
+            leg->AddEntry(h_ellipse, ellipse_diagnostic_failure.empty() ? "Weighted + ellipse" : "Ellipse FAILED (stored)", "l");
+            leg->AddEntry(h_mcd, "Weighted + MCD", "l");
             leg->Draw();
+            if (!ellipse_diagnostic_failure.empty()) {
+                TLatex text; text.SetNDC(); text.SetTextColor(kRed+1); text.SetTextSize(0.026);
+                text.DrawLatex(0.15, 0.38, "Ellipse failed: use de-correlation for diagnostic selection");
+            }
 
             c->SaveAs(Form("%s/%s_overlay_run%d.png", outPlotDir.Data(), output_stem, run));
             return c;
@@ -3389,8 +3542,7 @@ void nps_analysis_main(const TString &kinematic_in = "",
         TCanvas *c_W_overlay = draw_overlay_triplet(Form("c_W_overlay_run%d", run), "W Overlay",
                                                     h_W, h_W_weighted, h_W_excl_weighted, "W");
         TCanvas *c_t_overlay = draw_overlay_triplet(Form("c_t_overlay_run%d", run), "t Overlay",
-                                                    h_t, h_t_weighted, h_t_excl_weighted, "t",
-                                                    0.15, 0.6, 0.43, 0.88);
+                                                    h_t, h_t_weighted, h_t_excl_weighted, "t");
         TCanvas *c_tmin_overlay = draw_overlay_triplet(Form("c_tmin_overlay_run%d", run), "t_min Overlay",
                                                        h_tmin, h_tmin_weighted, h_tmin_excl_weighted, "tmin");
         TCanvas *c_pt_overlay = draw_overlay_triplet(Form("c_pt_overlay_run%d", run), "p_T Overlay",
@@ -3641,6 +3793,7 @@ void nps_analysis_main(const TString &kinematic_in = "",
         fout->cd();
 
         // Create, fill, and write event-level physics tree from treeData map.
+        plot_diagnostics.write();
         write_event_physics_tree(fout, treeData);
         treeData.clear();
 
@@ -3780,7 +3933,7 @@ void nps_analysis_main(const TString &kinematic_in = "",
         if (h_coin_bgsub) { h_coin_bgsub->SetLineColor(kGreen+2); h_coin_bgsub->SetLineWidth(2); h_coin_bgsub->Draw("HIST SAME"); }
         if (h_final)      { h_final->SetLineColor(kMagenta+1); h_final->SetLineWidth(2); h_final->Draw("HIST SAME"); }
 
-        TLegend *l2 = new TLegend(0.45,0.60,0.78,0.88); l2->SetBorderSize(0); l2->SetFillColor(0);
+        TLegend *l2 = new TLegend(0.55,0.68,0.90,0.88); l2->SetBorderSize(0); l2->SetFillColor(0);
         l2->SetHeader("Analysis flow"); l2->SetTextSize(0.030);
         l2->AddEntry(h_mpi0_all,   "1) All #pi^{0} candidates",                     "l");
         l2->AddEntry(h_m_pi0_coin, "2) Within coincidence window (t1 & t2)",      "l");
@@ -3802,8 +3955,9 @@ void nps_analysis_main(const TString &kinematic_in = "",
         c_cluster->Divide(2,2);
         c_cluster->cd(1);
         gPad->SetLeftMargin(0.12); gPad->SetBottomMargin(0.12); gPad->SetTopMargin(0.08); gPad->SetRightMargin(0.05); gPad->SetTicks(1,1);
-        set_overlay_y_range({h_clustE});
-        h_clustE->Draw();
+        TH1* energy_view = h_clustE->DrawCopy("HIST");
+        energy_view->GetXaxis()->SetRangeUser(0.4, h_clustE->GetXaxis()->GetXmax());
+        set_overlay_y_range({energy_view}, 0.4, h_clustE->GetXaxis()->GetXmax());
         c_cluster->cd(2);
         gPad->SetLeftMargin(0.12); gPad->SetBottomMargin(0.12); gPad->SetTopMargin(0.08); gPad->SetRightMargin(0.05); gPad->SetTicks(1,1);
         set_overlay_y_range({h_clustT});
@@ -3985,13 +4139,14 @@ void nps_analysis_main(const TString &kinematic_in = "",
         for (int i = 0; i < 10; ++i) if (hist_corr[i]) safe_delete(hist_corr[i]);
         }
 
-        // Batch cleanup: cluster histograms (mixed TH1D and TH2D)
+        // Batch cleanup: cluster histograms (mixed TH1D and TH2D).
+        // h_nclusters is owned by the cut_debug_plots cleanup below.
         {
         TH1* hist_cluster[] = {
-            h_nclusters, h_clustE, h_clustT, h_clustE_vs_T, h_clustXY, h_clustE_sum,
+            h_clustE, h_clustT, h_clustE_vs_T, h_clustXY, h_clustE_sum,
             h_opening_angle, h_photon_Eratio
         };
-        for (int i = 0; i < 8; ++i) if (hist_cluster[i]) safe_delete(hist_cluster[i]);
+        for (auto*& h : hist_cluster) if (h) safe_delete(h);
         }
 
         // Batch cleanup: pi0 mass histograms

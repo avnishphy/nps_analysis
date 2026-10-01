@@ -1,0 +1,271 @@
+Setting up NPS offline replay environment
+
+****************************************************
+>>>>  IMPORTANT: After loading this module, do  <<<<
+>>>>    cd $REPLAYDIR                           <<<<
+****************************************************
+
+Loading nps_replay/5.28.24
+  Loading requirement: pythia6/6.4.28 pythia8/8.317 root/6.30.04 evio/5.3
+    analyzer/1.7.12 hcana/1.1 NPSlib/fddb8e9_1.1.0
+
+Processing export_cached.C(4397)...
+START 4397 0 /cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4397_0_1_-1.root
+Podd::MultiFileRun  "RUN_4397"
+Run number:   4397
+Run date:     Tue Feb 13 16:01:36 2024
+Data version: 3
+Requested event range: all
+Analyzed events:       524625
+Assume Date:           0
+Database read:         1
+Initialized:           1
+Opened:                0
+Date set/read/req:     1 1 1
+Run num set/read/req:  1 1 1
+Run type set/read/req: 1 1 1
+Prescales set/rd/req:  0 0 0
+DAQInfo set/rd/req:    1 1 0
+Run parameters: 
+ Beam: 
+  Energy      = 10.5435 +/- 0 GeV
+  Momentum    = 10.5435 GeV/c
+  Mass/Charge = 0.000511/-1 GeV/c^2
+ Target: 
+  Mass:       = 0 GeV/c^2
+ DAQ:
+  Prescale factors: (1-12)
+   -1/-1/-1/1/-1/-1/0/0/0/0/0/0
+Search paths:
+  .
+  ./raw
+  ./raw/../raw.copiedtotape
+  ./cache
+  /net/cdaq/cdaql1data/coda/data/raw
+File name:   nps_coin_4397.dat.0
+Default stream: 
+  nps_coin_4397.dat.0
+EXPORTED 4397 0 TSH 284 28
+EXPORTED 4397 0 T 524625 19
+START 4397 1 /cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4397_1_1_-1.root
+Podd::MultiFileRun  "RUN_4397"
+Run number:   4397
+Run date:     Tue Feb 13 16:01:36 2024
+Data version: 3
+Requested event range: all
+Analyzed events:       539643
+Assume Date:           0
+Database read:         1
+Initialized:           1
+Opened:                0
+Date set/read/req:     1 1 1
+Run num set/read/req:  1 1 1
+Run type set/read/req: 1 1 1
+Prescales set/rd/req:  0 0 0
+DAQInfo set/rd/req:    1 1 0
+Run parameters: 
+ Beam: 
+  Energy      = 10.5435 +/- 0 GeV
+  Momentum    = 10.5435 GeV/c
+  Mass/Charge = 0.000511/-1 GeV/c^2
+ Target: 
+  Mass:       = 0 GeV/c^2
+ DAQ:
+  Prescale factors: (1-12)
+   0/0/0/0/0/0/0/0/0/0/0/0
+Search paths:
+  .
+  ./raw
+  ./raw/../raw.copiedtotape
+  ./cache
+  /net/cdaq/cdaql1data/coda/data/raw
+File name:   nps_coin_4397.dat.1
+Default stream: 
+  nps_coin_4397.dat.1
+EXPORTED 4397 1 TSH 340 28
+EXPORTED 4397 1 T 539643 19
+START 4397 2 /cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4397_2_1_-1.root
+Podd::MultiFileRun  "RUN_4397"
+Run number:   4397
+Run date:     Tue Feb 13 16:01:36 2024
+Data version: 3
+Requested event range: all
+Analyzed events:       524726
+Assume Date:           0
+Database read:         1
+Initialized:           1
+Opened:                0
+Date set/read/req:     1 1 1
+Run num set/read/req:  1 1 1
+Run type set/read/req: 1 1 1
+Prescales set/rd/req:  0 0 0
+DAQInfo set/rd/req:    1 1 0
+Run parameters: 
+ Beam: 
+  Energy      = 10.5435 +/- 0 GeV
+  Momentum    = 10.5435 GeV/c
+  Mass/Charge = 0.000511/-1 GeV/c^2
+ Target: 
+  Mass:       = 0 GeV/c^2
+ DAQ:
+  Prescale factors: (1-12)
+   0/0/0/0/0/0/0/0/0/0/0/0
+Search paths:
+  .
+  ./raw
+  ./raw/../raw.copiedtotape
+  ./cache
+  /net/cdaq/cdaql1data/coda/data/raw
+File name:   nps_coin_4397.dat.2
+Default stream: 
+  nps_coin_4397.dat.2
+EXPORTED 4397 2 TSH 284 28
+EXPORTED 4397 2 T 524726 19
+START 4397 3 /cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4397_3_1_-1.root
+Podd::MultiFileRun  "RUN_4397"
+Run number:   4397
+Run date:     Tue Feb 13 16:01:36 2024
+Data version: 3
+Requested event range: all
+Analyzed events:       531787
+Assume Date:           0
+Database read:         1
+Initialized:           1
+Opened:                0
+Date set/read/req:     1 1 1
+Run num set/read/req:  1 1 1
+Run type set/read/req: 1 1 1
+Prescales set/rd/req:  0 0 0
+DAQInfo set/rd/req:    1 1 0
+Run parameters: 
+ Beam: 
+  Energy      = 10.5435 +/- 0 GeV
+  Momentum    = 10.5435 GeV/c
+  Mass/Charge = 0.000511/-1 GeV/c^2
+ Target: 
+  Mass:       = 0 GeV/c^2
+ DAQ:
+  Prescale factors: (1-12)
+   0/0/0/0/0/0/0/0/0/0/0/0
+Search paths:
+  .
+  ./raw
+  ./raw/../raw.copiedtotape
+  ./cache
+  /net/cdaq/cdaql1data/coda/data/raw
+File name:   nps_coin_4397.dat.3
+Default stream: 
+  nps_coin_4397.dat.3
+EXPORTED 4397 3 TSH 308 28
+EXPORTED 4397 3 T 531787 19
+START 4397 4 /cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4397_4_1_-1.root
+Podd::MultiFileRun  "RUN_4397"
+Run number:   4397
+Run date:     Tue Feb 13 16:01:36 2024
+Data version: 3
+Requested event range: all
+Analyzed events:       538297
+Assume Date:           0
+Database read:         1
+Initialized:           1
+Opened:                0
+Date set/read/req:     1 1 1
+Run num set/read/req:  1 1 1
+Run type set/read/req: 1 1 1
+Prescales set/rd/req:  0 0 0
+DAQInfo set/rd/req:    1 1 0
+Run parameters: 
+ Beam: 
+  Energy      = 10.5435 +/- 0 GeV
+  Momentum    = 10.5435 GeV/c
+  Mass/Charge = 0.000511/-1 GeV/c^2
+ Target: 
+  Mass:       = 0 GeV/c^2
+ DAQ:
+  Prescale factors: (1-12)
+   0/0/0/0/0/0/0/0/0/0/0/0
+Search paths:
+  .
+  ./raw
+  ./raw/../raw.copiedtotape
+  ./cache
+  /net/cdaq/cdaql1data/coda/data/raw
+File name:   nps_coin_4397.dat.4
+Default stream: 
+  nps_coin_4397.dat.4
+EXPORTED 4397 4 TSH 326 28
+EXPORTED 4397 4 T 538297 19
+START 4397 5 /cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4397_5_1_-1.root
+Podd::MultiFileRun  "RUN_4397"
+Run number:   4397
+Run date:     Tue Feb 13 16:01:36 2024
+Data version: 3
+Requested event range: all
+Analyzed events:       525450
+Assume Date:           0
+Database read:         1
+Initialized:           1
+Opened:                0
+Date set/read/req:     1 1 1
+Run num set/read/req:  1 1 1
+Run type set/read/req: 1 1 1
+Prescales set/rd/req:  0 0 0
+DAQInfo set/rd/req:    1 1 0
+Run parameters: 
+ Beam: 
+  Energy      = 10.5435 +/- 0 GeV
+  Momentum    = 10.5435 GeV/c
+  Mass/Charge = 0.000511/-1 GeV/c^2
+ Target: 
+  Mass:       = 0 GeV/c^2
+ DAQ:
+  Prescale factors: (1-12)
+   0/0/0/0/0/0/0/0/0/0/0/0
+Search paths:
+  .
+  ./raw
+  ./raw/../raw.copiedtotape
+  ./cache
+  /net/cdaq/cdaql1data/coda/data/raw
+File name:   nps_coin_4397.dat.5
+Default stream: 
+  nps_coin_4397.dat.5
+EXPORTED 4397 5 TSH 284 28
+EXPORTED 4397 5 T 525450 19
+START 4397 6 /cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4397_6_1_-1.root
+Podd::MultiFileRun  "RUN_4397"
+Run number:   4397
+Run date:     Tue Feb 13 16:01:36 2024
+Data version: 3
+Requested event range: all
+Analyzed events:       310617
+Assume Date:           0
+Database read:         1
+Initialized:           1
+Opened:                0
+Date set/read/req:     1 1 1
+Run num set/read/req:  1 1 1
+Run type set/read/req: 1 1 1
+Prescales set/rd/req:  0 0 0
+DAQInfo set/rd/req:    1 1 0
+Run parameters: 
+ Beam: 
+  Energy      = 10.5435 +/- 0 GeV
+  Momentum    = 10.5435 GeV/c
+  Mass/Charge = 0.000511/-1 GeV/c^2
+ Target: 
+  Mass:       = 0 GeV/c^2
+ DAQ:
+  Prescale factors: (1-12)
+   0/0/0/0/0/0/0/0/0/0/0/0
+Search paths:
+  .
+  ./raw
+  ./raw/../raw.copiedtotape
+  ./cache
+  /net/cdaq/cdaql1data/coda/data/raw
+File name:   nps_coin_4397.dat.6
+Default stream: 
+  nps_coin_4397.dat.6
+EXPORTED 4397 6 TSH 169 28
+EXPORTED 4397 6 T 310617 19

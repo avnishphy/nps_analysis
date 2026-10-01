@@ -13,14 +13,14 @@ from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
+from PIL import Image, ImageChops
 from reportlab.lib.pagesizes import TABLOID, landscape
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
 
 SOURCE_DIR = Path(
-    "/lustre24/expphy/volatile/hallc/nps/singhav/nps_analysis/"
-    "nps_analysis_20260831_165046"
+    "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/output/"
 )
 OUTPUT_DIR = Path(
     "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/"
@@ -28,9 +28,60 @@ OUTPUT_DIR = Path(
 )
 PLOT_SUFFIXES = {".png", ".jpg", ".jpeg", ".pdf"}
 RUN_RE = re.compile(r"run_?(\d+)", re.IGNORECASE)
-COLS, ROWS = 5, 3
+COLS, ROWS = 4, 4
 PLOTS_PER_PAGE = COLS * ROWS
 PDF_DPI = 120
+# Known producer canvases; unknown images retain one slot. Never split a bitmap
+# into inferred subplots or remove either PNG/PDF representation.
+MULTIPANEL_PREFIXES = ("cluster_E_T_", "mass_cut_", "combbg_")
+
+
+def plot_span(label: str) -> int:
+    if label.startswith(MULTIPANEL_PREFIXES):
+        return 2
+    if label.startswith("cut_debug_"):
+        page = re.search(r"\[(\d+)/(\d+)\]$", label)
+        # The producer's final page is the single dead-block map.
+        return 1 if page and page[1] == page[2] else 2
+    return 1
+
+
+def paginate(plots: list[tuple[Path, str]]) -> list[list[tuple[Path, str, int, int, int]]]:
+    pages = []
+    page = []
+    occupied: set[tuple[int, int]] = set()
+    for path, label in plots:
+        span = plot_span(label)
+        while True:
+            slot = next(((r, c) for r in range(ROWS - span + 1)
+                         for c in range(COLS - span + 1)
+                         if all((r + dr, c + dc) not in occupied
+                                for dr in range(span) for dc in range(span))), None)
+            if slot is not None:
+                break
+            pages.append(page)
+            page, occupied = [], set()
+        row, col = slot
+        occupied.update((row + dr, col + dc) for dr in range(span) for dc in range(span))
+        page.append((path, label, row, col, span))
+    if page:
+        pages.append(page)
+    return pages
+
+
+def plot_image(path: Path) -> Image.Image:
+    """Remove only exterior pure-white margins; preserve every nonwhite pixel."""
+    with Image.open(path) as source:
+        rgba = source.convert("RGBA")
+        image = Image.new("RGB", rgba.size, "white")
+        image.paste(rgba, mask=rgba.getchannel("A"))
+    bounds = ImageChops.difference(image, Image.new("RGB", image.size, "white")).getbbox()
+    if bounds:
+        x0, y0, x1, y1 = bounds
+        pad = 10
+        image = image.crop((max(0, x0 - pad), max(0, y0 - pad),
+                            min(image.width, x1 + pad), min(image.height, y1 + pad)))
+    return image
 
 
 def natural_key(value: str) -> list[object]:
@@ -90,7 +141,7 @@ def expand_plots(plot_files: list[Path], temp_root: Path) -> list[tuple[Path, st
 def draw_page(
     pdf: canvas.Canvas,
     title: str,
-    plots: list[tuple[Path, str]],
+    plots: list[tuple[Path, str, int, int, int]],
     page_number: int,
     page_count: int,
 ) -> None:
@@ -102,22 +153,23 @@ def draw_page(
     pdf.setFont("Helvetica-Bold", 12)
     pdf.drawString(margin, page_height - margin - 10, f"{title}  |  page {page_number}/{page_count}")
 
-    for slot, (image_path, label) in enumerate(plots):
-        row, col = divmod(slot, COLS)
+    for image_path, label, row, col, span in plots:
         x = margin + col * (cell_width + gap)
-        y = page_height - margin - title_height - (row + 1) * cell_height - row * gap
+        width = span * cell_width + (span - 1) * gap
+        height = span * cell_height + (span - 1) * gap
+        y = page_height - margin - title_height - row * (cell_height + gap) - height
 
-        image = ImageReader(str(image_path))
+        image = ImageReader(plot_image(image_path))
         image_width, image_height = image.getSize()
-        available_height = cell_height - label_height
-        scale = min(cell_width / image_width, available_height / image_height)
+        available_height = height - label_height
+        scale = min(width / image_width, available_height / image_height)
         draw_width, draw_height = image_width * scale, image_height * scale
-        draw_x = x + (cell_width - draw_width) / 2
+        draw_x = x + (width - draw_width) / 2
         draw_y = y + label_height + (available_height - draw_height) / 2
         pdf.drawImage(image, draw_x, draw_y, draw_width, draw_height, mask="auto")
 
         pdf.setFont("Helvetica", 6.5)
-        pdf.drawCentredString(x + cell_width / 2, y + 2, label[:90])
+        pdf.drawCentredString(x + width / 2, y + 2, label[:90])
 
     pdf.showPage()
 
@@ -141,14 +193,14 @@ def make_kinematic_pdf(kin_dir: Path, output_dir: Path) -> tuple[Path, int, int]
                 group_temp = temp_root / f"group_{group_index:04d}"
                 group_temp.mkdir()
                 plots = expand_plots(groups[run_number], group_temp)
-                page_count = (len(plots) + PLOTS_PER_PAGE - 1) // PLOTS_PER_PAGE
+                pages = paginate(plots)
+                page_count = len(pages)
                 title = f"{kin_dir.name} - run {run_number}"
                 for page_index in range(page_count):
-                    start = page_index * PLOTS_PER_PAGE
                     draw_page(
                         pdf,
                         title,
-                        plots[start : start + PLOTS_PER_PAGE],
+                        pages[page_index],
                         page_index + 1,
                         page_count,
                     )

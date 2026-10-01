@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NPS π⁰ · Exclusive model explorer</title><link rel="stylesheet" href="assets/css/site.css"><link rel="stylesheet" href="assets/css/model-explorer.css"></head>
+<body data-page="sim"><a class="skip-link" href="#main">Skip to calculator</a>
+<header class="topbar"><div class="nav-shell"><a class="brand" href="index.html"><span class="brand-mark">π</span><span>NPS π⁰ analysis</span></a><button class="icon-button menu-button" data-menu-toggle>☰</button><nav class="site-nav"><a data-page="home" href="index.html">Start</a><a data-page="analysis" href="analysis.html">Data</a><a data-page="eff" href="efficiencies.html">Corrections</a><a data-page="sim" href="simulation.html">Simulation</a><a data-page="xsec" href="extraction.html">Cross sections</a><a data-page="results" href="results.html">Latest plots</a><a data-page="ops" href="operations.html">Runbook</a></nav><button class="icon-button" data-theme-toggle>◑ Light</button></div></header>
+<div class="page-head"><div class="kicker">Source-faithful browser calculator</div><h1>Exclusive pion model explorer</h1><p>Select one exact analytic branch from <code>physics_pion.f</code>, move through physical two-body kinematics, and inspect the φ, −t′ and Q² dependences without installing ROOT. Every calculation runs locally in this page.</p></div>
+<main id="main" style="max-width:1440px;margin:auto;padding:0 1.25rem 6rem">
+<div class="callout warn"><strong>Scope is explicit.</strong> The π⁰ choice is the active high-W 2021 proxy: the arithmetic mean of π⁺ and π⁻ fits with the pion-pole factor set to zero. The Blok, param04 and param_3000 choices are commented-out charged-pion branches—not independent π⁰ models. MAID and multipole branches require external tables and are documented below, but are not impersonated by an analytic curve.</div>
+<div class="explorer">
+<aside class="control-panel" aria-label="Model controls"><h2>Model and kinematics</h2>
+  <div class="field"><label for="model">Exact branch</label><select id="model" data-control>
+    <optgroup label="Active"><option value="pi0_2021">2021 π⁰ proxy — active high-W core</option><option value="pip_2021">2021 π⁺ fit</option><option value="pim_2021">2021 π⁻ fit</option></optgroup>
+    <optgroup label="Dormant / commented out"><option value="pip_blok">Blok π⁺</option><option value="pim_blok">Blok π⁻</option><option value="pip_04">param04 π⁺</option><option value="pim_04">param04 π⁻</option><option value="pip_3000">param_3000 π⁺</option><option value="pim_3000">param_3000 π⁻</option></optgroup>
+  </select></div>
+  <div class="control-group"><div class="field-label">Electron / hadron invariants</div>
+    <div class="field"><label for="q2">Q² [GeV²]</label><div class="field-row"><input id="q2-range" type="range" min="0.3" max="6" step="0.01" value="2.0"><input id="q2" data-control type="number" min="0.01" step="0.01" value="2.0"></div></div>
+    <div class="field"><label for="w">W [GeV]</label><div class="field-row"><input id="w-range" type="range" min="1.08" max="3.2" step="0.01" value="2.2"><input id="w" data-control type="number" min="1.08" step="0.01" value="2.2"></div></div>
+    <div class="field"><label for="eps">Virtual-photon ε</label><div class="field-row"><input id="eps-range" type="range" min="0" max="1" step="0.01" value="0.75"><input id="eps" data-control type="number" min="0" max="1" step="0.01" value="0.75"></div></div>
+  </div>
+  <div class="control-group"><div class="field-label">Final-state geometry</div>
+    <div class="field"><label for="tp">−t′ = |t|−|t|<sub>min</sub> [GeV²]</label><div class="field-row"><input id="tp-range" type="range" min="0" max="1.5" step="0.002" value="0.15"><input id="tp" data-control type="number" min="0" step="0.002" value="0.15"></div></div>
+    <div class="field"><label for="phi">φ<sub>cm</sub> [degrees]</label><div class="field-row"><input id="phi-range" type="range" min="0" max="360" step="1" value="0"><input id="phi" data-control type="number" min="0" max="360" step="1" value="0"></div></div>
+    <label class="inline-check"><input id="physical-angle" data-control type="checkbox" checked> Derive θ<sub>cm</sub> from Q², W and −t′ (recommended)</label>
+    <div class="field"><label for="theta">θ<sub>cm</sub> [degrees]</label><input id="theta" data-control type="number" min="0" max="180" step="0.1" value="20"></div>
+  </div>
+  <p class="muted" style="font-size:.76rem">Two-body π⁰p geometry uses m<sub>p</sub>=0.938 GeV and m<sub>π⁰</sub>=0.1349768 GeV. The analytic routines themselves receive Q², W², t, θ, φ and ε.</p>
+</aside>
+<div class="dashboard">
+  <div class="status-strip"><span id="model-status" class="status-chip"></span><span id="kin-status" class="status-chip"></span><span class="status-chip">as coded in Fortran</span></div>
+  <p id="model-note" class="lede"></p><div id="error" class="error-box" role="alert"></div>
+  <div class="metric-grid"><div class="metric"><span>d²σ/dt dφ [nb/GeV²/rad]</span><strong id="m-total"></strong></div><div class="metric"><span>σU = σT+εσL [nb/GeV²]</span><strong id="m-u"></strong></div><div class="metric"><span>σLT coefficient [nb/GeV²]</span><strong id="m-lt"></strong></div><div class="metric"><span>σTT coefficient [nb/GeV²]</span><strong id="m-tt"></strong></div></div>
+  <div class="metric-grid"><div class="metric"><span>|t|min [GeV²]</span><strong id="umin"></strong></div><div class="metric"><span>|t|max [GeV²]</span><strong id="umax"></strong></div><div class="metric"><span>current |t| [GeV²]</span><strong id="uvalue"></strong></div><div class="metric"><span>current θcm [degrees]</span><strong id="theta-readout">derived above</strong></div></div>
+  <article class="chart-card"><div class="chart-head"><div><h3>Azimuthal cross section</h3><p>Total curve and its constant, cosφ and cos2φ terms at the selected point.</p></div><div class="chart-actions"><button data-csv="cross_section_vs_phi" data-target="phi-chart">Download CSV</button></div></div><div id="phi-chart" class="chart"></div><div class="plot-tooltip"></div></article>
+  <article class="chart-card"><div class="chart-head"><div><h3>Responses versus −t′</h3><p>Physical θcm is recomputed at every −t′. Total is evaluated at the selected φ.</p></div><div class="chart-actions"><button data-csv="responses_vs_tprime" data-target="t-chart">Download CSV</button></div></div><div id="t-chart" class="chart"></div><div class="plot-tooltip"></div></article>
+  <article class="chart-card"><div class="chart-head"><div><h3>Q² dependence</h3><p>W, ε, selected φ and −t′ are held fixed; unphysical points are omitted.</p></div><div class="chart-actions"><button data-csv="responses_vs_q2" data-target="q-chart">Download CSV</button></div></div><div id="q-chart" class="chart"></div><div class="plot-tooltip"></div></article>
+  <h2 style="margin-top:2.5rem">Equation currently evaluated</h2><div id="formula" class="formula-box"></div>
+</div></div>
+<section style="margin-top:5rem"><h2>How to read these curves</h2><div class="grid three"><div class="card"><h3>1. Choose the branch</h3><p>The status chip distinguishes active code from historical routines that remain commented out. Charged branches are present for comparison, not relabeled as π⁰ physics.</p></div><div class="card"><h3>2. Fix one physical point</h3><p>Set Q², W, ε, −t′ and φ. With physical-angle mode enabled, the page computes θ<sub>cm</sub> from exact two-body π⁰p kinematics.</p></div><div class="card"><h3>3. Inspect or export</h3><p>Hover over any curve for values. Download its sampled points as CSV for an independent plot or numerical cross-check.</p></div></div>
+<div class="equation">d²σ/(dt dφ) = [σ<sub>T</sub> + εσ<sub>L</sub> + √(2ε(1+ε))σ<sub>LT</sub>cosφ + εσ<sub>TT</sub>cos2φ] / 2π</div>
+<p>The analytic functions return μb/MeV²/rad. The page converts to nb/GeV²/rad by multiplying by 10⁹. The displayed response coefficients omit the explicit 1/(2π), matching the decomposition above.</p></section>
+<section><h2>All relevant branches and what is calculable here</h2><div class="table-wrap"><table class="model-table"><thead><tr><th>Branch</th><th>π⁰?</th><th>Source status</th><th>Browser</th><th>Reason</th></tr></thead><tbody>
+<tr><td>sig_param_2021</td><td>Proxy path</td><td>Active</td><td>Exact analytic</td><td>π⁰ is mean of charged fits with fπ=0</td></tr>
+<tr><td>sig_blok</td><td>No</td><td>Commented</td><td>Exact analytic</td><td>Historical charged-pion parameterization</td></tr>
+<tr><td>sig_param04</td><td>No</td><td>Commented</td><td>Exact analytic</td><td>Includes a pole at |t|=0.02 GeV²</td></tr>
+<tr><td>sig_param_3000</td><td>No</td><td>Commented</td><td>Exact analytic</td><td>Historical charged-pion parameterization</td></tr>
+<tr><td>MAID π⁰p / π⁰n</td><td>Yes</td><td>Active at low W</td><td class="source-flag">Not synthesized</td><td>Requires <code>maidpi0p.dat</code>/<code>maidpi0n.dat</code> and the source's discrete lookup</td></tr>
+<tr><td>sig_multipole</td><td>No in configured comments</td><td>Commented low-W option</td><td class="source-flag">Not synthesized</td><td>Requires <code>MULTIPOL.file</code> and complex-amplitude expansion</td></tr>
+</tbody></table></div>
+<div class="callout"><strong>Why table curves are absent.</strong> An “exact” MAID or multipole curve is inseparable from the external data file, its grid lookup/interpolation behavior, and channel mapping. This offline site deliberately reports that boundary instead of drawing a look-alike curve.</div>
+<p><a class="button" href="physics-pion.html">Read the line-by-line Fortran model audit</a> <a class="button" href="simulation.html">Return to simulation overview</a></p></section>
+</main><footer class="footer"><div class="footer-inner"><span>Interactive model appendix · no network dependency</span><span>Source snapshot 535df7f7</span></div></footer>
+<script src="assets/js/site.js"></script><script>
+for (const key of ['q2','w','eps','tp','phi']) { const n=document.getElementById(key), r=document.getElementById(key+'-range'); r.addEventListener('input',()=>{n.value=r.value;n.dispatchEvent(new Event('input',{bubbles:true}))}); n.addEventListener('input',()=>{r.value=n.value}); }
+</script><script src="assets/js/model-explorer.js"></script></body></html>

@@ -1,0 +1,1283 @@
+{
+  "run": 4400,
+  "segments": [
+    {
+      "run": 4400,
+      "segment": 0,
+      "period_ticks": 6257191.870153937,
+      "period_block_median": 6257190.0,
+      "core_clock_residual_quantiles_ticks": [
+        5.0,
+        5.0,
+        6.0,
+        8.0
+      ],
+      "events": 514421,
+      "phase_model_events": 514385,
+      "scaler_clock_span": 570.470499,
+      "event_clock_span_ticks": 143082952390.0,
+      "core": {
+        "total": 20021,
+        "phase125": 20020,
+        "side500_1500": 0,
+        "model_missing": 1,
+        "phase_windows": {
+          "10": 20020,
+          "25": 20020,
+          "50": 20020,
+          "125": 20020,
+          "250": 20020,
+          "500": 20020
+        }
+      },
+      "raw": {
+        "total": 20022,
+        "phase125": 20021,
+        "side500_1500": 0,
+        "model_missing": 1,
+        "phase_windows": {
+          "10": 20021,
+          "25": 20021,
+          "50": 20021,
+          "125": 20021,
+          "250": 20021,
+          "500": 20021
+        }
+      },
+      "raw_not_core": {
+        "total": 1,
+        "phase125": 1,
+        "side500_1500": 0,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 1,
+          "25": 1,
+          "50": 1,
+          "125": 1,
+          "250": 1,
+          "500": 1
+        }
+      },
+      "positive_not_core": {
+        "total": 72,
+        "phase125": 6,
+        "side500_1500": 30,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 1,
+          "25": 1,
+          "50": 2,
+          "125": 6,
+          "250": 16,
+          "500": 42
+        }
+      },
+      "zero_raw": {
+        "total": 494328,
+        "phase125": 10,
+        "side500_1500": 124,
+        "model_missing": 35,
+        "phase_windows": {
+          "10": 0,
+          "25": 0,
+          "50": 0,
+          "125": 10,
+          "250": 21,
+          "500": 46
+        }
+      },
+      "all": {
+        "total": 514421,
+        "phase125": 20036,
+        "side500_1500": 154,
+        "model_missing": 36,
+        "phase_windows": {
+          "10": 20021,
+          "25": 20021,
+          "50": 20022,
+          "125": 20036,
+          "250": 20057,
+          "500": 20108
+        }
+      }
+    },
+    {
+      "run": 4400,
+      "segment": 1,
+      "period_ticks": 6257191.801437584,
+      "period_block_median": 6257190.0,
+      "core_clock_residual_quantiles_ticks": [
+        5.0,
+        5.5,
+        6.0,
+        7.5
+      ],
+      "events": 525572,
+      "phase_model_events": 525551,
+      "scaler_clock_span": 510.31593900000007,
+      "event_clock_span_ticks": 127762106673.0,
+      "core": {
+        "total": 20403,
+        "phase125": 20403,
+        "side500_1500": 0,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 20403,
+          "25": 20403,
+          "50": 20403,
+          "125": 20403,
+          "250": 20403,
+          "500": 20403
+        }
+      },
+      "raw": {
+        "total": 20407,
+        "phase125": 20407,
+        "side500_1500": 0,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 20407,
+          "25": 20407,
+          "50": 20407,
+          "125": 20407,
+          "250": 20407,
+          "500": 20407
+        }
+      },
+      "raw_not_core": {
+        "total": 4,
+        "phase125": 4,
+        "side500_1500": 0,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 4,
+          "25": 4,
+          "50": 4,
+          "125": 4,
+          "250": 4,
+          "500": 4
+        }
+      },
+      "positive_not_core": {
+        "total": 69,
+        "phase125": 11,
+        "side500_1500": 27,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 4,
+          "25": 5,
+          "50": 8,
+          "125": 11,
+          "250": 19,
+          "500": 42
+        }
+      },
+      "zero_raw": {
+        "total": 505100,
+        "phase125": 3,
+        "side500_1500": 122,
+        "model_missing": 21,
+        "phase_windows": {
+          "10": 0,
+          "25": 0,
+          "50": 0,
+          "125": 3,
+          "250": 13,
+          "500": 29
+        }
+      },
+      "all": {
+        "total": 525572,
+        "phase125": 20417,
+        "side500_1500": 149,
+        "model_missing": 21,
+        "phase_windows": {
+          "10": 20407,
+          "25": 20408,
+          "50": 20411,
+          "125": 20417,
+          "250": 20435,
+          "500": 20474
+        }
+      }
+    },
+    {
+      "run": 4400,
+      "segment": 2,
+      "period_ticks": 6257191.777946871,
+      "period_block_median": 6257190.0,
+      "core_clock_residual_quantiles_ticks": [
+        5.0,
+        5.5,
+        6.0,
+        7.0
+      ],
+      "events": 513632,
+      "phase_model_events": 513627,
+      "scaler_clock_span": 546.901155,
+      "event_clock_span_ticks": 137425691534.0,
+      "core": {
+        "total": 19946,
+        "phase125": 19946,
+        "side500_1500": 0,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 19946,
+          "25": 19946,
+          "50": 19946,
+          "125": 19946,
+          "250": 19946,
+          "500": 19946
+        }
+      },
+      "raw": {
+        "total": 19949,
+        "phase125": 19949,
+        "side500_1500": 0,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 19948,
+          "25": 19949,
+          "50": 19949,
+          "125": 19949,
+          "250": 19949,
+          "500": 19949
+        }
+      },
+      "raw_not_core": {
+        "total": 3,
+        "phase125": 3,
+        "side500_1500": 0,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 2,
+          "25": 3,
+          "50": 3,
+          "125": 3,
+          "250": 3,
+          "500": 3
+        }
+      },
+      "positive_not_core": {
+        "total": 66,
+        "phase125": 18,
+        "side500_1500": 21,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 2,
+          "25": 6,
+          "50": 10,
+          "125": 18,
+          "250": 27,
+          "500": 45
+        }
+      },
+      "zero_raw": {
+        "total": 493620,
+        "phase125": 3,
+        "side500_1500": 125,
+        "model_missing": 5,
+        "phase_windows": {
+          "10": 0,
+          "25": 0,
+          "50": 0,
+          "125": 3,
+          "250": 8,
+          "500": 26
+        }
+      },
+      "all": {
+        "total": 513632,
+        "phase125": 19967,
+        "side500_1500": 146,
+        "model_missing": 5,
+        "phase_windows": {
+          "10": 19948,
+          "25": 19952,
+          "50": 19956,
+          "125": 19967,
+          "250": 19981,
+          "500": 20017
+        }
+      }
+    },
+    {
+      "run": 4400,
+      "segment": 3,
+      "period_ticks": 6257191.892040873,
+      "period_block_median": 6257190.0,
+      "core_clock_residual_quantiles_ticks": [
+        5.0,
+        5.0,
+        6.0,
+        7.5
+      ],
+      "events": 516180,
+      "phase_model_events": 516160,
+      "scaler_clock_span": 550.107074,
+      "event_clock_span_ticks": 138068887270.0,
+      "core": {
+        "total": 20096,
+        "phase125": 20095,
+        "side500_1500": 0,
+        "model_missing": 1,
+        "phase_windows": {
+          "10": 20095,
+          "25": 20095,
+          "50": 20095,
+          "125": 20095,
+          "250": 20095,
+          "500": 20095
+        }
+      },
+      "raw": {
+        "total": 20098,
+        "phase125": 20097,
+        "side500_1500": 0,
+        "model_missing": 1,
+        "phase_windows": {
+          "10": 20097,
+          "25": 20097,
+          "50": 20097,
+          "125": 20097,
+          "250": 20097,
+          "500": 20097
+        }
+      },
+      "raw_not_core": {
+        "total": 2,
+        "phase125": 2,
+        "side500_1500": 0,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 2,
+          "25": 2,
+          "50": 2,
+          "125": 2,
+          "250": 2,
+          "500": 2
+        }
+      },
+      "positive_not_core": {
+        "total": 60,
+        "phase125": 5,
+        "side500_1500": 31,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 2,
+          "25": 3,
+          "50": 3,
+          "125": 5,
+          "250": 15,
+          "500": 29
+        }
+      },
+      "zero_raw": {
+        "total": 496024,
+        "phase125": 4,
+        "side500_1500": 117,
+        "model_missing": 19,
+        "phase_windows": {
+          "10": 0,
+          "25": 0,
+          "50": 0,
+          "125": 4,
+          "250": 13,
+          "500": 26
+        }
+      },
+      "all": {
+        "total": 516180,
+        "phase125": 20104,
+        "side500_1500": 148,
+        "model_missing": 20,
+        "phase_windows": {
+          "10": 20097,
+          "25": 20098,
+          "50": 20098,
+          "125": 20104,
+          "250": 20123,
+          "500": 20150
+        }
+      }
+    },
+    {
+      "run": 4400,
+      "segment": 4,
+      "period_ticks": 6257191.888686291,
+      "period_block_median": 6257190.0,
+      "core_clock_residual_quantiles_ticks": [
+        5.0,
+        5.0,
+        6.0,
+        7.0
+      ],
+      "events": 525965,
+      "phase_model_events": 525935,
+      "scaler_clock_span": 508.568264,
+      "event_clock_span_ticks": 127558754428.0,
+      "core": {
+        "total": 20370,
+        "phase125": 20369,
+        "side500_1500": 0,
+        "model_missing": 1,
+        "phase_windows": {
+          "10": 20369,
+          "25": 20369,
+          "50": 20369,
+          "125": 20369,
+          "250": 20369,
+          "500": 20369
+        }
+      },
+      "raw": {
+        "total": 20373,
+        "phase125": 20372,
+        "side500_1500": 0,
+        "model_missing": 1,
+        "phase_windows": {
+          "10": 20371,
+          "25": 20372,
+          "50": 20372,
+          "125": 20372,
+          "250": 20372,
+          "500": 20372
+        }
+      },
+      "raw_not_core": {
+        "total": 3,
+        "phase125": 3,
+        "side500_1500": 0,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 2,
+          "25": 3,
+          "50": 3,
+          "125": 3,
+          "250": 3,
+          "500": 3
+        }
+      },
+      "positive_not_core": {
+        "total": 73,
+        "phase125": 8,
+        "side500_1500": 28,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 2,
+          "25": 3,
+          "50": 6,
+          "125": 8,
+          "250": 19,
+          "500": 45
+        }
+      },
+      "zero_raw": {
+        "total": 505522,
+        "phase125": 7,
+        "side500_1500": 131,
+        "model_missing": 29,
+        "phase_windows": {
+          "10": 0,
+          "25": 0,
+          "50": 0,
+          "125": 7,
+          "250": 22,
+          "500": 42
+        }
+      },
+      "all": {
+        "total": 525965,
+        "phase125": 20384,
+        "side500_1500": 159,
+        "model_missing": 30,
+        "phase_windows": {
+          "10": 20371,
+          "25": 20372,
+          "50": 20375,
+          "125": 20384,
+          "250": 20410,
+          "500": 20456
+        }
+      }
+    },
+    {
+      "run": 4400,
+      "segment": 5,
+      "period_ticks": 6257191.960519274,
+      "period_block_median": 6257190.5,
+      "core_clock_residual_quantiles_ticks": [
+        5.0,
+        5.0,
+        6.0,
+        7.4229999999997744
+      ],
+      "events": 524715,
+      "phase_model_events": 524690,
+      "scaler_clock_span": 506.76867900000025,
+      "event_clock_span_ticks": 127209057533.0,
+      "core": {
+        "total": 20312,
+        "phase125": 20311,
+        "side500_1500": 0,
+        "model_missing": 1,
+        "phase_windows": {
+          "10": 20311,
+          "25": 20311,
+          "50": 20311,
+          "125": 20311,
+          "250": 20311,
+          "500": 20311
+        }
+      },
+      "raw": {
+        "total": 20313,
+        "phase125": 20312,
+        "side500_1500": 0,
+        "model_missing": 1,
+        "phase_windows": {
+          "10": 20312,
+          "25": 20312,
+          "50": 20312,
+          "125": 20312,
+          "250": 20312,
+          "500": 20312
+        }
+      },
+      "raw_not_core": {
+        "total": 1,
+        "phase125": 1,
+        "side500_1500": 0,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 1,
+          "25": 1,
+          "50": 1,
+          "125": 1,
+          "250": 1,
+          "500": 1
+        }
+      },
+      "positive_not_core": {
+        "total": 72,
+        "phase125": 9,
+        "side500_1500": 27,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 1,
+          "25": 1,
+          "50": 3,
+          "125": 9,
+          "250": 24,
+          "500": 45
+        }
+      },
+      "zero_raw": {
+        "total": 504331,
+        "phase125": 2,
+        "side500_1500": 143,
+        "model_missing": 24,
+        "phase_windows": {
+          "10": 0,
+          "25": 0,
+          "50": 0,
+          "125": 2,
+          "250": 12,
+          "500": 32
+        }
+      },
+      "all": {
+        "total": 524715,
+        "phase125": 20322,
+        "side500_1500": 170,
+        "model_missing": 25,
+        "phase_windows": {
+          "10": 20312,
+          "25": 20312,
+          "50": 20314,
+          "125": 20322,
+          "250": 20347,
+          "500": 20388
+        }
+      }
+    },
+    {
+      "run": 4400,
+      "segment": 6,
+      "period_ticks": 6257192.175100615,
+      "period_block_median": 6257190.5,
+      "core_clock_residual_quantiles_ticks": [
+        4.5,
+        5.5,
+        6.0,
+        7.0
+      ],
+      "events": 396262,
+      "phase_model_events": 396258,
+      "scaler_clock_span": 384.82942,
+      "event_clock_span_ticks": 96392329638.0,
+      "core": {
+        "total": 15393,
+        "phase125": 15393,
+        "side500_1500": 0,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 15393,
+          "25": 15393,
+          "50": 15393,
+          "125": 15393,
+          "250": 15393,
+          "500": 15393
+        }
+      },
+      "raw": {
+        "total": 15393,
+        "phase125": 15393,
+        "side500_1500": 0,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 15393,
+          "25": 15393,
+          "50": 15393,
+          "125": 15393,
+          "250": 15393,
+          "500": 15393
+        }
+      },
+      "raw_not_core": {
+        "total": 0,
+        "phase125": 0,
+        "side500_1500": 0,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 0,
+          "25": 0,
+          "50": 0,
+          "125": 0,
+          "250": 0,
+          "500": 0
+        }
+      },
+      "positive_not_core": {
+        "total": 57,
+        "phase125": 2,
+        "side500_1500": 32,
+        "model_missing": 0,
+        "phase_windows": {
+          "10": 0,
+          "25": 1,
+          "50": 1,
+          "125": 2,
+          "250": 8,
+          "500": 25
+        }
+      },
+      "zero_raw": {
+        "total": 380812,
+        "phase125": 1,
+        "side500_1500": 99,
+        "model_missing": 4,
+        "phase_windows": {
+          "10": 0,
+          "25": 0,
+          "50": 0,
+          "125": 1,
+          "250": 12,
+          "500": 26
+        }
+      },
+      "all": {
+        "total": 396262,
+        "phase125": 15396,
+        "side500_1500": 131,
+        "model_missing": 4,
+        "phase_windows": {
+          "10": 15393,
+          "25": 15394,
+          "50": 15394,
+          "125": 15396,
+          "250": 15413,
+          "500": 15444
+        }
+      }
+    }
+  ],
+  "examples": [
+    {
+      "run": 4400,
+      "segment": 0,
+      "event": 1971,
+      "ticks": 7062521458.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 93.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 0,
+      "event": 58964,
+      "ticks": 20909688162.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 96.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 0,
+      "event": 120560,
+      "ticks": 35958234437.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 70.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 0,
+      "event": 162709,
+      "ticks": 46295115242.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 74.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 0,
+      "event": 171247,
+      "ticks": 48341216957.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 87.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 0,
+      "event": 189310,
+      "ticks": 52746279839.0,
+      "raw": 2084.0,
+      "corrected": 271.77626,
+      "multiplicity": 1.0,
+      "residual_ticks": 0.6666641235351562,
+      "raw_window": true,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 0,
+      "event": 256002,
+      "ticks": 82536769854.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 113.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 0,
+      "event": 291424,
+      "ticks": 91096609602.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 92.5,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 0,
+      "event": 335467,
+      "ticks": 101815179165.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 107.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 0,
+      "event": 445786,
+      "ticks": 128545902304.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 110.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 0,
+      "event": 462339,
+      "ticks": 132600562549.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 89.5,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 0,
+      "event": 532062,
+      "ticks": 149632638369.0,
+      "raw": 1894.0,
+      "corrected": 245.11508,
+      "multiplicity": 1.0,
+      "residual_ticks": NaN,
+      "raw_window": true,
+      "core": true
+    },
+    {
+      "run": 4400,
+      "segment": 1,
+      "event": 681274,
+      "ticks": 186055752469.0,
+      "raw": 1949.0,
+      "corrected": 276.85458,
+      "multiplicity": 1.0,
+      "residual_ticks": 2.3333358764648438,
+      "raw_window": true,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 1,
+      "event": 789226,
+      "ticks": 212173270468.0,
+      "raw": 1825.0,
+      "corrected": 262.59622,
+      "multiplicity": 1.0,
+      "residual_ticks": -0.6666641235351562,
+      "raw_window": true,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 1,
+      "event": 912607,
+      "ticks": 242095162537.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 87.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 1,
+      "event": 936088,
+      "ticks": 247801721303.0,
+      "raw": 1736.0,
+      "corrected": 253.70916,
+      "multiplicity": 1.0,
+      "residual_ticks": 5.3333282470703125,
+      "raw_window": true,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 1,
+      "event": 993789,
+      "ticks": 261855374012.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 95.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 1,
+      "event": 1020120,
+      "ticks": 268250223822.0,
+      "raw": 1764.0,
+      "corrected": 256.63896,
+      "multiplicity": 1.0,
+      "residual_ticks": 2.3333282470703125,
+      "raw_window": true,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 1,
+      "event": 1055599,
+      "ticks": 276885148452.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 99.5,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 2,
+      "event": 1097679,
+      "ticks": 287115656699.0,
+      "raw": 2068.0,
+      "corrected": 286.13228,
+      "multiplicity": 1.0,
+      "residual_ticks": -13.666666030883789,
+      "raw_window": true,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 2,
+      "event": 1184928,
+      "ticks": 308214907160.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 91.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 2,
+      "event": 1272533,
+      "ticks": 337748853020.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 114.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 2,
+      "event": 1284217,
+      "ticks": 340683475779.0,
+      "raw": 1778.0,
+      "corrected": 249.11914000000002,
+      "multiplicity": 1.0,
+      "residual_ticks": -7.333335876464844,
+      "raw_window": true,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 2,
+      "event": 1531819,
+      "ticks": 400915204013.0,
+      "raw": 1919.0,
+      "corrected": 279.58906,
+      "multiplicity": 1.0,
+      "residual_ticks": -3.6666717529296875,
+      "raw_window": true,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 2,
+      "event": 1538063,
+      "ticks": 402410672959.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 120.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 3,
+      "event": 1648889,
+      "ticks": 429410455424.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 81.5,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 3,
+      "event": 1760789,
+      "ticks": 464907505393.0,
+      "raw": 1987.0,
+      "corrected": 265.819,
+      "multiplicity": 1.0,
+      "residual_ticks": 1.0,
+      "raw_window": true,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 3,
+      "event": 1907742,
+      "ticks": 500535955806.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 81.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 3,
+      "event": 1920568,
+      "ticks": 503601979687.0,
+      "raw": 2066.0,
+      "corrected": 279.10076,
+      "multiplicity": 1.0,
+      "residual_ticks": -5.6666717529296875,
+      "raw_window": true,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 3,
+      "event": 1971632,
+      "ticks": 516078820185.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 78.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 3,
+      "event": 2075588,
+      "ticks": 541370390512.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 67.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 3,
+      "event": 2122626,
+      "ticks": 552889880741.0,
+      "raw": 1802.0,
+      "corrected": 245.01742000000002,
+      "multiplicity": 1.0,
+      "residual_ticks": NaN,
+      "raw_window": true,
+      "core": true
+    },
+    {
+      "run": 4400,
+      "segment": 4,
+      "event": 2131769,
+      "ticks": 555092412370.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 93.5,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 4,
+      "event": 2310566,
+      "ticks": 598360893713.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 86.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 4,
+      "event": 2349136,
+      "ticks": 607796738923.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 88.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 4,
+      "event": 2362170,
+      "ticks": 610950363596.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 106.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 4,
+      "event": 2382687,
+      "ticks": 616006175718.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 108.5,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 4,
+      "event": 2393333,
+      "ticks": 618534081425.0,
+      "raw": 1982.0,
+      "corrected": 270.31136,
+      "multiplicity": 1.0,
+      "residual_ticks": -12.666664123535156,
+      "raw_window": true,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 4,
+      "event": 2412882,
+      "ticks": 623176917785.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 102.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 4,
+      "event": 2414296,
+      "ticks": 623514806034.0,
+      "raw": 2058.0,
+      "corrected": 287.20654,
+      "multiplicity": 1.0,
+      "residual_ticks": -6.3333282470703125,
+      "raw_window": true,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 4,
+      "event": 2451058,
+      "ticks": 632500133447.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 69.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 4,
+      "event": 2618744,
+      "ticks": 673234451947.0,
+      "raw": 1857.0,
+      "corrected": 249.31446,
+      "multiplicity": 1.0,
+      "residual_ticks": -7.6666717529296875,
+      "raw_window": true,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 4,
+      "event": 2648592,
+      "ticks": 680448994092.0,
+      "raw": 1772.0,
+      "corrected": 244.91976,
+      "multiplicity": 1.0,
+      "residual_ticks": NaN,
+      "raw_window": true,
+      "core": true
+    },
+    {
+      "run": 4400,
+      "segment": 5,
+      "event": 2727985,
+      "ticks": 699714888996.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 112.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 5,
+      "event": 3101122,
+      "ticks": 790150084123.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 72.0,
+      "raw_window": false,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 5,
+      "event": 3134633,
+      "ticks": 798253147540.0,
+      "raw": 1732.0,
+      "corrected": 247.36126000000002,
+      "multiplicity": 1.0,
+      "residual_ticks": -3.3333282470703125,
+      "raw_window": true,
+      "core": false
+    },
+    {
+      "run": 4400,
+      "segment": 5,
+      "event": 3173310,
+      "ticks": 807657707028.0,
+      "raw": 1858.0,
+      "corrected": 245.11508,
+      "multiplicity": 1.0,
+      "residual_ticks": NaN,
+      "raw_window": true,
+      "core": true
+    },
+    {
+      "run": 4400,
+      "segment": 6,
+      "event": 3437497,
+      "ticks": 871700069423.0,
+      "raw": 0.0,
+      "corrected": 0.0,
+      "multiplicity": 0.0,
+      "residual_ticks": 65.0,
+      "raw_window": false,
+      "core": false
+    }
+  ]
+}

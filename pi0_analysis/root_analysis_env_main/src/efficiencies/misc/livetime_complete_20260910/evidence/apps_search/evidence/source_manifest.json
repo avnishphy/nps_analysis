@@ -1,0 +1,44 @@
+[
+  {
+    "path": "/u/group/nps/apps/setup.sh",
+    "resolved_path": "/u/group/nps/apps/setup.sh",
+    "snapshot": "evidence/source_0_setup.sh",
+    "bytes": 365,
+    "sha256": "be7b726ca10acf907b8fec9ea124ab4681a7ed4573e505c31d06ff409bd35257"
+  },
+  {
+    "path": "/u/group/nps/modulefiles/nps_replay/11.11.23",
+    "resolved_path": "/u/group/nps/modulefiles/nps_replay/11.11.23",
+    "snapshot": "evidence/source_1_11.11.23",
+    "bytes": 1723,
+    "sha256": "29fdcd38ac8223aea144ea2d96391db0e148be196547b6bd76866f2c4e7bb91d"
+  },
+  {
+    "path": "/u/group/nps/modulefiles/nps_replay/2.20.24",
+    "resolved_path": "/u/group/nps/modulefiles/nps_replay/2.20.24",
+    "snapshot": "evidence/source_2_2.20.24",
+    "bytes": 1729,
+    "sha256": "1df2459a803ff008ac43ef690cb2903d866b51a156b7b7eed6b36c554789283b"
+  },
+  {
+    "path": "/u/group/nps/apps/hcana/1.0.0/src/src/THcScalerEvtHandler.cxx",
+    "resolved_path": "/u/group/nps/apps/hcana/1.0.0/src/src/THcScalerEvtHandler.cxx",
+    "snapshot": "evidence/source_3_THcScalerEvtHandler.cxx",
+    "bytes": 30619,
+    "sha256": "1ec96b3ea5f067fa769345c31c02e5a483b7c1fc2609b57dc079c26cf9c9dcde"
+  },
+  {
+    "path": "/u/group/nps/apps/hcana/1.0.1/src/src/THcScalerEvtHandler.cxx",
+    "resolved_path": "/u/group/nps/apps/hcana/1.0.1/src/src/THcScalerEvtHandler.cxx",
+    "snapshot": "evidence/source_4_THcScalerEvtHandler.cxx",
+    "bytes": 30619,
+    "sha256": "1ec96b3ea5f067fa769345c31c02e5a483b7c1fc2609b57dc079c26cf9c9dcde"
+  },
+  {
+    "path": "/u/group/nps/apps/hcana/1.0.2/src/src/THcScalerEvtHandler.cxx",
+    "resolved_path": "/u/group/nps/apps/hcana/1.0.2/src/src/THcScalerEvtHandler.cxx",
+    "snapshot": "evidence/source_5_THcScalerEvtHandler.cxx",
+    "bytes": 30619,
+    "sha256": "1ec96b3ea5f067fa769345c31c02e5a483b7c1fc2609b57dc079c26cf9c9dcde"
+  }
+]

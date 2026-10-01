@@ -1,0 +1,16 @@
+{
+  "old_E": 112586,
+  "old_D": 112746.0,
+  "old_ratio": 0.9985808809181701,
+  "perfile_covered_oldcurrent_E": 112263,
+  "perfile_covered_oldcurrent_ratio": 0.9957160342717258,
+  "perfile_covered_aligned_E": 112658,
+  "perfile_covered_aligned_ratio": 0.9992194845049935,
+  "matched": {
+    "E_raw": 112658,
+    "D": 112746.0,
+    "EDTM_raw": 0.9992194845049935
+  },
+  "input_path": "/w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_main/src/efficiencies/misc/livetime_refresh_20260909/results/run4398.json",
+  "input_sha256": "43c055241bf184787fdc094b82d59627704dc83859b3415bf108a2e6ff3778b4"
+}

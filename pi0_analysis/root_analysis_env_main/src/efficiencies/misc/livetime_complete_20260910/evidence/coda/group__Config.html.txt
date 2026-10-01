@@ -1,0 +1,1477 @@
+
+
+
+
+
+
+JLab VME Pipeline TI Library: Initialization/Configuration
+
+
+
+
+
+
+  $(document).ready(function() { searchBox.OnSelectItem(0); });
+
+
+
+
+
+
+
+ 
+ 
+  
+   JLab VME Pipeline TI Library
+    3v11.3
+   
+   JLab VME Pipeline TI library
+  
+ 
+ 
+
+
+
+
+
+var searchBox = new SearchBox("searchBox", "search",false,'Search');
+
+  
+    
+      Main Page
+      Modules
+      Classes
+      Files
+      
+        
+        
+          
+          
+          
+            
+          
+        
+      
+    
+  
+
+
+
+ All Classes Functions Variables Groups
+
+
+
+
+
+
+
+
+  
+Modules |
+Functions  
+  
+Initialization/Configuration  
+
+
+
+
+Modules
+ Master Configuration
+ 
+ Slave Configuration
+ 
+
+
+Functions
+int tiInit (unsigned int tAddr, unsigned int mode, int iFlag)
+ Initialize the TIp register space into local memory, and setup registers given user input.  More...
+ 
+unsigned int tiFind ()
+ Find the TI within the prescribed "GEO Slot to A24 VME Address" range from slot 3 to 21.  More...
+ 
+int tiReload ()
+ Reload the firmware on the FPGA.  More...
+ 
+int tiReset ()
+ Perform a soft reset of the TI.  More...
+ 
+int tiSetCrateID (unsigned int crateID)
+ Set the crate ID.  More...
+ 
+int tiSetInstantBlockLevelChange (int enable)
+ Set TS to instantly change blocklevel when broadcast is received.  More...
+ 
+int tiSetTriggerSource (int trig)
+ Set the trigger source This routine will set a library variable to be set in the TI registers at a call to tiIntEnable.  More...
+ 
+int tiSetTriggerSourceMask (int trigmask)
+ Set trigger sources with specified trigmask This routine is for special use when tiSetTriggerSource(...) does not set all of the trigger sources that is required by the user.  More...
+ 
+int tiSetGoOutput (int enable)
+ Enable/Disable use of O#4 as the 'GO' output level, enabled when trigger sources are enabled.  More...
+ 
+int tiEnableTriggerSource ()
+ Enable trigger sources Enable trigger sources set by tiSetTriggerSource(...) or tiSetTriggerSourceMask(...)  More...
+ 
+int tiForceSendTriggerSourceEnable ()
+ Force TI to send trigger source enabled bits to TI-master or TD.  More...
+ 
+int tiDisableTriggerSource (int fflag)
+ Disable trigger sources.  More...
+ 
+int tiSetSyncSource (unsigned int sync)
+ Set the Sync source mask.  More...
+ 
+int tiSetEventFormat (int format)
+ Set the event format.  More...
+ 
+int32_t tiGetEventFormat ()
+ Get the event format.  More...
+ 
+int tiSetFPInputReadout (int enable)
+ Set whether or not the latched pattern of FP Inputs in block readout.  More...
+ 
+int tiFakeTriggerBankOnError (int enable)
+ Option to generate a fake trigger bank when  finds an ERROR. Enabled by library default.  More...
+ 
+int tiEnableFiber (unsigned int fiber)
+ Enable Fiber transceiver.  More...
+ 
+int tiDisableFiber (unsigned int fiber)
+ Disnable Fiber transceiver.  More...
+ 
+int tiSetBusySource (unsigned int sourcemask, int rFlag)
+ Set the busy source with a given sourcemask sourcemask bits:  More...
+ 
+void tiEnableBusError ()
+ Enable Bus Errors to terminate Block Reads.  More...
+ 
+void tiDisableBusError ()
+ Disable Bus Errors to terminate Block Reads.  More...
+ 
+int tiSetTriggerPulse (int trigger, int delay, int width, int delay_step)
+ Set the characteristics of a specified trigger.  More...
+ 
+int tiSetPromptTriggerWidth (int width)
+ Set the width of the prompt trigger from OT#2.  More...
+ 
+void tiSetSyncDelayWidth (unsigned int delay, unsigned int width, int widthstep)
+ Set the delay time and width of the Sync signal.  More...
+ 
+int tiSetAdr32 (unsigned int a32base)
+ Routine to set the A32 Base.  More...
+ 
+int tiDisableA32 ()
+ Disable A32.  More...
+ 
+int tiResetEventCounter ()
+ Reset the L1A counter, as incremented by the TI.  More...
+ 
+int tiEnableVXSSignals ()
+ Enable trigger and sync signals sent through the VXS to the Signal Distribution (SD) module.  More...
+ 
+int tiDisableVXSSignals ()
+ Disable trigger and sync signals sent through the VXS to the Signal Distribution (SD) module.  More...
+ 
+int tiBusyOnBufferLevel (int enable)
+ Set the TI to be BUSY if number of stored blocks is equal to the set block buffer level.  More...
+ 
+int tiUseBroadcastBufferLevel (int enable)
+ Enable/Disable the use of the broadcasted buffer level, instead of the value set locally with .  More...
+ 
+int tiSetOutputPort (unsigned int set1, unsigned int set2, unsigned int set3, unsigned int set4)
+ Set (or unset) high level for the output ports on the front panel labelled as O#1-4.  More...
+ 
+int tiSetClockSource (unsigned int source)
+ Set the clock to the specified source.  More...
+ 
+
+void tiSetFiberDelay (unsigned int delay, unsigned int offset)
+ Set the fiber delay required to align the sync and triggers for all crates. 
+ 
+
+void tiSetFiberSyncDelay (unsigned int syncDelay)
+ Set the fiber delay required to align the sync and triggers for all crates. 
+ 
+int tiDisableDataReadout ()
+ Disable the necessity to readout the TI for every block.  More...
+ 
+int tiEnableDataReadout ()
+ Enable readout the TI for every block.  More...
+ 
+
+void tiResetSyncHistory ()
+ Reset the SyncCommand history buffer. 
+ 
+void tiUserSyncReset (int enable, int blflag)
+ Control level of the SyncReset signal.  More...
+ 
+
+int tiResetMGTRx ()
+ Reset the MGT Rx CDR. 
+ 
+
+int tiResetFiber ()
+ Reset the Fiber Tranceivers. 
+ 
+int tiSetTSInputDelay (int chan, int delay)
+ Set the input delay for the specified front panel TSinput (1-6)  More...
+ 
+int tiSetTokenTestMode (int mode)
+ Turn on Token out test mode.  More...
+ 
+int tiSetTokenOutTest (int level)
+ Set the level of the token out signal.  More...
+ 
+int tiSetScalerMode (int mode, int control)
+ Set control over the TS inputs scalers.  More...
+ 
+int tiSetEvTypeScalers (int enable)
+ Enable/disable recording of scalers associated with the bits in the event type.  More...
+ 
+void tiClearEvTypeScalers ()
+ Clear the event type scalers.  More...
+ 
+
+Detailed Description
+Function Documentation
+
+
+
+      
+        
+          int tiBusyOnBufferLevel 
+          (
+          int 
+          enable)
+          
+        
+      
+
+
+Set the TI to be BUSY if number of stored blocks is equal to the set block buffer level. 
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          void tiClearEvTypeScalers 
+          (
+          )
+          
+        
+      
+
+
+Clear the event type scalers. 
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiDisableA32 
+          (
+          )
+          
+        
+      
+
+
+Disable A32. 
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          void tiDisableBusError 
+          (
+          )
+          
+        
+      
+
+
+Disable Bus Errors to terminate Block Reads. 
+See AlsotiEnableBusError 
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiDisableDataReadout 
+          (
+          )
+          
+        
+      
+
+
+Disable the necessity to readout the TI for every block. 
+ For instances when the TI data is not required for analysis
+ When a block is "ready", a call to tiResetBlockReadout must be made.
+See AlsotiEnableDataReadout tiResetBlockReadout 
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiDisableFiber 
+          (
+          unsigned int 
+          fiber)
+          
+        
+      
+
+
+Disnable Fiber transceiver. 
+See AlsotiEnableFiber
+Parameters
+  
+    fiber,:integer indicative of the transceiver to disable
+  
+  
+
+ReturnsOK if successful, ERROR otherwise. 
+
+
+
+
+
+
+      
+        
+          int tiDisableTriggerSource 
+          (
+          int 
+          fflag)
+          
+        
+      
+
+
+Disable trigger sources. 
+Parameters
+  
+    fflag
+0: Disable Triggers
+>0: Disable Triggers and generate enough triggers to fill the current block
+
+
+  
+  
+
+ReturnsOK if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiDisableVXSSignals 
+          (
+          )
+          
+        
+      
+
+
+Disable trigger and sync signals sent through the VXS to the Signal Distribution (SD) module. 
+This may be required to eliminate the possibility of accidental
+signals being sent during Clock Synchronization or Trigger
+Enable/Disabling by the TI Master or TS.
+See AlsotiEnableVXSSignals 
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          void tiEnableBusError 
+          (
+          )
+          
+        
+      
+
+
+Enable Bus Errors to terminate Block Reads. 
+See AlsotiDisableBusError 
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiEnableDataReadout 
+          (
+          )
+          
+        
+      
+
+
+Enable readout the TI for every block. 
+See AlsotiDisableDataReadout 
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiEnableFiber 
+          (
+          unsigned int 
+          fiber)
+          
+        
+      
+
+
+Enable Fiber transceiver. 
+Note: All Fiber are enabled by default (no harm, except for 1-2W power usage)
+See AlsotiDisableFiber 
+Parameters
+  
+    fiber,:integer indicative of the transceiver to enable
+  
+  
+
+ReturnsOK if successful, ERROR otherwise. 
+
+
+
+
+
+
+      
+        
+          int tiEnableTriggerSource 
+          (
+          )
+          
+        
+      
+
+
+Enable trigger sources Enable trigger sources set by tiSetTriggerSource(...) or tiSetTriggerSourceMask(...) 
+See AlsotiSetTriggerSource 
+
+tiSetTriggerSourceMask
+ReturnsOK if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiEnableVXSSignals 
+          (
+          )
+          
+        
+      
+
+
+Enable trigger and sync signals sent through the VXS to the Signal Distribution (SD) module. 
+This may be required to eliminate the possibility of accidental
+signals being sent during Clock Synchronization or Trigger
+Enable/Disabling by the TI Master or TS.
+See AlsotiDisableVXSSignals 
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiFakeTriggerBankOnError 
+          (
+          int 
+          enable)
+          
+        
+      
+
+
+Option to generate a fake trigger bank when  finds an ERROR. Enabled by library default. 
+Parameters
+  
+    enableEnable fake trigger bank if enable != 0.
+  
+  
+
+ReturnsOK 
+
+
+
+
+
+
+      
+        
+          unsigned int tiFind 
+          (
+          )
+          
+        
+      
+
+
+Find the TI within the prescribed "GEO Slot to A24 VME Address" range from slot 3 to 21. 
+ReturnsA24 VME address if found. Otherwise, 0 
+
+
+
+
+
+
+      
+        
+          int tiForceSendTriggerSourceEnable 
+          (
+          )
+          
+        
+      
+
+
+Force TI to send trigger source enabled bits to TI-master or TD. 
+ReturnsOK if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int32_t tiGetEventFormat 
+          (
+          )
+          
+        
+      
+
+
+Get the event format. 
+Returnsinteger number indicating the event format
+0: 32 bit event number only
+1: 32 bit event number + 32 bit timestamp
+2: 32 bit event number + higher 16 bits of timestamp + higher 16 bits of eventnumber
+3: 32 bit event number + 32 bit timestamp
+higher 16 bits of timestamp + higher 16 bits of eventnumber 
+
+
+
+
+
+
+
+
+
+
+      
+        
+          int tiInit 
+          (
+          unsigned int 
+          tAddr, 
+        
+        
+          
+          
+          unsigned int 
+          mode, 
+        
+        
+          
+          
+          int 
+          iFlag 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Initialize the TIp register space into local memory, and setup registers given user input. 
+Parameters
+  
+    tAddrAddress or Slot Number
+A24 VME Address of the TI (0x000016 - 0xffffff)
+Slot number of TI (1 - 21)
+
+
+    modeReadout/Triggering Mode
+0 External Trigger - Interrupt Mode
+1 TI/TImaster Trigger - Interrupt Mode
+2 External Trigger - Polling Mode
+3 TI/TImaster Trigger - Polling Mode
+4 TSrev2 Trigger + TRG - Interrupt Mode
+5 TSrev2 Trigger + TRG - Polling Mode
+
+
+    iFlagInitialization bit mask
+0 Do not initialize the board, just setup the pointers to the registers
+1 Use Slave Fiber 5, instead of 1
+2 Ignore firmware check
+
+
+  
+  
+
+ReturnsOK if successful, otherwise ERROR. 
+
+
+
+
+
+
+      
+        
+          int tiReload 
+          (
+          )
+          
+        
+      
+
+
+Reload the firmware on the FPGA. 
+ReturnsOK if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiReset 
+          (
+          )
+          
+        
+      
+
+
+Perform a soft reset of the TI. 
+ReturnsOK if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiResetEventCounter 
+          (
+          )
+          
+        
+      
+
+
+Reset the L1A counter, as incremented by the TI. 
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiSetAdr32 
+          (
+          unsigned int 
+          a32base)
+          
+        
+      
+
+
+Routine to set the A32 Base. 
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiSetBusySource 
+          (
+          unsigned int 
+          sourcemask, 
+        
+        
+          
+          
+          int 
+          rFlag 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Set the busy source with a given sourcemask sourcemask bits: 
+Parameters
+  
+    sourcemask
+0: SWA
+1: SWB
+2: P2
+3: FP-FTDC
+4: FP-FADC
+5: FP
+6: Unused
+7: Loopack
+8-15: Fiber 1-8
+
+
+    rFlag- decision to reset the global source flags
+0: Keep prior busy source settings and set new "sourcemask"
+1: Reset, using only that specified with "sourcemask" 
+
+
+  
+  
+
+ReturnsOK if successful, ERROR otherwise. 
+
+
+
+
+
+
+      
+        
+          int tiSetClockSource 
+          (
+          unsigned int 
+          source)
+          
+        
+      
+
+
+Set the clock to the specified source. 
+Parameters
+  
+    source
+0: Onboard clock
+1: External clock (HFBR1 input)
+5: External clock (HFBR5 input)
+9: Bridge port clock (firmware defined)
+
+
+  
+  
+
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiSetCrateID 
+          (
+          unsigned int 
+          crateID)
+          
+        
+      
+
+
+Set the crate ID. 
+ReturnsOK if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiSetEventFormat 
+          (
+          int 
+          format)
+          
+        
+      
+
+
+Set the event format. 
+Parameters
+  
+    format- integer number indicating the event format
+0: 32 bit event number only
+1: 32 bit event number + 32 bit timestamp
+2: 32 bit event number + higher 16 bits of timestamp + higher 16 bits of eventnumber
+3: 32 bit event number + 32 bit timestamp
+higher 16 bits of timestamp + higher 16 bits of eventnumber
+
+
+
+
+  
+  
+
+ReturnsOK if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiSetEvTypeScalers 
+          (
+          int 
+          enable)
+          
+        
+      
+
+
+Enable/disable recording of scalers associated with the bits in the event type. 
+Provides the means for counting the event type bits, for each event obtained through ().
+Parameters
+  
+    enable,:
+0: Scalers Disabled
+1: Scalers Enabled, event type decoded in ()
+
+
+  
+  
+
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiSetFPInputReadout 
+          (
+          int 
+          enable)
+          
+        
+      
+
+
+Set whether or not the latched pattern of FP Inputs in block readout. 
+Parameters
+  
+    enable
+0: Disable
+>0: Enable
+
+
+  
+  
+
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiSetGoOutput 
+          (
+          int 
+          enable)
+          
+        
+      
+
+
+Enable/Disable use of O#4 as the 'GO' output level, enabled when trigger sources are enabled. 
+Parameters
+  
+    enableEnable flag 
+      0: Disable
+     !0: Enable
+*
+  
+  
+
+ReturnsOK if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiSetInstantBlockLevelChange 
+          (
+          int 
+          enable)
+          
+        
+      
+
+
+Set TS to instantly change blocklevel when broadcast is received. 
+Parameters
+  
+    enableOption to enable or disable this feature
+0: Disable !0: Enable
+
+
+  
+  
+
+ReturnsOK if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiSetOutputPort 
+          (
+          unsigned int 
+          set1, 
+        
+        
+          
+          
+          unsigned int 
+          set2, 
+        
+        
+          
+          
+          unsigned int 
+          set3, 
+        
+        
+          
+          
+          unsigned int 
+          set4 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Set (or unset) high level for the output ports on the front panel labelled as O#1-4. 
+Parameters
+  
+    set1O#1 
+    set2O#2 
+    set3O#3 
+    set4O#4
+  
+  
+
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiSetPromptTriggerWidth 
+          (
+          int 
+          width)
+          
+        
+      
+
+
+Set the width of the prompt trigger from OT#2. 
+Parameters
+  
+    widthOutput width will be set to (width + 2) * 4ns
+  
+  
+
+This routine is only functional for Firmware type=2 (modTI)
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiSetScalerMode 
+          (
+          int 
+          mode, 
+        
+        
+          
+          
+          int 
+          control 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Set control over the TS inputs scalers. 
+Provides a means for having counters disabled when trigger sources are disabled and disabled when the specific input is disabled.
+Parameters
+  
+    mode,:
+0: Always count, regardless of trigger source enable
+1: Only count when trigger source is enabled.
+
+
+    control,:
+0: TS inputs scalers count according to 'mode' parameter.
+1: TS inputs scalers can be enabled/disabled with /
+
+
+  
+  
+
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          void tiSetSyncDelayWidth 
+          (
+          unsigned int 
+          delay, 
+        
+        
+          
+          
+          unsigned int 
+          width, 
+        
+        
+          
+          
+          int 
+          widthstep 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Set the delay time and width of the Sync signal. 
+Parameters
+  
+    delaythe delay (latency) set in units of 4ns. 
+    widththe width set in units of 4ns. 
+    twidthif this is non-zero, set width in units of 32ns. 
+  
+  
+
+
+
+
+
+
+
+      
+        
+          int tiSetSyncSource 
+          (
+          unsigned int 
+          sync)
+          
+        
+      
+
+
+Set the Sync source mask. 
+Parameters
+  
+    sync- MASK indicating the sync source bit: description
+0: P0
+1: HFBR1
+2: HFBR5
+3: FP
+4: LOOPBACK
+
+
+  
+  
+
+ReturnsOK if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiSetTokenOutTest 
+          (
+          int 
+          level)
+          
+        
+      
+
+
+Set the level of the token out signal. 
+Parameters
+  
+    level
+>0: High
+0: Low 
+
+
+  
+  
+
+See AlsotiSetTokenTestMode 
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiSetTokenTestMode 
+          (
+          int 
+          mode)
+          
+        
+      
+
+
+Turn on Token out test mode. 
+See AlsotiSetTokenOutTest 
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiSetTriggerPulse 
+          (
+          int 
+          trigger, 
+        
+        
+          
+          
+          int 
+          delay, 
+        
+        
+          
+          
+          int 
+          width, 
+        
+        
+          
+          
+          int 
+          delay_step 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Set the characteristics of a specified trigger. 
+Parameters
+  
+    trigger
+1: set for trigger 1
+2: set for trigger 2 (playback trigger) 
+
+
+    delaydelay in units of delay_step 
+    widthpulse width in units of 4ns 
+    delay_stepstep size of the delay
+0: 16ns !0: 64ns (with an offset of ~4.1 us)
+
+
+  
+  
+
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiSetTriggerSource 
+          (
+          int 
+          trig)
+          
+        
+      
+
+
+Set the trigger source This routine will set a library variable to be set in the TI registers at a call to tiIntEnable. 
+Parameters
+  
+    trig- integer indicating the trigger source
+0: P0
+1: HFBR#1
+2: Front Panel (TRG)
+3: Front Panel TS Inputs
+4: TS (rev2)
+5: Random
+6-9: TS Partition 1-4
+10: HFBR#5
+11: Pulser Trig 2 then Trig1 after specified delay
+
+
+  
+  
+
+ReturnsOK if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiSetTriggerSourceMask 
+          (
+          int 
+          trigmask)
+          
+        
+      
+
+
+Set trigger sources with specified trigmask This routine is for special use when tiSetTriggerSource(...) does not set all of the trigger sources that is required by the user. 
+Parameters
+  
+    trigmaskbits:
+0: P0
+1: HFBR #1
+2: TI Master Loopback
+3: Front Panel (TRG) Input
+4: VME Trigger
+5: Front Panel TS Inputs
+6: TS (rev 2) Input
+7: Random Trigger
+10: HFBR #5
+11: Pulser Trig2 with delayed Trig1 (only compatible with 2 and 7)
+
+
+  
+  
+
+ReturnsOK if successful, ERROR otherwise 
+
+
+
+
+
+
+      
+        
+          int tiSetTSInputDelay 
+          (
+          int 
+          chan, 
+        
+        
+          
+          
+          int 
+          delay 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Set the input delay for the specified front panel TSinput (1-6) 
+Parameters
+  
+    chanFront Panel TSInput Channel (1-6) 
+    delayDelay in units of 4ns (0=8ns) 
+  
+  
+
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          int tiUseBroadcastBufferLevel 
+          (
+          int 
+          enable)
+          
+        
+      
+
+
+Enable/Disable the use of the broadcasted buffer level, instead of the value set locally with . 
+Parameters
+  
+    enable- 1: Enable, 0: Disable
+  
+  
+
+ReturnsOK if successful, otherwise ERROR 
+
+
+
+
+
+
+      
+        
+          void tiUserSyncReset 
+          (
+          int 
+          enable, 
+        
+        
+          
+          
+          int 
+          blflag 
+        
+        
+          
+          )
+          
+        
+      
+
+
+Control level of the SyncReset signal. 
+See AlsotiSetUserSyncResetReceive 
+Parameters
+  
+    enable
+>0: High
+0: Low 
+
+
+    blflagOption to change block level, after SyncReset Low (enable = 0)
+0: Do not change block level
+>0: Broadcast block level to all connected slaves (including self) BlockLevel broadcasted will be set to library value (Set with tiSetBlockLevel) 
+
+
+  
+  
+
+
+
+
+
+
+
+Generated by  
+
+ 1.8.5
+
+
+

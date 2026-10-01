@@ -1,0 +1,10 @@
+get request: 100230264
+user: singhav
+status: done
+/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_1_1_-1.root -> done
+/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_2_1_-1.root -> done
+/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_3_1_-1.root -> done
+/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_4_1_-1.root -> done
+/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_5_1_-1.root -> done
+
+

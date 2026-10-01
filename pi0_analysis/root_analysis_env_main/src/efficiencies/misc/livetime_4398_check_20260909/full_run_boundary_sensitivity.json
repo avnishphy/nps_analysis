@@ -1,0 +1,10 @@
+{
+  "primary": "[b_i,b_(i+1))",
+  "alternative": "(b_i,b_(i+1)]",
+  "alternative_N": 2893284,
+  "alternative_E": 112652,
+  "D": 112746,
+  "S": 2895694,
+  "alternative_EDTM": 0.999166267539425,
+  "alternative_CLTP": 0.9991677889777315
+}

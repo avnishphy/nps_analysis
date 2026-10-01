@@ -1,0 +1,47 @@
+NPS pi0 website plot provenance
+Prepared 2026-09-22 from root_analysis_env_main commit 535df7f75d416dec90bf7b39dfca78a942083912.
+Files were copied byte-for-byte; the listed SHA-256 applies to source and website copy.
+
+cffe07a7c89b3c714852ece66c0eafbd0f77328e07ebffbd32e55946f93ebf50  data_mass_cut_run6929.png
+  source: output/KinC_x60_4a/plots/mass_cut_run6929.png
+  modified: 2026-09-08 16:25:18 -0400; size: 68450 bytes
+
+858619491f7a6a67ca4c7a7c688c0eee37423ab838419641eae728545b3331d6  data_mmiss_vs_mgg_run6929.png
+  source: output/KinC_x60_4a/plots/mmiss_vs_mgg_run6929.png
+  modified: 2026-09-08 16:25:19 -0400; size: 29654 bytes
+
+c637aca3e82c31aa2ecccaa169eef9073660acde195461301135b990bcc73810  efficiency_x60_4b_lh2.png
+  source: output/efficiency_stuff/plots/efficiency_multipanel_vs_run_KinC_x60_4b_lh2.png
+  modified: 2026-08-24 14:31:44 -0400; size: 867613 bytes
+
+a6c582c328001443f80ba6f96af1ac0524375e71d82618c02c0f63042cb655b5  post_mpi0_absolute.png
+  source: output/KinC_x25_3/plots/post_analysis/01_mass_mpi0_absolute.png
+  modified: 2026-08-31 16:43:11 -0400; size: 151731 bytes
+
+18679fb143cd2028ea7fff158f98d9c10185e8559f99b21bc465e95c6b3b8959  pi0_properties_stability.png
+  source: output/KinC_x25_3/plots/post_analysis/run_stability/28_pi0_properties_multipanel.png
+  modified: 2026-08-31 17:35:30 -0400; size: 480101 bytes
+
+b078efea459e3f4bdd7ef6ecc1945cfc9ad1ab841c4a78d7cccc273ea621e955  simc_smeared_2d_mass_cut.png
+  source: output/KinC_x60_4b_pepsi/KinC_x60_4b/root/smear_x60_4b_pepsi/smearing_output/KinC_x60_4b/root/simc_smeared_2d_mass_cut.png
+  modified: 2026-09-18 21:52:00 -0400; size: 60514 bytes
+
+a158620542a66afdb1325b1d5a133f07b5cb6972490cc93c1f1c6f392d89e90d  xsec_slice_t2.png
+  source: output/KinC_x36_5_407/xsec_simc_model/slices/slice_t2_q0_x0.png
+  modified: 2026-09-20 16:53:55 -0400; size: 56603 bytes
+
+6731a15e817885946f85f86db7ade05f5a2dc896412d6bd8c4ce8b48861060ff  xsec_terms_tprime.png
+  source: output/KinC_x36_5_407/xsec_simc_model/sigma_vs_tprime/sigma_terms_vs_minus_tprime_q0_x0.png
+  modified: 2026-09-20 16:53:55 -0400; size: 24934 bytes
+
+115edda3c721fbdddc5f8e4defb2f723d14045cc29d1bd8d48e2ebb750dd1520  partons_coefficients.png
+  source: output/KinC_x36_5_407/xsec_simc_model/partons_projection/partons_coefficients_vs_minus_tprime_q0_x0.png
+  modified: 2026-09-20 16:53:55 -0400; size: 29300 bytes
+
+4c4d5f58a38e7b4df659e5ea788aca0addd73be8c0873499d4800e1bac92233f  migration_response_components.png
+  source: output/KinC_x36_5_407/xsec/migration/response_components.png
+  modified: 2026-09-20 14:50:24 -0400; size: 69340 bytes
+
+a0a071e01369f445d5e81647abe62c453071c07ee858538033bb242b979a9327  migration_fractions.png
+  source: output/KinC_x36_5_407/xsec/migration/selected_migration_fractions.png
+  modified: 2026-09-20 14:50:24 -0400; size: 49657 bytes

@@ -1,0 +1,1312 @@
+[
+  {
+    "run": 4305,
+    "user_attachment": "/home/singhav/.codex/attachments/54b8a574-1ac2-4fbd-b685-70be3eb64733/pasted-text.txt",
+    "local_file": "logbook/run4305_user_log.txt",
+    "sha256": "0c8c12c890cf39a8d51f7d9762beb59def3f8d2aa6cbd6188461d25ac40fa448",
+    "lines": 7054,
+    "matches": [
+      {
+        "line": 2,
+        "text": "10Feb2024 12:11:18: ER1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 8,
+        "text": "10Feb2024 12:11:18: ER1 INFO:       DataChannel File: file = /home/coda/data/raw/nps_coin_4305.dat.0"
+      },
+      {
+        "line": 14,
+        "text": "10Feb2024 12:11:19: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 19,
+        "text": "10Feb2024 12:11:19: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 24,
+        "text": "10Feb2024 12:11:19: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 29,
+        "text": "10Feb2024 12:11:19: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 34,
+        "text": "10Feb2024 12:11:19: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 39,
+        "text": "10Feb2024 12:11:19: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 44,
+        "text": "10Feb2024 12:11:19: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 49,
+        "text": "10Feb2024 12:11:19: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 54,
+        "text": "10Feb2024 12:11:19: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 59,
+        "text": "10Feb2024 12:11:19: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 64,
+        "text": "10Feb2024 12:11:19: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 69,
+        "text": "10Feb2024 12:11:19: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 74,
+        "text": "10Feb2024 12:11:19: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 79,
+        "text": "10Feb2024 12:11:19: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 90,
+        "text": "10Feb2024 12:11:21: npsvtp1 INFO: prestarting,run 4305, type 1"
+      },
+      {
+        "line": 91,
+        "text": "10Feb2024 12:11:21: npsvtp2 INFO: prestarting,run 4305, type 1"
+      },
+      {
+        "line": 92,
+        "text": "10Feb2024 12:11:21: npsvtp3 INFO: prestarting,run 4305, type 1"
+      },
+      {
+        "line": 93,
+        "text": "10Feb2024 12:11:21: npsvtp4 INFO: prestarting,run 4305, type 1"
+      },
+      {
+        "line": 94,
+        "text": "10Feb2024 12:11:21: npsvtp5 INFO: prestarting,run 4305, type 1"
+      },
+      {
+        "line": 103,
+        "text": "10Feb2024 12:11:22: npsvtp1 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 113,
+        "text": "10Feb2024 12:11:22: npsvtp4 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 115,
+        "text": "10Feb2024 12:11:22: npsvtp2 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 116,
+        "text": "10Feb2024 12:11:22: npsvtp5 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 119,
+        "text": "10Feb2024 12:11:22: npsvtp3 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 138,
+        "text": "      RxErrorCnt = 0"
+      },
+      {
+        "line": 140,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 154,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 180,
+        "text": "      RxErrorCnt = 0"
+      },
+      {
+        "line": 182,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 203,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 229,
+        "text": "      RxErrorCnt = 0"
+      },
+      {
+        "line": 231,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 252,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 279,
+        "text": "      RxErrorCnt = 0"
+      },
+      {
+        "line": 281,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 302,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 330,
+        "text": "      RxErrorCnt = 0"
+      },
+      {
+        "line": 332,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 354,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 370,
+        "text": "10Feb2024 12:11:22: npsvme5 INFO: prestarting,run 4305, type 1"
+      },
+      {
+        "line": 371,
+        "text": "10Feb2024 12:11:22: ROC5 INFO: prestarting,run 4305, type 1"
+      },
+      {
+        "line": 372,
+        "text": "10Feb2024 12:11:22: npsvme1 INFO: prestarting,run 4305, type 1"
+      },
+      {
+        "line": 373,
+        "text": "10Feb2024 12:11:22: npsvme2 INFO: prestarting,run 4305, type 1"
+      },
+      {
+        "line": 374,
+        "text": "10Feb2024 12:11:22: npsvme3 INFO: prestarting,run 4305, type 1"
+      },
+      {
+        "line": 378,
+        "text": "10Feb2024 12:11:22: npsvme4 INFO: prestarting,run 4305, type 1"
+      },
+      {
+        "line": 379,
+        "text": "10Feb2024 12:11:22: ROC3 INFO: prestarting,run 4305, type 1"
+      },
+      {
+        "line": 381,
+        "text": "10Feb2024 12:11:22: npsvme5 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 393,
+        "text": "10Feb2024 12:11:22: npsvme1 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 396,
+        "text": "10Feb2024 12:11:22: npsvme2 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 399,
+        "text": "10Feb2024 12:11:22: npsvme3 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 402,
+        "text": "10Feb2024 12:11:22: npsvme4 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 462,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 485,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 486,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 509,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 580,
+        "text": "                                                  .......Error Status......."
+      },
+      {
+        "line": 802,
+        "text": "Slot     Prescale  Rate[kHz] Status    Period    npulses"
+      },
+      {
+        "line": 859,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 915,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 916,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 945,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 963,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 993,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 994,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 1032,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 1167,
+        "text": "                                                  .......Error Status......."
+      },
+      {
+        "line": 1216,
+        "text": "                                                  .......Error Status......."
+      },
+      {
+        "line": 1543,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 1593,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 1594,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 1644,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 1884,
+        "text": "                                                  .......Error Status......."
+      },
+      {
+        "line": 2210,
+        "text": "Slot     Prescale  Rate[kHz] Status    Period    npulses"
+      },
+      {
+        "line": 2240,
+        "text": "Slot     Prescale  Rate[kHz] Status    Period    npulses"
+      },
+      {
+        "line": 2532,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 2555,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 2556,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 2579,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 2684,
+        "text": "                                                  .......Error Sta"
+      },
+      {
+        "line": 3065,
+        "text": "10Feb2024 12:11:25: ROC1 INFO: prestarting,run 4305, type 1"
+      },
+      {
+        "line": 3071,
+        "text": "10Feb2024 12:11:30: sms_coin_sparse WARN:  waiting for... ROC1, "
+      },
+      {
+        "line": 3128,
+        "text": "      RxErrorCnt = 820"
+      },
+      {
+        "line": 3130,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3144,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3170,
+        "text": "      RxErrorCnt = 818"
+      },
+      {
+        "line": 3172,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3193,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3221,
+        "text": "      RxErrorCnt = 821"
+      },
+      {
+        "line": 3223,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3244,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3270,
+        "text": "      RxErrorCnt = 820"
+      },
+      {
+        "line": 3272,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3293,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3319,
+        "text": "      RxErrorCnt = 820"
+      },
+      {
+        "line": 3321,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3344,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3409,
+        "text": "10Feb2024 12:11:43: sms_coin_sparse WARN:  waiting for... ROC1, "
+      },
+      {
+        "line": 3419,
+        "text": "10Feb2024 12:11:48: sms_coin_sparse WARN:  waiting for... ROC1, "
+      },
+      {
+        "line": 3430,
+        "text": "10Feb2024 12:11:53: sms_coin_sparse WARN:  waiting for... ROC1, "
+      },
+      {
+        "line": 3443,
+        "text": "10Feb2024 12:11:58: sms_coin_sparse WARN:  waiting for... ROC1, "
+      },
+      {
+        "line": 3462,
+        "text": "10Feb2024 12:12:00: sms_coin_sparse INFO:  StartRun succeeded."
+      },
+      {
+        "line": 4047,
+        "text": "10Feb2024 12:33:07: sms_coin_sparse WARN:  waiting for... ROC1, "
+      },
+      {
+        "line": 4050,
+        "text": "10Feb2024 12:33:12: sms_coin_sparse WARN:  waiting for... ROC1, "
+      },
+      {
+        "line": 4053,
+        "text": "10Feb2024 12:33:17: sms_coin_sparse WARN:  waiting for... ROC1, "
+      },
+      {
+        "line": 4056,
+        "text": "10Feb2024 12:33:22: sms_coin_sparse WARN:  waiting for... ROC1, "
+      },
+      {
+        "line": 4058,
+        "text": "10Feb2024 12:33:27: sms_coin_sparse WARN:  waiting for... ROC1, "
+      },
+      {
+        "line": 4065,
+        "text": "10Feb2024 12:33:32: ROC1 INFO: ended after 560647 blocks (560647 events) "
+      },
+      {
+        "line": 4071,
+        "text": "10Feb2024 12:33:32: sms_coin_sparse WARN:  waiting for... ROC1, "
+      },
+      {
+        "line": 4078,
+        "text": "10Feb2024 12:33:37: ROC3 INFO: ended after 560647 blocks (560647 events) "
+      },
+      {
+        "line": 4124,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 4147,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 4148,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 4171,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 4242,
+        "text": "                                                  .......Error Status......."
+      },
+      {
+        "line": 4466,
+        "text": "Slot     Prescale  Rate[kHz] Status    Period    npulses"
+      },
+      {
+        "line": 4479,
+        "text": "10Feb2024 12:33:37: npsvme5 INFO: ended after 560647 blocks (560647 events) "
+      },
+      {
+        "line": 4523,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 4546,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 4547,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 4603,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 4634,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 4672,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 4673,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 4716,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 4817,
+        "text": "                                                  .......Error Status......."
+      },
+      {
+        "line": 4896,
+        "text": "                                                  .......Error Status......."
+      },
+      {
+        "line": 5145,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 5173,
+        "text": "10Feb2024 12:33:37: ROC5 INFO: ended after 560647 blocks (560647 events) "
+      },
+      {
+        "line": 5198,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 5221,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 5222,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 5293,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 5294,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 5330,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 5403,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 5700,
+        "text": "                                                  .......Error Status......."
+      },
+      {
+        "line": 6206,
+        "text": "Slot     Prescale  Rate[kHz] Status    Period    npulses"
+      },
+      {
+        "line": 6335,
+        "text": "10Feb2024 12:33:37: npsvme1 INFO: ended after 560647 blocks (560647 events) "
+      },
+      {
+        "line": 6422,
+        "text": "Slot     Prescale  Rate[kHz] Status    Period    npulses"
+      },
+      {
+        "line": 6509,
+        "text": "10Feb2024 12:33:37: npsvme2 INFO: ended after 560647 blocks (560647 events) "
+      },
+      {
+        "line": 6694,
+        "text": "10Feb2024 12:33:37: npsvme4 INFO: ended after 560647 blocks (560647 events) "
+      },
+      {
+        "line": 6740,
+        "text": "10Feb2024 12:33:37: npsvme3 INFO: ended after 560647 blocks (560647 events) "
+      },
+      {
+        "line": 6764,
+        "text": "      RxErrorCnt = 821"
+      },
+      {
+        "line": 6766,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 6789,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 6814,
+        "text": "      RxErrorCnt = 818"
+      },
+      {
+        "line": 6816,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 6838,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 6848,
+        "text": "10Feb2024 12:33:42: npsvtp1 INFO: ended after 560647 blocks (560647 events) "
+      },
+      {
+        "line": 6870,
+        "text": "      RxErrorCnt = 820"
+      },
+      {
+        "line": 6872,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 6893,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 6906,
+        "text": "10Feb2024 12:33:42: npsvtp2 INFO: ended after 560647 blocks (560647 events) "
+      },
+      {
+        "line": 6926,
+        "text": "      RxErrorCnt = 820"
+      },
+      {
+        "line": 6928,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 6949,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 6975,
+        "text": "      RxErrorCnt = 820"
+      },
+      {
+        "line": 6977,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 6991,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 7007,
+        "text": "10Feb2024 12:33:42: npsvtp3 INFO: ended after 560647 blocks (560647 events) "
+      },
+      {
+        "line": 7008,
+        "text": "10Feb2024 12:33:42: npsvtp4 INFO: ended after 560647 blocks (560647 events) "
+      },
+      {
+        "line": 7009,
+        "text": "10Feb2024 12:33:42: npsvtp5 INFO: ended after 560647 blocks (560647 events) "
+      }
+    ]
+  },
+  {
+    "run": 4303,
+    "user_attachment": "/home/singhav/.codex/attachments/47f39c89-02ab-4bbd-8a44-c927c454f778/pasted-text.txt",
+    "local_file": "logbook/run4303_user_log.txt",
+    "sha256": "7effebb888bacb3904529cfa5345afe435f126cfb1b7a6f4528032a60b17a25b",
+    "lines": 8342,
+    "matches": [
+      {
+        "line": 2,
+        "text": "10Feb2024 10:37:50: ER1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 8,
+        "text": "10Feb2024 10:37:50: ER1 INFO:       DataChannel File: file = /home/coda/data/raw/nps_coin_4303.dat.0"
+      },
+      {
+        "line": 14,
+        "text": "10Feb2024 10:37:51: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 19,
+        "text": "10Feb2024 10:37:51: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 24,
+        "text": "10Feb2024 10:37:51: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 29,
+        "text": "10Feb2024 10:37:51: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 34,
+        "text": "10Feb2024 10:37:51: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 39,
+        "text": "10Feb2024 10:37:51: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 44,
+        "text": "10Feb2024 10:37:51: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 49,
+        "text": "10Feb2024 10:37:51: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 54,
+        "text": "10Feb2024 10:37:51: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 59,
+        "text": "10Feb2024 10:37:51: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 64,
+        "text": "10Feb2024 10:37:51: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 69,
+        "text": "10Feb2024 10:37:51: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 74,
+        "text": "10Feb2024 10:37:51: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 79,
+        "text": "10Feb2024 10:37:51: PEB1 INFO:       DataChannel Adapter: ignore data errors = false"
+      },
+      {
+        "line": 90,
+        "text": "10Feb2024 10:37:53: npsvtp1 INFO: prestarting,run 4303, type 1"
+      },
+      {
+        "line": 91,
+        "text": "10Feb2024 10:37:53: npsvtp2 INFO: prestarting,run 4303, type 1"
+      },
+      {
+        "line": 92,
+        "text": "10Feb2024 10:37:53: npsvtp3 INFO: prestarting,run 4303, type 1"
+      },
+      {
+        "line": 93,
+        "text": "10Feb2024 10:37:53: npsvtp5 INFO: prestarting,run 4303, type 1"
+      },
+      {
+        "line": 94,
+        "text": "10Feb2024 10:37:53: npsvtp4 INFO: prestarting,run 4303, type 1"
+      },
+      {
+        "line": 115,
+        "text": "10Feb2024 10:37:53: npsvtp5 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 116,
+        "text": "10Feb2024 10:37:53: npsvtp1 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 117,
+        "text": "10Feb2024 10:37:53: npsvtp3 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 118,
+        "text": "10Feb2024 10:37:53: npsvtp2 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 119,
+        "text": "10Feb2024 10:37:53: npsvtp4 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 138,
+        "text": "      RxErrorCnt = 0"
+      },
+      {
+        "line": 140,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 154,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 180,
+        "text": "      RxErrorCnt = 0"
+      },
+      {
+        "line": 182,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 203,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 229,
+        "text": "      RxErrorCnt = 0"
+      },
+      {
+        "line": 231,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 252,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 277,
+        "text": "      RxErrorCnt = 0"
+      },
+      {
+        "line": 279,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 300,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 327,
+        "text": "      RxErrorCnt = 0"
+      },
+      {
+        "line": 329,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 351,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 373,
+        "text": "10Feb2024 10:37:55: npsvme5 INFO: prestarting,run 4303, type 1"
+      },
+      {
+        "line": 374,
+        "text": "10Feb2024 10:37:55: npsvme1 INFO: prestarting,run 4303, type 1"
+      },
+      {
+        "line": 375,
+        "text": "10Feb2024 10:37:55: npsvme2 INFO: prestarting,run 4303, type 1"
+      },
+      {
+        "line": 376,
+        "text": "10Feb2024 10:37:55: ROC5 INFO: prestarting,run 4303, type 1"
+      },
+      {
+        "line": 377,
+        "text": "10Feb2024 10:37:55: npsvme3 INFO: prestarting,run 4303, type 1"
+      },
+      {
+        "line": 378,
+        "text": "10Feb2024 10:37:55: ROC3 INFO: prestarting,run 4303, type 1"
+      },
+      {
+        "line": 379,
+        "text": "10Feb2024 10:37:55: npsvme4 INFO: prestarting,run 4303, type 1"
+      },
+      {
+        "line": 385,
+        "text": "10Feb2024 10:37:55: npsvme5 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 390,
+        "text": "10Feb2024 10:37:55: npsvme1 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 392,
+        "text": "10Feb2024 10:37:55: npsvme2 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 399,
+        "text": "10Feb2024 10:37:55: npsvme4 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 404,
+        "text": "10Feb2024 10:37:55: npsvme3 WARN: configtype = coin_sparse, updated config file path"
+      },
+      {
+        "line": 464,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 487,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 488,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 511,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 582,
+        "text": "                                                  .......Error Status......."
+      },
+      {
+        "line": 804,
+        "text": "Slot     Prescale  Rate[kHz] Status    Period    npulses"
+      },
+      {
+        "line": 861,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 884,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 885,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 908,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 1009,
+        "text": "                                                  .......Error Status......."
+      },
+      {
+        "line": 1210,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 1246,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 1247,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 1284,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 1487,
+        "text": "                                                  .......Error Status......."
+      },
+      {
+        "line": 1502,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 1539,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 1540,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 1605,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 1815,
+        "text": "                                                  .......Error Status......."
+      },
+      {
+        "line": 1893,
+        "text": "Slot     Prescale  Rate[kHz] Status    Period    npulses"
+      },
+      {
+        "line": 2461,
+        "text": "Slot     Prescale  Rate[kHz] Status    Period    npulses"
+      },
+      {
+        "line": 2534,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 2557,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 2558,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 2581,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 2686,
+        "text": "                                                  .......Error "
+      },
+      {
+        "line": 3065,
+        "text": "10Feb2024 10:37:59: ROC1 INFO: prestarting,run 4303, type 1"
+      },
+      {
+        "line": 3072,
+        "text": "10Feb2024 10:38:04: sms_coin_sparse WARN:  waiting for... ROC1, "
+      },
+      {
+        "line": 3130,
+        "text": "      RxErrorCnt = 819"
+      },
+      {
+        "line": 3132,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3153,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3179,
+        "text": "      RxErrorCnt = 820"
+      },
+      {
+        "line": 3181,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3195,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3219,
+        "text": "      RxErrorCnt = 820"
+      },
+      {
+        "line": 3221,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3243,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3269,
+        "text": "      RxErrorCnt = 820"
+      },
+      {
+        "line": 3271,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3294,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3324,
+        "text": "      RxErrorCnt = 820"
+      },
+      {
+        "line": 3326,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3347,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 3417,
+        "text": "10Feb2024 10:38:19: sms_coin_sparse WARN:  waiting for... ROC1, "
+      },
+      {
+        "line": 3426,
+        "text": "10Feb2024 10:38:24: sms_coin_sparse WARN:  waiting for... ROC1, "
+      },
+      {
+        "line": 3440,
+        "text": "10Feb2024 10:38:29: sms_coin_sparse WARN:  waiting for... ROC1, "
+      },
+      {
+        "line": 3450,
+        "text": "10Feb2024 10:38:34: sms_coin_sparse WARN:  waiting for... ROC1, "
+      },
+      {
+        "line": 3467,
+        "text": "10Feb2024 10:38:35: sms_coin_sparse INFO:  StartRun succeeded."
+      },
+      {
+        "line": 5358,
+        "text": "10Feb2024 11:47:15: ROC1 INFO: ended after 3310432 blocks (3310432 events) "
+      },
+      {
+        "line": 5366,
+        "text": "10Feb2024 11:47:18: ROC3 INFO: ended after 3310432 blocks (3310432 events) "
+      },
+      {
+        "line": 5412,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 5435,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 5436,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 5459,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 5530,
+        "text": "                                                  .......Error Status......."
+      },
+      {
+        "line": 5753,
+        "text": "Slot     Prescale  Rate[kHz] Status    Period    npulses"
+      },
+      {
+        "line": 5767,
+        "text": "10Feb2024 11:47:18: npsvme5 INFO: ended after 3310432 blocks (3310432 events) "
+      },
+      {
+        "line": 5811,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 5834,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 5835,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 5858,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 5937,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 5980,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 5981,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 6051,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 6082,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 6138,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 6139,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 6224,
+        "text": "                                                  .......Error Status......."
+      },
+      {
+        "line": 6234,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 6298,
+        "text": " Configured as a TI Slave"
+      },
+      {
+        "line": 6325,
+        "text": "                                                  .......Error Status......."
+      },
+      {
+        "line": 6381,
+        "text": " Block Level        = 1 "
+      },
+      {
+        "line": 6382,
+        "text": " Block Buffer Level = 5 -Broadcast- (Busy Enabled)"
+      },
+      {
+        "line": 6472,
+        "text": " Bus Errors Disabled"
+      },
+      {
+        "line": 6620,
+        "text": "10Feb2024 11:47:18: npsvme3 INFO: Error Status......."
+      },
+      {
+        "line": 6807,
+        "text": "                                                  .......Error Status......."
+      },
+      {
+        "line": 7795,
+        "text": "Slot     Prescale  Rate[kHz] Status    Period    npulses"
+      },
+      {
+        "line": 7837,
+        "text": "Slot     Prescale  Rate[kHz] Status    Period    npulses"
+      },
+      {
+        "line": 7900,
+        "text": "10Feb2024 11:47:18: npsvme2 INFO: ended after 3310432 blocks (3310432 events) "
+      },
+      {
+        "line": 7928,
+        "text": "10Feb2024 11:47:18: npsvme1 INFO: ended after 3310432 blocks (3310432 events) "
+      },
+      {
+        "line": 8020,
+        "text": "10Feb2024 11:47:18: npsvme3 INFO: ended after 3310432 blocks (3310432 events) "
+      },
+      {
+        "line": 8022,
+        "text": "10Feb2024 11:47:18: npsvme4 INFO: ended after 3310432 blocks (3310432 events) "
+      },
+      {
+        "line": 8025,
+        "text": "10Feb2024 11:47:18: ROC5 INFO: ended after 3310432 blocks (3310432 events) "
+      },
+      {
+        "line": 8050,
+        "text": "      RxErrorCnt = 819"
+      },
+      {
+        "line": 8052,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 8073,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 8085,
+        "text": "10Feb2024 11:47:22: npsvtp1 INFO: ended after 3310432 blocks (3310432 events) "
+      },
+      {
+        "line": 8104,
+        "text": "      RxErrorCnt = 820"
+      },
+      {
+        "line": 8106,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 8132,
+        "text": "      RxErrorCnt = 820"
+      },
+      {
+        "line": 8134,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 8155,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 8178,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 8212,
+        "text": "      RxErrorCnt = 820"
+      },
+      {
+        "line": 8214,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 8235,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 8245,
+        "text": "10Feb2024 11:47:22: npsvtp2 INFO: ended after 3310432 blocks (3310432 events) "
+      },
+      {
+        "line": 8264,
+        "text": "      RxErrorCnt = 820"
+      },
+      {
+        "line": 8266,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 8280,
+        "text": "    -Lane--  Channel  Error  Link   Trg   Latency [ns]"
+      },
+      {
+        "line": 8286,
+        "text": "10Feb2024 11:47:22: npsvtp3 INFO: ended after 3310432 blocks (3310432 events) "
+      },
+      {
+        "line": 8295,
+        "text": "10Feb2024 11:47:22: npsvtp5 INFO: ended after 3310432 blocks (3310432 events) "
+      },
+      {
+        "line": 8296,
+        "text": "10Feb2024 11:47:22: npsvtp4 INFO: ended after 3310432 blocks (3310432 events) "
+      }
+    ]
+  }
+]

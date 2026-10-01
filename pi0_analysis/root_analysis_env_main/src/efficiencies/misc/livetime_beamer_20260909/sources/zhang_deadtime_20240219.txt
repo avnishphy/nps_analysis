@@ -1,0 +1,928 @@
+EDTM Analysis                                                                    EDTM TDC Time Raw > 1                                                                                                             EDTM TDC Time Raw∈ [1770,2200]
+                                                                                                      EDTM Counts Difference (Run 3992)                                                                                                                           EDTM Counts Difference (Run 3992)
+                                                         45
+
+
+
+
+                                           Difference
+
+
+
+
+                                                                                                                                                                                                   Difference
+                                                                                                                                                                                                                    10
+                                                                          Events - Scaler
+                                                         40               40Hz counts - Scaler
+                                                                                                                                                                                                                     5
+                                                         35               Scaler - Scaler
+
+
+
+                                                                                                                                                                                                                                                                                                                                                       EDTM
+                                                         30                                                                                                                                                          0
+
+                                                         25                                                                                                                                                         −5
+
+
+
+                                                                                                                                                                                                                                                                                                                                                     Counts Diff
+                                                         20
+                                                                                                                                                                                                                   − 10
+                                                         15
+                                                                                                                                                                                                                   − 15
+                                                         10                                                                                                                                                                           Events - Scaler
+                                                                                                                                                                                                                                      40Hz counts - Scaler
+
+
+Ø EDTM live time > 100% is due
+                                                          5                                                                                                                                                        − 20
+                                                                                                                                                                                                                                      Scaler - Scaler
+                                                          0           0                          50                   100                     150                        200                                                      0                          50                   100                     150                         200
+                                                                                                                                                    Time (250MHz Clock) in second                                                                                                                               Time (250MHz Clock) in second
+
+
+
+
+  to the tdc noise                                                                                       EDTM Counts Rate (Run 3992)                                                                                                                                 EDTM Counts Rate (Run 3992)
+
+
+
+
+                                       Rate (Hz)
+
+
+
+
+                                                                                                                                                                                               Rate (Hz)
+                                                         60               Event Rate                                                                                                                               40.5
+
+                                                                          40Hz
+                                                                                                                                                                                                                    40
+                                                                          Scaler Rate
+
+
+Ø Where those tdc noise come
+                                                         55
+
+                                                                                                                                                                                                                   39.5
+
+
+
+
+                                                                                                                                                                                                                                                                                                                                                     EDTM Rate
+                                                         50
+                                                                                                                                                                                                                    39
+
+
+
+
+  from?                                                  45                                                                                                                                                        38.5
+
+
+                                                                                                                                                                                                                    38
+                                                                                                                                                                                                                                                                                                                      Event Rate
+
+                                                         40                                                                                                                                                                                                                                                           40Hz
+
+                                                                                                                                                                                                                   37.5                                                                                               Scaler Rate
+                                                                  0                          50                      100                      150                        200                                                  0                          50                      100                      150                         200
+                                                                                                                                                    Time (250MHz Clock) in second                                                                                                                               Time (250MHz Clock) in second
+
+
+
+                                                                                                             hL1ACCP Rate (Run 3992)                                                                                                                                     hL1ACCP Rate (Run 3992)
+                               Rate (Hz)
+
+
+
+
+                                                                                                                                                                                              Rate (Hz)
+                                                        2500                                                                                                                                                       2500
+
+
+                                                        2000                                                                                                                                                       2000
+
+
+                                                        1500                                                                                                                                                       1500                                                                                                                                  Trigger Rate
+                                                        1000                                                                                                                                                       1000
+
+
+                                                        500                                                                                                                                                        500
+
+
+                                                          0       0                          50                      100                      150                        200                                         0        0                          50                      100                      150                         200
+                                                                                                                                                    Time (250MHz Clock) in second                                                                                                                               Time (250MHz Clock) in second
+
+
+
+                                                                                                             h_EDTM_tdcTimeRaw_3992                                                                                                                                      h_EDTM_tdcTimeRaw_3992
+                                                                                                                                                                   h_EDTM_tdcTimeRaw_3992                                                                                                                                      h_EDTM_tdcTimeRaw_3992
+                                           Counts
+
+
+
+
+                                                                                                                                                                                                          Counts
+                                                                                                                                                                  Entries             7320                                                                                                                                    Entries             7255
+                                                                                                                                                                  Mean                1983                                                                                                                                    Mean                1983
+                                                                                                                                                                  Std Dev             88.91                                                                                                                                   Std Dev            87.65
+
+                                                        102                                                                                                                                                        102
+
+
+
+                                                                                                                                                                                                                                                                                                                                                    EDTM
+                                                         10                                                                                                                                                         10
+
+                                                                                                                                                                                                                                                                                                                                                 TDC Time Raw
+Run 3992                                                  1
+
+                                                              0                   500                 1000             1500            2000                2500                 3000
+                                                                                                                                                                      Raw tdc Time
+                                                                                                                                                                                                                     1
+
+                                                                                                                                                                                                                          0                   500                 1000             1500            2000                2500                   3000
+                                                                                                                                                                                                                                                                                                                                    Raw tdc Time
+                                                                                                                                                                                                                                                                                                                                                           1
+EDTM Analysis                                                                       EDTM TDC Time Raw > 1                                                                                                                       EDTM TDC Time Raw > 1
+                                                                                                 EDTM Counts Difference (Run 4533)                                                                                                                          EDTM Counts Difference (Run 3992)
+                                                               0                                                                                                                                               45
+
+
+
+
+                                    Difference
+
+
+
+
+                                                                                                                                                                                                 Difference
+                                                                                                                                                                                                                                Events - Scaler
+                                                         − 100                                                                                                                                                 40               40Hz counts - Scaler
+                                                                                                                                                                                                               35               Scaler - Scaler
+                                                         − 200
+
+                                                         − 300
+
+                                                         − 400
+                                                                                                                                                                                                               30
+
+                                                                                                                                                                                                               25                                                                                                                                 EDTM
+                                                                                                                                                                                                                                                                                                                                                Counts Diff
+                                                                                                                                                                                                               20
+                                                         − 500
+                                                                                                                                                                                                               15
+                                                         − 600
+                                                                                                                                                                                                               10
+                                                                           Events - Scaler
+                                                         − 700
+
+
+Ø Where those tdc noise come
+                                                                                                                                                                                                                5
+                                                                           Scaler - Scaler
+                                                         − 800
+                                                                       0                   100    200            300         400            500                600                                              0           0                          50                   100                     150                        200
+                                                                                                                                          Time (250MHz Clock) in second                                                                                                                                   Time (250MHz Clock) in second
+
+
+
+
+   from?                                                                                            EDTM Counts Rate (Run 4533)                                                                                                                                EDTM Counts Rate (Run 3992)
+
+
+
+
+                                    Rate (Hz)
+
+
+
+
+                                                                                                                                                                                             Rate (Hz)
+                                                         2000                                                                                                                                                  60               Event Rate
+                                                                                                                                                                                                                                40Hz
+                                                         1990                                                                                                                                                                   Scaler Rate
+
+
+• It’s not related with high rate
+                                                                                                                                                                                                               55
+
+                                                         1980
+
+
+
+                                                                                                                                                                                                                                                                                                                                               EDTM Rate
+                                                                                                                                                                                                               50
+                                                         1970
+
+
+
+
+• It’s related with beam                                 1960
+
+
+                                                         1950              Event Rate
+                                                                                                                                                                                                               45
+
+
+
+                                                                                                                                                                                                               40
+
+                                                         1940              Scaler Rate
+                                                                       0                 100     200             300         400            500                600                                                      0                          50                      100                      150                        200
+                                                                                                                                          Time (250MHz Clock) in second                                                                                                                                   Time (250MHz Clock) in second
+
+
+
+                                                                                                        hL1ACCP Rate (Run 4533)                                                                                                                                    hL1ACCP Rate (Run 3992)
+                                    Rate (Hz)
+
+
+
+
+                                                                                                                                                                                     Rate (Hz)
+                                                         2000
+
+                                                                                                                                                                                                              2500
+                                                         1990
+
+                                                                                                                                                                                                              2000
+
+
+
+                                                                                                                                                                                                                                                                                                                                                    Trigger Rate
+                                                         1980
+
+
+                                                         1970                                                                                                                                                 1500
+
+
+                                                         1960                                                             EDTM test run                                                                       1000
+
+
+                                                         1950
+
+
+                                                         1940
+                                                                                                                            2000Hz                                                                            500
+
+
+
+                                                                       0                 100     200             300         400            500                600                                              0       0                          50                      100                      150                        200
+                                                                                                                                          Time (250MHz Clock) in second                                                                                                                                   Time (250MHz Clock) in second
+
+
+
+                                                                                                        h_EDTM_tdcTimeRaw_4533                                                                                                                                     h_EDTM_tdcTimeRaw_3992
+                                                                                                                                                          h_EDTM_tdcTimeRaw_4533                                                                                                                                         h_EDTM_tdcTimeRaw_3992
+                                                Counts
+
+
+
+
+                                                                                                                                                                                                 Counts
+                                                                                                                                                         Entries          1229526                                                                                                                                       Entries             7320
+                                                                                                                                                         Mean                1773                                                                                                                                       Mean                1983
+                                                                                                                                                         Std Dev              87.8                                                                                                                                      Std Dev             88.91
+
+                                                                                                                                                                                                              102
+
+
+
+                                                                                                                                                                                                                                                                                                                                             EDTM
+                                                          104
+
+
+
+
+                                                          10
+                                                            3
+                                                                                                                                                                                                               10
+
+                                                                                                                                                                                                                                                                                                                                          TDC Time Raw
+                                                          102
+                                                                                                                                                                                                                1                                                                                                                                     2
+                                                                   0                 500         1000             1500             2000           2500                 3000                                         0                   500                 1000             1500            2000                2500                 3000
+                                                                                                                                                             Raw tdc Time                                                                                                                                                   Raw tdc Time
+EDTM Analysis                                                                         EDTM TDC Time Raw∈ [1770,2200]
+                                                                                                                                    EDTM Counts Difference (Run 3991)
+
+
+
+
+                                                                      Difference
+                                                                                        0
+
+
+
+                                                                                      − 10
+                                                                                                                                                                                                                     EDTM
+                                                                                                                                                                                                                   Counts Diff
+                                                                                      − 20
+
+
+
+                                                                                      − 30
+                                                                                                        Events - Scaler
+                                                                                                        40Hz counts - Scaler
+
+
+Ø Sometimes the EDTM scaler rate shows a high peak, that’s                            − 40
+                                                                                                    0
+                                                                                                        Scaler - Scaler
+                                                                                                                20             40              60           80          100         120             140
+                                                                                                                                                                              Time (250MHz Clock) in second
+
+
+
+
+  because the two scaler readouts are too close to each other.                                                                         EDTM Counts Rate (Run 3991)
+
+
+
+
+                                                                         Rate (Hz)
+                                                                                       60               Event Rate
+                                                                                                        40Hz
+                                                                                       55               Scaler Rate
+
+
+Ø The real EDTM rate is not that high.                                                 50
+
+
+                                                                                       45                                                                                                                         EDTM Rate
+                                                                                       40
+
+
+                                                                                       35
+
+
+                                                                                                0              20              40              60           80         100          120             140
+                                                                                                                                                                              Time (250MHz Clock) in second
+
+
+
+                                                                                                                                           hL1ACCP Rate (Run 3991)
+
+
+
+
+                                                                 Rate (Hz)
+                                                                                      2800
+
+                                                                                      2700
+
+
+
+
+                                                                                                                                                                                                                       Trigger Rate
+                                                                                      2600
+
+                                                                                      2500
+
+                                                                                      2400
+
+                                                                                      2300
+
+                                                                                      2200
+
+
+                                                                                                0              20              40              60           80         100          120             140
+                                                                                                                                                                              Time (250MHz Clock) in second
+
+
+
+                                                                                                                                           h_EDTM_tdcTimeRaw_3991
+                                                                                                                                                                                             h_EDTM_tdcTimeRaw_3991
+
+
+
+
+                                                                             Counts
+                                                                                                                                                                                            Entries             5624
+                                                                                                                                                                                            Mean                1984
+                                                                                                                                                                                            Std Dev            88.12
+
+                                                                                      102
+
+
+
+                                                                                                                                                                                                                 EDTM
+                                                                                                                                                                                                              TDC Time Raw
+                                                                                       10
+
+
+
+
+Run 3991                                                                                1
+
+                                                                                            0                   500                 1000             1500            2000            2500                 3000
+                                                                                                                                                                                                Raw tdc Time
+                                                                                                                                                                                                                         3
+EDTM Analysis                                                               EDTM TDC Time Raw > 1                                                                                                EDTM TDC Time Raw∈ [1770,2200]
+                                                                                         EDTM Counts Difference (Run 4530)                                                                                                                     EDTM Counts Difference (Run 3993)
+
+
+
+
+                                Difference
+
+
+
+
+                                                                                                                                                                                Difference
+                                              400                                                                                                                                                120
+                                                                   Events - Scaler
+                                              350                                                                                                                                                100
+                                                                   Scaler - Scaler
+                                              300
+                                                                                                                                                                                                  80
+                                              250
+
+                                              200
+                                                                                                                                                                                                  60                                                                                                                             EDTM
+                                                                                                                                                                                                                                                                                                                               Counts Diff
+                                                                                                                                                                                                  40
+                                              150
+
+                                              100                                                                                                                                                 20
+
+                                                                                                                                                                                                                  Events - Scaler
+                                               50                                                                                                                                                     0
+                                                                                                                                                                                                                  40Hz counts - Scaler
+
+
+Ø Sometimes the EDTM scaler                        0
+
+                                                               0                   100    200            300          400           500                 600
+                                                                                                                                 Time (250MHz Clock) in second
+                                                                                                                                                                                                 − 20
+                                                                                                                                                                                                              0
+                                                                                                                                                                                                                  Scaler - Scaler
+                                                                                                                                                                                                                         100             200           300       400      500          600         700             800
+                                                                                                                                                                                                                                                                                         Time (250MHz Clock) in second
+
+
+
+
+   rate shows a deep valley                                                                 EDTM Counts Rate (Run 4530)                                                                                                                           EDTM Counts Rate (Run 3993)
+
+
+
+
+                                Rate (Hz)
+
+
+
+
+                                                                                                                                                                                    Rate (Hz)
+                                              200                                                                                                                                                 45
+
+                                                                                                                                                                                                  40
+                                              180
+
+
+Ø That’s not real because the
+                                                                                                                                                                                                  35
+
+                                                                                                                                                                                                  30
+                                              160
+
+
+
+                                              140
+                                                                                                                                                                                                  25
+
+                                                                                                                                                                                                  20                                                                                                                          EDTM Rate
+   EDTM tdc rate is stable                    120
+                                                                   Event Rate
+                                                                                                                                                                                                  15
+
+                                                                                                                                                                                                  10
+                                                                                                                                                                                                                                                                                               Event Rate
+
+                                                                                                                                                                                                                                                                                               40Hz
+                                                                                                                                                                                                      5
+                                              100                  Scaler Rate                                                                                                                                                                                                                 Scaler Rate
+                                                               0                 100      200            300          400           500                 600                                           0       0          100             200           300       400      500          600         700             800
+                                                                                                                                 Time (250MHz Clock) in second                                                                                                                           Time (250MHz Clock) in second
+
+
+
+                                                           3
+                                                                                                hL1ACCP Rate (Run 4530)                                                                                                                               hL1ACCP Rate (Run 3993)
+                                                       × 10
+                                                                                                                                                                                                 1000
+                                Rate (Hz)
+
+
+
+
+                                                                                                                                                                            Rate (Hz)
+                                              100
+                                                                                                                                                                                                 800
+
+                                               80
+
+
+                                               60
+                                                                                                                                                                                                 600
+
+                                                                                                                                                                                                                                                                                                                                   Trigger Rate
+                                               40                                                                 EDTM test run                                                                  400
+
+
+
+
+                                               20
+                                                                                                                     200Hz                                                                       200
+
+
+
+                                                   0           0                 100      200            300          400           500                 600                                           0       0          100             200           300       400      500          600         700             800
+                                                                                                                                 Time (250MHz Clock) in second                                                                                                                           Time (250MHz Clock) in second
+
+
+
+                                                                                                h_EDTM_tdcTimeRaw_4530                                                                                                                                h_EDTM_tdcTimeRaw_3993
+                                                                                                                                                  h_EDTM_tdcTimeRaw_4530                                                                                                                                h_EDTM_tdcTimeRaw_3993
+                                     Counts
+
+
+
+
+                                                                                                                                                                                        Counts
+                                                                                                                                                 Entries           121342                                                                                                                              Entries            28823
+                                                                                                                                                 Mean                1772                          3
+                                                                                                                                                                                                                                                                                                       Mean                1984
+                                                                                                                                                 Std Dev            87.66                        10                                                                                                    Std Dev             87.65
+
+
+
+
+                                                                                                                                                                                                                                                                                                                             EDTM
+                                                3
+                                              10
+
+                                                                                                                                                                                                 102
+
+
+
+                                              102                                                                                                                                                                                                                                                                         TDC Time Raw
+                                                                                                                                                                                                  10
+
+
+
+                                              10
+                                                                                                                                                                                                                                                                                                                                     4
+                                                       0                     500         1000             1500            2000            2500                 3000                                       0               500                  1000             1500            2000            2500                   3000
+                                                                                                                                                     Raw tdc Time                                                                                                                                            Raw tdc Time
+EDTM Analysis                                                                     EDTM TDC Time Raw > 1                                                                                               EDTM TDC Time Raw∈ [1770,2200]
+                                                                                               EDTM Counts Difference (Run 4531)                                                                                                            EDTM Counts Difference (Run 4037)
+                                                             0
+
+
+
+
+                                          Difference
+
+
+
+
+                                                                                                                                                                                      Difference
+                                                                                                                                                                                                       10
+
+                                                        − 10
+                                                                                                                                                                                                        0
+                                                        − 20
+
+
+                                                        − 30
+                                                                                                                                                                                                      − 10
+                                                                                                                                                                                                                                                                                                                                  EDTM
+                                                        − 40
+
+
+                                                                                                                                                                                                                                                                                                                                Counts Diff
+                                                                                                                                                                                                      − 20
+
+                                                        − 50
+                                                                                                                                                                                                      − 30
+                                                        − 60                                                                                                                                                         Events - Scaler
+                                                                         Events - Scaler
+                                                                                                                                                                                                                     40Hz counts - Scaler
+
+
+Ø The sudden drops appeared in
+                                                                                                                                                                                                      − 40
+                                                        − 70             Scaler - Scaler                                                                                                                             Scaler - Scaler
+                                                                     0                   100     200             300             400         500                600                                              0       20            40   60         80       100     120          140          160          180
+                                                                                                                                        Time (250MHz Clock) in second                                                                                                                      Time (250MHz Clock) in second
+
+
+
+
+  both production and test runs                                                                   EDTM Counts Rate (Run 4531)                                                                                                                    EDTM Counts Rate (Run 4037)
+
+
+
+
+                                  Rate (Hz)
+
+
+
+
+                                                                                                                                                                                         Rate (Hz)
+                                                        500                                                                                                                                            42
+
+                                                       499.5                                                                                                                                           40
+
+
+
+
+Ø The drop appeared only for
+                                                                                                                                                                                                       38
+                                                        499
+                                                                                                                                                                                                       36
+
+
+
+                                                                                                                                                                                                                                                                                                                                EDTM Rate
+                                                       498.5
+                                                                                                                                                                                                       34
+                                                        498
+                                                                                                                                                                                                       32
+
+
+  high rate runs (>200Hz)                              497.5
+
+
+                                                        497              Event Rate
+                                                                                                                                                                                                       30
+
+                                                                                                                                                                                                       28
+                                                                                                                                                                                                                                                                                                 Event Rate
+
+                                                                                                                                                                                                                                                                                                 40Hz
+                                                                         Scaler Rate                                                                                                                   26
+                                                       496.5                                                                                                                                                                                                                                     Scaler Rate
+
+
+Ø The reason could be some                                           0                   100     200             300             400         500                600
+                                                                                                                                        Time (250MHz Clock) in second
+                                                                                                                                                                                                             0          20             40   60         80       100    120           140         160           180
+                                                                                                                                                                                                                                                                                           Time (250MHz Clock) in second
+
+
+
+                                                                                                       hL1ACCP Rate (Run 4531)                                                                                                                     hL1ACCP Rate (Run 4037)
+
+  limitations in the daq system
+                                  Rate (Hz)
+
+
+
+
+                                                                                                                                                                                 Rate (Hz)
+                                                        501
+
+                                                       500.5                                                                                                                                          2200
+
+                                                        500
+                                                                                                                                                                                                      2000
+
+
+                                                                                                                                                                                                                                                                                                                                    Trigger Rate
+                                                       499.5
+
+                                                        499
+
+
+                                                                                                                         EDTM test run
+                                                                                                                                                                                                      1800
+
+                                                       498.5
+
+                                                        498                                                                                                                                           1600
+
+                                                       497.5
+
+                                                        497
+                                                                                                                            500Hz                                                                     1400
+
+
+                                                                     0                   100     200             300             400         500                600                                          0          20             40   60         80       100    120           140         160           180
+                                                                                                                                        Time (250MHz Clock) in second                                                                                                                      Time (250MHz Clock) in second
+
+
+
+                                                                                                       h_EDTM_tdcTimeRaw_4531                                                                                                                      h_EDTM_tdcTimeRaw_4037
+                                                                                                                                                       h_EDTM_tdcTimeRaw_4531                                                                                                                             h_EDTM_tdcTimeRaw_4037
+                                              Counts
+
+
+
+
+                                                                                                                                                                                             Counts
+                                                                                                                                                      Entries           296615                                                                                                                           Entries             7439
+                                                                                                                                                      Mean                1772                                                                                                                           Mean                1985
+                                                        104                                                                                           Std Dev            87.77                                                                                                                           Std Dev               87
+
+
+
+
+                                                                                                                                                                                                                                                                                                                               EDTM
+                                                                                                                                                                                                      102
+
+                                                          3
+                                                        10
+
+
+
+
+                                                        102
+                                                                                                                                                                                                       10
+                                                                                                                                                                                                                                                                                                                            TDC Time Raw
+                                                                                                                                                                                                                                                                                                                                      5
+                                                                 0                 500         1000              1500            2000          2500                 3000                                10                    500           1000             1500             2000                2500                   3000
+                                                                                                                                                          Raw tdc Time                                                                                                                                         Raw tdc Time
+EDTM Analysis                                                                        EDTM TDC Time Raw > 1                                                                                                                   EDTM TDC Time Raw > 1
+                                                                                                  EDTM Counts Difference (Run 4531)                                                                                                                    EDTM Counts Difference (Run 4532)
+                                                                0                                                                                                                                                    0
+
+
+
+
+                                             Difference
+
+
+
+
+                                                                                                                                                                                            Difference
+                                                                                                                                                                                                                − 20
+                                                           − 10
+                                                                                                                                                                                                                − 40
+                                                           − 20
+
+
+                                                                                                                                                                                                                                                                                                                                       EDTM
+                                                                                                                                                                                                                − 60
+                                                           − 30
+                                                                                                                                                                                                                − 80
+
+                                                           − 40
+
+
+                                                                                                                                                                                                                                                                                                                                     Counts Diff
+                                                                                                                                                                                                               − 100
+
+                                                           − 50                                                                                                                                                − 120
+
+                                                                                                                                                                                                               − 140
+                                                           − 60             Events - Scaler                                                                                                                                      Events - Scaler
+                                                                                                                                                                                                               − 160
+
+
+Ø If there a drop at the beginning                         − 70
+                                                                        0
+                                                                            Scaler - Scaler
+                                                                                            100     200             300             400         500                600
+                                                                                                                                           Time (250MHz Clock) in second
+                                                                                                                                                                                                               − 180
+                                                                                                                                                                                                                             0
+                                                                                                                                                                                                                                 Scaler - Scaler
+                                                                                                                                                                                                                                                 100    200            300          400          500                600
+                                                                                                                                                                                                                                                                                               Time (250MHz Clock) in second
+
+
+
+
+   of the run, that’s not real                                                                       EDTM Counts Rate (Run 4531)                                                                                                                          EDTM Counts Rate (Run 4532)
+
+
+
+
+                                     Rate (Hz)
+
+
+
+
+                                                                                                                                                                                         Rate (Hz)
+                                                           500                                                                                                                                                 1000
+
+                                                          499.5                                                                                                                                                999.5
+
+                                                           499                                                                                                                                                  999
+
+
+
+
+                                                                                                                                                                                                                                                                                                                                    EDTM Rate
+                                                          498.5                                                                                                                                                998.5
+
+                                                           498                                                                                                                                                  998
+
+                                                          497.5                                                                                                                                                997.5
+
+                                                           497              Event Rate                                                                                                                          997              Event Rate
+
+                                                          496.5             Scaler Rate                                                                                                                        996.5             Scaler Rate
+                                                                        0                   100     200             300             400         500                600                                                       0                 100      200            300         400           500                600
+                                                                                                                                           Time (250MHz Clock) in second                                                                                                                       Time (250MHz Clock) in second
+
+
+
+                                                                                                          hL1ACCP Rate (Run 4531)                                                                                                                             hL1ACCP Rate (Run 4532)
+                                     Rate (Hz)
+
+
+
+
+                                                                                                                                                                                    Rate (Hz)
+                                                           501                                                                                                                                                 1001
+
+                                                          500.5                                                                                                                                               1000.5
+
+                                                           500                                                                                                                                                 1000
+
+                                                                                                                                                                                                               999.5
+
+
+                                                                                                                                                                                                                                                                                                                                         Trigger Rate
+                                                          499.5
+                                                                                                                                                                                                                999
+                                                           499
+
+
+                                                                                                                            EDTM test run                                                                                        EDTM test run
+                                                                                                                                                                                                               998.5
+                                                          498.5
+                                                                                                                                                                                                                998
+                                                           498
+                                                                                                                                                                                                               997.5
+                                                          497.5
+
+                                                           497
+                                                                                                                               500Hz                                                                            997
+
+                                                                                                                                                                                                               996.5
+                                                                                                                                                                                                                                   1000Hz
+                                                                        0                   100     200             300             400         500                600                                                       0                 100      200            300         400           500                600
+                                                                                                                                           Time (250MHz Clock) in second                                                                                                                       Time (250MHz Clock) in second
+
+
+
+                                                                                                          h_EDTM_tdcTimeRaw_4531                                                                                                                              h_EDTM_tdcTimeRaw_4532
+                                                                                                                                                          h_EDTM_tdcTimeRaw_4531                                                                                                                               h_EDTM_tdcTimeRaw_4532
+                                                 Counts
+
+
+
+
+                                                                                                                                                                                                     Counts
+                                                                                                                                                         Entries           296615                                                                                                                             Entries           612660
+                                                                                                                                                         Mean                1772                                                                                                                             Mean                1772
+                                                           104                                                                                           Std Dev            87.77                                                                                                                             Std Dev            87.83
+                                                                                                                                                                                                                104
+
+
+
+
+                                                           10
+                                                             3
+
+
+                                                                                                                                                                                                                  3
+                                                                                                                                                                                                                                                                                                                                  EDTM
+                                                                                                                                                                                                                                                                                                                               TDC Time Raw
+                                                                                                                                                                                                                10
+
+
+
+
+                                                           102
+
+                                                                                                                                                                                                                102
+
+                                                                                                                                                                                                                                                                                                                                           6
+                                                                    0                 500         1000              1500            2000          2500                 3000                                              0                 500         1000             1500            2000           2500                 3000
+                                                                                                                                                             Raw tdc Time                                                                                                                                         Raw tdc Time
+EDTM Analysis Summary
+  1.   EDTM live time > 100 % is due to the tdc noise related with the beam (real physics trigger)
+  2.   Sometimes the EDTM scaler rate shows a high peak, that’s because the two scaler readouts are too close to each
+       other. The real EDTM rate is still stable.
+  3.   Sometimes the EDTM scaler rate shows a deep valley, that’s not real because the EDTM tdc rate is stable. We
+       need to correct it when calculating the EDTM dead time.
+  4.   When the trigger rate is high (at least larger than 200Hz), there could be some obvious drops in the EDTM
+       Counts Diff plots. That’s due to some limitations of the daq system because the h1ACCP rate also shows a drop.
+  5.   If there a drop in the EDTM Counts Diff plot at the beginning of the run, that’s not real
+  6.   According to my 6-level EDTM test runs (50, 100, 200, 500, 1000, 2000 Hz), when the trigger rate is larger
+       than a certain value between 200 and 500, the daq system starts to have deadtime.
+
+
+                                  When we’re calculating the EDTM dead time for a run,
+                in addition to adding a 2 uA beam current cut, the above things should also be considered.
+
+                                                                                                                     7
+

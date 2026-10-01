@@ -1,0 +1,17 @@
+●
+    Updated ‘as-built’ block diagrams for S/HMS
+    EL_real as of pion-LT (2021)
+     –   Trigger timing plots for that configuration
+         are here:
+         https://logbooks.jlab.org/entry/3902530
+●
+    These diagrams are qualitatively the same as
+    what is in Carlos’ docs, but the nomenclature
+    is a little different in the circuit (and hence log
+    entries).
+
+
+
+
+                                                          Brad Sawatzky (03 Dec 2021)
+

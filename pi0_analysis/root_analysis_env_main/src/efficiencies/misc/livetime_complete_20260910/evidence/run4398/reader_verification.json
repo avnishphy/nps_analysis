@@ -1,0 +1,12 @@
+{
+  "T": {
+    "rows": 542584,
+    "columns_checked": 92,
+    "mismatches": []
+  },
+  "TSH": {
+    "rows": 355,
+    "columns_checked": 696,
+    "mismatches": []
+  }
+}

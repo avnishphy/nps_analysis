@@ -1,0 +1,247 @@
+{
+  "pages": 56,
+  "main_slides": 27,
+  "backup_slides": 29,
+  "out_of_page_text": [],
+  "overfull_or_tex_errors": [],
+  "production_formula_checks": 43,
+  "production_table_rows": 43,
+  "copied_evidence_hashes_checked": 39,
+  "all_source_hashes_checked": true,
+  "titles": [
+    {
+      "page": 1,
+      "title": "NPS / NORMALIZATION STUDIES"
+    },
+    {
+      "page": 2,
+      "title": "Three questions organize the investigation"
+    },
+    {
+      "page": 3,
+      "title": "Name the stages before naming the livetimes"
+    },
+    {
+      "page": 4,
+      "title": "Electronic, DAQ and total livetime: conditional definitions"
+    },
+    {
+      "page": 5,
+      "title": "Time sampling and physics-event sampling can differ"
+    },
+    {
+      "page": 6,
+      "title": "Five counts and one prescale define the diagnostic ratios"
+    },
+    {
+      "page": 7,
+      "title": "Accepted pulses and sent pulses belong on different sides"
+    },
+    {
+      "page": 8,
+      "title": "The cache baseline covers every production run, partially in places"
+    },
+    {
+      "page": 9,
+      "title": "What we tried before: the May 2025 luminosity study"
+    },
+    {
+      "page": 10,
+      "title": "Current NewGen: preserve the actual applied reference"
+    },
+    {
+      "page": 11,
+      "title": "Run 4398 exposes the endpoint mismatch directly"
+    },
+    {
+      "page": 12,
+      "title": "New calculation: one explicit interval for every count"
+    },
+    {
+      "page": 13,
+      "title": "Files are storage boundaries; gaps are exposure boundaries"
+    },
+    {
+      "page": 14,
+      "title": "A tighter timing window is a sensitivity test"
+    },
+    {
+      "page": 15,
+      "title": "All production runs: retain the saved and same-cache controls"
+    },
+    {
+      "page": 16,
+      "title": "Unprescaled runs reveal structure hidden by the large excess"
+    },
+    {
+      "page": 17,
+      "title": "Changing the method has several distinct contributions"
+    },
+    {
+      "page": 18,
+      "title": "Run 4398: method changes and file changes must be separated"
+    },
+    {
+      "page": 19,
+      "title": "Prescaled runs require a sampling check of their own"
+    },
+    {
+      "page": 20,
+      "title": "A prescale factor is not enough to establish pulser sampling"
+    },
+    {
+      "page": 21,
+      "title": "A ratio near one can hide inconsistent counters"
+    },
+    {
+      "page": 22,
+      "title": "Real DAQ losses must remain in the livetime"
+    },
+    {
+      "page": 23,
+      "title": "PRE40/100/150/200: populated does not mean identified"
+    },
+    {
+      "page": 24,
+      "title": "New NPS sources sharpen the questions we can ask"
+    },
+    {
+      "page": 25,
+      "title": "Normalization errors can introduce artificial run structure"
+    },
+    {
+      "page": 26,
+      "title": "The physics risk is more than a common scale shift"
+    },
+    {
+      "page": 27,
+      "title": "What is established, and what must still be tested"
+    },
+    {
+      "page": 28,
+      "title": "Backup: exact methodology, counter evidence and sources"
+    },
+    {
+      "page": 29,
+      "title": "Production comparison: runs 4253\u20134397"
+    },
+    {
+      "page": 30,
+      "title": "Production comparison: runs 4398\u20134558"
+    },
+    {
+      "page": 31,
+      "title": "Timing spectra and timing acceptance need separate checks"
+    },
+    {
+      "page": 32,
+      "title": "Peak locations are run-dependent and have distinct units"
+    },
+    {
+      "page": 33,
+      "title": "Latch, timing and current changes probe different effects"
+    },
+    {
+      "page": 34,
+      "title": "Current selection is not the full production quality selection"
+    },
+    {
+      "page": 35,
+      "title": "Run 4303: cancellation hides a selected counter defect"
+    },
+    {
+      "page": 36,
+      "title": "Run 4305: retain the failure visibly"
+    },
+    {
+      "page": 37,
+      "title": "Run 4551: examine the full interval history"
+    },
+    {
+      "page": 38,
+      "title": "Run 4350: zero-time changes and counter restarts"
+    },
+    {
+      "page": 39,
+      "title": "PRE width comparisons require an identified signal model"
+    },
+    {
+      "page": 40,
+      "title": "Lost leading edges need not mean lost trigger decisions"
+    },
+    {
+      "page": 41,
+      "title": "A coincidence livetime is not generally a plane livetime"
+    },
+    {
+      "page": 42,
+      "title": "Event-spacing fits require a specific DAQ model"
+    },
+    {
+      "page": 43,
+      "title": "Earlier NPS repairs are evidence to examine, not defaults"
+    },
+    {
+      "page": 44,
+      "title": "Report LT, database LT and this calculation are distinct records"
+    },
+    {
+      "page": 45,
+      "title": "Uncertainty estimates remain conditional diagnostics"
+    },
+    {
+      "page": 46,
+      "title": "Statistical precision does not cover an unknown measurement path"
+    },
+    {
+      "page": 47,
+      "title": "Trigger names: period documentation versus run-start proof"
+    },
+    {
+      "page": 48,
+      "title": "Concrete evidence to recover next"
+    },
+    {
+      "page": 49,
+      "title": "Historical yield-rate clues are not a new correction"
+    },
+    {
+      "page": 50,
+      "title": "Numerical production results: table 1 of 4"
+    },
+    {
+      "page": 51,
+      "title": "Numerical production results: table 2 of 4"
+    },
+    {
+      "page": 52,
+      "title": "Numerical production results: table 3 of 4"
+    },
+    {
+      "page": 53,
+      "title": "Numerical production results: table 4 of 4"
+    },
+    {
+      "page": 54,
+      "title": "Reproduce the slides independently of ROOT availability"
+    },
+    {
+      "page": 55,
+      "title": "Earlier code: the four formulas written explicitly"
+    },
+    {
+      "page": 56,
+      "title": "Source guide for technical discussion"
+    }
+  ],
+  "visual_review": {
+    "all_pages_in_contact_sheets": true,
+    "additional_high_resolution_pages": [
+      4,
+      15,
+      55
+    ],
+    "checks": "Readable math, table rows, plot captions, diagram labels and page margins; no content overlap observed."
+  },
+  "original_analysis_archive_checksums_verified": 402
+}

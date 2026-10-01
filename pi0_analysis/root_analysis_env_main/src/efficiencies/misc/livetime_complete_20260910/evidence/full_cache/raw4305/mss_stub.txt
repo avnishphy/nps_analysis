@@ -1,0 +1,16 @@
+tapewrite_id=291762710
+bitfileIndex=291762710
+sourcePath=/home/coda/data/raw/nps_coin_4305.dat.0
+size=13341141036
+crc32=53e8a0c0
+adler32=756ab5b0
+owner=halldata
+creationTime=2024-02-10 17:30:47
+volser=805448
+tapeStatus=ready
+filePosition=1665530
+volumeSet=hallc-raw
+stubPath=/mss/hallc/c-nps/raw/nps_coin_4305.dat.0
+dup.tapewrite_id=291773827
+dup.bitfileIndex=291773827
+dup.creationTime=2024-02-10 20:00:06

@@ -1,0 +1,5 @@
+[
+  {"name":"U_tprime_integral","component":"U","q2":[3.3,4.7],"xb":[0.29,0.44],"tprime":[-0.55,0.0]},
+  {"name":"LT_tprime_integral","component":"LT","q2":[3.3,4.7],"xb":[0.29,0.44],"tprime":[-0.55,0.0]},
+  {"name":"TT_tprime_integral","component":"TT","q2":[3.3,4.7],"xb":[0.29,0.44],"tprime":[-0.55,0.0]}
+]

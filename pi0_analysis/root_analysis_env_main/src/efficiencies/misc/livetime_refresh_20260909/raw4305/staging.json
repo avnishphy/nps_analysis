@@ -1,0 +1,11 @@
+{
+  "authorized_files": [
+    "/mss/hallc/c-nps/raw/nps_coin_4305.dat.0"
+  ],
+  "request_id": 100232289,
+  "submitted_command": "env -u DEBUG jcache get /mss/hallc/c-nps/raw/nps_coin_4305.dat.0",
+  "submission_status": "pending",
+  "last_service_query": "active",
+  "completion_evidence": "Cached file fully read to EOF; size, CRC32 and Adler32 match tape stub",
+  "additional_files_staged": false
+}

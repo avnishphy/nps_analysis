@@ -1,0 +1,38 @@
+[
+  {
+    "file": "singh_nps_luminosity_202505.pdf",
+    "url": "https://indico.jlab.org/event/946/contributions/16510/attachments/12602/20074/Luminosity_nps_collaboration_meeting_2025.pdf",
+    "final_url": "https://indico.jlab.org/event/946/contributions/16510/attachments/12602/20074/Luminosity_nps_collaboration_meeting_2025.pdf",
+    "content_type": "application/pdf",
+    "status": "downloaded",
+    "bytes": 3505516,
+    "sha256": "41315ac2d52f7d2c0bbb0f38432ea5919f04d7defe48905fb3e418f885184562"
+  },
+  {
+    "file": "yero_EDTM_report_20170906.pdf",
+    "url": "https://raw.githubusercontent.com/JeffersonLab/Hall-C-Trigger-Setup/master/edtm_studies/EDTM_report.pdf",
+    "final_url": "https://raw.githubusercontent.com/JeffersonLab/Hall-C-Trigger-Setup/master/edtm_studies/EDTM_report.pdf",
+    "content_type": "application/octet-stream",
+    "status": "downloaded",
+    "bytes": 2323044,
+    "sha256": "c2fafba5a563a288b15c8dd19b306d045aff1537fc858e44fd5cbca5e53cf514"
+  },
+  {
+    "file": "yero_EDTM_LT_Studies_20171121.pdf",
+    "url": "https://raw.githubusercontent.com/JeffersonLab/Hall-C-Trigger-Setup/master/edtm_studies/EDTM_LT_Studies.pdf",
+    "final_url": "https://raw.githubusercontent.com/JeffersonLab/Hall-C-Trigger-Setup/master/edtm_studies/EDTM_LT_Studies.pdf",
+    "content_type": "application/octet-stream",
+    "status": "downloaded",
+    "bytes": 787760,
+    "sha256": "8414a824e19e74c421da5871c79f3228bb5ed4635493a41893923b00db18d37a"
+  },
+  {
+    "file": "nps_runplan_archive_20230911.pdf",
+    "url": "https://hallcweb.jlab.org/wiki/images/archive/1/10/20230911123553%21NPS_DVCS_RunPlan.pdf",
+    "final_url": "https://hallcweb.jlab.org/wiki/images/archive/1/10/20230911123553%21NPS_DVCS_RunPlan.pdf",
+    "content_type": "application/pdf",
+    "status": "downloaded",
+    "bytes": 212691,
+    "sha256": "67d6ab36393c5c81547ccc98549340f14a8fe05c564d8c23b0b002730273204f"
+  }
+]

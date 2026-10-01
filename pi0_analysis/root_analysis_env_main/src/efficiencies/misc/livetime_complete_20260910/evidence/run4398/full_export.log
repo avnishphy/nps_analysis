@@ -1,0 +1,224 @@
+
+Processing /tmp/nps4398_resume/export_full_run.C...
+Podd::MultiFileRun  "RUN_4398"
+Run number:   4398
+Run date:     Tue Feb 13 17:03:18 2024
+Data version: 3
+Requested event range: all
+Analyzed events:       542584
+Assume Date:           0
+Database read:         1
+Initialized:           1
+Opened:                0
+Date set/read/req:     1 1 1
+Run num set/read/req:  1 1 1
+Run type set/read/req: 1 1 1
+Prescales set/rd/req:  0 0 0
+DAQInfo set/rd/req:    1 1 0
+Run parameters: 
+ Beam: 
+  Energy      = 10.5435 +/- 0 GeV
+  Momentum    = 10.5435 GeV/c
+  Mass/Charge = 0.000511/-1 GeV/c^2
+ Target: 
+  Mass:       = 0 GeV/c^2
+ DAQ:
+  Prescale factors: (1-12)
+   -1/-1/-1/1/-1/-1/0/0/0/0/0/0
+Search paths:
+  .
+  ./raw
+  ./raw/../raw.copiedtotape
+  ./cache
+  /net/cdaq/cdaql1data/coda/data/raw
+File name:   nps_coin_4398.dat.0
+Default stream: 
+  nps_coin_4398.dat.0
+EXPORTED segment=0 tree=TSH rows=355 columns=696
+EXPORTED segment=0 tree=TSHelH rows=19435 columns=90
+EXPORTED segment=0 tree=T rows=542584 columns=13
+Podd::MultiFileRun  "RUN_4398"
+Run number:   4398
+Run date:     Tue Feb 13 17:03:18 2024
+Data version: 3
+Requested event range: all
+Analyzed events:       545750
+Assume Date:           0
+Database read:         1
+Initialized:           1
+Opened:                0
+Date set/read/req:     1 1 1
+Run num set/read/req:  1 1 1
+Run type set/read/req: 1 1 1
+Prescales set/rd/req:  0 0 0
+DAQInfo set/rd/req:    1 1 0
+Run parameters: 
+ Beam: 
+  Energy      = 10.5435 +/- 0 GeV
+  Momentum    = 10.5435 GeV/c
+  Mass/Charge = 0.000511/-1 GeV/c^2
+ Target: 
+  Mass:       = 0 GeV/c^2
+ DAQ:
+  Prescale factors: (1-12)
+   0/0/0/0/0/0/0/0/0/0/0/0
+Search paths:
+  .
+  ./raw
+  ./raw/../raw.copiedtotape
+  ./cache
+  /net/cdaq/cdaql1data/coda/data/raw
+File name:   nps_coin_4398.dat.1
+Default stream: 
+  nps_coin_4398.dat.1
+EXPORTED segment=1 tree=TSH rows=358 columns=696
+EXPORTED segment=1 tree=TSHelH rows=19534 columns=90
+EXPORTED segment=1 tree=T rows=545750 columns=13
+Podd::MultiFileRun  "RUN_4398"
+Run number:   4398
+Run date:     Tue Feb 13 17:03:18 2024
+Data version: 3
+Requested event range: all
+Analyzed events:       531817
+Assume Date:           0
+Database read:         1
+Initialized:           1
+Opened:                0
+Date set/read/req:     1 1 1
+Run num set/read/req:  1 1 1
+Run type set/read/req: 1 1 1
+Prescales set/rd/req:  0 0 0
+DAQInfo set/rd/req:    1 1 0
+Run parameters: 
+ Beam: 
+  Energy      = 10.5435 +/- 0 GeV
+  Momentum    = 10.5435 GeV/c
+  Mass/Charge = 0.000511/-1 GeV/c^2
+ Target: 
+  Mass:       = 0 GeV/c^2
+ DAQ:
+  Prescale factors: (1-12)
+   0/0/0/0/0/0/0/0/0/0/0/0
+Search paths:
+  .
+  ./raw
+  ./raw/../raw.copiedtotape
+  ./cache
+  /net/cdaq/cdaql1data/coda/data/raw
+File name:   nps_coin_4398.dat.2
+Default stream: 
+  nps_coin_4398.dat.2
+EXPORTED segment=2 tree=TSH rows=308 columns=696
+EXPORTED segment=2 tree=TSHelH rows=16583 columns=90
+EXPORTED segment=2 tree=T rows=531817 columns=13
+Podd::MultiFileRun  "RUN_4398"
+Run number:   4398
+Run date:     Tue Feb 13 17:03:18 2024
+Data version: 3
+Requested event range: all
+Analyzed events:       557074
+Assume Date:           0
+Database read:         1
+Initialized:           1
+Opened:                0
+Date set/read/req:     1 1 1
+Run num set/read/req:  1 1 1
+Run type set/read/req: 1 1 1
+Prescales set/rd/req:  0 0 0
+DAQInfo set/rd/req:    1 1 0
+Run parameters: 
+ Beam: 
+  Energy      = 10.5435 +/- 0 GeV
+  Momentum    = 10.5435 GeV/c
+  Mass/Charge = 0.000511/-1 GeV/c^2
+ Target: 
+  Mass:       = 0 GeV/c^2
+ DAQ:
+  Prescale factors: (1-12)
+   0/0/0/0/0/0/0/0/0/0/0/0
+Search paths:
+  .
+  ./raw
+  ./raw/../raw.copiedtotape
+  ./cache
+  /net/cdaq/cdaql1data/coda/data/raw
+File name:   nps_coin_4398.dat.3
+Default stream: 
+  nps_coin_4398.dat.3
+EXPORTED segment=3 tree=TSH rows=434 columns=696
+EXPORTED segment=3 tree=TSHelH rows=23873 columns=90
+EXPORTED segment=3 tree=T rows=557074 columns=13
+Podd::MultiFileRun  "RUN_4398"
+Run number:   4398
+Run date:     Tue Feb 13 17:03:18 2024
+Data version: 3
+Requested event range: all
+Analyzed events:       543642
+Assume Date:           0
+Database read:         1
+Initialized:           1
+Opened:                0
+Date set/read/req:     1 1 1
+Run num set/read/req:  1 1 1
+Run type set/read/req: 1 1 1
+Prescales set/rd/req:  0 0 0
+DAQInfo set/rd/req:    1 1 0
+Run parameters: 
+ Beam: 
+  Energy      = 10.5435 +/- 0 GeV
+  Momentum    = 10.5435 GeV/c
+  Mass/Charge = 0.000511/-1 GeV/c^2
+ Target: 
+  Mass:       = 0 GeV/c^2
+ DAQ:
+  Prescale factors: (1-12)
+   0/0/0/0/0/0/0/0/0/0/0/0
+Search paths:
+  .
+  ./raw
+  ./raw/../raw.copiedtotape
+  ./cache
+  /net/cdaq/cdaql1data/coda/data/raw
+File name:   nps_coin_4398.dat.4
+Default stream: 
+  nps_coin_4398.dat.4
+EXPORTED segment=4 tree=TSH rows=344 columns=696
+EXPORTED segment=4 tree=TSHelH rows=18664 columns=90
+EXPORTED segment=4 tree=T rows=543642 columns=13
+Podd::MultiFileRun  "RUN_4398"
+Run number:   4398
+Run date:     Tue Feb 13 17:03:18 2024
+Data version: 3
+Requested event range: all
+Analyzed events:       501527
+Assume Date:           0
+Database read:         1
+Initialized:           1
+Opened:                0
+Date set/read/req:     1 1 1
+Run num set/read/req:  1 1 1
+Run type set/read/req: 1 1 1
+Prescales set/rd/req:  0 0 0
+DAQInfo set/rd/req:    1 1 0
+Run parameters: 
+ Beam: 
+  Energy      = 10.5435 +/- 0 GeV
+  Momentum    = 10.5435 GeV/c
+  Mass/Charge = 0.000511/-1 GeV/c^2
+ Target: 
+  Mass:       = 0 GeV/c^2
+ DAQ:
+  Prescale factors: (1-12)
+   0/0/0/0/0/0/0/0/0/0/0/0
+Search paths:
+  .
+  ./raw
+  ./raw/../raw.copiedtotape
+  ./cache
+  /net/cdaq/cdaql1data/coda/data/raw
+File name:   nps_coin_4398.dat.5
+Default stream: 
+  nps_coin_4398.dat.5
+EXPORTED segment=5 tree=TSH rows=440 columns=696
+EXPORTED segment=5 tree=TSHelH rows=24331 columns=90
+EXPORTED segment=5 tree=T rows=501527 columns=13

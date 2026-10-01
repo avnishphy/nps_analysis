@@ -1,0 +1,39 @@
+Components 48 exact boundaries 52025 disagreements 2
+[
+  {
+    "run": 4303,
+    "run_type": "production",
+    "component": 0,
+    "segment_start": 0,
+    "segment_end": 0,
+    "ev_start": 455000,
+    "ev_end": 456915,
+    "scaler_seconds": 0.0008689999999660358,
+    "event_seconds": 2.0002582524868964,
+    "difference_seconds": 1.9993892524869303,
+    "N": 1915,
+    "A": 3.0,
+    "S": 3.0,
+    "D": 1.0,
+    "E_raw": 79,
+    "charge_uC": 0.03371867156238295
+  },
+  {
+    "run": 4305,
+    "run_type": "production",
+    "component": 0,
+    "segment_start": 0,
+    "segment_end": 0,
+    "ev_start": 105080,
+    "ev_end": 106127,
+    "scaler_seconds": 0.005481000000003178,
+    "event_seconds": 2.0015081070087146,
+    "difference_seconds": 1.9960271070087114,
+    "N": 1047,
+    "A": 2.0,
+    "S": 2.0,
+    "D": 0.0,
+    "E_raw": 80,
+    "charge_uC": 0.10785449192462693
+  }
+]

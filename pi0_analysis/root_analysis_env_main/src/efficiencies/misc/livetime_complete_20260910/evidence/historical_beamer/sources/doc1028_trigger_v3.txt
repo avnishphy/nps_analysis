@@ -1,0 +1,1244 @@
+                                  DISCLOSURE:
+    THE ELECTRONIC DIAGRAMS SHOWN IN THE MAIN TEXT ARE UPDATED AND
+ CORRESPOND TO THE ELECTRONICS DIAGRAMS USED IN A1N/D2N EXPERIMENTS AS
+     OF FALL 2019 - FALL 2020. THE CHANGES ARE MINOR, HOWEVER, IF YOUR
+EXPERIMENT RAN BEFORE FALL 2019, PLEASE REFER TO SECTION 6 (PAGE 17) OF THIS
+           DOCUMENT FOR CLARIFICATION OF THE CHANGES MADE.
+
+
+
+
+                                     1
+                                   Hall C 12 GeV Trigger Set-Up
+                                                    Carlos Yero
+                                              email cyero002@fiu.edu
+
+                                                  August 30, 2020
+
+
+1     Detector Electronics Racks and Patch Panel Diagrams
+The majority of the detector electronics in the HMS/SHMS detector huts are read out in the Counting Room except
+for the HMS/SHMS Drift Chambers and the SHMS Shower Counter signals which are read in their respective detector
+huts. In HMS/SHMS huts, the Drift Chamber signals are output by 20-25 feet long ribbon cables which are read in
+the hut electronics rack (See Figure 2). On the SHMS side, the Shower Counter consists of 224 signal cables which
+would take up most of the space available for other detectors in the Counting Room, so they are read directly in the hut
+electronics rack.
+
+1.1    HMS Detector Hut
+The HMS Drift Chambers are read out through a VXS Crate (ROC3) in the detector hut electronics rack. The signals
+are carried through 16-channel ribbon cables which are fed in various CAEN1190 TDC modules. The TI (or Trigger
+Interface) module at the front end of the crate distributes the readout trigger throughout all modules in the crate and
+initiates data readout.
+
+
+                                Particle Detectors inside the HMS
+
+                                                                                      Preshower &
+                                                                                    Shower Counters
+
+
+                                                                                  X-Y Scintillators
+
+
+                                                                                 Heavy Gas
+                                                                                 Cerenkov
+
+
+                                                                          X-Y Scintillators
+
+
+                                                                    Aerogel Cerenkov
+
+
+                                                               Drift Chambers
+
+
+
+
+Figure 1: HMS detector stack.
+
+
+
+
+                                                           2
+The rest of the HMS detector signals(Gas Çerenkov, Hodoscope, Calorimeter) are sent to the Hall C Floor Patch Panel
+via the hut Patch, with the exception of the Aerogel, which is sent directly from the detector to the Floor Patch. All the
+signals are then sent to the Counting Room Patch Panel to be processed by the electronics. (See Figure 3)
+                            HMS Drift Chamber Rack
+                                                                                    HMS Hut Patch Panel 1           HMS Hut Patch Panel 2
+                                   (HMS Hut)
+
+
+                                                                                                                         TCH L
+                                                                                          TCH L                        PA NE
+                                         NIM CRATE
+                                                                                        PA NE                           PA
+                                                                                         PA
+                                                                                                                     Hodoscope Planes
+
+                                                                                                                    h1X h1Y h2X h2Y
+
+
+
+
+                                                                                     Hodoscope Planes
+                                                                                                                    Calorimeter Layers
+                      ROC03 HMS VXS CRATE
+                                                                                    h1X h1Y h2X h2Y
+                                                                                                                      hA hB hC hD
+                                                                      TI MODULE
+                             C1190 TDC
+                             C1190 TDC
+
+                                          C1190 TDC
+                                          C1190 TDC
+
+                                                      C1190 TDC
+
+
+
+
+                               4 5         7 8 . . . 17           19 20             Calorimeter Layers
+                                                                                                                      Gas Cherenkov
+                                                                                      hA hB hC hD
+
+
+
+
+Figure 2: HMS detector hut electronic rack and patch panels.
+
+
+
+                    HMS                                                     Hut                             Floor                   Counting Room
+                  Detectors                                                 Patch                           Patch                       Patch
+                                                          35.05 ft                     204.8 ft                      207.2 ft
+                                                          (54.1 ns)                    (248.03 ns)                   (250.9 ns)
+                                                                                        447.05 ft
+                                                                                        (553.03 ns)
+             Cable Gauge:
+                            RG-58 (Vp = 65.9%)
+                            RG-8 (Vp = 84%)
+
+
+Figure 3: HMS Patch Diagram from detectors to Counting Room.
+
+
+
+1.2    SHMS Detector Hut
+Similarly to the HMS Drift Chambers, the SHMS Drift Chambers are also read out by TDCs in a VXS Crate in the
+SHMS electronics hut (See Figure 6). The Shower Counter 224 signals are fed directly into the Flash ADC (fADC-250)
+modules in a VXSSHMS                         Hut
+                   Crate (ROC4). The Pre-Shower       signals (x14/side) passFloor                Counting
+                                                                                through a 50:50 splitter andRoom
+                                                                                                              a part is fed into
+fADCs. The other   part is partially summedPatch
+                Detectors                     in the hut and sent via the hutPatch                      PatchRoom Patch (See
+                                                                              patch panel to the Counting
+                                   47.0 ft              196.8 ft                      207.2 ft
+Figure 5). The rest of the SHMS detector signals (HGC/NGC, Hodoscope, Aerogel) are sent to the Counting Room
+via the hut patch panel (See Figure(72.55
+                                      7). ns)           (238.34 ns)                  (250.94 ns)
+                                                                                          451.0 ft
+                                                                                         (561.83 ns)
+             Cable Gauge:                                                                  3
+                            RG-58 (Vp = 65.9%)
+Figure 4: SHMS detector stack.
+
+
+   SHMS Hut Patch Panel           HC01Z18 (SHMS Hut)                           Drift Chamber Rack
+                                            50:50 splitter
+                                                                                  (SHMS Hut)
+                              PreSh.          PreSh.
+                              [1-14]-        [1-14]+
+   Pre-Shower SUM                           NIM CRATE
+
+
+          CH
+                              PreSh. [1-14]+
+                              PreSh. [1-14]-
+
+
+
+                               PreShower
+
+
+
+
+         T
+                                  SUM
+
+                                  SUM
+
+                                  SUM
+
+
+
+
+             L
+       PA NE
+        PA                                  RIBBON -> BNC
+                              PreSh.          PreSh.
+      Hodoscope Planes        [1-14]-        [1-14]+
+
+     S1X S1Y S2X S2Y
+
+
+
+
+  Heavy Gas Cherenkov        ROC04 SHMS VXS CRATE
+                                                                             ROC06 SHMS VXS CRATE
+  (HGC)
+                                                             TI MODULE
+
+
+
+
+                                                                                                    TI MODULE
+                                                                                                    TDC CALIB
+                                                                                 C1190 TDC
+                                                                                 C1190 TDC
+                                                                                 C1190 TDC
+                                                                                 C1190 TDC
+                                                                                 C1190 TDC
+                                                                                 C1190 TDC
+                                 fADC-250
+                                 fADC-250
+
+
+
+
+                                                             fADC-250
+                                                             fADC-250
+                                                             fADC-250
+
+
+
+
+                                                                                                    CV538- A
+
+
+
+
+  Noble Gas Cherenkov
+  (NGC)                                     . . .
+                                   1 2                       18 19
+
+   Aerogel Cherenkov
+                                 20                                               6   ...   14 15   19 20
+
+   (AERO)                                   SCALERS
+                                              0.0        4096.00
+                                              0.0            0.0
+
+
+Figure 5: SHMS Hut Patch Panel (left) and Electronics Rack (right). Figure 6: SHMS Drift Chamber Electronics Rack.
+
+
+
+
+                                                                         4
+                SHMS                           Hut                                 Floor                     Counting Room
+               Detectors                       Patch                               Patch                         Patch
+                                     47.0 ft                196.8 ft                          207.2 ft
+                                     (72.55 ns)             (238.34 ns)                      (250.94 ns)
+                                                                  451.0 ft
+                                                                 (561.83 ns)
+         Cable Gauge:
+                        RG-58 (Vp = 65.9%)
+                        RG-8 (Vp = 84%)
+
+
+Figure 7: SHMS Patch Diagram from detectors to Counting Room.
+
+
+1.3    Hall C Counting Room
+Once the detector signals arrive at the Counting Room Patch (See Figure 8A), they are processed by the NIM/CAMAC
+electronics (See Figure 8B) to form the single arm and coincidence triggers for each spectrometer. The signals are
+also sent to ADCs/TDCs to determine energy and timing information for individual detectors as well as trigger TDC
+information.
+
+
+
+
+Figure 8: (A) Counting Room Patch Panels (left 2 racks). (B) Counting Room main Electronic Racks for HMS/SHMS detectors (right 2 racks).
+
+
+
+
+                                                                   5
+2     HMS Trigger Set-Up
+The XY scintillator arrays (hodoscope planes) will form part of the standard HMS trigger configuration. Additional par-
+ticle detectors may also be incorporated into the HMS trigger as required by different experiments. The Gas Čerenkov
+and Calorimeter triggers will be used for e/π separation, whereas the Aerogel Čerenkov trigger will be used for π/K/p
+separation.
+
+2.1   Hodoscope Pre-Trigger
+
+
+
+
+Figure 9: HMS Hodoscope Electronics Diagram. For original diagram, see Appendix A.1
+
+Each hodoscope plane consists of an array of scintillator bars coupled to a PMT at each end (See Figure 1), so each
+bar reads out two signals. As shown in Figure 9, for example, hodoscope plane h1X consists of 32 signals (16 bars)
+read out in the Counting House (CH) patch. Each side of the plane (x16 signals/side) is fed into a 64-channel input
+passive splitter (16 Ch./set). One-third (33%) of the signal amplitude is sent via a 16-channel ribbon cable to a 64 Ch.
+input Ribbon-to-BNC converter (16 Ch./set) which outputs are fed into a 16-channel NIM input flash ADC (fADC).
+The remaining two-thirds (66%) of the signal amplitude is sent to a 16-Ch. input CAMAC Discriminator unit. The
+HMS discriminators thresholds and gate widths were set to -44.5 mV and 60 ns , respectively.
+    The discriminated signals are sent via two ribbon-cable outputs to CAEN1190 TDCs/Scalers (daisy-chained) and
+to a LeCroy 4564 CAMAC Logic unit to form the plane pre-triggers. The Logic Unit takes four sets of 16-Ch. input
+ribbon cable and forms a 16-fold OR for each set by default. Further boolean operations are done through the module
+backplane by connecting a twisted pair cable to the pin corresponding to the desired boolean operation. For hodoscope
+
+
+
+
+                                                                6
+plane pre-triggers, the boolean operations are as follows:
+
+                                     h1X = h1X+ (16-fold OR) AND h1X- (16-fold OR)
+                                     h1Y = h1Y+ (10-fold OR) AND h1Y- (10-fold OR)
+                                     h2X = h2X+ (16-fold OR) AND h2X- (16-fold OR)
+                                     h2Y = h2Y+ (10-fold OR) AND h2Y- (10-fold OR)
+     Once a pre-trigger has been made for each plane, they are sent to a NIM/ECL converter (Level Translator - Phillips
+Scientific (or P/S) Model 7126) via twisted pair cables to convert the ECL signal (twisted pair) to a NIM signal. The
+NIM output is then sent to individual sets of a P/S Model 752 NIM Logic unit to adjust the widths of each of the
+plane pre-triggers as necessary before making a coincidence. An X-Y hodoscope plane coincidence (h1 = h1X AND
+h1Y, h2 = h2X AND h2Y) is then made by feeding each hodoscope X-Y plane pair into a P/S Model 755 Nim Logic
+unit. A copy of each of the four individual plane pre-triggers is also sent to another set of P/S Model 755 to make a
+3/4 or 4/4 plane coincidence (via a front-panel knob) which defines the production hodoscope pre-trigger. A copy of
+all the pre-triggers discussed above are sent to TDCs/Scalers via a NIM/ECL converter for timing and counting rate
+information. (See Figure 9)
+
+
+2.2   Calorimeter Pre-Trigger
+
+
+
+
+Figure 10: HMS Calorimeter Electronics Diagram. For original diagram, see Appendix A.2
+
+The HMS Calorimeter consists of four layers of lead blocks. Layers A and B read out a 26 PMT signals per layer (13
+signals/side) while layers C and D read out 13 signals/layer on one side. The first layer form the Pre-Shower counter
+while all four layers (A, B, C and D) form the Shower counter. Each layer is read out in the Counting Room patch and
+fed into 50:50 splitters. One output of the splitter is fed to fADCs via a Ribbon-to-BNC converter (same as hodoscopes)
+while the other output is sent to a P/S Model 740 NIM Linear FI/FO summing modules. Each side of a layer is summed
+first (hA+, hA-, hB+, hB-, hC and hD sums). The sums are fed into a LeCroy Model 428F summing module where
+layers hA+/- and hB+/- are summed to form hA and hB sums. A copy of each layer sum is sent to fADCs. The Pre-
+Shower SUM is then made from the sum of layer A, while the Shower SUM is made by summing all four layers. A
+
+                                                                 7
+copy of the Pre-Shower and Shower sums is also sent to fADCs. The Pre-Shower and Shower sums are then sent to a
+P/S Model 715 NIM Discriminator unit to form the PreShower Low/High (LO/HI) and Shower Low pre-triggers with
+thresholds -40 mV , -60 mV and -45 mV , respectively with all gate widths set to 30 ns. A copy of the pre-triggers is
+sent to TDCs/Scaler modules for trigger timing and counting rate information.
+
+2.3   Gas Čerenkov Pre-Trigger
+
+
+
+
+Figure 11: HMS Gas Čerenkov Electronics Diagram. Same electronics diagram applies for SHMS Gas Čerenkov. For original diagram, see
+Appendix A.3
+
+    The HMS Gas Čerenkov detector consists of a 1.5 m long cylindrical tank between the first and second set of
+hodoscope planes (See Figure 1). The tank is filled with a gas and has two spherical mirrors that focus the Čerenkov
+photons towards two 5-inch PMTs[2]. The signals are read out in the Counting Room patch and pass through a 50:50
+splitter. One output is fed into an fADC module via a Ribbon-to-BNC converter. The other output is sent to a LeCroy
+Model 428F summing module, and a copy of the sum is fed to an fADC. The sum is also sent to a P/S Model 715 NIM
+discriminator to form the Čerenkov pre-trigger with a threshold and gate width set to -50 mV and 30 ns . A copy of the
+discriminated signal is also sent to TDCs/Scalers via a NIM/ECL converter for trigger and counting rate information.
+
+2.4   Aerogel Čerenkov Pre-Trigger
+The HMS Aerogel Čerenkov detector consists of a 120cm x 70cm rectangular aerogel tray coupled to a diffusion box[1]
+and is located between the second Drift Chamber and first set of hodoscope planes. The diffusion box has 8 PMTs on
+each side which detect Čerenkov light produced by interactions with the Aerogel material. The signals are sent directly
+to the Hall C Floor Patch Panel, and then read out in the Counting Room patch and pass through a 50:50 splitter. One
+output is fed into an fADC module via a Ribbon-to-BNC converter. The other output is sent to a summing module,
+and a copy of the sum is fed to an fADC. The sum is also sent to a NIM discriminator to form the Aerogel pre-trigger.
+A copy of the discriminated signal is also sent to TDCs/Scalers via a NIM/ECL converter for trigger and counting rate
+information. The electronics diagram is the same as in Figure 11. For the original diagram, see Appendix A.4
+
+
+
+
+                                                                 8
+2.5    HMS Single Arm Pre-Trigger
+
+
+
+
+Figure 12: HMS Single Arm Pre-Trigger Electronics Diagram. For original diagram, see Appendix A.5
+
+    The HMS single arm pre-trigger will be formed from the standard pre-trigger (hodoscopes) and a combination of
+other detector pre-triggers as required by the experiment. The standard and other experiment-specific pre-triggers are
+sent to a P/S Model 755 NIM Logic unit to form a single-arm coincidence. Once the HMS pre-trigger is formed, a
+copy is sent to Scalers/TDCs. The other copy is sent to a NIM/ECL converter, where three copies of the HMS pre-
+trigger are sent via ECL twisted pairs to two CAEN 1190 TDC modules and an input on the TI1 known as the Trigger
+Supervisor or TS (up to six trigger inputs). The copies sent to the TDCs are fed externally through the 16th pin of a
+16-channel input ribbon cable adaptor2 The pre-trigger copy sent to the Trigger Supervisor is processed, accepted and
+disseminated throgh the crate backplane to all modules (except TDCs) in the crate. The TDCs are NOT configured to
+not receive a copy of the accepted triggers, therefore, a copy must be sent from the “TRG” ECL output in TI front panel
+to the TDC “TRG” NIM input3 via a NIM/ECL converter. The inputs are daisy-chained with other TDCs present in
+the crate. A copy of the accepted triggers is also sent to Scalers/TDCs.
+
+
+
+
+   1
+      In single-arm mode, the TI in ROC 01 is known as TM or Trigger Master, and its main operation is to distribute a copy of the accepted
+triggers to all ROCs related to the HMS via fiber optic lines. The same applies to the SHMS when operated in single-arm mode.
+    2
+      Each TDC module in the readout crate (ROC 01) must receive a copy of the HMS pre-trigger known as the reference time via twisted pairs.
+The reference time in each TDC module functions as a common stop for all detector signals being fed to the TDC.
+    3
+      A copy of the accepted triggers is needed by ADCs/TDCs in order to initiate readout in all channels of the respective modules.
+
+
+                                                                     9
+3        SHMS Trigger Set-Up
+The three planes (X1, Y1, X2) of scintillator arrays and the Quartz plane (Y2) will form part of the standard SHMS
+trigger configuration (See Figure 4). Additional particle detectors may also be incorporated into the SHMS trigger as
+required by different experiments. The Noble Gas Čerenkov 4 and Calorimeter triggers will be used for e/π separation,
+whereas the Heavy Gas5 and Aerogel Čerenkov trigger will be used for π/K/p separation[6].
+
+3.1       Hodoscopes Pre-Trigger
+
+
+
+
+Figure 13: SHMS Hodoscopes Electronics Diagram. For original diagram, see Appendix A.6
+
+    Each hodoscope plane consists of an array of scintillator bars coupled to a PMT at each end (See Figure 4), so
+each bar reads out two signals. As shown in Figure 28, for example, hodoscope plane S1X consists of 26 signals (16
+bars) read out in the Counting House (CH) patch. Each side of the plane (x13 signals/side) is fed into a 64-channel
+input passive splitter (16 Ch./set). One-third (33%) of the signal amplitude is sent via a 16-channel ribbon cable to
+a 64 Ch. input Ribbon-to-BNC converter (16 Ch./set) which outputs are fed into a 16-channel NIM input flash ADC
+(fADC). The remaining two-thirds (66%) of the signal amplitude is sent to a 16-Ch. input CAMAC Discriminator unit.
+The SHMS discriminators thresholds and gate widths were set to -30 mV and 60 ns , respectively, whereas the Quartz
+Discriminators thresholds and gate widths were set to -60 mV and 60 ns , respectively
+    The discriminated signals are sent via two ribbon-cable outputs to CAEN1190 TDCs/Scalers (daisy-chained) and
+to a LeCroy 4564 CAMAC Logic unit to form the plane pre-triggers. The Logic Unit takes four sets of 16-Ch. input
+ribbon cable and forms a 16-fold OR for each set by default. Further boolean operations are done through the module
+backplane by connecting a twisted pair cable to the pin corresponding to the desired boolean operation. For hodoscope
+    4
+        Noble Gas Čer: e/π separation ≥ 6 GeV/c
+    5
+        Heavy Gas Čer: π/K separation above 3.4 GeV/c
+
+
+
+
+                                                               10
+plane pre-triggers, the boolean operations are as follows:
+
+                    S1X = S1XL (13-fold OR) AND S1XR (13-fold OR)
+                    S1Y = S1YT (14-fold OR) AND S1YB (14-fold OR)
+                    S2X = S2XL (13-fold OR) AND S2XR (13-fold OR)
+                                                                                                               6
+                    S2Y = S2Y[1-16]T OR S2Y[17-21]T AND S2Y[1-16]B OR S2Y[17-21]B
+
+     Once a pre-trigger has been made for each plane, they are sent to a NIM/ECL converter (Level Translator - Phillips
+Scientific (or P/S) Model 7126) via twisted pair cables to convert the ECL signal (twisted pair) to a NIM signal. The
+NIM output is then sent to individual sets of a P/S Model 752 NIM Logic unit to adjust the widths of each of the
+plane pre-triggers as necessary before making a coincidence. An X-Y hodoscope plane coincidence (S1 = S1X AND
+S1Y, S2 = S2X AND S2Y) is then made by feeding each hodoscope X-Y plane pair into a P/S Model 755 Nim Logic
+unit. A copy of each of the four individual plane pre-triggers is also sent to another set of P/S Model 755 to make a
+3/4 or 4/4 plane coincidence (via a front-panel knob) which defines the production hodoscope pre-trigger. A copy of
+all the pre-triggers discussed above are sent to TDCs/Scalers via a NIM/ECL converter for timing and counting rate
+information. (See Figure 13)
+
+
+3.2    Pre-Shower / Shower Calorimeter Pre-Trigger
+
+
+
+
+Figure 14: SHMS PreShower / Shower Electronics Diagram. For original diagram, see Appendix A.7
+
+    The SHMS Pre-Shower consists of two sets of fourteen (PMT-coupled) lead blocks oriented perpendicular to the
+Shower Counter blocks[8]. The initial sum was done in the SHMS Electronics Hut. PMT signals from groups of four
+blocks were summed to form:
+                                    preSh SUM [1-4]: [1-4]L + [1-4]R
+                                           preSh SUM [5-8]: [5-8]L + [5-8]R
+                                           preSh SUM [9-12]: [9-12]L + [9-12]R
+                                           preSh SUM [13-14]: [13-14]L + [13-14]R
+The Shower counter consists of 224 lead blocks, each coupled to a PMT at the end. Becasue of the high channel density
+of this detector, its signals are sent directly to the ROC 4 fADCs in the SHMS detector hut.
+
+
+
+
+   6
+    The SHMS S2Y (quartz) plane has 5 non-functional PMT channels on each side of the plane. In other words, it had up to 16 functional
+channels/side.
+
+
+                                                                  11
+3.3   Heavy/Noble Gas Čerenkov Pre-Trigger
+
+
+
+
+Figure 15: SHMS Gas Čerenkovs Electronics Diagram.
+
+The SHMS Heavy Gas Čerenkov detector consists of a 1 m long, 1.6 m in diameter cylindrical tank located between
+the first set of hodoscope planes and the Aerogel (See Figure 4). The tank is filled with a gas and has four thin spherical
+mirrors that focus the Čerenkov photons towards four 5-inch PMTs[5].
+    The SHMS Noble Gas Čerenkov detector consists of a 2 m long active length of Argon/Neon gas tank located
+before the first drift chamber (See Figure 4). The tank is filled with a gas and has four overlapping mirrors, that focus
+the Čerenkov photons towards four 5-inch PMTs[3]. For the original electronics diagram, See Appendix A.4 on the
+HMS Gas Čerenkov.
+
+3.4   Aerogel Čerenkov Pre-Trigger
+The SHMS Aerogel Čerenkov detector consists of a 110 x 100 x 24.5 cm3 rectangular aerogel tray coupled to a diffusion
+box. The diffusion box has seven 5-inch PMTs on each side which detect Čerenkov light produced by interactions with
+the Aerogel material[4]. The detector is located between Heavy Gas Čerenkov and second set of hodoscope planes
+(See Figure 4). The electronics diagram is the same as in Figure 15. For the original diagram, see Appendix A.4
+
+
+
+
+                                                            12
+3.5    SHMS Single Arm Pre-Trigger
+
+
+
+
+Figure 16: SHMS Single Arm Trigger Electronics Diagram. For the original diagram, see Appendix A.8.
+
+    The SHMS single arm trigger is be formed exactly as the HMS single arm trigger, with the exception of the detectors
+involved. Compare the electronics diagrams in Figures 16 and 12, and read Section 2.5 for a detailed description of
+the electronic diagrams.
+
+
+
+
+                                                                 13
+4    Coincidence Trigger Set-Up
+
+
+
+
+Figure 17: Coincidence Trigger Electronics Diagram. For the original diagram, see Appendix A.9
+
+     In coincidence mode, the HMS and SHMS pre-triggers are sent to a NIM Logic module, where the first pre-trigger
+that arrives will open a coincidence time window during which the second pre-trigger may or may not arrive in time.
+This will determine whether two events that occurred in each spectrometer are correlated with the event that originated
+at the target. If the coincidence pre-trigger is formed, a copy will be sent to scalers and TDCs, while the other copy is
+sent to a NIM/ECL converter where three copies (may be more) are sent via twisted pairs to every TDC module and
+the TI, which will be the ONLY Trigger Master in coincidence mode. Additional copies (not shown) may need to be
+sent to the HMS readout crate (ROC 01) as well, since the coincidence pre-trigger7 is common to all crates.
+     Once the coincidence pre-trigger is processed by the TI Master in ROC 02, it is sent to a NIM/ECL converter,
+where a copy is sent to scalers and TDCs, and the other copy is sent to the “TRG” NIM input in the TDC front panel,
+and daisy-chained with other TDCs in ROC02 and ROC01. The remaining crates in the HMS/SHMS huts receive a
+copy of the accepted trigger via fiber optics lines running from the TI Master to the TIs in all other crates. The TIs
+then distribute the accepted trigger to all modules of their respective crates.
+
+
+5    Electronic Dead Time Monitoring (EDTM)
+The EDTM system is a new method used in Hall C to measure the total dead time of the data acquisition (DAQ) system.
+It consists of introducing a controlled (fixed frequency) pulse as near as possible to the detectors that form part of the
+trigger. Ideally, one would send the EDTM pulses at the detector level in the hut such that both the real physics and
+EDTM signals pass through the same electronics. Since this is not easy or practical to do, the EDMT logic pulses are
+   7
+     A copy of the coincidence pre-trigger will also need to be sent to the HMS/SHMS TDC modules present in the detector huts crates via the
+patch panel.
+
+
+                                                                    14
+injected at the trigger logic level in the Counting Room.
+
+
+
+
+Figure 18: EDTM electronics diagram.
+
+
+     By design, the EDTM is a real trigger as measured by the electronics and readout systems. Since the EDTM is
+invasive to the trigger electronics, its frequency should be small enough to minimize the probability of blocking actual
+physics triggers, but sufficiently large to gather the necessary statistics for a precise dead time measurement during the
+course of a run.
+     Figure 18 shows a simplified diagram of the EDTM signal distribution through the trigger electronics. The EDTM
+logic signals (purple) are injected into the trigger logic where they mix with the physics pre-triggers (magenta). A
+separate copy of the EDTM is also sent to scalers/TDCs to be used in the dead time calculation. If the EDTM makes
+it to the front-end of the Trigger Interface (TI) module and gets accepted (L1 Accept), it has esentially measured both
+the electronics and computer dead time.
+
+
+
+
+Figure 19: Cartoon representation of EDTM (purple) and physics (magenta) pre-triggers at the TI module front-end.
+
+
+    Figure 19 shows the random physics (magenta) and clocked (purple) EDTM pulses at an input channel of the TI
+front-end where the EDTM has been set to a sufficiently large frequency (1/Tclk ) to ensure that enough EDTM signals
+get accepted in order to make a statistically significant and reliable dead time calculation. In this example, an EDTM
+
+                                                                   15
+signal has been accepted by the TI which triggered a BUSY signal for a time τ during which all other incoming pre-
+triggers are blocked contributing to the DAQ computer dead time. The accepted pre-triggers are distributed to all ROCs
+for data readout.
+    Over the course of a run, the total dead time (TTDT ), or alternatively, the total live time (TTLT ) in terms of the
+EDTM is defined as
+                                                                   Nedtm,acc
+                                          TTDT ≡ 1 − TTLT = 1 −               ,                                      (1)
+                                                                   Nedtm,scl
+where Nedtm,acc is the number of accepted EDTM counts obtained by requiring a non-zero hit on the EDTM TDC
+spectrum, and Nedtm,scl is the number of EDTM scaler counts regardless of whether or not the EDTM was accepted.
+In reality, frequent beam trips occur during the course of a run which makes this calculation biased since one can
+measure live times of ∼100% during beam-off periods as only the EDTM signal (and cosmic rays) are measured. To
+eliminate this bias, the live time calculation was done by making a software cut on the beam current above a certain
+threshold. Furthermore, since the EDTM events are generated by a clock, rather than a poisson source, it introduces an
+additional bias since the EDTM cannot block itself. To account for this bias, an additional correction to the total live
+time was derived and can be found in Ref.[7]. This correction, however, is negligible provided that the EDTM rate is
+sufficiently low as was the case for this experiment (∼ 2 Hz).
+    Even though only the total live time is required as a correction factor in the measured cross section, one may also
+calculate the computer live time defined as
+                                                            Nphy,acc
+                                                   TCLT =            ,                                               (2)
+                                                            Nphy,scl
+where Nphy,acc is the number of accepted physics triggers obtained by requiring a zero hit on the EDTM TDC spectrum
+(EDTM rejected by TI) and Nphy,scl is the number of physics trigger scaler counts after having subtracted the EDTM
+scaler counts. The electronic live time can then be obtained from the following formula:
+
+                                                TTLT = TCLT · TELT ,                                                 (3)
+
+where TELT is the electroninc live time expressed as a fraction (not percent).
+   For a more detailed discussion on the live time calculations and its correction factors see Refs.[9, 7].
+
+
+
+
+                                                          16
+6     Notes on Changes to the Trigger
+    In Hall C, each spectrometer has multiple pre-triggers (HODO 3/4, STOF, EL-REAL, EL-CLEAN) that may
+change depending on the nature of the experiment. The base pre-trigger is the HODO 3/4, which requires at least 3
+of 4 hodoscope planes to fire. Since the commissioning phase (Fall 2017) of the spectrometers, the trigger electronics
+has had three major modifications up to the present time (Fall 2020) described below.
+    During the commissioning phase of the spectrometers, the reference time logic was initially defined to be:
+                                   logic
+                                  Treftime,init ≡ p(h)HODO 3/4 OR p(h)STOF
+                                                  OR p(h)EL-REAL OR p(h)EL-CLEAN                                               (4)
+
+where the logic pre-trigger signals described in Eq. 4 have been delayed in time relative to each other and the p(h)
+refers to prefix used in the software to denote the SHMS (HMS).
+
+6.1   January, 2018: Removal of STOF from Reference Time Definition
+
+
+
+
+Figure 20: The STOF was removed from the reference time definition in both spectrometers (HMS/SHMS) on January 23, 2018. See HC-Log
+Entry (for HMS):https://logbooks.jlab.org/entry/3519686. Note: The trigger electronics is shown for HMS, but also applies to the
+SHMS.
+
+
+On January 2018, the STOF reference time was removed from the original reference time definition (see Eq.4), and
+the reference time was redefined as
+                        logic
+                       Treftime,Jan18 ≡ p(h)HODO 3/4 OR p(h)EL-REAL OR p(h)EL-CLEAN                                            (5)
+
+
+
+
+                                                                17
+6.2   August, 2018: Removal of EL-CLEAN from Reference Time Definition
+
+
+
+
+Figure 21: The EL-CLEAN was removed from the reference time definition in both spectrometers (HMS/SHMS) on August 09, 2018. See
+HC-Log Entry:https://logbooks.jlab.org/entry/3585301. Note: The trigger electronics is shown for HMS, but also applies to the
+SHMS.
+
+
+On August 2018, EL-CLEAN was removed from the reference time definition. It was determined that any pre-trigger
+that required the HODO 3/4 was unnecessary and redundant to have in the reference time definition so it was removed.
+The reference time was redefined once again as follows:
+                                   logic
+                                  Treftime,Aug18 ≡ p(h)HODO 3/4 OR p(h)EL-REAL                                             (6)
+
+
+
+
+                                                              18
+6.3    December, 2019: Removal of STOF from trigger / Removal of EL-REAL from Reference Time
+       Definition
+
+
+
+
+Figure 22: The STOF was removed from electronics trigger and EL-REAL was removed from the reference time definition in both spectrometers
+(HMS/SHMS) on Dec 06, 2019. See the highlights section of HC-Log Entry:https://logbooks.jlab.org/entry/3747761. Note: The
+trigger electronics is shown for HMS, but also applies to the SHMS.
+
+
+On early December 2019, before the start of the A1n/d2n experimental run periods, the STOF was removed from the
+trigger definition in both spectrometers. Since STOF trigger was removed, the EL-REAL now requires a HODO 3/4
+and it was determined that this reference time (EL-REAL) was no longer needed so it was removed from the reference
+time definition as well. The reference time was redefined as follows:
+                                                  logic
+                                                 Treftime,Dec19 ≡ p(h)HODO 3/4                                                       (7)
+
+
+
+
+                                                                   19
+6.4   Electronics Trigger Oscilloscope Traces
+For a visual representation of the trigger logic signals discussed, see a summary of the various trigger oscilloscope
+traces taken since the start of the commissioning phase:
+
+December 2017:
+SHMS: https://logbooks.jlab.org/entry/3508587
+HMS: https://logbooks.jlab.org/entry/3504470
+
+September 2018:
+SHMS: https://logbooks.jlab.org/entry/3599311
+HMS: https://logbooks.jlab.org/entry/3599283
+
+February 2019:
+SHMS: https://logbooks.jlab.org/entry/3655622
+HMS: https://logbooks.jlab.org/entry/3655644
+
+December 2019:
+SHMS: https://logbooks.jlab.org/entry/3752072
+HMS: https://logbooks.jlab.org/entry/3752087
+
+
+
+
+                                                         20
+References
+[1] Asaturyan, R., Ent, R., et al. The aerogel threshold cherenkov detector for the high momentum spectrometer in
+    hall c at jefferson lab. Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrom-
+    eters, Detectors and Associated Equipment 548, 03 (2005), 364–374.
+
+[2] Cothran, C., Day, D., and Mitchell, J. A threshold gas cerenkov detector for cebaf’s hall c high momentum
+    spectrometer. Bulletin of the American Physical Society 28, 01 (1995), 1007f.
+
+[3] Day, D., and Yurov, M. Shms noble gas Čerenkov. Presented at the 2013 Hall C Users Meeting, Jefferson Lab,
+    Newport News, VA. https://www.jlab.org/Hall-C/talks/01_24_13/day.pdf.
+
+[4] Horn, T., Mkrtchyan, H., et al. The aerogel threshold cherenkov detector for the shms magnetic spectrom-
+    eter in hall c at jefferson lab. Nuclear Instruments and Methods in Physics Research Section A: Accelerators,
+    Spectrometers, Detectors and Associated Equipment 842 (2017), 28–47.
+
+[5] Huber, G. Shms heavy gas Čerenkov. Presented at the 2008 Hall C User’s Summer Workshop, Jefferson Lab,
+    Newport News, VA. https://www.jlab.org/Hall-C/talks/08_04_08/talks/huber_heavygas.ppt.
+
+[6] Huber, G., Day, D., and Mkrtchyan, H. Shms particle identification. Presented at the 2009 SHMS Detector
+    Review, Jefferson Lab, Newport News, VA. http://lichen.phys.uregina.ca/index_files/talks/shms_
+    pidreview_09aug.pdf.
+
+[7] Mack, D. Live Time Calculations, 2019.           https://hallcweb.jlab.org/DocDB/0010/001001/002/
+    EDTMnonPoissonBiasCorrectionv2.pdf.
+
+[8] Mkrtchyan, H., et al. Shms calorimeter status update. Presented at the 2012 Hall C Meeting, Jefferson Lab,
+    Newport News, VA. https://www.jlab.org/Hall-C/talks/01_13_12/mkrtchyan.pdf.
+
+[9] Pooser, E. Live Time Calculations, 2019.         https://hallcweb.jlab.org/DocDB/0010/001022/001/
+    pooser_live_time.pdf.
+
+
+
+
+                                                        21
+Appendix A               Original Electronics Diagrams
+A.1    HMS Hodoscopes Electronics Diagram
+
+
+ HMS Hodoscope pre-Trigger
+                                                                                                                               NIM (h1X)
+
+
+
+
+                                                            Ribbon
+                                                                                 (VXS)
+                                                                                                                               Logic
+                                                                                                     Twisted pairs             P/S 752                  NIM (h1)
+                                                                                                                                                        Logic
+                                                                                                                               NIM (h1Y)                P/S 755
+                                                                                                                               Logic
+                                          lemo (66)                    Ribbon                                                                            NIM 3/4                             pre-Trigger
+                                                                                                            NIM/               P/S 752
+                                                                                                                                                         Logic or
+                                                                                      L4564                 ECL                NIM (h2X)                 P/S 755 4/4                         (HMS Hodo)
+                                                                                                                               Logic
+                               Ribbon     (33)                                                                                 P/S 752                  NIM (h2)
+                                (33)                                                                                                                    Logic
+                                                                                                                               NIM (h2Y)
+                                                                                                                                                        P/S 755
+                                 RIBBON->BNC                                                                                   Logic
+                                                                                                                               P/S 752
+
+                lemo
+                Ribbon
+                Twisted pair                                                                                                   NIM/
+                                                                                                                               ECL
+
+
+
+
+                                                                                                                               Ribbon
+                                                                                                                                        Scalers (VME)
+
+
+                                                                                                                                        C1190 TDC (VXS)
+
+
+
+Figure 23: Original HMS Hodoscopes Electronics Diagram.
+
+
+
+A.2    HMS Calorimeter Electronics Diagram
+                                          ECL
+                   NIM/ECL
+
+                               Scalers (VME)             C1190 TDC (VME64)
+                                                                                                                                                 Lemo
+                                                                                                                                                 Ribbon
+
+
+
+                                           Splitter
+                                           50:50
+
+
+                                                  Ribbon
+                                                                                                                       FADC
+                                                                                                                       (VXS)
+                                        RIBBON->BNC
+                                                                                                                                                                              lemo
+
+
+
+
+                                                                                                                                        FADC (VXS)
+
+
+                                                                                                           Scaler      FADC
+                                                                                      NIM     NIM/
+                                                                                      Disc    ECL                      (VXS)                NIM
+                                                                     Row-Pair Sums
+                                                                                                      x4   C1190 TDC                        Lin.
+                                                                                 x3                                                                             NIM
+                                                                                                                                            FI/FO               DISC                 Sh LO
+                                                      Splitter                                                                              3/4
+                                                      50:50
+                                                                                                                                                                       lemo
+
+
+
+
+                                                           Ribbon                                                                        FADC (VXS)
+
+                                                 RIBBON->BNC
+
+
+                                                                                                                                                              NIM/
+                                                                                                      FADC (VXS)                                              ECL
+                                                                                                                                                              Ribbon
+
+
+
+
+                                                                                                                                                                              Scaler
+
+                                                                                                                                                                              C1190 TDC
+                                                                                                                               FADC(VXS)
+
+
+
+
+Figure 24: Original HMS Calorimeter Electronics Diagram.
+
+
+
+
+                                                                                             22
+                                                                                   1/4                           pre-Trig (HMS Aero)
+                                                      Ribbon     EDTM
+
+                              Lemo             RIBBON->BNC
+
+A.3                  Ribbon
+       HMS Gas Čerenkov  Electronics Diagram
+
+
+
+
+                                                                                                                  pre-Trig (HMS Gas Ch)
+                                                                               NIM
+                                                                               Disc.                         pre-Trig (SHMS NGC)
+                                                                       (mod)
+                                                                                                                  pre-Trig (SHMS HGC)
+                                            Ribbon            EDTM
+                                                              EDTM?
+
+                                              RIBBON->BNC
+                             Lemo
+                             Ribbon
+
+Figure 25: Original HMS Gas Čerenkov Electronics Diagram. Same electronics diagram applies for SHMS Gas Čerenkov.
+
+
+
+A.4    HMS Aerogel Čerenkov Electronics Diagram
+
+
+
+
+                                                                                  NIM
+                                                                                  Lin.
+                                                                                                          pre-Trig (SHMS Aero)
+                                                                                  FI/FO
+                                                                                  1/4                         pre-Trig (HMS Aero)
+                                                      Ribbon     EDTM
+
+                                Lemo            RIBBON->BNC
+                                Ribbon
+
+Figure 26: Original HMS Gas Čerenkov Electronics Diagram. Same electronics diagram applies for SHMS Gas Čerenkov.
+
+
+
+
+                                                                                                               pre-Trig (HMS Gas Ch)
+                                                                               NIM
+                                                                               Disc.                      pre-Trig (SHMS NGC)
+
+                                                                                                               pre-Trig (SHMS HGC)
+                                             Ribbon           EDTM
+                                                              EDTM?
+
+                                               RIBBON->BNC
+                               Lemo
+                               Ribbon
+
+
+
+
+                                                                  23
+A.5      HMS Single Arm Electronics Diagram
+
+
+   HMS Single Arm Trigger
+                                                                                                                                                                                                                 HMS pre-Trigger
+        pre-Trig                                                                                                                                                                                                 (only for ‘Coincidence’)
+        (preSh/Shower)                                        NIM/ECL
+
+
+
+
+                                                                                                (REF time)
+                                                                           lemo
+        pre-Trig (Gas                       NIM Logic
+        Cherenkov)                          P/S 755                                                                                Twisted pair
+                                            (HMS pre-Trig)                                                                          (copies of HMS
+        pre-Trig (Aero                                                                                                             pre-Trigger)
+        Cherenkov)
+                                                             lemo
+
+
+
+
+                                                                                                                                                                                                    (REF time)
+        pre-Trig (Hodo)                                                                                                           IN
+                                              NIM/ECL                                                                                            TS #2 (HMS pre-Trigger)
+                                                                                                                                               (up to 6 TS inputs in TI module)
+      ‘Any combination of
+                                                              Scalers (VME)
+                                                    Ribbon
+
+
+
+
+      experiment-specific                                                                                                                  lemo
+      pre-Triggers’                                                                                                               OUT
+
+                                                              C1190 TDC (VXS)                                                                          NIM/ECL
+                                                                                                             HMS                        Twisted
+
+
+
+
+                                                                                                                                                                         lemo
+                                                                                                                                                                         Jumper
+                                                                                                             Trigger                    pair
+                          Lemo
+                                                                                                             (accepted
+                                                                                                             triggers)
+                                                                                                                              TI                       NIM/ECL
+
+                          Ribbon                                                                                             Master
+                                                                                                                             (ROC 01)
+                          Twisted Pair
+
+
+
+
+                                                                                                                                                       Ribbon
+                                                                                                                                                                  Scalers (VME)
+                                                                Lemo Daisy-Chained
+                                                                with all TDCs in ROC 01 crate
+                                                                via ‘TRG’ NIM input                                                                               C1190 TDC (VXS)
+
+
+
+
+Figure 27: Original HMS Single Arm Trigger Electronics Diagram.
+
+
+
+A.6      SHMS Hodoscopes Pre-Trigger
+
+                                                                                                                                                                Ribbon
+       SHMS Hodoscope pre-Trigger                                                                                                                                            Scalers (VME)
+                                                                                                                                                        NIM/ECL              C1190 TDC (VXS)
+                                                                           Ribbon
+
+
+
+
+                                                                                                        (VXS)
+                                                                                                                                                            NIM (S1X)
+                                                                                                                                                            Logic
+                                                                                                                                                                              NIM (S1)
+                                                                                                                                                            P/S 752
+                                                                                                                                                                              Logic
+                                                                                                                                                            NIM (S1Y)
+                                                                                                                                                                              P/S 755
+                                                                                        Ribbon                                                              Logic
+                                                                                                                                                                                       3/4
+                                                                                                                                        NIM/                                   NIM
+                                                                                                                                                            P/S 752
+                                                               (66)                                             L4564                                                          Logic or
+                                                                                                                                        ECL                 NIM (S2X)                                                    pre-Trigger
+                                                                                                                                                                               P/S 755 4/4
+                                                                                                                                                            Logic                                                        (SHMS Hodo)
+                                           Ribbon
+                                                     (33)
+
+
+
+
+                                                                                                                                                            P/S 752           NIM (S2)
+                                                                                                                                                                              Logic
+                                                                                                                          Twisted                           NIM (S2Y)
+                                                                                                                                                                              P/S 755
+                                                                                                                                                            Logic
+                                                     RIBBON->BNC
+                                                                                                                          pairs
+                                                                                                                                                            P/S 752
+                                                                                                                                                                                     Twisted pair
+
+
+
+
+                                                                                                                                                      (VXS)
+                                                                                                                         Ribbon
+
+
+
+
+                                                                                                                                           Ribbon
+
+
+                                                              ECL
+                             NIM/ECL
+
+                                             Scalers (VME)                C1190 TDC (VME64)
+                                   lemo
+                                   Ribbon
+                                   Twisted pair
+
+
+
+Figure 28: Original SHMS Hodoscope Electronics Diagram.
+
+
+
+                                                                                                                     24
+A.7      SHMS Pre-Shower / Shower Calorimeter Pre-Trigger
+
+
+   SHMS Pre-Shower pre-Trigger                                                                                                                            C1190 TDC (VXS)
+
+
+
+
+                                                                                                                                                                                               Ribbon
+                                                                                                                                                             Scalers (VME)
+
+                                                                                                                                                                                           NIM/
+                                                                            NIM                                                                     EDTM
+                                                                                                                                                                                           ECL
+                                                                            Lin.
+                                                             (x14 +sig)
+                                                                            FI/FO
+                                                                                                      (x4, +sig)
+                                                                            (mod)                                       NIM Lin. FI/FO              CH           NIM                      NIM            pre-Trigger
+                                                                            4/4                                         Sums: [1-4]+/-              Patch
+                                                                                                                                                                 Lin.                     Disc.          (PSh HI)
+                                            Splitter                                                                          [5-8]+/-
+         PreShower (x28 sig)                                                                                                                                     FI/FO
+                                            50:50                                                                             [9-12]+/-
+                                                                                                                              [13-14]+/-                         (mod)                    NIM            pre-Trigger
+                                                                            NIM                                                                     x4
+                                                                                                                                                                 1/4
+                                    Ribbon                                                            (x4, -sig)             4/4                                                          Disc.          (PSh LO)
+                                                                            Lin.
+                                                              (x14 -sig)    FI/FO
+                                         RIBBON->BNC
+                                                                            (mod)
+                                                                            4/4                                                                               FADC (VXS)
+                                         FADC (VXS)
+                                                                                                            SHMS Electronics Hut
+
+                                   lemo
+                                   Ribbon
+
+Figure 29: Original SHMS PreShower Electronics Diagram
+
+
+
+A.8      SHMS Single Arm Pre-Trigger
+
+
+   SHMS Single Arm Trigger
+                                                                                                                                                                                          SHMS pre-Trigger
+       pre-Trig (pShHI,                                                                                                                                                                   (only for ‘Coincidence’)
+       pShLO)
+                                                        NIM/ECL
+                                                                                         (REF time)
+
+
+
+
+       pre-Trig
+                                                                    lemo
+
+
+
+
+                                         NIM Logic
+       (Heavy/Noble                      P/S 755                                                                        Twisted pair
+       Gas Cherenkov)                    (SHMS pre-Trig)                                                                 (copies of SHMS
+                                                                                                                        pre-Trigger)
+        pre-Trig (Aero
+        Cherenkov)                                    lemo
+                                                                                                                                                                             (REF time)
+
+
+
+                                                                                                                       IN
+       pre-Trig (Hodo)                    NIM/ECL                                                                                   TS #2 (SHMS pre-Trigger)
+                                                                                                                                  (up to 6 TS inputs in TI module)
+      ‘Any combination of
+                                                        Scalers (VME)
+                                             Ribbon
+
+
+
+
+      experiment-specific                                                                                                       lemo
+      pre-Triggers’                                                                                                    OUT
+
+                                                        C1190 TDC (VXS)                                                                    NIM/ECL
+                                                                                                      SHMS                   Twisted
+                                                                                                                                                             lemo
+                                                                                                                                                             Jumper
+
+
+
+
+                                                                                                      Trigger                pair
+                          Lemo
+                                                                                                      (accepted
+                                                                                                      triggers)
+                                                                                                                     TI                    NIM/ECL
+
+                          Ribbon                                                                                   (Master)
+                                                                                                                   (ROC 02)
+                          Twisted Pair
+                                                                                                                                           Ribbon
+
+
+
+
+                                                                                                                                                         Scalers (VME)
+                                                         Lemo Daisy-Chained
+                                                         with all TDCs in ROC 02 crate
+                                                         via ‘TRG’ NIM input                                                                         C1190 TDC (VXS)
+
+
+
+
+Figure 30: Original SHMS Single Arm Trigger Electronics Diagram
+
+
+
+
+                                                                                                                  25
+A.9    Coincidence Pre-Trigger
+
+
+   HMS/SHMS Coincidence Trigger
+    pre-Trig (HMS)
+                                         NIM Logic
+                                         P/S 755                                                   NIM/ECL
+                                         (coinc. pre-trig)
+
+    pre-Trig (SHMS)                                                                                                 in
+
+                                                                  Twisted pair                                            TS #3
+                                            NIM/ECL               (REF time)            Coincidence
+
+
+
+
+                                                                                                                                  (REF time)
+                                                                                                                                  Twisted pair
+                                                                                        Trigger
+                                                                                        (acc. triggers)             out
+                 Lemo                       Ribbon
+                 Ribbon                                      Scalers (VME)
+                                                                                                              TI Master
+                 Twisted Pair                                                                                                         Lemo Daisy-Chained
+                                                             C1190 TDC (VME64)                                (ROC 02)                with all TDCs in ROCs 01, 02
+                                                                                                                                      crates via ‘TRG’ NIM input
+                                                                                             NIM/
+
+
+
+
+                                                                                                           Jumper
+                                                                                 lemo        ECL
+
+
+
+
+                                                                                                            lemo
+                                                                                             NIM/
+                                                                                             ECL
+
+
+
+
+                                                                                          Ribbon
+                                                                                                          Scalers (VME)
+
+                                                                                                          C1190 TDC (VXS)
+
+
+Figure 31: Original Coincidence Trigger Electronics Diagram
+
+
+
+
+                                                                          26
+

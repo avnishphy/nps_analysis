@@ -1,0 +1,217 @@
+    NPS Trigger/DAQ
+      Feb 2, 2023
+
+      Benjamin Raydo
+FEDAQ Group (Physics Division)
+
+
+
+
+      Thomas Jefferson National Accelerator Facility   Page 1
+                         Clustered trigger & readout
+Goals
+ • 3x3 clustering trigger across full calorimeter: trigger on clusters>=threshold
+ • 5x5 full waveform readout centered on triggered clusters
+                                                                 All 3x3 views evaluated in parallel – including views
+                                                                 across multiple crates (FADC hits on perimeter are
+                                                                               shared with optical links)
+
+
+
+
+                                                                    5x5 centered on cluster seed for
+                                                                 clusters >= threshold are the FADC
+                                                                     channels readout each event
+
+
+
+
+                               Thomas Jefferson National Accelerator Facility                                 Page 2
+                        NPS Calorimeter DAQ/Trigger Setup
+                                                 Shared Perimeter (1 row)
+                                                  FADC Digitized Pulses
+                                                                   FADC Channel
+                                            FADC
+                                                                   Readout Masks
+                                      Digitized Pulses
+
+Calorimeter Array                                                       Triggers
+                                        FADC              VTP
+35                                     120 Channels
+
+
+                                        FADC              VTP
+                                       240 Channels
+
+
+                                        FADC              VTP
+                                                                                        L1A (to front-end: FADC, VTP, etc)
+                                       240 Channels
+                                                                                   TS
+Y
+
+                                        FADC              VTP
+                                       240 Channels
+                                                                                                   L1A trigger latency estimated around 1µs
+                                                                                                  • Clustering of all views happens in
+                                        FADC              VTP
+                                                                                                    parallel in about 64ns
+                                                                                                  • Most of the delay is in transporting
+                                       240 Channels                                                 information across the serial links
+0                                                                                                 • L1A latency doesn't include additional
+                                                                                                    delays due to TS->TI cable
+     0              X      29   VXS Crate                     20Gbps optical                        delays/latency settings
+                                     160Gbps over VXS backplane
+                                        FADC Integrated Pulses
+                                        (channel#, charge, time)
+
+                                  Thomas Jefferson National Accelerator Facility                Page 3
+                   FADC – Pulse Processing
+
+
+
+
+ECAL
+Channel                                                                    Reports to GTP:
+                                                                           • 13bit energy (in MeV)
+                                                                           • 4ns timing
+                                                                           • Channel number
+                                                                           • 32ns double pulse
+                                                  Gain
+                                                                             resolution
+
+•    Trigger pedestal is the same parameter that would be calculated for the readout data.
+•    Trigger gain parameter normally used to scale ADC -> MeV (makes VTP settings &
+     diagnostics easy to read)
+•    Both pedestal and gain require calibration to determine parameters.
+
+
+
+                          Thomas Jefferson National Accelerator Facility          Page 4
+                                                Cluster Finding
+Cluster finding is done by (using 3x3 tower views, all views evaluated in parallel):
+ • Seed hit (center) must be >= seed threshold
+ • Seed hit must also be a local maximum in both space and time
+ • Cluster is reported with:
+    –   Timestamp of seed hit (large amplitude hit => lowest jitter)
+    –   Number of hits in cluster
+    –   X,Y position of seed hit
+    –   Energy in MeV units
+ e.g. for seed threshold of 2 and hit ∆t=+/-8ns, the following hit pattern evolving in time will report 1 cluster:
+
+                                   2    2           1                                              1     2   2
+               8    3         3                                                                    3     8   3
+                                                                               1
+          T=0ns              T=4ns                 T=8ns                      T=12ns              T=0ns, E=19, N=6, X, Y
+
+                                            Thomas Jefferson National Accelerator Facility      Page 5
+                          DiagGUI – FADC250
+DiagGUI is a general purpose tool to gain register access to DAQ modules and
+display various diagnostics, histograms, scalers, etc…
+  • Runs parallel to DAQ operations...okay to view, but be careful as it allows
+    changing module parameters on the fly! Really intended for 'expert' only.
+  • For example, you can look at any FADC250 waveforms and trigger on the
+    channels:
+
+
+
+
+                          Thomas Jefferson National Accelerator Facility   Page 6
+                               DiagGUI – VTP
+On VTP, trigger features can be monitored (HPS calorimeter example shown)
+ • Triggered cluster rates as function of position
+ • Cluster energy distribution, and number of hit crystals forming cluster
+ • Can select individual channels
+
+
+
+
+                          Thomas Jefferson National Accelerator Facility   Page 7
+                  Trigger Configuration Files
+Example/template trigger file (to be updated for NPS):
+ • $CLON_PARMS/trigger/HPS/Run2019/TEST/hps_ben_test.trg
+
+Singles Setup:
+
+
+
+
+                       Thomas Jefferson National Accelerator Facility   Page 8
+                           Trigger Data Banks
+Enabled trigger bits and clusters are written to events
+ • These allow online/offline checking of the trigger decisions
+ • ...NPS format is slightly different than what is shown here ->
+
+
+
+
+                           Thomas Jefferson National Accelerator Facility   Page 9
+                             Firmware Simulation
+VHDL, Verilog, C/C++ Simulator: Aldec Riviera
+ • Simulates source files used to compile FPGA projects
+ • Links to external libraries (e.g. C/C++ EVIO)
+   – Can directly read and write DAQ EVIO files
+   – Simulate firmware with runs and record new trigger bank structures
+ • Cycle accurate simulation of firmware
+   – Some models are simplified for speed optimization (e.g. FADC trigger path & SerDes)
+ • Event simulation rate ~1Hz
+   – Not very fast, but plenty can handle ~100k events in a day
+ • Can verify trigger logic
+   – Can use cosmic and/or noise data from NPS calorimeter (before beam arrives)
+   – Can use early beam data during commissioning for additional quick verification
+
+
+                              Thomas Jefferson National Accelerator Facility   Page 10
+                                  Cluster verification (from HPS)
+    Examples of comparing ~100k clusters (timestamp, energy, nhits, X, Y) of new
+    firmware against HPS run 8099 trigger banks:
+                                              •   Less than 36ns and above 80ns the FADC waveforms are clipped by the
+                    matched                       readout window, so energy discrepancies develop causing VTP banks not
+                                                  to match SSP banks
+
+                                  match       •   There are ~20 events that fail to match out of ~100k. These failures are due
+                                  failed          to pulse pileup creating dead-time on the FADC pulse detection in the
+                                                  trigger. Not easy or impossible to correct for, so this mismatch is not a
+                                                  surprise.
+
+
+      Only region where FADC          •    Comparing VTP cluster banks to trigger
+      waveforms are not clipped            emulator a 100% match is seen because
+                                           both emulator and VTP see the same FADC
+                                           waveforms (some which are clipped)
+
+•   Singles (old) and Pair trigger logic can be checked the same way
+    (simulation is done, just need to run the analyzer to make the plots –
+    will do soon)
+                                             Thomas Jefferson National Accelerator Facility     Page 11
+                               Trigger Emulator
+The trigger emulator is a basic ROOT based C++ analyzer
+ • Reads trigger banks and also reconstruct trigger banks from FADC
+   waveforms
+ • Compares reconstructed trigger banks to recorded ones reports on
+   discrepancies
+ • Measures/estimates rates of trigger bits from random trigger
+   – A single random trigger run can be taken and fed through the program under various
+     settings to tune parameters
+   – These rates should match the running trigger bit rates as well – another good
+     verification step
+ • Written for Hall B HPS – planning to update for NPS
+
+
+
+                             Thomas Jefferson National Accelerator Facility   Page 12
+                                     Summary
+• Trigger firmware is ready, but hardware testing is required
+  (expected to happen in the next week or two)
+
+• Simulation verification is completed (clusters trigger looks good)
+
+• Need to implement the VTP FADC 5x5 channel mask readout
+  firmware feature – will take a few days effort. Something expecting
+  to do once cluster trigger is up and running
+
+
+
+
+                        Thomas Jefferson National Accelerator Facility   Page 13
+

@@ -1,0 +1,965 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2026-01-28 Wed 04:30 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CODA 3 Installation Walk-through</title>
+<meta name="author" content="Bryan Moffit &lt;moffit@jlab.org&gt;" />
+<meta name="generator" content="Org Mode" />
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/bigblow_theme/css/htmlize.css"/>
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/bigblow_theme/css/bigblow.css"/>
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/bigblow_theme/css/hideshow.css"/>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/bigblow_theme/js/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/bigblow_theme/js/jquery-ui-1.10.2.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/bigblow_theme/js/jquery.localscroll-min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/bigblow_theme/js/jquery.scrollTo-1.4.3.1-min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/bigblow_theme/js/jquery.zclip.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/bigblow_theme/js/bigblow.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/bigblow_theme/js/hideshow.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/lib/js/jquery.stickytableheaders.min.js"></script>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">CODA 3 Installation Walk-through</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#intro">1. Intro</a></li>
+<li><a href="#install">2. Download and Install</a>
+<ul>
+<li><a href="#orgc7e372b">2.1. CODA 3.10</a></li>
+<li><a href="#orgb8b9fd5">2.2. JDK1.8.0_152</a></li>
+<li><a href="#orga656607">2.3. coda_scripts and CODA 3 environment</a></li>
+</ul>
+</li>
+<li><a href="#testconfig">3. Test Configuration</a>
+<ul>
+<li><a href="#orgbc36f9e">3.1. Setup coda component table</a></li>
+<li><a href="#org463efdf">3.2. Setup test configuration with jcedit</a>
+<ul>
+<li><a href="#orgf68e6db">3.2.1. Start jcedit</a></li>
+<li><a href="#org06a3a53">3.2.2. Create a new SESSION</a></li>
+<li><a href="#org7926885">3.2.3. Create a new CODA configuration</a></li>
+</ul>
+</li>
+<li><a href="#orgba6c9ac">3.3. Compile example readout list</a></li>
+<li><a href="#org63848af">3.4. startCoda</a>
+<ul>
+<li><a href="#org981a3ee">3.4.1. Take a run</a></li>
+</ul>
+</li>
+<li><a href="#orgcae90d2">3.5. Look at the data output</a>
+<ul>
+<li><a href="#org10a4c73">3.5.1. jeviodmp</a></li>
+<li><a href="#org0632dbc">3.5.2. evio2xml</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#external_process">4. External processes</a>
+<ul>
+<li><a href="#orgdfc602f">4.1. Attach to the State</a>
+<ul>
+<li><a href="#orgdb522c5">4.1.1. <b>Supervisor</b> State</a></li>
+<li><a href="#org779a07c">4.1.2. <b>Component</b> State</a></li>
+</ul>
+</li>
+<li><a href="#org7cd2528">4.2. Create a new <b>Process</b></a>
+<ul>
+<li><a href="#org2248deb">4.2.1. Runtype Variables</a></li>
+<li><a href="#orga4a7f10">4.2.2. Example</a></li>
+<li><a href="#org3b9f373">4.2.3. Caveats</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#changelog">5. Changelog</a>
+<ul>
+<li><a href="#org77c3a37">5.1. source for this file</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-intro" class="outline-2">
+<h2 id="intro"><span class="section-number-2">1.</span> Intro</h2>
+<div class="outline-text-2" id="text-intro">
+<p>
+The following guide to CODA 3 contains the steps I took to install CODA 3.10 on my RHEL 7.9 PC. Here you will find basic information that will help you with environment setup, database configuration,
+and taking then decoding the data from a local ROC.
+</p>
+</div>
+</div>
+<div id="outline-container-install" class="outline-2">
+<h2 id="install"><span class="section-number-2">2.</span> Download and Install</h2>
+<div class="outline-text-2" id="text-install">
+</div>
+<div id="outline-container-orgc7e372b" class="outline-3">
+<h3 id="orgc7e372b"><span class="section-number-3">2.1.</span> CODA 3.10</h3>
+<div class="outline-text-3" id="text-2-1">
+<p>
+Download and install the latest CODA 3 tarball
+<a href="https://coda.jlab.org/drupal/content/coda-3-release">https://coda.jlab.org/drupal/content/coda-3-release</a>
+</p>
+<ul class="org-ul">
+<li>Here, I made a directory (<code>$HOME/coda</code>) and extracted
+CODA 3.10 into it.</li>
+</ul>
+<div class="org-src-container">
+<pre class="src src-shell">mkdir $HOME/coda
+tar zxvf coda310_arm-2.tgz -C $HOME/coda
+</pre>
+</div>
+<p>
+This extracts the CODA 3.10 into <code>CODA=$HOME/coda/coda3.10_arm</code>.  This info will be added below.
+</p>
+</div>
+</div>
+<div id="outline-container-orgb8b9fd5" class="outline-3">
+<h3 id="orgb8b9fd5"><span class="section-number-3">2.2.</span> JDK1.8.0_152</h3>
+<div class="outline-text-3" id="text-2-2">
+<p>
+Download and install this version of the jdk:
+<a href="https://coda.jlab.org/drupal/system/files/coda/3.10/jdk-8u152-linux-x86.tar.gz">https://coda.jlab.org/drupal/system/files/coda/3.10/jdk-8u152-linux-x86.tar.gz</a>
+</p>
+
+<ul class="org-ul">
+<li>I installed this in <code>HOME</code> as well:</li>
+</ul>
+<div class="org-src-container">
+<pre class="src src-shell">tar zxvf jdk-8u152-linux-x86.tar.gz -C $HOME
+</pre>
+</div>
+<p>
+This extracts the jdk into <code>JAVA_HOME=$HOME/jdk1.8.0_152</code>.  This info
+will be added below.
+</p>
+</div>
+</div>
+<div id="outline-container-orga656607" class="outline-3">
+<h3 id="orga656607"><span class="section-number-3">2.3.</span> coda_scripts and CODA 3 environment</h3>
+<div class="outline-text-3" id="text-2-3">
+<p>
+Follow the README.md for coda_scripts installation.  These instructions include steps for setting up the CODA 3 environment. <a href="https://github.com/JeffersonLab/coda_scripts/blob/master/README.md">https://github.com/JeffersonLab/coda_scripts/blob/master/README.md</a>
+</p>
+<ul class="org-ul">
+<li>I cloned the git repo in my <code>CODA</code> directory</li>
+</ul>
+<div class="org-src-container">
+<pre class="src src-shell">cd ${HOME}/coda
+git clone https://github.com/JeffersonLab/coda_scripts
+</pre>
+</div>
+<ul class="org-ul">
+<li>Since I use bash, I modified the <code>coda_scripts/setupCODA.bash</code> to read:</li>
+</ul>
+<div class="org-src-container">
+<pre class="src src-shell"># Where I installed stuff
+export JAVA_HOME=$HOME/jdk1.8.0_152
+export CODA=$HOME/coda/3.10_arm
+export CODA_CONFIG=$HOME/coda/coda_scripts
+
+# Add config scripts to path
+export PATH=${CODA_CONFIG}:${PATH}
+
+# CODA 3 environment defaults 
+source ${CODA_CONFIG}/coda3.10.setup_bash
+
+# Override some defaults
+export SESSION=testsession
+export EXPID=testexpid
+
+export COOL_HOME=${CODA}/cool
+
+export REMEX_CMSG_HOST=dharma.jlab.org
+export REMEX_CMSG_PASSWORD=${EXPID}
+
+export CODA_COMPONENT_TABLE=${CODA_CONFIG}/config/${EXPID}/coda_component_table.cfg
+</pre>
+</div>
+<p>
+Be sure and update <code>CODA</code>, <code>JAVA_HOME</code>, and <code>CODA_CONFIG</code> to the paths where you have installed them. You're free to change the <code>SESSION</code> and <code>EXPID</code> to your own naming scheme.  Change the <code>REMEX_CMSG_HOST</code> to match the hostname of your machine.
+</p>
+<ul class="org-ul">
+<li>Now this file is sourced in my <code>$HOME/.bashrc</code>:</li>
+</ul>
+<div class="org-src-container">
+<pre class="src src-shell">source $HOME/coda/coda_scripts/setupCODA3.bash
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-testconfig" class="outline-2">
+<h2 id="testconfig"><span class="section-number-2">3.</span> Test Configuration</h2>
+<div class="outline-text-2" id="text-testconfig">
+<p>
+Now I'll test my installation by running a <b>ROC</b> and <b>PEB</b> on the PC.  It'll generate some data and I'll use some CODA 3 utilities to look at the resulting data file.
+</p>
+</div>
+<div id="outline-container-orgbc36f9e" class="outline-3">
+<h3 id="orgbc36f9e"><span class="section-number-3">3.1.</span> Setup coda component table</h3>
+<div class="outline-text-3" id="text-3-1">
+<p>
+The <code>CODA_COMPONENT_TABLE</code> environment variable was created in <code>setupCODA.bash</code>.  Now I'll make one that defines a <b>ROC</b> (named <b>ROC1</b>) and <b>PEB</b> (named <b>PEB1</b>) that will run on my PC (short hostname: dharma):
+</p>
+<pre class="example" id="orge959787">
+#
+#  coda_scripts/config/testexpid/coda_component_table.cfg
+#
+# hostname   component type    component name
+#
+dharma  ROC  ROC1
+dharma  PEB  PEB1
+</pre>
+</div>
+</div>
+<div id="outline-container-org463efdf" class="outline-3">
+<h3 id="org463efdf"><span class="section-number-3">3.2.</span> Setup test configuration with jcedit</h3>
+<div class="outline-text-3" id="text-3-2">
+</div>
+<div id="outline-container-orgf68e6db" class="outline-4">
+<h4 id="orgf68e6db"><span class="section-number-4">3.2.1.</span> Start jcedit</h4>
+<div class="outline-text-4" id="text-3-2-1">
+<p>
+With the CODA 3 environment defined, we can now run CODA 3 utilities.  In a fresh terminal I execute jcedit:
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">jcedit
+</pre>
+</div>
+<p>
+A pop-up window appears with:
+</p>
+
+
+<div id="org75c5027" class="figure">
+<p><img src="pics/create_cool_database.png" alt="create_cool_database.png" />
+</p>
+</div>
+
+<p>
+I clicked on the <b>Ok</b> button and the pop-up disappears.  This has created a directory structure with the COOL database at <code>COOL_HOME</code>
+</p>
+
+<p>
+The COOL Database Editor with a blank canvas appears:
+</p>
+
+
+<div id="orgcea8337" class="figure">
+<p><img src="pics/cool_database_editor_empty.png" alt="cool_database_editor_empty.png" />
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-org06a3a53" class="outline-4">
+<h4 id="org06a3a53"><span class="section-number-4">3.2.2.</span> Create a new SESSION</h4>
+<div class="outline-text-4" id="text-3-2-2">
+<p>
+At the top of the jcedit GUI, I selected from the pull-down menu:
+<b>Expert -&gt; Session -&gt; New&#x2026;</b>
+</p>
+
+<p>
+A pop-up window appeared, I entered in my <code>SESSION=testsession</code>, and clicked <b>OK</b>:
+</p>
+
+
+<div id="org50648f7" class="figure">
+<p><img src="pics/testsession.png" alt="testsession.png" />
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-org7926885" class="outline-4">
+<h4 id="org7926885"><span class="section-number-4">3.2.3.</span> Create a new CODA configuration</h4>
+<div class="outline-text-4" id="text-3-2-3">
+<p>
+Now ready to make the test configuration, I did a <b>click-and-drag</b> on the <b>ROC</b> icon from the component column on the left of the GUI. <b>ROC1</b> then appeared in the canvas.
+</p>
+
+<p>
+I did the same with the <b>PEB</b> icon, and <b>OUT</b> icon.
+The canvas now looked like:
+</p>
+
+
+<div id="org2f98e0f" class="figure">
+<p><img src="pics/testconfig_empty.png" alt="testconfig_empty.png" />
+</p>
+</div>
+
+<p>
+Double-clicking on a component in the canvas allows you to set them up for this configuration.  For <b>ROC1</b> I configured a test readout list
+</p>
+<pre class="example">
+/home/moffit/coda/3.10_arm/examples/rol/test_list_v3.so
+</pre>
+
+<p>
+in the <b>ROL1</b> field:
+</p>
+
+
+<div id="org4886958" class="figure">
+<p><img src="pics/roc1_config.png" alt="roc1_config.png" />
+</p>
+</div>
+
+<p>
+The <b>FILE1</b> component was configured to generate an output <b>Type=File</b>:
+</p>
+<pre class="example">
+/home/moffit/coda/data/testconfig_%d.evio.%d
+</pre>
+
+
+
+<div id="orgb9fa8da" class="figure">
+<p><img src="pics/file1_config.png" alt="file1_config.png" />
+</p>
+</div>
+
+<p>
+With this configuration, the first <b>%d</b> will be replaced with the current run number and the second <b>%d</b> replaced with the current split number.
+</p>
+
+<p>
+Now I linked <b>ROC1</b> to <b>PEB1</b> by selecting the <b>Link Mode</b>:
+</p>
+
+
+<div id="org43e5a6f" class="figure">
+<p><img src="pics/link_mode.png" alt="link_mode.png" />
+</p>
+</div>
+
+<p>
+then <b>click-and-drag</b> from one to the other.  A pop-up window will show some various options for this link.  The defaults are fine, and I just clicked <b>Ok</b>.  I did the same procedure for linking the
+<b>PEB1</b> to the <b>FILE1</b>.  Again, the link defaults were fine and I clicked <b>Ok</b>.
+</p>
+
+<p>
+My canvas now looked like:
+</p>
+
+
+<div id="org39aae95" class="figure">
+<p><img src="pics/testconfig_filled.png" alt="testconfig_filled.png" />
+</p>
+</div>
+
+<p>
+I then saved this configuration using the Pull-Down menu:
+<b>File -&gt; Save</b>
+</p>
+
+<p>
+A pop-up window appeared, I entered <code>testconfig</code>, and clicked <b>OK</b>:
+</p>
+
+
+<div id="org622868f" class="figure">
+<p><img src="pics/save_testconfig.png" alt="save_testconfig.png" />
+</p>
+</div>
+
+<p>
+All done.  I closed the GUI with the Pull-Down menu:
+<b>File -&gt; Exit</b>
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-orgba6c9ac" class="outline-3">
+<h3 id="orgba6c9ac"><span class="section-number-3">3.3.</span> Compile example readout list</h3>
+<div class="outline-text-3" id="text-3-3">
+<p>
+In a terminal, I changed directories into <code>$CODA/examples/rol</code> and compiled the test readout list.
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">cd $CODA/examples/rol
+make test_list_v3.so
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org63848af" class="outline-3">
+<h3 id="org63848af"><span class="section-number-3">3.4.</span> startCoda</h3>
+<div class="outline-text-3" id="text-3-4">
+<p>
+In a terminal, now I ran:
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">startCoda
+</pre>
+</div>
+
+<p>
+Three xterms should appear with the <b>Platform</b>, <b>PEB1</b>, and <b>ROC1</b>.  The RunControl GUI appeared shortly afterwards:
+</p>
+
+
+<div id="org666f97b" class="figure">
+<p><a href="pics/startCoda.png"><img src="pics/startCoda-small.png" alt="startCoda-small.png" /></a>
+</p>
+</div>
+
+<p>
+In the top of <b>Run Control</b>, I select: <b>Configurations -&gt; Coda Config</b>, and select <b>testconfig</b>.  The GUI should re-configure and now show <b>ROC1</b> and <b>PEB1</b> in a <b>booted</b> state.
+</p>
+</div>
+<div id="outline-container-org981a3ee" class="outline-4">
+<h4 id="org981a3ee"><span class="section-number-4">3.4.1.</span> Take a run</h4>
+<div class="outline-text-4" id="text-3-4-1">
+<p>
+Click on <b>Configure</b> button. Then <b>Download</b>, Then <b>Start</b>.
+</p>
+
+<p>
+<b>End</b>
+</p>
+
+
+<div id="org7ff44af" class="figure">
+<p><a href="pics/testconfig_end.png"><img src="pics/testconfig_end-small.png" alt="testconfig_end-small.png" /></a>
+</p>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-orgcae90d2" class="outline-3">
+<h3 id="orgcae90d2"><span class="section-number-3">3.5.</span> Look at the data output</h3>
+<div class="outline-text-3" id="text-3-5">
+</div>
+<div id="outline-container-org10a4c73" class="outline-4">
+<h4 id="org10a4c73"><span class="section-number-4">3.5.1.</span> jeviodmp</h4>
+<div class="outline-text-4" id="text-3-5-1">
+<p>
+I opened up a fresh terminal, and ran the program:
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">jeviodmp
+</pre>
+</div>
+<p>
+This brings up the GUI that allows you to view the data for each event within a CODA 3 run.  I navigated to find my data file by using the Pull-down menu:
+<b>File -&gt; Open Event File</b>, then used the pop-up window to find the file for the run
+I just took:
+</p>
+
+
+<div id="org4bf39bb" class="figure">
+<p><img src="pics/jeviodmp_open.png" alt="jeviodmp_open.png" />
+</p>
+</div>
+
+<p>
+I chose to view the data in hexidecimal.  This is selected using the pull-down: <b>View -&gt; Hexidecimal</b>.  The first two events are the Prestart and Go CODA events. You can navigate to the first triggered event by using the <b>next&gt;</b> button:
+</p>
+
+
+<div id="orgfdd053b" class="figure">
+<p><img src="pics/jeviodmp_evt3.png" alt="jeviodmp_evt3.png" />
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-org0632dbc" class="outline-4">
+<h4 id="org0632dbc"><span class="section-number-4">3.5.2.</span> evio2xml</h4>
+<div class="outline-text-4" id="text-3-5-2">
+<p>
+I opened up a fresh terminal, navigated to my data directory and ran the program:
+</p>
+<div class="org-src-container">
+<pre class="src src-shell">cd ~/coda/data/
+evio2xml -verbose -pause testconfig_1.evio.0
+</pre>
+</div>
+
+<p>
+This produced some output into the terminal that has the EVIO data format converted to XML.  I pressed &lt;Enter&gt; a couple times to advance to the first triggered event:
+</p>
+
+<pre class="example" id="org5b9fc29">
+&lt;!-- ===================== Buffer 3 contains 220 words (880 bytes) ===================== --&gt;
+
+   &lt;!-- header words: 219, 0xff501001 --&gt;
+   &lt;event format="evio" count="3" content="bank" data_type="0x10" tag="65360" padding="0" num="1" length="219" ndata="218"&gt;
+
+      &lt;!-- header words: 11, 0xff212001 --&gt;
+      &lt;bank content="segment" data_type="0x20" tag="65313" padding="0" num="1" length="11" ndata="10"&gt;
+
+         &lt;!-- header word: 0x10a0004 --&gt;
+         &lt;uint64 data_type="0xa" tag="1" padding="0" length="4" ndata="2"&gt;
+            0x0000000000000001  0x0000000012345678  
+         &lt;/uint64&gt;
+
+         &lt;!-- header word: 0x1850001 --&gt;
+         &lt;uint16 data_type="0x5" tag="1" padding="2" length="1" ndata="1"&gt;
+            0x0001  
+         &lt;/uint16&gt;
+
+         &lt;!-- header word: 0x1010002 --&gt;
+         &lt;uint32 data_type="0x1" tag="1" padding="0" length="2" ndata="2"&gt;
+            0x12345678  0x00000000  
+         &lt;/uint32&gt;
+      &lt;/bank&gt;
+
+      &lt;!-- header words: 205, 0x11001 --&gt;
+      &lt;bank content="bank" data_type="0x10" tag="1" padding="0" num="1" length="205" ndata="204"&gt;
+
+         &lt;!-- header words: 203, 0x10101 --&gt;
+         &lt;uint32 data_type="0x1" tag="1" padding="0" num="1" length="203" ndata="202"&gt;
+            0x110000da  0x00000000  0x01000000  0x02000000  
+            0x03000000  0x04000000  0x05000000  0x06000000  
+            0x07000000  0x08000000  0x09000000  0x0a000000  
+            0x0b000000  0x0c000000  0x0d000000  0x0e000000  
+            0x0f000000  0x10000000  0x11000000  0x12000000  
+            0x13000000  0x14000000  0x15000000  0x16000000  
+            0x17000000  0x18000000  0x19000000  0x1a000000  
+            0x1b000000  0x1c000000  0x1d000000  0x1e000000  
+            0x1f000000  0x20000000  0x21000000  0x22000000  
+            0x23000000  0x24000000  0x25000000  0x26000000  
+            0x27000000  0x28000000  0x29000000  0x2a000000  
+            0x2b000000  0x2c000000  0x2d000000  0x2e000000  
+            0x2f000000  0x30000000  0x31000000  0x32000000  
+            0x33000000  0x34000000  0x35000000  0x36000000  
+            0x37000000  0x38000000  0x39000000  0x3a000000  
+            0x3b000000  0x3c000000  0x3d000000  0x3e000000  
+            0x3f000000  0x40000000  0x41000000  0x42000000  
+            0x43000000  0x44000000  0x45000000  0x46000000  
+            0x47000000  0x48000000  0x49000000  0x4a000000  
+            0x4b000000  0x4c000000  0x4d000000  0x4e000000  
+            0x4f000000  0x50000000  0x51000000  0x52000000  
+            0x53000000  0x54000000  0x55000000  0x56000000  
+            0x57000000  0x58000000  0x59000000  0x5a000000  
+            0x5b000000  0x5c000000  0x5d000000  0x5e000000  
+            0x5f000000  0x60000000  0x61000000  0x62000000  
+            0x63000000  0x64000000  0x65000000  0x66000000  
+            0x67000000  0x68000000  0x69000000  0x6a000000  
+            0x6b000000  0x6c000000  0x6d000000  0x6e000000  
+            0x6f000000  0x70000000  0x71000000  0x72000000  
+            0x73000000  0x74000000  0x75000000  0x76000000  
+            0x77000000  0x78000000  0x79000000  0x7a000000  
+            0x7b000000  0x7c000000  0x7d000000  0x7e000000  
+            0x7f000000  0x80000000  0x81000000  0x82000000  
+            0x83000000  0x84000000  0x85000000  0x86000000  
+            0x87000000  0x88000000  0x89000000  0x8a000000  
+            0x8b000000  0x8c000000  0x8d000000  0x8e000000  
+            0x8f000000  0x90000000  0x91000000  0x92000000  
+            0x93000000  0x94000000  0x95000000  0x96000000  
+            0x97000000  0x98000000  0x99000000  0x9a000000  
+            0x9b000000  0x9c000000  0x9d000000  0x9e000000  
+            0x9f000000  0xa0000000  0xa1000000  0xa2000000  
+            0xa3000000  0xa4000000  0xa5000000  0xa6000000  
+            0xa7000000  0xa8000000  0xa9000000  0xaa000000  
+            0xab000000  0xac000000  0xad000000  0xae000000  
+            0xaf000000  0xb0000000  0xb1000000  0xb2000000  
+            0xb3000000  0xb4000000  0xb5000000  0xb6000000  
+            0xb7000000  0xb8000000  0xb9000000  0xba000000  
+            0xbb000000  0xbc000000  0xbd000000  0xbe000000  
+            0xbf000000  0xc0000000  0xc1000000  0xc2000000  
+            0xc3000000  0xc4000000  0xc5000000  0xc6000000  
+            0xc7000000  0xff0000da  
+         &lt;/uint32&gt;
+      &lt;/bank&gt;
+   &lt;/event&gt;
+
+   &lt;!-- end buffer 3 --&gt;
+</pre>
+
+
+<p>
+This program has a number of useful features, including:
+</p>
+<ul class="org-ul">
+<li>save the output to file (<code>-out outfilename</code>),</li>
+<li>skip to specific events (<code>-skip skip_event</code>),</li>
+<li>pause after each event (<code>-pause</code>)</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-external_process" class="outline-2">
+<h2 id="external_process"><span class="section-number-2">4.</span> External processes</h2>
+<div class="outline-text-2" id="text-external_process">
+<p>
+Attaching an external process to a CODA state may help to monitor and display current run data.  jcedit allows you to attach one before or after any component state (except for the <b>FILE</b> type).
+</p>
+
+<p>
+CODA Users currently use this feature for:
+</p>
+<ul class="org-ul">
+<li>Start and End of Run logbook entries</li>
+<li>Run Information entry into an external database</li>
+<li>launch or reset of online data monitoring applications</li>
+</ul>
+</div>
+<div id="outline-container-orgdfc602f" class="outline-3">
+<h3 id="orgdfc602f"><span class="section-number-3">4.1.</span> Attach to the State</h3>
+<div class="outline-text-3" id="text-4-1">
+<p>
+The <b>Process</b> box is where an external process is added or modified.  Getting to this box depends on the type of Component to follow (e.g. Supervisor, ROC, PEB).  Supervisor has different states to attach
+</p>
+</div>
+<div id="outline-container-orgdb522c5" class="outline-4">
+<h4 id="orgdb522c5"><span class="section-number-4">4.1.1.</span> <b>Supervisor</b> State</h4>
+<div class="outline-text-4" id="text-4-1-1">
+<p>
+To attach to <b>before</b> or <b>after</b> a state, click on the <b>Expert</b> pull down menu from the main jcedit window and select <b>Supervisor Process</b>.  A window will pop up showing the name of the current configuration (e.g. <b>testconfig</b>) with a <b>Process</b> box.  The <b>Process</b> box has selection box that allows for creating (<b>New&#x2026;</b>) or modifying the execution of an external process.
+</p>
+
+<p>
+<b>Expert -&gt; Supervisor Process</b>
+<img src="pics/Supervisor_Process-New.png" alt="Supervisor_Process-New.png" />
+</p>
+</div>
+</div>
+<div id="outline-container-org779a07c" class="outline-4">
+<h4 id="org779a07c"><span class="section-number-4">4.1.2.</span> <b>Component</b> State</h4>
+<div class="outline-text-4" id="text-4-1-2">
+<p>
+For most components, the <b>Process</b> box is presented in it's configuration window:
+</p>
+
+
+<div id="org07a404e" class="figure">
+<p><img src="pics/roc1_config.png" alt="roc1_config.png" />
+</p>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-org7cd2528" class="outline-3">
+<h3 id="org7cd2528"><span class="section-number-3">4.2.</span> Create a new <b>Process</b></h3>
+<div class="outline-text-3" id="text-4-2">
+<p>
+In the <b>Process</b> box, Select <b>New&#x2026;</b> and click <b>Open</b>
+</p>
+
+
+<div id="org53a175e" class="figure">
+<p><img src="pics/testconfig_process_1-empty.png" alt="testconfig_process_1-empty.png" />
+</p>
+</div>
+
+<ul class="org-ul">
+<li><code>Name</code> : Internal Name for the <b>Process</b>.  The default will indicate the config or component name.</li>
+<li><code>sync</code> : Enable/Disable wait for <b>Command</b> to end before continuing</li>
+<li><code>periodic</code> : Enable/Disable periodic execution, beginning at configured transition</li>
+<li><p>
+<code>Transition</code> : Which state transition, available based on Supervisor/Component process
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">Supervisor</td>
+<td class="org-left">Component</td>
+</tr>
+
+<tr>
+<td class="org-left">Download</td>
+<td class="org-left">X</td>
+<td class="org-left">X</td>
+</tr>
+
+<tr>
+<td class="org-left">Prestart</td>
+<td class="org-left">X</td>
+<td class="org-left">X</td>
+</tr>
+
+<tr>
+<td class="org-left">Go</td>
+<td class="org-left">X</td>
+<td class="org-left">X</td>
+</tr>
+
+<tr>
+<td class="org-left">End</td>
+<td class="org-left">X</td>
+<td class="org-left">X</td>
+</tr>
+
+<tr>
+<td class="org-left">Reset</td>
+<td class="org-left">X</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">Pause</td>
+<td class="org-left">X</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">Resume</td>
+<td class="org-left">X</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+</tbody>
+</table></li>
+<li><code>Path</code> : Path to executable</li>
+<li><code>Command</code> : Executable command, with or without arguments</li>
+<li><code>ExitCode</code> : Compare executable return value to set value to determine if it was successful.  Ignored if set to <code>777</code>.  An error will be displayed in the platform text output.</li>
+</ul>
+</div>
+<div id="outline-container-org2248deb" class="outline-4">
+<h4 id="org2248deb"><span class="section-number-4">4.2.1.</span> Runtype Variables</h4>
+<div class="outline-text-4" id="text-4-2-1">
+<p>
+Commandline arguments in <b>Command</b> can communicate run conditions.  CODA3 maintains these Runtype variables that are resolved at runtime:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">%(rn)</td>
+<td class="org-left">Run Number</td>
+</tr>
+
+<tr>
+<td class="org-left">%(rt)</td>
+<td class="org-left">Runtype</td>
+</tr>
+
+<tr>
+<td class="org-left">%(session)</td>
+<td class="org-left">Session Name</td>
+</tr>
+
+<tr>
+<td class="org-left">%(udl)</td>
+<td class="org-left">cMsg connection information for component</td>
+</tr>
+
+<tr>
+<td class="org-left">%(config)</td>
+<td class="org-left">User Configuration Path</td>
+</tr>
+
+<tr>
+<td class="org-left">%(dir)</td>
+<td class="org-left">User Script Path</td>
+</tr>
+
+<tr>
+<td class="org-left">%(ddb)</td>
+<td class="org-left">Data Description Database Path</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-orga4a7f10" class="outline-4">
+<h4 id="orga4a7f10"><span class="section-number-4">4.2.2.</span> Example</h4>
+<div class="outline-text-4" id="text-4-2-2">
+<p>
+To try this out, I added the script below to my script path, and added these entries to <code>testconfig_process_1</code>
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">Name</td>
+<td class="org-left"><code>testconfig_process_1</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Path</td>
+<td class="org-left"><code>/home/moffit/scripts</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Command</td>
+<td class="org-left"><code>example_shell_process.sh %(rt) %(rn) PRESTART</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Transition</td>
+<td class="org-left">after - prestart</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<code>testconfig_process_2</code>
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">Name</td>
+<td class="org-left"><code>testconfig_process_2</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Path</td>
+<td class="org-left"><code>/home/moffit/scripts</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Command</td>
+<td class="org-left"><code>example_shell_process.sh %(rt) %(rn) RESET</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Transition</td>
+<td class="org-left">before - reset</td>
+</tr>
+
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<code>testconfig_process_3</code>
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">Name</td>
+<td class="org-left"><code>testconfig_process_3</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Path</td>
+<td class="org-left"><code>/home/moffit/scripts</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Command</td>
+<td class="org-left"><code>example_shell_process.sh %(rt) %(rn) END</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Transition</td>
+<td class="org-left">after - end</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+After saving each, I clicked <b>Apply</b> to apply these to the current configuration <code>testconfig</code>.
+Be sure to <b>save</b> the configuration.
+</p>
+
+<p>
+If the rcgui was still running, reset and re-select the <b>Cool Runtypes</b> window (<b>Configurations-&gt;Coda Config</b>).  
+</p>
+</div>
+<ol class="org-ol">
+<li><a id="org29a3a28"></a>shell script<br />
+<div class="outline-text-5" id="text-4-2-2-1">
+<ul class="org-ul">
+<li>here's a simple shell script that just pipes the arguments to an output file</li>
+</ul>
+<div class="org-src-container">
+<pre class="src src-shell">#!/bin/bash
+
+# Redirect all output to logfile
+LOG_FILE=/tmp/example_log_file.txt
+exec &gt;&gt; $LOG_FILE 2&gt;&amp;1
+
+RunType=$1
+RunNumber=$2
+RunState=$3
+
+date
+echo "$0: "
+echo "   RunType   = $RunType"
+echo "   RunNumber = $RunNumber"
+echo "   RunState  = $RunState"
+</pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+<div id="outline-container-org3b9f373" class="outline-4">
+<h4 id="org3b9f373"><span class="section-number-4">4.2.3.</span> Caveats</h4>
+<div class="outline-text-4" id="text-4-2-3">
+<ul class="org-ul">
+<li>output is not redirected well from Java.Fork execution on the platform
+<ul class="org-ul">
+<li>best to redirect output to file within script/program</li>
+</ul></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-changelog" class="outline-2">
+<h2 id="changelog"><span class="section-number-2">5.</span> Changelog</h2>
+<div class="outline-text-2" id="text-changelog">
+<ul class="org-ul">
+<li>27jan2027: Updated html format, add external process section</li>
+<li>16nov2020: Updated coda 3 tarball name to current: <code>coda3.10_arm-2.tgz</code></li>
+<li>6nov2020: Updated coda 3 tarball name to current: <code>coda3.10_arm-1.tgz</code></li>
+</ul>
+</div>
+<div id="outline-container-org77c3a37" class="outline-3">
+<h3 id="org77c3a37"><span class="section-number-3">5.1.</span> source for this file</h3>
+<div class="outline-text-3" id="text-5-1">
+<p>
+<a href="https://coda.jlab.org/drupal/system/files/coda/3.10/walkthrough/coda3_installation_walkthrough.org">coda3_installation_walkthrough.org</a>
+</p>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Bryan Moffit &lt;moffit@jlab.org&gt;</p>
+<p class="date">Created: 2026-01-28 Wed 04:30</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>

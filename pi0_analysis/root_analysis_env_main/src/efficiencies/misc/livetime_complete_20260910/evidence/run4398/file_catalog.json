@@ -1,0 +1,74 @@
+[
+  {
+    "source": "cache",
+    "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_0_1_-1.root",
+    "size": 15400016868,
+    "mtime": 1784806873.0
+  },
+  {
+    "source": "cache",
+    "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_1_1_-1.root",
+    "size": 15402060171,
+    "mtime": 1788977876.0
+  },
+  {
+    "source": "cache",
+    "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_2_1_-1.root",
+    "size": 15387477689,
+    "mtime": 1788978018.0
+  },
+  {
+    "source": "cache",
+    "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_3_1_-1.root",
+    "size": 15384335046,
+    "mtime": 1788978059.0
+  },
+  {
+    "source": "cache",
+    "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_4_1_-1.root",
+    "size": 15404240726,
+    "mtime": 1788977939.0
+  },
+  {
+    "source": "cache",
+    "path": "/cache/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_5_1_-1.root",
+    "size": 14294205439,
+    "mtime": 1788978096.0
+  },
+  {
+    "source": "mss",
+    "path": "/mss/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_0_1_-1.root",
+    "size": 1024,
+    "mtime": 1747307085.0
+  },
+  {
+    "source": "mss",
+    "path": "/mss/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_1_1_-1.root",
+    "size": 1024,
+    "mtime": 1747302575.0
+  },
+  {
+    "source": "mss",
+    "path": "/mss/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_2_1_-1.root",
+    "size": 1024,
+    "mtime": 1747308521.0
+  },
+  {
+    "source": "mss",
+    "path": "/mss/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_3_1_-1.root",
+    "size": 1024,
+    "mtime": 1747308561.0
+  },
+  {
+    "source": "mss",
+    "path": "/mss/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_4_1_-1.root",
+    "size": 1024,
+    "mtime": 1747307125.0
+  },
+  {
+    "source": "mss",
+    "path": "/mss/hallc/c-nps/analysis/pass2/replays/updated/nps_hms_coin_4398_5_1_-1.root",
+    "size": 1024,
+    "mtime": 1747308601.0
+  }
+]

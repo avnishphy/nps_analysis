@@ -1,0 +1,10 @@
+ok	1
+message	Selection built successfully.
+low	32.9375
+high	44.5625
+i0	38.75
+mean_current	37.432858589670012
+hel_charge_before	20080.11361161073
+hel_charge_after	19227.069268609237
+gevnum_ranges	2620280-2830860;2848673-2850981;2851422-3142555
+evcount_ranges	148-6255;7840-7911;7924-16327

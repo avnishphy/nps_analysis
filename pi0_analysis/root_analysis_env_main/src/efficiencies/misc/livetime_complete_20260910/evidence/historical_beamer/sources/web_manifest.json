@@ -1,0 +1,92 @@
+[
+  {
+    "file": "zhang_deadtime_20240718.pdf",
+    "url": "https://indico.jlab.org/event/866/contributions/14918/subcontributions/283/attachments/11529/17843/Deadtime%20and%20Efficiency.pdf",
+    "retrieved_utc": "2026-09-09T19:58:33.886276+00:00",
+    "final_url": "https://indico.jlab.org/event/866/contributions/14918/subcontributions/283/attachments/11529/17843/Deadtime%20and%20Efficiency.pdf",
+    "bytes": 4491938,
+    "sha256": "c60f1a46c64cf71349ae5bd878a4299de3507dbae7a5eeed018e5e8acd2d37ac",
+    "status": "downloaded"
+  },
+  {
+    "file": "raydo_trigger_20240717.pdf",
+    "url": "https://indico.jlab.org/event/866/contributions/14914/subcontributions/234/attachments/11505/17805/NPS_July17_2024_Raydo.pdf",
+    "retrieved_utc": "2026-09-09T19:58:34.102232+00:00",
+    "final_url": "https://indico.jlab.org/event/866/contributions/14914/subcontributions/234/attachments/11505/17805/NPS_July17_2024_Raydo.pdf",
+    "bytes": 1445169,
+    "sha256": "5da2130574d9eaa1afbe8a25d30f8c546efabdba864e30273fb51c6da3f3044d",
+    "status": "downloaded"
+  },
+  {
+    "file": "pionlt_EDTM_study.pdf",
+    "url": "https://redmine.jlab.org/attachments/download/1499/EDTM_Study_Report.pdf",
+    "retrieved_utc": "2026-09-09T19:58:34.254911+00:00",
+    "final_url": "https://redmine.jlab.org/attachments/download/1499/EDTM_Study_Report.pdf",
+    "bytes": 152966,
+    "sha256": "dc0cb2f123e36bc37411fc26625a5f51cd15e85d2d9a878da1aea0b2b87a0512",
+    "status": "downloaded"
+  },
+  {
+    "file": "issue866.html",
+    "url": "https://redmine.jlab.org/issues/866",
+    "retrieved_utc": "2026-09-09T19:58:34.317649+00:00",
+    "final_url": "https://redmine.jlab.org/issues/866",
+    "bytes": 11752,
+    "sha256": "1aa77c5ba662c2de6d9aeee568ddeb40310eb48d09b4aa12a6a4572140c28e00",
+    "status": "downloaded"
+  },
+  {
+    "file": "issue837.html",
+    "url": "https://redmine.jlab.org/issues/837",
+    "retrieved_utc": "2026-09-09T19:58:34.384662+00:00",
+    "final_url": "https://redmine.jlab.org/issues/837",
+    "bytes": 22346,
+    "sha256": "f2e18b687e59a2976934dbcea9c9fbfb1a72eea40b0a08c6fae3424e8e622c78",
+    "status": "downloaded"
+  },
+  {
+    "file": "issue836.html",
+    "url": "https://redmine.jlab.org/issues/836",
+    "retrieved_utc": "2026-09-09T19:58:34.490317+00:00",
+    "final_url": "https://redmine.jlab.org/issues/836",
+    "bytes": 14977,
+    "sha256": "83a63e3f5a93a25a1fad7cf28c0200351ee2487a11ec0df0dd15280ef2809799",
+    "status": "downloaded"
+  },
+  {
+    "file": "trigger_history.html",
+    "url": "https://hallcweb.jlab.org/wiki/index.php/Trigger_History",
+    "retrieved_utc": "2026-09-09T19:58:34.579710+00:00",
+    "final_url": "https://hallcweb.jlab.org/wiki/index.php/Trigger_History",
+    "bytes": 24976,
+    "sha256": "15e20fac40b59e48bf7a5d817a1440a48a7155c2b457398a6bb52fad4aeaa05a",
+    "status": "downloaded"
+  },
+  {
+    "file": "edtm_pulser.html",
+    "url": "https://hallcweb.jlab.org/wiki/index.php?title=Hall_C_EDTM_Pulser",
+    "retrieved_utc": "2026-09-09T19:58:35.065680+00:00",
+    "final_url": "https://hallcweb.jlab.org/wiki/index.php?title=Hall_C_EDTM_Pulser",
+    "bytes": 14114,
+    "sha256": "40d17ee874b42ab4ab5b775ff227a22982b7b6b1a40440f2ba535dd94c07c493",
+    "status": "downloaded"
+  },
+  {
+    "file": "zhang_deadtime_20240219.pdf",
+    "url": "https://redmine.jlab.org/attachments/download/2343/Dead%20time%20analysis_2024-02-19.pdf",
+    "retrieved_utc": "2026-09-09T19:59:27.610796+00:00",
+    "final_url": "https://redmine.jlab.org/attachments/download/2343/Dead%20time%20analysis_2024-02-19.pdf",
+    "bytes": 312954,
+    "sha256": "57c64a6baa2a4e984dee7214aa3f32bffddc4246eda97c79439a5cf66050ed18",
+    "status": "downloaded"
+  },
+  {
+    "file": "zhang_deadtime_20240303.pdf",
+    "url": "https://redmine.jlab.org/attachments/download/2368/Updates_2024-03-03.pdf",
+    "retrieved_utc": "2026-09-09T19:59:27.708423+00:00",
+    "final_url": "https://redmine.jlab.org/attachments/download/2368/Updates_2024-03-03.pdf",
+    "bytes": 571198,
+    "sha256": "b9459cf85a97030867ffe8b0b5ba88f533ffe5d15c373b1d1f2041c1cbe87de7",
+    "status": "downloaded"
+  }
+]

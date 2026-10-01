@@ -1,0 +1,3184 @@
+{
+  "segments": [
+    {
+      "run": 4253,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003095.15609044,
+      "pulser_period_seconds": 0.025028456893206052,
+      "pulser_rate_hz": 39.95452073880947,
+      "fit_points": 742,
+      "beam_intervals": 637,
+      "D_minus_expected_quantiles": [
+        -0.9973409684513399,
+        -0.9848032398422351,
+        2.2033182005998242e-05,
+        0.9839986721795844,
+        0.9965459898774185
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4253,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003094.15312967,
+      "pulser_period_seconds": 0.0250284570227184,
+      "pulser_rate_hz": 39.954520532060656,
+      "fit_points": 770,
+      "beam_intervals": 632,
+      "D_minus_expected_quantiles": [
+        -0.9964216005268867,
+        -0.9886844076303527,
+        0.019640116731878265,
+        0.9862824870859156,
+        0.9981046301785881
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4253,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003098.49221203,
+      "pulser_period_seconds": 0.0250284568636524,
+      "pulser_rate_hz": 39.954520785987846,
+      "fit_points": 530,
+      "beam_intervals": 415,
+      "D_minus_expected_quantiles": [
+        -0.9981401533306098,
+        -0.9867331376433057,
+        0.00022171130767389968,
+        0.9786023201110914,
+        0.99346939729827
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4254,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003097.36023226,
+      "pulser_period_seconds": 0.025028456870867643,
+      "pulser_rate_hz": 39.95452077446969,
+      "fit_points": 768,
+      "beam_intervals": 643,
+      "D_minus_expected_quantiles": [
+        -0.9982200393008753,
+        -0.9814838896461009,
+        0.007733184293115869,
+        0.984083304347864,
+        0.9981840538203244
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4254,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003095.52952135,
+      "pulser_period_seconds": 0.02502845694207469,
+      "pulser_rate_hz": 39.95452066079735,
+      "fit_points": 725,
+      "beam_intervals": 642,
+      "D_minus_expected_quantiles": [
+        -0.9982997207526694,
+        -0.986573868024043,
+        0.003777914325524989,
+        0.9820818105165654,
+        0.9983041449861076
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4254,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003103.04285872,
+      "pulser_period_seconds": 0.02502845681736802,
+      "pulser_rate_hz": 39.95452085987455,
+      "fit_points": 397,
+      "beam_intervals": 319,
+      "D_minus_expected_quantiles": [
+        -0.9955432574058278,
+        -0.9862250640596022,
+        0.0003414269514649959,
+        0.9808044653308542,
+        0.987196389589954
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4255,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003102.8820422,
+      "pulser_period_seconds": 0.025028456692884702,
+      "pulser_rate_hz": 39.954521058595205,
+      "fit_points": 637,
+      "beam_intervals": 467,
+      "D_minus_expected_quantiles": [
+        -0.9974215177720254,
+        -0.9929633923109219,
+        2.139287362012965e-05,
+        0.9929398535654406,
+        0.9973843944903393
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4256,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003100.14134845,
+      "pulser_period_seconds": 0.025028456894795697,
+      "pulser_rate_hz": 39.95452073627182,
+      "fit_points": 1469,
+      "beam_intervals": 1369,
+      "D_minus_expected_quantiles": [
+        -0.9979003266547863,
+        -0.9831571085087945,
+        -1.791625300029409e-05,
+        0.9832778977116254,
+        0.9979044486557882
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4257,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003099.06942174,
+      "pulser_period_seconds": 0.025028456997271055,
+      "pulser_rate_hz": 39.954520572683876,
+      "fit_points": 727,
+      "beam_intervals": 592,
+      "D_minus_expected_quantiles": [
+        -0.997420544873961,
+        -0.9718256789955008,
+        0.030847278431387792,
+        0.9718012892926371,
+        0.9973853674510735
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4258,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003106.02681422,
+      "pulser_period_seconds": 0.025028456938070973,
+      "pulser_rate_hz": 39.95452066718874,
+      "fit_points": 592,
+      "beam_intervals": 572,
+      "D_minus_expected_quantiles": [
+        -0.9698920693538327,
+        -0.9541723627424241,
+        0.05096419043486122,
+        0.8548652615431727,
+        0.9979445415092982
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4258,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003104.34852612,
+      "pulser_period_seconds": 0.02502845636386105,
+      "pulser_rate_hz": 39.954521583836645,
+      "fit_points": 63,
+      "beam_intervals": 43,
+      "D_minus_expected_quantiles": [
+        -0.96342127155242,
+        -0.7426162796142505,
+        0.05148176500161128,
+        0.30170744010555833,
+        0.34164305086709845
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4259,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003101.1899755,
+      "pulser_period_seconds": 0.02502845702739787,
+      "pulser_rate_hz": 39.95452052459052,
+      "fit_points": 475,
+      "beam_intervals": 403,
+      "D_minus_expected_quantiles": [
+        -0.9896510112907606,
+        -0.9522079131557879,
+        -0.04812273513029197,
+        0.9522959882480593,
+        0.9921114670408571
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4300,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003091.49062616,
+      "pulser_period_seconds": 0.025028461051755,
+      "pulser_rate_hz": 39.95451410025387,
+      "fit_points": 366,
+      "beam_intervals": 256,
+      "D_minus_expected_quantiles": [
+        -0.9949304058198862,
+        -0.9379013301220048,
+        0.05820909792930706,
+        0.6681995575890032,
+        0.8472533869979557
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4300,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003087.96485066,
+      "pulser_period_seconds": 0.025028460959330888,
+      "pulser_rate_hz": 39.954514247796325,
+      "fit_points": 298,
+      "beam_intervals": 273,
+      "D_minus_expected_quantiles": [
+        -0.9727559458159618,
+        -0.9575748285843599,
+        0.0613652093472723,
+        0.497490772097139,
+        0.7018375767665308
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4300,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003087.7206373,
+      "pulser_period_seconds": 0.02502846102682124,
+      "pulser_rate_hz": 39.954514140057206,
+      "fit_points": 363,
+      "beam_intervals": 258,
+      "D_minus_expected_quantiles": [
+        -0.9948905309981058,
+        -0.9649713921742356,
+        0.06651955723001635,
+        0.7488205277162638,
+        0.998197338050403
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4300,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003096.28889763,
+      "pulser_period_seconds": 0.025028461110267033,
+      "pulser_rate_hz": 39.95451400684742,
+      "fit_points": 363,
+      "beam_intervals": 262,
+      "D_minus_expected_quantiles": [
+        -0.9528980700816874,
+        -0.9265512644455964,
+        0.06250439507675765,
+        0.6888408808842289,
+        0.925160753168413
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4300,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003093.6984131,
+      "pulser_period_seconds": 0.02502846103449135,
+      "pulser_rate_hz": 39.95451412781293,
+      "fit_points": 280,
+      "beam_intervals": 279,
+      "D_minus_expected_quantiles": [
+        -0.9940914162026928,
+        -0.9502964741728457,
+        0.0644019924780963,
+        0.735796329082925,
+        0.9975980448615331
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4300,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003098.3712571,
+      "pulser_period_seconds": 0.02502846069928627,
+      "pulser_rate_hz": 39.95451466292199,
+      "fit_points": 302,
+      "beam_intervals": 274,
+      "D_minus_expected_quantiles": [
+        -0.9602510136487865,
+        -0.9259636473417422,
+        0.06058526575209555,
+        0.4785430758774132,
+        0.8131269791920346
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4301,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003097.0296051,
+      "pulser_period_seconds": 0.025028460909390125,
+      "pulser_rate_hz": 39.954514327519924,
+      "fit_points": 407,
+      "beam_intervals": 266,
+      "D_minus_expected_quantiles": [
+        -0.9719570151057866,
+        -0.9602443492298441,
+        0.06380227521790971,
+        0.801780168356879,
+        0.9755427530678276
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4301,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003098.8365269,
+      "pulser_period_seconds": 0.0250284609874852,
+      "pulser_rate_hz": 39.95451420285182,
+      "fit_points": 353,
+      "beam_intervals": 264,
+      "D_minus_expected_quantiles": [
+        -0.975872307964309,
+        -0.9508891497783897,
+        0.06396234269302425,
+        0.8001154499913954,
+        0.9970784859205253
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4301,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003096.2217865,
+      "pulser_period_seconds": 0.025028461124651704,
+      "pulser_rate_hz": 39.954513983884254,
+      "fit_points": 402,
+      "beam_intervals": 254,
+      "D_minus_expected_quantiles": [
+        -0.9589311557310367,
+        -0.9488897872829655,
+        0.058009558187158916,
+        0.8943620629940515,
+        0.9978380601385339
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4301,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003097.37587133,
+      "pulser_period_seconds": 0.025028461052216355,
+      "pulser_rate_hz": 39.95451409951738,
+      "fit_points": 312,
+      "beam_intervals": 274,
+      "D_minus_expected_quantiles": [
+        -0.9851415483974932,
+        -0.9696391969118807,
+        0.06444200359745622,
+        0.9680737133185581,
+        0.9856916563017393
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4301,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003096.79012573,
+      "pulser_period_seconds": 0.025028460781306584,
+      "pulser_rate_hz": 39.954514531987776,
+      "fit_points": 299,
+      "beam_intervals": 271,
+      "D_minus_expected_quantiles": [
+        -0.9882588662968459,
+        -0.9297534706677396,
+        0.05964659663777638,
+        0.7018557661431439,
+        0.9758220251341925
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4301,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003087.51610816,
+      "pulser_period_seconds": 0.025028461339063654,
+      "pulser_rate_hz": 39.95451364160492,
+      "fit_points": 196,
+      "beam_intervals": 195,
+      "D_minus_expected_quantiles": [
+        -0.9512592041268562,
+        -0.9190350897840438,
+        0.05956846906539681,
+        0.42856131576645307,
+        0.9067824089040926
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4302,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003092.83562443,
+      "pulser_period_seconds": 0.025028460672907895,
+      "pulser_rate_hz": 39.95451470503146,
+      "fit_points": 280,
+      "beam_intervals": 280,
+      "D_minus_expected_quantiles": [
+        -0.9971291149876436,
+        -0.9706336781063437,
+        0.06076497681969073,
+        0.9119728716344189,
+        0.9893263045274665
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4302,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003097.32948804,
+      "pulser_period_seconds": 0.025028461055195104,
+      "pulser_rate_hz": 39.95451409476222,
+      "fit_points": 280,
+      "beam_intervals": 279,
+      "D_minus_expected_quantiles": [
+        -0.9751129558338505,
+        -0.9451910202295966,
+        0.06572055756784323,
+        0.7561668140188149,
+        0.9149721758873426
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4302,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003094.08715612,
+      "pulser_period_seconds": 0.025028460921063932,
+      "pulser_rate_hz": 39.954514308884285,
+      "fit_points": 298,
+      "beam_intervals": 274,
+      "D_minus_expected_quantiles": [
+        -0.9813940080524262,
+        -0.9543118656491952,
+        0.05938733867051127,
+        0.6284962363699457,
+        0.9858910096009197
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4302,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003097.3826242,
+      "pulser_period_seconds": 0.025028460791220383,
+      "pulser_rate_hz": 39.95451451616175,
+      "fit_points": 304,
+      "beam_intervals": 274,
+      "D_minus_expected_quantiles": [
+        -0.9953307836785541,
+        -0.9483994118365979,
+        0.061864103854560426,
+        0.49263701275370747,
+        0.6816016975718355
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4302,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003093.6721355,
+      "pulser_period_seconds": 0.025028460882357485,
+      "pulser_rate_hz": 39.954514370673834,
+      "fit_points": 280,
+      "beam_intervals": 279,
+      "D_minus_expected_quantiles": [
+        -0.95201979881098,
+        -0.937409231991381,
+        0.05940719229742797,
+        0.59662269472937,
+        0.8445609690457232
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4302,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003097.9852981,
+      "pulser_period_seconds": 0.025028460753614742,
+      "pulser_rate_hz": 39.954514576194015,
+      "fit_points": 301,
+      "beam_intervals": 272,
+      "D_minus_expected_quantiles": [
+        -0.9627280199700436,
+        -0.9460362224272026,
+        0.060374141280615135,
+        0.4517465480201988,
+        0.5599671634400565
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4302,
+      "segment": 6,
+      "event_ticks_per_scaler_second": 250003090.72240245,
+      "pulser_period_seconds": 0.02502846120105635,
+      "pulser_rate_hz": 39.95451386191469,
+      "fit_points": 280,
+      "beam_intervals": 279,
+      "D_minus_expected_quantiles": [
+        -0.9737140817765777,
+        -0.9322620727342087,
+        0.05892875607067083,
+        0.8444296013505492,
+        0.9828154071423967
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4302,
+      "segment": 7,
+      "event_ticks_per_scaler_second": 250003100.30939975,
+      "pulser_period_seconds": 0.02502845977393799,
+      "pulser_rate_hz": 39.95451614011402,
+      "fit_points": 30,
+      "beam_intervals": 17,
+      "D_minus_expected_quantiles": [
+        -0.5294359119636454,
+        -0.4750067289733886,
+        0.07282836944472137,
+        0.15928078736651186,
+        0.1721405925580548
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4303,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250481238.8052131,
+      "pulser_period_seconds": 0.024980684355734667,
+      "pulser_rate_hz": 40.03092892731083,
+      "fit_points": 357,
+      "beam_intervals": 269,
+      "D_minus_expected_quantiles": [
+        -1.141239186684345,
+        -1.1056821143742974,
+        -0.08879866978998052,
+        0.7916918064037392,
+        0.9652131227635266
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4303,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003095.41429126,
+      "pulser_period_seconds": 0.02502846095287579,
+      "pulser_rate_hz": 39.954514258101,
+      "fit_points": 300,
+      "beam_intervals": 272,
+      "D_minus_expected_quantiles": [
+        -0.9791486887250898,
+        -0.9633486760608616,
+        0.0651608675842894,
+        0.7224139899696433,
+        0.9870098376974425
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4303,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003089.65014145,
+      "pulser_period_seconds": 0.025028460828586292,
+      "pulser_rate_hz": 39.954514456512186,
+      "fit_points": 301,
+      "beam_intervals": 274,
+      "D_minus_expected_quantiles": [
+        -0.9588521925484912,
+        -0.9532030237513517,
+        0.06306285863234962,
+        0.6718639653338263,
+        0.8728593925585812
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4303,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003096.33530483,
+      "pulser_period_seconds": 0.02502846088423234,
+      "pulser_rate_hz": 39.954514367680886,
+      "fit_points": 587,
+      "beam_intervals": 266,
+      "D_minus_expected_quantiles": [
+        -0.9603303318075262,
+        -0.937586224497786,
+        0.0649408985275457,
+        0.6766804456010431,
+        0.9086987700897566
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4303,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003102.38754332,
+      "pulser_period_seconds": 0.025028460940777292,
+      "pulser_rate_hz": 39.9545142774146,
+      "fit_points": 322,
+      "beam_intervals": 272,
+      "D_minus_expected_quantiles": [
+        -0.9861008128710722,
+        -0.9395002646856696,
+        0.05365392882998066,
+        0.6241732095749285,
+        0.9409821985614286
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4303,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003103.1067013,
+      "pulser_period_seconds": 0.02502846070975278,
+      "pulser_rate_hz": 39.95451464621364,
+      "fit_points": 280,
+      "beam_intervals": 279,
+      "D_minus_expected_quantiles": [
+        -0.9609302069533925,
+        -0.9377469993700123,
+        0.06324227439650087,
+        0.8225781908860023,
+        0.9610386259442407
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4303,
+      "segment": 6,
+      "event_ticks_per_scaler_second": 250003095.5423876,
+      "pulser_period_seconds": 0.025028460469617073,
+      "pulser_rate_hz": 39.954515029557456,
+      "fit_points": 67,
+      "beam_intervals": 67,
+      "D_minus_expected_quantiles": [
+        -0.9365587199689003,
+        -0.9229781803056701,
+        0.062362508141646344,
+        0.3278976162637392,
+        0.5281633863505562
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4304,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003097.5793685,
+      "pulser_period_seconds": 0.02502846246085097,
+      "pulser_rate_hz": 39.95451185082505,
+      "fit_points": 443,
+      "beam_intervals": 445,
+      "D_minus_expected_quantiles": [
+        -0.9743093740175794,
+        -0.957226422928901,
+        0.049743242119475894,
+        0.9238091130700241,
+        0.9962441507500301
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4304,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003101.50968274,
+      "pulser_period_seconds": 0.025028462111256842,
+      "pulser_rate_hz": 39.95451240890419,
+      "fit_points": 222,
+      "beam_intervals": 176,
+      "D_minus_expected_quantiles": [
+        -0.9747499907231685,
+        -0.9594174465874801,
+        0.05331805424590641,
+        0.8883849344795713,
+        0.9720305987462723
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4305,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250365714.8057422,
+      "pulser_period_seconds": 0.024992212350071426,
+      "pulser_rate_hz": 40.01246412253464,
+      "fit_points": 659,
+      "beam_intervals": 529,
+      "D_minus_expected_quantiles": [
+        -1.0947099824979176,
+        -1.0804495402867178,
+        -0.07758464785449348,
+        0.7843755519196854,
+        0.9265140967054082
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4306,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003094.55222985,
+      "pulser_period_seconds": 0.025028461986307367,
+      "pulser_rate_hz": 39.95451260836892,
+      "fit_points": 1248,
+      "beam_intervals": 1217,
+      "D_minus_expected_quantiles": [
+        -0.9980838253418938,
+        -0.9877052411517826,
+        3.831256798036975e-05,
+        0.9872816357782482,
+        0.9940451356742557
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4308,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003097.89263827,
+      "pulser_period_seconds": 0.025028461403164858,
+      "pulser_rate_hz": 39.954513539276114,
+      "fit_points": 78,
+      "beam_intervals": 78,
+      "D_minus_expected_quantiles": [
+        -0.9795867494627402,
+        -0.9618353586423781,
+        0.049699908961706285,
+        0.4695659067400761,
+        0.5843713496922334
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4308,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003099.8623998,
+      "pulser_period_seconds": 0.025028461647900874,
+      "pulser_rate_hz": 39.95451314858856,
+      "fit_points": 81,
+      "beam_intervals": 80,
+      "D_minus_expected_quantiles": [
+        -0.9931705018679651,
+        -0.9905822485064542,
+        0.04176971988084688,
+        0.8408013155581071,
+        0.9644377596805356
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4308,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003098.69997934,
+      "pulser_period_seconds": 0.025028462152751504,
+      "pulser_rate_hz": 39.95451234266365,
+      "fit_points": 102,
+      "beam_intervals": 69,
+      "D_minus_expected_quantiles": [
+        -0.9469512286859683,
+        -0.7376471123987471,
+        0.0494226218367686,
+        0.4219823139300647,
+        0.560563722571942
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4308,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003098.25338727,
+      "pulser_period_seconds": 0.02502846142048724,
+      "pulser_rate_hz": 39.954513511623304,
+      "fit_points": 80,
+      "beam_intervals": 79,
+      "D_minus_expected_quantiles": [
+        -0.9881369599997498,
+        -0.9517679645339021,
+        0.05545341424038952,
+        0.9153281408148984,
+        0.9310350591659073
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4308,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003096.9789306,
+      "pulser_period_seconds": 0.025028462859434168,
+      "pulser_rate_hz": 39.95451121454158,
+      "fit_points": 79,
+      "beam_intervals": 78,
+      "D_minus_expected_quantiles": [
+        -0.9311572282946514,
+        -0.9191588885757415,
+        0.04822624391846375,
+        0.24928115342670187,
+        0.2888893860320252
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4308,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003099.52760535,
+      "pulser_period_seconds": 0.0250284627211501,
+      "pulser_rate_hz": 39.95451143529315,
+      "fit_points": 42,
+      "beam_intervals": 42,
+      "D_minus_expected_quantiles": [
+        -0.919610816117185,
+        -0.8113176292557378,
+        0.052181298810317855,
+        0.13865268423623248,
+        0.1707280845593715
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4349,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003023.06636602,
+      "pulser_period_seconds": 0.025028458530941506,
+      "pulser_rate_hz": 39.954518124388166,
+      "fit_points": 367,
+      "beam_intervals": 261,
+      "D_minus_expected_quantiles": [
+        -0.946753313885921,
+        -0.9309393156126902,
+        0.06127754425725129,
+        0.7417362104790212,
+        0.9969507700770066
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4349,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003155.2910426,
+      "pulser_period_seconds": 0.025028458380462942,
+      "pulser_rate_hz": 39.954518364606656,
+      "fit_points": 457,
+      "beam_intervals": 253,
+      "D_minus_expected_quantiles": [
+        -0.953266381044827,
+        -0.9456094971464085,
+        0.05887979253914466,
+        0.6500329772180946,
+        0.8800449182482311
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4349,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003093.2964139,
+      "pulser_period_seconds": 0.025028459896769772,
+      "pulser_rate_hz": 39.954515944029865,
+      "fit_points": 346,
+      "beam_intervals": 256,
+      "D_minus_expected_quantiles": [
+        -0.9888210563938316,
+        -0.9390936658568847,
+        0.06086238417295675,
+        0.673483953083023,
+        0.9725429266722756
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4349,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003052.34886408,
+      "pulser_period_seconds": 0.025028459754549637,
+      "pulser_rate_hz": 39.95451617106488,
+      "fit_points": 347,
+      "beam_intervals": 269,
+      "D_minus_expected_quantiles": [
+        -0.9720805686429514,
+        -0.9195739416664332,
+        0.05848463621887845,
+        0.5512040782228264,
+        0.7599729989320458
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4349,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003040.00460744,
+      "pulser_period_seconds": 0.025028459180385307,
+      "pulser_rate_hz": 39.9545170876398,
+      "fit_points": 299,
+      "beam_intervals": 274,
+      "D_minus_expected_quantiles": [
+        -0.9893427546319487,
+        -0.962439736779063,
+        0.0634571397046031,
+        0.6942898515238459,
+        0.9640083160732864
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4349,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003029.92029604,
+      "pulser_period_seconds": 0.025028458936979,
+      "pulser_rate_hz": 39.95451747620473,
+      "fit_points": 290,
+      "beam_intervals": 264,
+      "D_minus_expected_quantiles": [
+        -0.9838298091177649,
+        -0.9580727298840026,
+        0.05980052395602087,
+        0.8051763949587072,
+        0.9768949002068865
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4350,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003022.39301428,
+      "pulser_period_seconds": 0.025028458294267312,
+      "pulser_rate_hz": 39.95451850220622,
+      "fit_points": 317,
+      "beam_intervals": 274,
+      "D_minus_expected_quantiles": [
+        -0.9633351950583915,
+        -0.9389481555987187,
+        0.06530640937012322,
+        0.5662307049376522,
+        0.9759339368194304
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4350,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003044.47223213,
+      "pulser_period_seconds": 0.025028458715605995,
+      "pulser_rate_hz": 39.95451782959651,
+      "fit_points": 327,
+      "beam_intervals": 267,
+      "D_minus_expected_quantiles": [
+        -0.963213985373983,
+        -0.953970108125113,
+        0.0631959509173754,
+        0.8589745544819606,
+        0.9631897927880146
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4350,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003165.8959747,
+      "pulser_period_seconds": 0.025028458378620767,
+      "pulser_rate_hz": 39.954518367547436,
+      "fit_points": 364,
+      "beam_intervals": 260,
+      "D_minus_expected_quantiles": [
+        -0.9554239309160408,
+        -0.9429876875314632,
+        0.060737671761437184,
+        0.469755714904,
+        0.9840050192372445
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4350,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 251685814.57412586,
+      "pulser_period_seconds": 0.024861137512456447,
+      "pulser_rate_hz": 40.223420971745924,
+      "fit_points": 793,
+      "beam_intervals": 250,
+      "D_minus_expected_quantiles": [
+        -1.5209737083431065,
+        -1.5078789736401712,
+        -0.4696888466101399,
+        0.6165691303862921,
+        0.7757956680997573
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4350,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003092.9164546,
+      "pulser_period_seconds": 0.025028464088279957,
+      "pulser_rate_hz": 39.954509252857775,
+      "fit_points": 522,
+      "beam_intervals": 246,
+      "D_minus_expected_quantiles": [
+        -0.9914846128050954,
+        -0.9470791712291089,
+        0.06918630947618709,
+        0.712535340881818,
+        0.8965076667606411
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4350,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003065.5811914,
+      "pulser_period_seconds": 0.025028463861140715,
+      "pulser_rate_hz": 39.95450961545441,
+      "fit_points": 168,
+      "beam_intervals": 168,
+      "D_minus_expected_quantiles": [
+        -0.9765423521588019,
+        -0.9581920449833348,
+        0.06642872293257085,
+        0.692970102534118,
+        0.9778695523703647
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4351,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003055.55948964,
+      "pulser_period_seconds": 0.025028462650251614,
+      "pulser_rate_hz": 39.95451154847287,
+      "fit_points": 365,
+      "beam_intervals": 273,
+      "D_minus_expected_quantiles": [
+        -0.94246502311141,
+        -0.93441818448547,
+        0.05781465846645517,
+        0.7196562983383663,
+        0.9621635578218672
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4351,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003052.11150613,
+      "pulser_period_seconds": 0.025028462037832704,
+      "pulser_rate_hz": 39.95451252611578,
+      "fit_points": 356,
+      "beam_intervals": 266,
+      "D_minus_expected_quantiles": [
+        -0.9942080729401965,
+        -0.9323045489567647,
+        0.061768199112918865,
+        0.6081988813703644,
+        0.987412851298771
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4351,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003057.87507272,
+      "pulser_period_seconds": 0.025028461762539832,
+      "pulser_rate_hz": 39.954512965583156,
+      "fit_points": 302,
+      "beam_intervals": 271,
+      "D_minus_expected_quantiles": [
+        -0.990213501507256,
+        -0.962548996734327,
+        0.06200704692955128,
+        0.8205329850197269,
+        0.938028193206037
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4351,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003059.9690776,
+      "pulser_period_seconds": 0.02502846185719685,
+      "pulser_rate_hz": 39.95451281447619,
+      "fit_points": 323,
+      "beam_intervals": 267,
+      "D_minus_expected_quantiles": [
+        -0.9834209318158713,
+        -0.9595584985824849,
+        0.06068885032895821,
+        0.9011359084855479,
+        0.9983598103503795
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4351,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003063.02659774,
+      "pulser_period_seconds": 0.02502846141839359,
+      "pulser_rate_hz": 39.954513514965534,
+      "fit_points": 300,
+      "beam_intervals": 273,
+      "D_minus_expected_quantiles": [
+        -0.9861791955199095,
+        -0.9503415950967815,
+        0.05649222491535966,
+        0.7349055159988167,
+        0.981377739497006
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4351,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003068.02432832,
+      "pulser_period_seconds": 0.02502846152484557,
+      "pulser_rate_hz": 39.95451334502951,
+      "fit_points": 280,
+      "beam_intervals": 279,
+      "D_minus_expected_quantiles": [
+        -0.9582106959942962,
+        -0.9303120574925867,
+        0.06036815271420437,
+        0.4497847260193634,
+        0.8804714474091249
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4351,
+      "segment": 6,
+      "event_ticks_per_scaler_second": 250003067.50010303,
+      "pulser_period_seconds": 0.025028461366195954,
+      "pulser_rate_hz": 39.95451359829191,
+      "fit_points": 361,
+      "beam_intervals": 256,
+      "D_minus_expected_quantiles": [
+        -0.9564132497280298,
+        -0.9423812245295927,
+        0.06306457567691126,
+        0.6998346429309111,
+        0.9644768133835697
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4351,
+      "segment": 7,
+      "event_ticks_per_scaler_second": 250003084.94969204,
+      "pulser_period_seconds": 0.025028460669671664,
+      "pulser_rate_hz": 39.95451471019766,
+      "fit_points": 51,
+      "beam_intervals": 51,
+      "D_minus_expected_quantiles": [
+        -0.966603876069982,
+        -0.9620091069035368,
+        0.06903555101602876,
+        0.8208419333661414,
+        0.9351964687367378
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4352,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003075.70770812,
+      "pulser_period_seconds": 0.02502846128303532,
+      "pulser_rate_hz": 39.95451373104648,
+      "fit_points": 300,
+      "beam_intervals": 268,
+      "D_minus_expected_quantiles": [
+        -0.9801464965340898,
+        -0.9504834664498409,
+        0.06118644792078953,
+        0.774427320658665,
+        0.9976387938330191
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4352,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003073.73702788,
+      "pulser_period_seconds": 0.025028461002012885,
+      "pulser_rate_hz": 39.95451417966036,
+      "fit_points": 320,
+      "beam_intervals": 268,
+      "D_minus_expected_quantiles": [
+        -0.9648847701482026,
+        -0.9466287535237697,
+        0.06462163857847258,
+        0.7939339073803281,
+        0.966553283524533
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4352,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003076.32203323,
+      "pulser_period_seconds": 0.02502846123649536,
+      "pulser_rate_hz": 39.954513805341165,
+      "fit_points": 444,
+      "beam_intervals": 249,
+      "D_minus_expected_quantiles": [
+        -0.9960884962669354,
+        -0.9546109163893959,
+        0.05769027932463189,
+        0.6167245109192019,
+        0.8005645544986493
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4352,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003071.25159213,
+      "pulser_period_seconds": 0.025028461251590913,
+      "pulser_rate_hz": 39.95451378124318,
+      "fit_points": 300,
+      "beam_intervals": 273,
+      "D_minus_expected_quantiles": [
+        -0.983422867149983,
+        -0.9282872363075336,
+        0.059448326133534124,
+        0.5208542570062119,
+        0.8405474301879536
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4352,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003076.6884988,
+      "pulser_period_seconds": 0.025028460919109603,
+      "pulser_rate_hz": 39.9545143120041,
+      "fit_points": 332,
+      "beam_intervals": 262,
+      "D_minus_expected_quantiles": [
+        -0.9766316622169597,
+        -0.9555868204437071,
+        0.05900776454112844,
+        0.4876231302935895,
+        0.9144598643782373
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4352,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003077.47542518,
+      "pulser_period_seconds": 0.025028460824244793,
+      "pulser_rate_hz": 39.9545144634428,
+      "fit_points": 279,
+      "beam_intervals": 278,
+      "D_minus_expected_quantiles": [
+        -0.9802278716522892,
+        -0.9405810069695637,
+        0.06526034305623085,
+        0.5681716538950086,
+        0.8630535944856206
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4352,
+      "segment": 6,
+      "event_ticks_per_scaler_second": 250003079.5220827,
+      "pulser_period_seconds": 0.025028460608751493,
+      "pulser_rate_hz": 39.95451480744838,
+      "fit_points": 299,
+      "beam_intervals": 273,
+      "D_minus_expected_quantiles": [
+        -0.9643666179061796,
+        -0.932070584498615,
+        0.06164377122685494,
+        0.651199393560464,
+        0.8806212393922692
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4352,
+      "segment": 7,
+      "event_ticks_per_scaler_second": 250003082.7051214,
+      "pulser_period_seconds": 0.025028461441919593,
+      "pulser_rate_hz": 39.954513477409485,
+      "fit_points": 48,
+      "beam_intervals": 48,
+      "D_minus_expected_quantiles": [
+        -0.934714425261248,
+        -0.9244628404246185,
+        0.06562190637321663,
+        0.2707080966091873,
+        0.35614215843142816
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4353,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003076.46611294,
+      "pulser_period_seconds": 0.025028460735429418,
+      "pulser_rate_hz": 39.9545146052244,
+      "fit_points": 499,
+      "beam_intervals": 428,
+      "D_minus_expected_quantiles": [
+        -0.9918549192253892,
+        -0.9455724085976996,
+        0.05255452375903502,
+        0.8542814352032534,
+        0.98944636793901
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4353,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003079.86949274,
+      "pulser_period_seconds": 0.025028460796382403,
+      "pulser_rate_hz": 39.95451450792129,
+      "fit_points": 255,
+      "beam_intervals": 255,
+      "D_minus_expected_quantiles": [
+        -0.9932131779117128,
+        -0.9543398325621376,
+        0.053973103725653004,
+        0.8502027159261953,
+        0.9816154779482531
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4354,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003080.77670226,
+      "pulser_period_seconds": 0.02502846090517593,
+      "pulser_rate_hz": 39.95451433424731,
+      "fit_points": 852,
+      "beam_intervals": 788,
+      "D_minus_expected_quantiles": [
+        -0.9939719659637092,
+        -0.9705789973722853,
+        0.03523478400902036,
+        0.9507186002926876,
+        0.9884480477236366
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4354,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003077.54084274,
+      "pulser_period_seconds": 0.02502846030271795,
+      "pulser_rate_hz": 39.95451529598909,
+      "fit_points": 93,
+      "beam_intervals": 93,
+      "D_minus_expected_quantiles": [
+        -0.9873014874407176,
+        -0.9305468975542829,
+        0.041066218420482414,
+        0.39678033744878477,
+        0.6253337842771742
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4355,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003078.30745783,
+      "pulser_period_seconds": 0.025028460875158164,
+      "pulser_rate_hz": 39.954514382166565,
+      "fit_points": 1374,
+      "beam_intervals": 1257,
+      "D_minus_expected_quantiles": [
+        -0.9983670584841207,
+        -0.992775024660774,
+        3.47609310011876e-05,
+        0.9903657684522102,
+        0.9983167168078211
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4356,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003088.57840914,
+      "pulser_period_seconds": 0.025028461380179657,
+      "pulser_rate_hz": 39.954513575968846,
+      "fit_points": 94,
+      "beam_intervals": 71,
+      "D_minus_expected_quantiles": [
+        -0.9891359516575022,
+        -0.9737814320902884,
+        0.04254797760842166,
+        0.7190566985884237,
+        0.9525304585216077
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4356,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003083.98650616,
+      "pulser_period_seconds": 0.025028460237375125,
+      "pulser_rate_hz": 39.954515400299975,
+      "fit_points": 79,
+      "beam_intervals": 78,
+      "D_minus_expected_quantiles": [
+        -0.9686429375777266,
+        -0.9453230851194747,
+        0.03659110394069387,
+        0.5764738661488041,
+        0.921122554434092
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4356,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003078.0147237,
+      "pulser_period_seconds": 0.025028461521440518,
+      "pulser_rate_hz": 39.95451335046521,
+      "fit_points": 79,
+      "beam_intervals": 78,
+      "D_minus_expected_quantiles": [
+        -0.997046493841836,
+        -0.9652355094023402,
+        0.04588463075386073,
+        0.8945321396400199,
+        0.9747056652180248
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4356,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003074.27833977,
+      "pulser_period_seconds": 0.025028460346963037,
+      "pulser_rate_hz": 39.95451522535785,
+      "fit_points": 79,
+      "beam_intervals": 78,
+      "D_minus_expected_quantiles": [
+        -0.9802693513598086,
+        -0.96393314871889,
+        0.05021594375511995,
+        0.951811568658411,
+        0.9759005454350671
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4356,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003072.6196774,
+      "pulser_period_seconds": 0.025028461230310863,
+      "pulser_rate_hz": 39.954513815213865,
+      "fit_points": 93,
+      "beam_intervals": 69,
+      "D_minus_expected_quantiles": [
+        -0.6664295384695151,
+        -0.5704558541722682,
+        0.049339766177453726,
+        0.10846987171430242,
+        0.13703698600573944
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4356,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003074.81895962,
+      "pulser_period_seconds": 0.025028460278008244,
+      "pulser_rate_hz": 39.954515335434756,
+      "fit_points": 79,
+      "beam_intervals": 78,
+      "D_minus_expected_quantiles": [
+        -0.9370787406368493,
+        -0.9360942613744783,
+        0.05259301715003062,
+        0.7216531721212761,
+        0.8684626332259882
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4356,
+      "segment": 6,
+      "event_ticks_per_scaler_second": 250003062.2339076,
+      "pulser_period_seconds": 0.0250284617840835,
+      "pulser_rate_hz": 39.95451293119164,
+      "fit_points": 20,
+      "beam_intervals": 6,
+      "D_minus_expected_quantiles": [
+        0.009107340623003779,
+        0.009822526404256137,
+        0.0696184504544135,
+        0.570471791064749,
+        0.5961774494769543
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4397,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003070.7336011,
+      "pulser_period_seconds": 0.02502845905927975,
+      "pulser_rate_hz": 39.95451728096828,
+      "fit_points": 282,
+      "beam_intervals": 282,
+      "D_minus_expected_quantiles": [
+        -0.9944573198832813,
+        -0.9466561349543348,
+        0.05992077813557728,
+        0.6821957913781349,
+        0.7952586796100611
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4397,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003065.36205053,
+      "pulser_period_seconds": 0.02502845914548122,
+      "pulser_rate_hz": 39.95451714335941,
+      "fit_points": 338,
+      "beam_intervals": 269,
+      "D_minus_expected_quantiles": [
+        -0.9469511234875228,
+        -0.9364414872988676,
+        0.06435600486729243,
+        0.6683414845932452,
+        0.995913916996372
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4397,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003061.51720738,
+      "pulser_period_seconds": 0.025028459814823607,
+      "pulser_rate_hz": 39.95451607484572,
+      "fit_points": 283,
+      "beam_intervals": 282,
+      "D_minus_expected_quantiles": [
+        -0.9831877315299096,
+        -0.9479310674522222,
+        0.06270003018656212,
+        0.768884019910584,
+        0.9945176485021108
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4397,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003064.52722993,
+      "pulser_period_seconds": 0.02502845964285087,
+      "pulser_rate_hz": 39.9545163493767,
+      "fit_points": 307,
+      "beam_intervals": 275,
+      "D_minus_expected_quantiles": [
+        -0.96716652004487,
+        -0.9548868989882578,
+        0.06295918528826405,
+        0.28439030441288315,
+        0.43444185188566564
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4397,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003070.8096179,
+      "pulser_period_seconds": 0.025028459566850146,
+      "pulser_rate_hz": 39.95451647070147,
+      "fit_points": 325,
+      "beam_intervals": 271,
+      "D_minus_expected_quantiles": [
+        -0.9525434098523249,
+        -0.9372807845499977,
+        0.05972262671409112,
+        0.6543706426503613,
+        0.9972337629481558
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4397,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003063.20948553,
+      "pulser_period_seconds": 0.025028459846450996,
+      "pulser_rate_hz": 39.95451602435692,
+      "fit_points": 283,
+      "beam_intervals": 282,
+      "D_minus_expected_quantiles": [
+        -0.9726795927389276,
+        -0.9476792529807799,
+        0.059683565231772207,
+        0.5481113618093291,
+        0.7490774644165121
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4397,
+      "segment": 6,
+      "event_ticks_per_scaler_second": 250003066.45526096,
+      "pulser_period_seconds": 0.025028459809962163,
+      "pulser_rate_hz": 39.954516082606354,
+      "fit_points": 168,
+      "beam_intervals": 167,
+      "D_minus_expected_quantiles": [
+        -0.947508364198498,
+        -0.945328445795999,
+        0.05556813352754375,
+        0.8585966152601817,
+        0.987405729108275
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4398,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003074.5390442,
+      "pulser_period_seconds": 0.02502845958837728,
+      "pulser_rate_hz": 39.95451643633634,
+      "fit_points": 353,
+      "beam_intervals": 267,
+      "D_minus_expected_quantiles": [
+        -0.9574577465939029,
+        -0.9447849730723777,
+        0.06431746486342149,
+        0.7443051318641791,
+        0.9960351962746472
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4398,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003062.7061417,
+      "pulser_period_seconds": 0.025028459537900193,
+      "pulser_rate_hz": 39.954516516916115,
+      "fit_points": 357,
+      "beam_intervals": 264,
+      "D_minus_expected_quantiles": [
+        -0.9522238661869977,
+        -0.9335199583676861,
+        0.06579562076206713,
+        0.7326972199275794,
+        0.9895624032494794
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4398,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003063.65974164,
+      "pulser_period_seconds": 0.02502845923985858,
+      "pulser_rate_hz": 39.95451699269884,
+      "fit_points": 307,
+      "beam_intervals": 275,
+      "D_minus_expected_quantiles": [
+        -0.9789943446524205,
+        -0.9512930789282987,
+        0.05796358355881637,
+        0.4263226380047894,
+        0.8350972877729816
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4398,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003065.4061553,
+      "pulser_period_seconds": 0.02502845940766058,
+      "pulser_rate_hz": 39.95451672482587,
+      "fit_points": 433,
+      "beam_intervals": 254,
+      "D_minus_expected_quantiles": [
+        -0.9506261015617525,
+        -0.9385290725244978,
+        0.06355775188063717,
+        0.600396601613562,
+        0.8325991992359985
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4398,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003068.82205555,
+      "pulser_period_seconds": 0.02502845940074301,
+      "pulser_rate_hz": 39.95451673586882,
+      "fit_points": 343,
+      "beam_intervals": 265,
+      "D_minus_expected_quantiles": [
+        -0.984867144501635,
+        -0.9320248988514953,
+        0.06231913976692738,
+        0.3162863082897819,
+        0.8553678068734172
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4398,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003074.44438672,
+      "pulser_period_seconds": 0.025028459381474927,
+      "pulser_rate_hz": 39.954516766627684,
+      "fit_points": 438,
+      "beam_intervals": 237,
+      "D_minus_expected_quantiles": [
+        -0.9639709938206806,
+        -0.9367875387843787,
+        0.06611475733311067,
+        0.5850766792690485,
+        0.8993845588554024
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4399,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003064.19205666,
+      "pulser_period_seconds": 0.02502845987202607,
+      "pulser_rate_hz": 39.95451598352981,
+      "fit_points": 281,
+      "beam_intervals": 281,
+      "D_minus_expected_quantiles": [
+        -0.9605333381618095,
+        -0.9275788533795918,
+        0.06288000820447337,
+        0.5830391801362512,
+        0.9888043355717997
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4399,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003068.59156522,
+      "pulser_period_seconds": 0.025028460404340043,
+      "pulser_rate_hz": 39.95451513376331,
+      "fit_points": 283,
+      "beam_intervals": 282,
+      "D_minus_expected_quantiles": [
+        -0.9600122288403128,
+        -0.93849592334747,
+        0.06418023007569928,
+        0.5708892588954715,
+        0.7353521807389214
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4399,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003061.69550252,
+      "pulser_period_seconds": 0.025028460456686982,
+      "pulser_rate_hz": 39.95451505019858,
+      "fit_points": 303,
+      "beam_intervals": 275,
+      "D_minus_expected_quantiles": [
+        -0.9823865900258113,
+        -0.9505116770113122,
+        0.05924601465132184,
+        0.6705352779499338,
+        0.9564852494739782
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4399,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003065.8069247,
+      "pulser_period_seconds": 0.02502846029617917,
+      "pulser_rate_hz": 39.95451530642735,
+      "fit_points": 332,
+      "beam_intervals": 275,
+      "D_minus_expected_quantiles": [
+        -0.9883403257421293,
+        -0.9333501272290801,
+        0.06559826992162243,
+        0.6391008105476916,
+        0.7982499707977624
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4399,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003070.54310507,
+      "pulser_period_seconds": 0.02502846002059149,
+      "pulser_rate_hz": 39.954515746365416,
+      "fit_points": 305,
+      "beam_intervals": 277,
+      "D_minus_expected_quantiles": [
+        -0.9889005696924045,
+        -0.9612999902252681,
+        0.05780625920164084,
+        0.6247688471845885,
+        0.8503256124970733
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4399,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003070.31703413,
+      "pulser_period_seconds": 0.025028460107344705,
+      "pulser_rate_hz": 39.95451560787577,
+      "fit_points": 302,
+      "beam_intervals": 276,
+      "D_minus_expected_quantiles": [
+        -0.9301671545047014,
+        -0.9147846659936292,
+        0.0611027838229532,
+        0.3756304665470598,
+        0.7736873169103262
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4399,
+      "segment": 6,
+      "event_ticks_per_scaler_second": 250003073.55089164,
+      "pulser_period_seconds": 0.025028460309190804,
+      "pulser_rate_hz": 39.954515285656065,
+      "fit_points": 149,
+      "beam_intervals": 148,
+      "D_minus_expected_quantiles": [
+        -0.9886358032108795,
+        -0.9316168588099442,
+        0.06561828873272901,
+        0.48844318636341155,
+        0.6189277759847513
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4400,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003070.7738403,
+      "pulser_period_seconds": 0.025028460053654163,
+      "pulser_rate_hz": 39.95451569358538,
+      "fit_points": 312,
+      "beam_intervals": 276,
+      "D_minus_expected_quantiles": [
+        -0.9599733946797784,
+        -0.9276402028554749,
+        0.05884518221093771,
+        0.4515817843218386,
+        0.9581198481496216
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4400,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003066.26159856,
+      "pulser_period_seconds": 0.025028460230524432,
+      "pulser_rate_hz": 39.95451541123617,
+      "fit_points": 284,
+      "beam_intervals": 283,
+      "D_minus_expected_quantiles": [
+        -0.9949729851184088,
+        -0.9589707703704389,
+        0.06791542213453283,
+        0.5419176893603648,
+        0.9134299181574548
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4400,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003065.93280616,
+      "pulser_period_seconds": 0.025028460169479,
+      "pulser_rate_hz": 39.95451550868686,
+      "fit_points": 302,
+      "beam_intervals": 276,
+      "D_minus_expected_quantiles": [
+        -0.9738372415287131,
+        -0.9472075569435425,
+        0.06529820641090112,
+        0.6493141722627938,
+        0.900385943649539
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4400,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003070.49570444,
+      "pulser_period_seconds": 0.02502846016904574,
+      "pulser_rate_hz": 39.954515509378496,
+      "fit_points": 302,
+      "beam_intervals": 276,
+      "D_minus_expected_quantiles": [
+        -0.9515426232606501,
+        -0.9281892089430599,
+        0.06006416349958954,
+        0.5068238159787883,
+        0.8987478071266679
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4400,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003067.68776953,
+      "pulser_period_seconds": 0.025028460436737277,
+      "pulser_rate_hz": 39.95451508204555,
+      "fit_points": 283,
+      "beam_intervals": 282,
+      "D_minus_expected_quantiles": [
+        -0.9815875634786124,
+        -0.9537100996707106,
+        0.059365814481566304,
+        0.8296025356118197,
+        0.9723848351358981
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4400,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003071.19471616,
+      "pulser_period_seconds": 0.02502846037297609,
+      "pulser_rate_hz": 39.954515183831575,
+      "fit_points": 283,
+      "beam_intervals": 282,
+      "D_minus_expected_quantiles": [
+        -0.9594929203446441,
+        -0.9450285867597006,
+        0.060724064341840744,
+        0.8950013604813956,
+        0.9841312587234086
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4400,
+      "segment": 6,
+      "event_ticks_per_scaler_second": 250003081.77644566,
+      "pulser_period_seconds": 0.025028460171926347,
+      "pulser_rate_hz": 39.954515504780005,
+      "fit_points": 213,
+      "beam_intervals": 213,
+      "D_minus_expected_quantiles": [
+        -0.9711602811811417,
+        -0.944988475333206,
+        0.06232160282726795,
+        0.6056831110495332,
+        0.989604384610459
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4401,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003070.55065164,
+      "pulser_period_seconds": 0.025028460282703075,
+      "pulser_rate_hz": 39.9545153279401,
+      "fit_points": 575,
+      "beam_intervals": 415,
+      "D_minus_expected_quantiles": [
+        -0.9921360477659817,
+        -0.9476083386099015,
+        0.05133446491461768,
+        0.704352368736843,
+        0.8607114722848195
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4401,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003027.74339056,
+      "pulser_period_seconds": 0.02502846567551559,
+      "pulser_rate_hz": 39.954506719053995,
+      "fit_points": 72,
+      "beam_intervals": 71,
+      "D_minus_expected_quantiles": [
+        -0.9514451242455095,
+        -0.936873715640526,
+        0.05227064488360611,
+        0.5190410198410826,
+        0.7278960950582984
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4402,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003072.06845638,
+      "pulser_period_seconds": 0.025028460336676824,
+      "pulser_rate_hz": 39.95451524177839,
+      "fit_points": 934,
+      "beam_intervals": 742,
+      "D_minus_expected_quantiles": [
+        -0.9981690070632396,
+        -0.9723887556490938,
+        0.03529289945583969,
+        0.9608951948019725,
+        0.9934405447344545
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4403,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003075.29857442,
+      "pulser_period_seconds": 0.025028460587026076,
+      "pulser_rate_hz": 39.95451484213004,
+      "fit_points": 1228,
+      "beam_intervals": 1123,
+      "D_minus_expected_quantiles": [
+        -0.9961704811423999,
+        -0.986368839547743,
+        3.383995263561701e-05,
+        0.985677383693096,
+        0.9967575697421438
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4404,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003068.58647254,
+      "pulser_period_seconds": 0.025028460273966397,
+      "pulser_rate_hz": 39.95451534188701,
+      "fit_points": 78,
+      "beam_intervals": 78,
+      "D_minus_expected_quantiles": [
+        -0.9866223525679487,
+        -0.9426592007018688,
+        0.04775850788375635,
+        0.6146264789027751,
+        0.6259152867802911
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4404,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003068.99238577,
+      "pulser_period_seconds": 0.025028460894749763,
+      "pulser_rate_hz": 39.95451435089126,
+      "fit_points": 79,
+      "beam_intervals": 78,
+      "D_minus_expected_quantiles": [
+        -0.9781899661241624,
+        -0.9381647322824977,
+        0.046661741802367374,
+        0.7489853826827917,
+        0.9878486966781566
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4404,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003069.89953417,
+      "pulser_period_seconds": 0.025028460278896613,
+      "pulser_rate_hz": 39.9545153340166,
+      "fit_points": 79,
+      "beam_intervals": 78,
+      "D_minus_expected_quantiles": [
+        -0.9373184648909358,
+        -0.9360878658182572,
+        0.0371106452962664,
+        0.7791242344700671,
+        0.8294835537099274
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4404,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003072.18699953,
+      "pulser_period_seconds": 0.02502846045606115,
+      "pulser_rate_hz": 39.95451505119763,
+      "fit_points": 79,
+      "beam_intervals": 78,
+      "D_minus_expected_quantiles": [
+        -0.9484652087511733,
+        -0.9352977987709093,
+        0.04961697452667835,
+        0.45241673435089846,
+        0.48686507428629255
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4404,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003072.93471354,
+      "pulser_period_seconds": 0.025028460003749798,
+      "pulser_rate_hz": 39.954515773250876,
+      "fit_points": 79,
+      "beam_intervals": 78,
+      "D_minus_expected_quantiles": [
+        -0.960532917335172,
+        -0.9524724933224402,
+        0.04534039648456201,
+        0.7120036641847841,
+        0.960477004985222
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4404,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003072.90034595,
+      "pulser_period_seconds": 0.025028460367196095,
+      "pulser_rate_hz": 39.95451519305854,
+      "fit_points": 71,
+      "beam_intervals": 71,
+      "D_minus_expected_quantiles": [
+        -0.9425921788808296,
+        -0.9367468333069396,
+        0.031357477215479435,
+        0.5182602511859846,
+        0.752202830331278
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4483,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003068.5507914,
+      "pulser_period_seconds": 0.0250284605209358,
+      "pulser_rate_hz": 39.954514947634124,
+      "fit_points": 161,
+      "beam_intervals": 69,
+      "D_minus_expected_quantiles": [
+        -0.9218952490807055,
+        -0.9132011466284257,
+        0.06030555119221148,
+        0.9325312747993217,
+        0.9885267284057448
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4484,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003075.11895597,
+      "pulser_period_seconds": 0.025028460043614857,
+      "pulser_rate_hz": 39.954515709611755,
+      "fit_points": 374,
+      "beam_intervals": 266,
+      "D_minus_expected_quantiles": [
+        -0.9569368835593366,
+        -0.9372912481861129,
+        0.05854549127937503,
+        0.5705525303679136,
+        0.9671095820759774
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4484,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003073.4155137,
+      "pulser_period_seconds": 0.025028460069520208,
+      "pulser_rate_hz": 39.95451566825741,
+      "fit_points": 313,
+      "beam_intervals": 283,
+      "D_minus_expected_quantiles": [
+        -0.9954129993895293,
+        -0.9464471422571663,
+        0.06543772797404301,
+        0.696266300519804,
+        0.9731028422661581
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4484,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003070.03415537,
+      "pulser_period_seconds": 0.025028459898032887,
+      "pulser_rate_hz": 39.95451594201348,
+      "fit_points": 292,
+      "beam_intervals": 291,
+      "D_minus_expected_quantiles": [
+        -0.970841520192181,
+        -0.9401444655855826,
+        0.06284013675728772,
+        0.6990879293680308,
+        0.9924402796635121
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4484,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003068.17376503,
+      "pulser_period_seconds": 0.02502846026787566,
+      "pulser_rate_hz": 39.95451535161004,
+      "fit_points": 293,
+      "beam_intervals": 292,
+      "D_minus_expected_quantiles": [
+        -0.9777125151041588,
+        -0.9412372389596926,
+        0.062142113960653944,
+        0.5461495189952342,
+        0.83270978426855
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4484,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003073.35031825,
+      "pulser_period_seconds": 0.02502846035369316,
+      "pulser_rate_hz": 39.95451521461413,
+      "fit_points": 347,
+      "beam_intervals": 272,
+      "D_minus_expected_quantiles": [
+        -0.9879405967641333,
+        -0.9583906368586236,
+        0.06124341145443424,
+        0.826636137546863,
+        0.9917225549748423
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4484,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003074.84256116,
+      "pulser_period_seconds": 0.02502846036348455,
+      "pulser_rate_hz": 39.954515198983515,
+      "fit_points": 349,
+      "beam_intervals": 273,
+      "D_minus_expected_quantiles": [
+        -0.9678034898262524,
+        -0.9449846670983669,
+        0.06024457985438403,
+        0.5988102676087418,
+        0.8414934932824565
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4484,
+      "segment": 6,
+      "event_ticks_per_scaler_second": 250003074.4569002,
+      "pulser_period_seconds": 0.02502845984740954,
+      "pulser_rate_hz": 39.95451602282673,
+      "fit_points": 85,
+      "beam_intervals": 85,
+      "D_minus_expected_quantiles": [
+        -0.9640094597074267,
+        -0.9303469808574767,
+        0.06587651827487662,
+        0.4333392691832615,
+        0.4857789616639927
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4485,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003071.3780243,
+      "pulser_period_seconds": 0.025028460335278016,
+      "pulser_rate_hz": 39.9545152440114,
+      "fit_points": 292,
+      "beam_intervals": 292,
+      "D_minus_expected_quantiles": [
+        -0.9715992588936473,
+        -0.9668326852264348,
+        0.06172280681862219,
+        0.7585014017577567,
+        0.9930409951143986
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4485,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003069.52559155,
+      "pulser_period_seconds": 0.02502846035600496,
+      "pulser_rate_hz": 39.95451521092366,
+      "fit_points": 386,
+      "beam_intervals": 268,
+      "D_minus_expected_quantiles": [
+        -0.9934143579732364,
+        -0.9458077540065771,
+        0.058406648253956917,
+        0.7585710096599616,
+        0.9908435630325272
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4485,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003068.532065,
+      "pulser_period_seconds": 0.025028460269951317,
+      "pulser_rate_hz": 39.95451534829654,
+      "fit_points": 314,
+      "beam_intervals": 285,
+      "D_minus_expected_quantiles": [
+        -0.954139344420966,
+        -0.9375550241900998,
+        0.06435959617947162,
+        0.5420935555926767,
+        0.9205632954451488
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4485,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003074.27045295,
+      "pulser_period_seconds": 0.02502845995653798,
+      "pulser_rate_hz": 39.954515848618094,
+      "fit_points": 434,
+      "beam_intervals": 279,
+      "D_minus_expected_quantiles": [
+        -0.9748767393701598,
+        -0.9497749152331658,
+        0.06463827682701151,
+        0.8351110545629019,
+        0.9826915648058048
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4485,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003070.74604627,
+      "pulser_period_seconds": 0.025028460234318026,
+      "pulser_rate_hz": 39.95451540518022,
+      "fit_points": 315,
+      "beam_intervals": 286,
+      "D_minus_expected_quantiles": [
+        -0.9768735775197541,
+        -0.9410603476456523,
+        0.06032407633303194,
+        0.7410961307261158,
+        0.9529665027117105
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4485,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003065.26290923,
+      "pulser_period_seconds": 0.025028459912210414,
+      "pulser_rate_hz": 39.954515919380995,
+      "fit_points": 364,
+      "beam_intervals": 203,
+      "D_minus_expected_quantiles": [
+        -0.9793118322548082,
+        -0.9556164070483422,
+        0.06100227431053895,
+        0.6299160035395377,
+        0.8359115204963423
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4487,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003065.68375528,
+      "pulser_period_seconds": 0.02502845972011593,
+      "pulser_rate_hz": 39.95451622603358,
+      "fit_points": 425,
+      "beam_intervals": 272,
+      "D_minus_expected_quantiles": [
+        -0.9955739342122882,
+        -0.9503885727225366,
+        0.0621803189919774,
+        0.7655051378493432,
+        0.9630331869775688
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4487,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003070.32711887,
+      "pulser_period_seconds": 0.025028459729929804,
+      "pulser_rate_hz": 39.95451621036708,
+      "fit_points": 314,
+      "beam_intervals": 289,
+      "D_minus_expected_quantiles": [
+        -0.951943571144767,
+        -0.9357651884368345,
+        0.06287955437272785,
+        0.5134490968377371,
+        0.991241106811259
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4487,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003074.160467,
+      "pulser_period_seconds": 0.025028459689725994,
+      "pulser_rate_hz": 39.95451627454697,
+      "fit_points": 368,
+      "beam_intervals": 150,
+      "D_minus_expected_quantiles": [
+        -0.9977315752265952,
+        -0.9688788208359097,
+        0.06443765209861141,
+        0.8886044533212997,
+        0.9826907118028743
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4488,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003071.86755022,
+      "pulser_period_seconds": 0.02502845972825366,
+      "pulser_rate_hz": 39.95451621304281,
+      "fit_points": 405,
+      "beam_intervals": 271,
+      "D_minus_expected_quantiles": [
+        -0.9741582875119832,
+        -0.9266843313481516,
+        0.058604415781758235,
+        0.5401475414678308,
+        0.6316918931572388
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4488,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003068.86861187,
+      "pulser_period_seconds": 0.025028459448260723,
+      "pulser_rate_hz": 39.95451666001328,
+      "fit_points": 342,
+      "beam_intervals": 281,
+      "D_minus_expected_quantiles": [
+        -0.9665278695005242,
+        -0.9477572375765305,
+        0.0636377905788379,
+        0.5110299204610506,
+        0.6666335439059914
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4488,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003069.77715325,
+      "pulser_period_seconds": 0.025028459359259438,
+      "pulser_rate_hz": 39.95451680209168,
+      "fit_points": 357,
+      "beam_intervals": 272,
+      "D_minus_expected_quantiles": [
+        -0.9588568866324181,
+        -0.9353132880672813,
+        0.05790403316689208,
+        0.5390270702588372,
+        0.6229318552293179
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4488,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003071.2309022,
+      "pulser_period_seconds": 0.025028459173011986,
+      "pulser_rate_hz": 39.9545170994103,
+      "fit_points": 332,
+      "beam_intervals": 283,
+      "D_minus_expected_quantiles": [
+        -0.9505469420956416,
+        -0.933648578630038,
+        0.06723281801868097,
+        0.5013006963779776,
+        0.9340244580094321
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4488,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003069.17615893,
+      "pulser_period_seconds": 0.025028459123600966,
+      "pulser_rate_hz": 39.95451717828825,
+      "fit_points": 387,
+      "beam_intervals": 275,
+      "D_minus_expected_quantiles": [
+        -0.9796339884385219,
+        -0.9176661304642534,
+        0.058123030304116696,
+        0.7043277222474698,
+        0.8723578866755624
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4488,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003069.18703705,
+      "pulser_period_seconds": 0.025028459106363952,
+      "pulser_rate_hz": 39.954517205804784,
+      "fit_points": 152,
+      "beam_intervals": 125,
+      "D_minus_expected_quantiles": [
+        -0.9248164459068988,
+        -0.919710258611982,
+        0.06195860889049243,
+        0.5688266563151836,
+        0.7001820441605489
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4489,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003075.81034565,
+      "pulser_period_seconds": 0.02502845893609089,
+      "pulser_rate_hz": 39.95451747762248,
+      "fit_points": 414,
+      "beam_intervals": 273,
+      "D_minus_expected_quantiles": [
+        -0.9600568740622606,
+        -0.9364037997174376,
+        0.0664729255412766,
+        0.5586600590051415,
+        0.9192804831544947
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4489,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003085.03661922,
+      "pulser_period_seconds": 0.025028458880799395,
+      "pulser_rate_hz": 39.954517565887805,
+      "fit_points": 295,
+      "beam_intervals": 294,
+      "D_minus_expected_quantiles": [
+        -0.955702008292846,
+        -0.9401469155170274,
+        0.0624173654229665,
+        0.6278415391644447,
+        0.9913183014122922
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4489,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003087.8705528,
+      "pulser_period_seconds": 0.02502845873395474,
+      "pulser_rate_hz": 39.95451780030525,
+      "fit_points": 326,
+      "beam_intervals": 287,
+      "D_minus_expected_quantiles": [
+        -0.9930199970236373,
+        -0.9451177265466066,
+        0.05864119448436611,
+        0.6124129354241017,
+        0.7913428612349307
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4489,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003098.20318428,
+      "pulser_period_seconds": 0.025028458841069683,
+      "pulser_rate_hz": 39.954517629310864,
+      "fit_points": 318,
+      "beam_intervals": 286,
+      "D_minus_expected_quantiles": [
+        -0.9664499004508968,
+        -0.9467982709566201,
+        0.06449487345435756,
+        0.8194142493392123,
+        0.9592746512593351
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4489,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003101.824441,
+      "pulser_period_seconds": 0.025028458513940026,
+      "pulser_rate_hz": 39.95451815152871,
+      "fit_points": 318,
+      "beam_intervals": 287,
+      "D_minus_expected_quantiles": [
+        -0.9695673980540533,
+        -0.9336914371111714,
+        0.05672267488687055,
+        0.44480537987922625,
+        0.6974711919540368
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4489,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003107.45664036,
+      "pulser_period_seconds": 0.025028458458531144,
+      "pulser_rate_hz": 39.954518239981425,
+      "fit_points": 315,
+      "beam_intervals": 288,
+      "D_minus_expected_quantiles": [
+        -0.9709260287193047,
+        -0.9342581691413959,
+        0.0638743566661617,
+        0.7613903960685762,
+        0.9951126307806959
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4489,
+      "segment": 6,
+      "event_ticks_per_scaler_second": 250003121.32232144,
+      "pulser_period_seconds": 0.025028456724356482,
+      "pulser_rate_hz": 39.954521008354796,
+      "fit_points": 22,
+      "beam_intervals": 22,
+      "D_minus_expected_quantiles": [
+        -0.9769647024158417,
+        -0.9639595058280248,
+        0.05595782289368856,
+        0.6310952922770776,
+        0.7043019633996295
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4490,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003105.39054856,
+      "pulser_period_seconds": 0.0250284583414665,
+      "pulser_rate_hz": 39.95451842685915,
+      "fit_points": 652,
+      "beam_intervals": 450,
+      "D_minus_expected_quantiles": [
+        -0.9938602963424046,
+        -0.9374912631063627,
+        0.050189560226478136,
+        0.3761896082891177,
+        0.9157625829816567
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4490,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003101.2321049,
+      "pulser_period_seconds": 0.025028458484839103,
+      "pulser_rate_hz": 39.95451819798436,
+      "fit_points": 71,
+      "beam_intervals": 66,
+      "D_minus_expected_quantiles": [
+        -0.9924614299735168,
+        -0.9776323105433911,
+        0.04955074591688202,
+        0.5486055473311208,
+        0.6622532098472362
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4491,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003103.82038453,
+      "pulser_period_seconds": 0.0250284585275841,
+      "pulser_rate_hz": 39.954518129747804,
+      "fit_points": 959,
+      "beam_intervals": 680,
+      "D_minus_expected_quantiles": [
+        -0.9953380186559997,
+        -0.962351568487919,
+        0.03994182085348541,
+        0.9520318923361009,
+        0.997550077116685
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4492,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003094.23052272,
+      "pulser_period_seconds": 0.025028458398644548,
+      "pulser_rate_hz": 39.95451833558221,
+      "fit_points": 1248,
+      "beam_intervals": 1081,
+      "D_minus_expected_quantiles": [
+        -0.9976957473520685,
+        -0.9890655713888407,
+        2.6845106290807053e-05,
+        0.9897345611808618,
+        0.995631848091378
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4493,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003081.9781191,
+      "pulser_period_seconds": 0.02502845907123702,
+      "pulser_rate_hz": 39.954517261880135,
+      "fit_points": 99,
+      "beam_intervals": 58,
+      "D_minus_expected_quantiles": [
+        -0.9838693345924838,
+        -0.7890625692896331,
+        0.04317987359451081,
+        0.09101262256981414,
+        0.09160474851543654
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4493,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003086.63643262,
+      "pulser_period_seconds": 0.025028457853461358,
+      "pulser_rate_hz": 39.95451920589279,
+      "fit_points": 118,
+      "beam_intervals": 64,
+      "D_minus_expected_quantiles": [
+        -0.9237416748548384,
+        -0.9170460965253311,
+        0.043995050887239984,
+        0.09202997205756219,
+        0.09208031475164091
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4493,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003085.03117028,
+      "pulser_period_seconds": 0.025028458535764207,
+      "pulser_rate_hz": 39.95451811668938,
+      "fit_points": 79,
+      "beam_intervals": 78,
+      "D_minus_expected_quantiles": [
+        -0.9192246354955103,
+        -0.9111642110135045,
+        0.03512732755332593,
+        0.5509442832251106,
+        0.8800438654843106
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4493,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003085.90851718,
+      "pulser_period_seconds": 0.025028457671428927,
+      "pulser_rate_hz": 39.95451949648274,
+      "fit_points": 79,
+      "beam_intervals": 78,
+      "D_minus_expected_quantiles": [
+        -0.9780404481342941,
+        -0.969826198470767,
+        0.039659404001113785,
+        0.8391180815655741,
+        0.9625471813745463
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4493,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003087.1141374,
+      "pulser_period_seconds": 0.025028458308407758,
+      "pulser_rate_hz": 39.954518479632924,
+      "fit_points": 79,
+      "beam_intervals": 78,
+      "D_minus_expected_quantiles": [
+        -0.9316911712411127,
+        -0.9271994842744827,
+        0.022900518505593936,
+        0.9371657132039724,
+        0.9557169956813851
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4493,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003084.4385653,
+      "pulser_period_seconds": 0.025028457869268654,
+      "pulser_rate_hz": 39.95451918065859,
+      "fit_points": 61,
+      "beam_intervals": 61,
+      "D_minus_expected_quantiles": [
+        -0.9770009984445096,
+        -0.9548981584323372,
+        0.033387176543485,
+        0.9780981129018869,
+        0.979728257283071
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4551,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003073.85941267,
+      "pulser_period_seconds": 0.02502845728603208,
+      "pulser_rate_hz": 39.954520111716256,
+      "fit_points": 350,
+      "beam_intervals": 290,
+      "D_minus_expected_quantiles": [
+        -0.9825565404386936,
+        -0.9738832132116984,
+        0.0588563196575862,
+        0.9235144593995008,
+        0.969378171867902
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4551,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003075.26549178,
+      "pulser_period_seconds": 0.025028456978268866,
+      "pulser_rate_hz": 39.95452060301828,
+      "fit_points": 349,
+      "beam_intervals": 290,
+      "D_minus_expected_quantiles": [
+        -0.9943840620471605,
+        -0.9701196816830696,
+        0.06396951529384154,
+        0.5566265658822347,
+        0.9766489105161043
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4551,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003074.32347253,
+      "pulser_period_seconds": 0.025028457006883286,
+      "pulser_rate_hz": 39.95452055733926,
+      "fit_points": 368,
+      "beam_intervals": 295,
+      "D_minus_expected_quantiles": [
+        -0.9680938960585195,
+        -0.9519538679305952,
+        0.06071331325873075,
+        0.674026147063817,
+        0.9442458858328848
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4551,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003076.2503892,
+      "pulser_period_seconds": 0.025028457042067603,
+      "pulser_rate_hz": 39.95452050117229,
+      "fit_points": 366,
+      "beam_intervals": 289,
+      "D_minus_expected_quantiles": [
+        -0.9597432888551936,
+        -0.9484601322850671,
+        0.060833289200928675,
+        0.6713349301362783,
+        0.9966870665729246
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4551,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003079.50832507,
+      "pulser_period_seconds": 0.025028457243468243,
+      "pulser_rate_hz": 39.95452017966362,
+      "fit_points": 396,
+      "beam_intervals": 282,
+      "D_minus_expected_quantiles": [
+        -0.9844345389021498,
+        -0.9610767268522475,
+        0.061093636838919,
+        0.8050955577444255,
+        0.9892354322887087
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4551,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003075.98938,
+      "pulser_period_seconds": 0.025028457072870023,
+      "pulser_rate_hz": 39.95452045200042,
+      "fit_points": 339,
+      "beam_intervals": 260,
+      "D_minus_expected_quantiles": [
+        -0.9851542654468943,
+        -0.9476297789409379,
+        0.06219184127366617,
+        0.7596630632589112,
+        0.9866777976192651
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4555,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003072.9433176,
+      "pulser_period_seconds": 0.025028457246122827,
+      "pulser_rate_hz": 39.954520175425934,
+      "fit_points": 392,
+      "beam_intervals": 275,
+      "D_minus_expected_quantiles": [
+        -0.938087287018746,
+        -0.932009405410887,
+        0.06175289490094826,
+        0.3813782039163217,
+        0.8543625019456442
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4555,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003079.0584255,
+      "pulser_period_seconds": 0.02502845738700518,
+      "pulser_rate_hz": 39.95451995052647,
+      "fit_points": 302,
+      "beam_intervals": 301,
+      "D_minus_expected_quantiles": [
+        -0.9381667460960159,
+        -0.931534295787344,
+        0.06071452734364868,
+        0.6265556589347341,
+        0.9834424857591131
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4555,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003076.59559554,
+      "pulser_period_seconds": 0.0250284573290401,
+      "pulser_rate_hz": 39.954520043059816,
+      "fit_points": 375,
+      "beam_intervals": 280,
+      "D_minus_expected_quantiles": [
+        -0.9869114456822672,
+        -0.9422311050168449,
+        0.06161331890789512,
+        0.5567363802933737,
+        0.9074290472150395
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4555,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003076.8212916,
+      "pulser_period_seconds": 0.02502845721023318,
+      "pulser_rate_hz": 39.95452023271887,
+      "fit_points": 332,
+      "beam_intervals": 295,
+      "D_minus_expected_quantiles": [
+        -0.9692119729107276,
+        -0.9580271045049585,
+        0.060514190140040114,
+        0.8176724572141878,
+        0.9539554846895015
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4555,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003074.28707072,
+      "pulser_period_seconds": 0.02502845730003254,
+      "pulser_rate_hz": 39.954520089366426,
+      "fit_points": 695,
+      "beam_intervals": 270,
+      "D_minus_expected_quantiles": [
+        -0.971728820753782,
+        -0.9453196820528382,
+        0.05566000276419203,
+        0.7645187492544152,
+        0.9820837540123364
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4555,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003075.09568322,
+      "pulser_period_seconds": 0.025028457435020815,
+      "pulser_rate_hz": 39.95451987387605,
+      "fit_points": 154,
+      "beam_intervals": 123,
+      "D_minus_expected_quantiles": [
+        -0.9915058767816021,
+        -0.9613697806079654,
+        0.05671922871613333,
+        0.5135208137820318,
+        0.5429262338952157
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4556,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003074.6616179,
+      "pulser_period_seconds": 0.02502845747829599,
+      "pulser_rate_hz": 39.95451980479314,
+      "fit_points": 506,
+      "beam_intervals": 470,
+      "D_minus_expected_quantiles": [
+        -0.9937431915720651,
+        -0.9526112120694059,
+        0.057738207196599944,
+        0.6335718558655649,
+        0.9752121465407697
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4556,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003073.0414774,
+      "pulser_period_seconds": 0.0250284570977279,
+      "pulser_rate_hz": 39.95452041231821,
+      "fit_points": 164,
+      "beam_intervals": 150,
+      "D_minus_expected_quantiles": [
+        -0.9672088084134778,
+        -0.9211318616052355,
+        0.04894699714935058,
+        0.3200147706121858,
+        0.635319072514843
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4557,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003072.69457403,
+      "pulser_period_seconds": 0.025028457322936872,
+      "pulser_rate_hz": 39.954520052802785,
+      "fit_points": 1324,
+      "beam_intervals": 1178,
+      "D_minus_expected_quantiles": [
+        -0.9975393675228048,
+        -0.9878975427462412,
+        2.3406755587984662e-05,
+        0.9883934450573234,
+        0.9976660900750147
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4558,
+      "segment": 0,
+      "event_ticks_per_scaler_second": 250003072.278061,
+      "pulser_period_seconds": 0.025028457018983596,
+      "pulser_rate_hz": 39.95452053802276,
+      "fit_points": 102,
+      "beam_intervals": 71,
+      "D_minus_expected_quantiles": [
+        -0.9786418508230383,
+        -0.939905943160656,
+        0.04640963355450367,
+        0.3226142634004321,
+        0.4721742210076698
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4558,
+      "segment": 1,
+      "event_ticks_per_scaler_second": 250003073.0150118,
+      "pulser_period_seconds": 0.025028457735455364,
+      "pulser_rate_hz": 39.95451939427326,
+      "fit_points": 100,
+      "beam_intervals": 69,
+      "D_minus_expected_quantiles": [
+        -0.7937491628691333,
+        -0.6462865266372142,
+        0.03638333796014592,
+        0.08951645603200688,
+        0.0905217117389725
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4558,
+      "segment": 2,
+      "event_ticks_per_scaler_second": 250003073.1834648,
+      "pulser_period_seconds": 0.02502845694513767,
+      "pulser_rate_hz": 39.954520655907714,
+      "fit_points": 80,
+      "beam_intervals": 79,
+      "D_minus_expected_quantiles": [
+        -0.9439615628691058,
+        -0.9220217364870087,
+        0.04776785135555883,
+        0.22794967945717237,
+        0.6683954590885861
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4558,
+      "segment": 3,
+      "event_ticks_per_scaler_second": 250003072.4583707,
+      "pulser_period_seconds": 0.025028457118173635,
+      "pulser_rate_hz": 39.95452037967938,
+      "fit_points": 79,
+      "beam_intervals": 78,
+      "D_minus_expected_quantiles": [
+        -0.9706905843033979,
+        -0.9545082044616087,
+        0.03116730089411135,
+        0.8602697707091185,
+        0.9481617848059471
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4558,
+      "segment": 4,
+      "event_ticks_per_scaler_second": 250003068.07740036,
+      "pulser_period_seconds": 0.025028457100001518,
+      "pulser_rate_hz": 39.95452040868869,
+      "fit_points": 80,
+      "beam_intervals": 79,
+      "D_minus_expected_quantiles": [
+        -0.9396859345306865,
+        -0.9364136593104001,
+        0.05396129672219274,
+        0.9270369726527306,
+        0.9682988049642205
+      ],
+      "selected_abs_excess_gt2": 0
+    },
+    {
+      "run": 4558,
+      "segment": 5,
+      "event_ticks_per_scaler_second": 250003065.8873101,
+      "pulser_period_seconds": 0.025028457098395348,
+      "pulser_rate_hz": 39.95452041125272,
+      "fit_points": 46,
+      "beam_intervals": 46,
+      "D_minus_expected_quantiles": [
+        -0.9459987538879346,
+        -0.930374538679677,
+        0.044571979296108566,
+        0.6319122990655828,
+        0.8494569771762741
+      ],
+      "selected_abs_excess_gt2": 0
+    }
+  ],
+  "selected_anomalies": []
+}

@@ -1,0 +1,168 @@
+[
+  {
+    "file": "ti_index.html",
+    "url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/index.html",
+    "utc": "2026-09-10T02:10:08.007820+00:00",
+    "status": 200,
+    "final_url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/index.html",
+    "content_type": "text/html;charset=UTF-8",
+    "bytes": 5586,
+    "sha256": "fb1f4eb807b8a8f3845ff09c4b980880260eb26a346be28c85acbf98469ed2aa"
+  },
+  {
+    "file": "ti_files.html",
+    "url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/files.html",
+    "utc": "2026-09-10T02:10:08.009447+00:00",
+    "status": 200,
+    "final_url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/files.html",
+    "content_type": "text/html;charset=UTF-8",
+    "bytes": 5512,
+    "sha256": "3e7116b2678862dad1b15944f14eece8b3079b856efaee9f7d44b50a5e9aac67"
+  },
+  {
+    "file": "tiLib_8c.html",
+    "url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/tiLib_8c.html",
+    "utc": "2026-09-10T02:10:08.010056+00:00",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "file": "TI.pdf",
+    "url": "https://coda.jlab.org/drupal/system/files/pdfs/HardwareManual/TI/TI.pdf",
+    "utc": "2026-09-10T02:10:08.074470+00:00",
+    "status": 200,
+    "final_url": "https://coda.jlab.org/drupal/system/files/pdfs/HardwareManual/TI/TI.pdf",
+    "content_type": "application/pdf",
+    "bytes": 10482727,
+    "sha256": "006ad963b292252bb4b5e9c01f449bb04608a95be4a490a53aa8ad3dbe14a0e0"
+  },
+  {
+    "file": "TS.pdf",
+    "url": "https://coda.jlab.org/drupal/system/files/pdfs/HardwareManual/TS/TS.pdf",
+    "utc": "2026-09-10T02:10:08.080552+00:00",
+    "status": 200,
+    "final_url": "https://coda.jlab.org/drupal/system/files/pdfs/HardwareManual/TS/TS.pdf",
+    "content_type": "application/pdf",
+    "bytes": 3290612,
+    "sha256": "4edf02ff6928f8f4a1efbdffd7654c6febf4d3b4de9e76faf1f6146b9beae406"
+  },
+  {
+    "file": "single_crate.html",
+    "url": "https://coda.jlab.org/drupal/content/example-single-crate-configuration",
+    "utc": "2026-09-10T02:10:08.121203+00:00",
+    "status": 200,
+    "final_url": "https://coda.jlab.org/drupal/content/example-single-crate-configuration",
+    "content_type": "text/html; charset=utf-8",
+    "bytes": 18078,
+    "sha256": "a09254a92f371672511c21ce1c1939773382e031dc027640557108cf36ef7e2b"
+  },
+  {
+    "file": "walkthrough.html",
+    "url": "https://coda.jlab.org/drupal/system/files/coda/3.10/walkthrough/index.html",
+    "utc": "2026-09-10T02:10:08.149992+00:00",
+    "status": 200,
+    "final_url": "https://coda.jlab.org/drupal/system/files/coda/3.10/walkthrough/index.html",
+    "content_type": "text/html;charset=UTF-8",
+    "bytes": 32281,
+    "sha256": "9dc84bb65b7a1713254b770f1af1bf312001c70e1264b0eac8aaaf1c39bb96bb"
+  },
+  {
+    "file": "roc.html",
+    "url": "https://coda.jlab.org/drupal/content/readout-controller-roc",
+    "utc": "2026-09-10T02:10:08.184027+00:00",
+    "status": 200,
+    "final_url": "https://coda.jlab.org/drupal/content/readout-controller-roc",
+    "content_type": "text/html; charset=utf-8",
+    "bytes": 13507,
+    "sha256": "4544c85791e601dd691282c5e485e95c476c47c8167ba8b10dafb1468a74522e"
+  },
+  {
+    "file": "documents.html",
+    "url": "https://coda.jlab.org/drupal/content/documents",
+    "utc": "2026-09-10T02:10:08.221261+00:00",
+    "status": 200,
+    "final_url": "https://coda.jlab.org/drupal/content/documents",
+    "content_type": "text/html; charset=utf-8",
+    "bytes": 16160,
+    "sha256": "db2cee21dd948248a52af9b4cbf9ab5880a6c6331467241e0458201431333fbd"
+  },
+  {
+    "file": "vme_drivers.html",
+    "url": "https://coda.jlab.org/drupal/content/vme-module-drivers",
+    "utc": "2026-09-10T02:10:08.232894+00:00",
+    "status": 200,
+    "final_url": "https://coda.jlab.org/drupal/content/vme-module-drivers",
+    "content_type": "text/html; charset=utf-8",
+    "bytes": 16868,
+    "sha256": "85822f7ff6bf781bcb14856b2ddb043f0f17d1bc11043a964469662fe2452bdc"
+  },
+  {
+    "file": "modules.html",
+    "url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/modules.html",
+    "utc": "2026-09-10T02:15:17.900244+00:00",
+    "status": 200,
+    "final_url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/modules.html",
+    "content_type": "text/html;charset=UTF-8",
+    "bytes": 7314,
+    "sha256": "1c2c42524132f7ad79704481251292122071cfe91b4a5b67e41822b2fa7b4df3"
+  },
+  {
+    "file": "tiLib_8h_source.html",
+    "url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/tiLib_8h_source.html",
+    "utc": "2026-09-10T02:15:17.901541+00:00",
+    "status": 200,
+    "final_url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/tiLib_8h_source.html",
+    "content_type": "text/html;charset=UTF-8",
+    "bytes": 286068,
+    "sha256": "cc2bc48ddb7a38bf64bd514066ce213a1bc51019bf19109f77bf50319f7ba210"
+  },
+  {
+    "file": "group__Status.html",
+    "url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/group__Status.html",
+    "utc": "2026-09-10T02:19:00.321712+00:00",
+    "status": 200,
+    "final_url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/group__Status.html",
+    "content_type": "text/html;charset=UTF-8",
+    "bytes": 97665,
+    "sha256": "56e65fa4f3f8339c5448d2a0a9ef2eafc196962a2616b0398db25c639066469a"
+  },
+  {
+    "file": "group__Config.html",
+    "url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/group__Config.html",
+    "utc": "2026-09-10T02:19:00.323297+00:00",
+    "status": 200,
+    "final_url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/group__Config.html",
+    "content_type": "text/html;charset=UTF-8",
+    "bytes": 76187,
+    "sha256": "48d645f9a9b6dbcf48f734b3b1ec6b6b4ac14051a32c360f4357985a5cf47c1d"
+  },
+  {
+    "file": "group__Readout.html",
+    "url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/group__Readout.html",
+    "utc": "2026-09-10T02:19:00.323658+00:00",
+    "status": 200,
+    "final_url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/group__Readout.html",
+    "content_type": "text/html;charset=UTF-8",
+    "bytes": 31519,
+    "sha256": "cd9322c99e0cc117f70eca716209a1b7224fd7e994cc659824c66aa62d376632"
+  },
+  {
+    "file": "group__IntPoll.html",
+    "url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/group__IntPoll.html",
+    "utc": "2026-09-10T02:19:00.375238+00:00",
+    "status": 200,
+    "final_url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/group__IntPoll.html",
+    "content_type": "text/html;charset=UTF-8",
+    "bytes": 12966,
+    "sha256": "81ceeea8fbdcef71bc483e370e50f90d7ee995236044556c7738f565d33839ca"
+  },
+  {
+    "file": "group__MasterReadout.html",
+    "url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/group__MasterReadout.html",
+    "utc": "2026-09-10T02:19:00.381615+00:00",
+    "status": 200,
+    "final_url": "https://coda.jlab.org/drupal/system/files/coda/LibraryManual/tiLib/group__MasterReadout.html",
+    "content_type": "text/html;charset=UTF-8",
+    "bytes": 8194,
+    "sha256": "812f8b28aca7cf890744dc4b4b6618001a310210c5e855c5b932f7658354ad86"
+  }
+]

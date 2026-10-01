@@ -1,0 +1,56 @@
+[
+  {
+    "file": "doc1001_EDTMnonPoissonBiasCorrectionv2.pdf",
+    "url": "https://hallcweb.jlab.org/DocDB/0010/001001/002/EDTMnonPoissonBiasCorrectionv2.pdf",
+    "final_url": "https://hallcweb.jlab.org/DocDB/0010/001001/002/EDTMnonPoissonBiasCorrectionv2.pdf",
+    "content_type": "application/pdf",
+    "status": "downloaded",
+    "bytes": 375437,
+    "sha256": "8325d24ca8895c7e04a1a6503d155bace7854aac3b3f815c523302a7c8425a0e"
+  },
+  {
+    "file": "doc1022_pooser_live_time.pdf",
+    "url": "https://hallcweb.jlab.org/DocDB/0010/001022/001/pooser_live_time.pdf",
+    "final_url": "https://hallcweb.jlab.org/DocDB/0010/001022/001/pooser_live_time.pdf",
+    "content_type": "application/pdf",
+    "status": "downloaded",
+    "bytes": 5866669,
+    "sha256": "2efecd8cf56819e0a994878e551bd131c7192431695972041849e38ce9e080d1"
+  },
+  {
+    "file": "doc1028_EL_real_trigger_update-03Dec2021.pdf",
+    "url": "https://hallcweb.jlab.org/DocDB/0010/001028/005/EL_real_trigger_update-03Dec2021.pdf",
+    "final_url": "https://hallcweb.jlab.org/DocDB/0010/001028/005/EL_real_trigger_update-03Dec2021.pdf",
+    "content_type": "application/pdf",
+    "status": "downloaded",
+    "bytes": 110718,
+    "sha256": "bbf3bc93e8f1a8bfecefe18c7988d6f23b019ab08650fb88a5db0e83af50aa51"
+  },
+  {
+    "file": "doc1028_trigger_v3.pdf",
+    "url": "https://hallcweb.jlab.org/DocDB/0010/001028/005/trigger_v3.pdf",
+    "final_url": "https://hallcweb.jlab.org/DocDB/0010/001028/005/trigger_v3.pdf",
+    "content_type": "application/pdf",
+    "status": "downloaded",
+    "bytes": 10320844,
+    "sha256": "b6413c6458652a5e763f4a5f30900220574978f18220be9f5ef9e556d9cc7196"
+  },
+  {
+    "file": "doc1063_Combinatorics_in_Estimating_the_Hodo_3of4_Trigger_Livetimev2.pdf",
+    "url": "https://hallcweb.jlab.org/DocDB/0010/001063/002/Combinatorics%20in%20Estimating%20the%20Hodo%203of4%20Trigger%20Livetimev2.pdf",
+    "final_url": "https://hallcweb.jlab.org/DocDB/0010/001063/002/Combinatorics%20in%20Estimating%20the%20Hodo%203of4%20Trigger%20Livetimev2.pdf",
+    "content_type": "application/pdf",
+    "status": "downloaded",
+    "bytes": 617151,
+    "sha256": "5c3d6136c3d608e0276d26639cd3f6afe91f1741f0dc8ec800c9fecf6c591a25"
+  },
+  {
+    "file": "doc1110_DetailedDeadtimeSourcesv2.pdf",
+    "url": "https://hallcweb.jlab.org/DocDB/0011/001110/002/DetailedDeadtimeSourcesv2.pdf",
+    "final_url": "https://hallcweb.jlab.org/DocDB/0011/001110/002/DetailedDeadtimeSourcesv2.pdf",
+    "content_type": "application/pdf",
+    "status": "downloaded",
+    "bytes": 1558631,
+    "sha256": "1d29bc18b47ccacb241694180099b2f787ea8c61bf6592f3f4440028009628a4"
+  }
+]

@@ -60,6 +60,12 @@ Geant4 internals are out of scope for this phase.
 
 ## Working Tree Rules
 
+- Files named only as references are read-only for that task. Do not edit,
+  truncate, delete, rename, or overwrite them in the patch unless the user
+  explicitly authorizes changes to that file. Put new behavior in the target
+  workflow's own files. Record a checksum before work and verify it afterward.
+- For authorized edits, retain a recoverable pre-edit copy and stage patches
+  before atomic replacement so interruption cannot leave a file empty.
 - Do not revert, delete, or overwrite user changes unless explicitly asked.
 - This repository often contains generated ROOT dictionaries, shared objects,
   logs, plots, and CSV outputs. Treat them as artifacts unless the task

@@ -1,0 +1,321 @@
+Update on EDTM Studies
+
+
+        Carlos Yero
+         09/06/17
+                    EDTM Electronics Diagram
+
+
+                                                        # EDTM Accepted Triggers, TDC6=0
+                                 Total Live Time =
+                                                             # EDTM Scaler Counts
+          Scalers     TDCs
+
+EDTM 1
+                         NIM                            pre-Trigger
+                                  Hodoscope
+           NIM           Logic                                            T.I.
+                                  Electronics
+           DISC         FI/FO
+                         “OR”
+EDTM 2
+
+
+
+
+                                         pre-Trigger
+                                                       Scalers
+
+Physics
+                                                       TDCs
+
+
+
+                                                                    # Accepted Triggers
+                                     Computer Live Time =
+                                                                 # pre-Trigger Scaler Counts
+               Some Useful Concepts
+               T = 1/f         Case 1: T > w (or f < 1/w):
+pre-Trigger                        Live Time = 100%
+                 W
+                               Case 2: T = w (or f = 1/w):
+                                    Live Time ~ 50%
+              T.I. BUSY
+                               Case 3: T < w (or f > 1/w):
+                                    Live Time < 50%
+
+
+
+  Physics
+                                  Due to randomness,
+ (Poisson)
+                                 Live Time will NEVER
+                                         be 100%
+
+
+
+  EDTM                                Due to periodicity,
+ (Clock)                              Live Time should
+                                  ALWAYS be 100% (T>w)
+Measured BUSY from SHMS/HMS
+
+
+             SHMS BUSY Output = 220 us
+
+
+                   EDTM pre-Trigger Rates
+             f < 4.545 kHz.     100% Live Time
+
+
+
+
+              HMS BUSY Output = 2.22 ms !!!
+
+
+                 EDTM pre-Trigger Rates
+              f < 450 Hz.     100% Live Time
+SHMS Dead time as seen on O’scope
+
+
+
+
+               BUSY
+
+
+
+     Poisson          EDTM
+SHMS:
+EDTM 1 < 1 kHz
+EDTM 2 < 1 kHz
+
+                                         EDTM 1 Acc.   Computer Live
+    Run #    EDTM 1 (Hz)   EDTM 2 (Hz)
+                                         EDTM 2 Acc.      Time
+    1069         100           100          1.00          93.1%
+    1070         200           100          2.05          95.6%
+    1072         301           100          3.15          95.4%
+    1073         401           100          4.31          95.6%
+    1074         501           100          5.53          95.6%
+    1075         601           100          6.78          94.1%
+    1076         701           100          8.13          95.0%
+    1077         800           100          9.43          93.7%
+
+
+
+
+*Rates are well below the SHMS BUSY output width
+*Computer live time should be at 100%
+                Why is Computer Live Time NOT 100%?
+
+
+*   the pre-Triggers and accepted triggers were fed to a digital scaler
+     (Most direct measure of counts)
+
+
+     Results: pre-Trigger Counts = Trigger Counts (100% Live Time)
+
+
+                Are the SCALERS in SYNC with the TI?
+
+
+                                               Scalers AND TI
+Scalers Start    TI starts
+                                              Stop Processing
+                Processing
+
+
+       OUT of SYNC?
+                                                        ?
+     GO!          TI start                       End Run
+SHMS:
+EDTM 1 > 1 kHz
+EDTM 2 = 1 kHz
+
+                                            EDTM 1 Acc.   Computer Live
+    Run #     EDTM 1 (kHz)   EDTM 2 (kHz)
+                                            EDTM 2 Acc.      Time
+    1078           1              1            0.993         75.1%
+    1079           2              1            2.25          68.3%
+    1080           3              1            8.09          71.7%
+    1081           4            0.999          33.6          64.5%
+    1082           5            0.997          2.60          42.4%
+    1083           6            0.996          14.2          41.5%
+    1084           7            0.996          8.13          39.2%
+    1085           8            0.997          34.09         37.9%
+    1088           9            0.997          72.1          35.6%
+    1089           10           0.996          9.13          27.7%
+
+
+
+
+*Unpredictable behavior beyond ~ 4 kHz edtm rate
+*observation: edtm rate approaches BUSY output width (220 us)
+                                               Software Issue ?
+                                                                               * Is
+  CAEN1190 RAW TDC Slot 19 Channel 42                         h_rawtdc
+
+      3
+                                                        Entries
+                                                        Mean
+                                                                     107365
+                                                                       922.1                  hallc_replay over counting
+  10                                                    Std Dev        74.86
+
+                                                                                EDTM hits?
+  10
+      2
+
+                                                                                                      Cross-check with
+                                                                                                tst1190_main.C script
+  10
+                                                                                          shows agreement in counts
+
+       1
+
+           800      900         1000    1100     1200             1300          hallc_replay software is OK!
+
+T.shms.pHODO_EDTM_tdcTimeRaw
+                                                        Entries      110560
+                                                        Mean           921.6    T.shms.pHODO_EDTM_tdcTimeRaw
+   3
+ 10                                                     Std Dev        74.86                                                            Entries   110560
+                                                                                                                                        Mean         895
+                                                                                                                                        Std Dev     171.1
+
+
+                                                                                   3
+                                                                                 10
+ 102                                                                                                  bin content = 3195
+
+                                                                                 102
+
+
+ 10
+                                                                                 10
+
+
+
+
+      1                                                                               1
+
+                                                                                          0     200      400     600       800   1000    1200
+           800      900        1000     1100     1200             1300
+     SHMS:
+ EDTM < 1 kHz
+Physics <= 1 kHz
+
+                                                Physics Acc.   Computer Live
+    Run #          EDTM (kHz)   Physics (kHz)
+                                                EDTM Acc.         Time
+    1091              0.101         0.095          0.901          92.5%
+                       01
+    1093              0.101         0.501           4.56          76.7%
+    1094              0.101         1.00            9.14          75.0%
+
+
+
+     SHMS:
+ EDTM < 1 kHz
+Physics > 1 kHz
+
+
+                                                Physics Acc.   Computer Live
+    Run #          EDTM (kHz)   Physics (kHz)
+                                                EDTM Acc.         Time
+    1095              0.101         1.407           12.8          68.2%
+    1096              0.101         2.000           18.4          63.8%
+    1097              0.101         2.438           22.4          59.1%
+    1098              0.101         3.052           28.1          54.3%
+    1099              0.101         4.631           41.8          46.8%
+     1100             0.101         5.252           48.8          42.5%
+     1101             0.101         5.988           52.7          38.7%
+     SHMS:
+EDTM >= 1 kHz                     Unpredictable ratios at high EDTM rates
+Physics ~ 1 kHz
+
+                                                  EDTM Acc.        Computer Live
+   Run #          EDTM (kHz)   Physics (kHz)
+                                                  Physics Acc.        Time
+    1103             1.00          0.940             1.37             69.9%
+    1104             2.00          0.965             3.56             59.2%
+    1105             3.00          0.964             9.33             71.6%
+    1106             4.00          0.948             34.25            68.0%
+    1107             5.00          0.974             6.40             43.8%
+    1108             6.00          0.935             10.17            41.3%
+
+
+     SHMS:
+EDTM = 1 kHz
+Physics >=1 kHz
+
+                                               Physics Acc/ EDTM   Computer Live
+   Run #          EDTM (kHz)   Physics (kHz)
+                                                       Acc.           Time
+    1109             1.00          1.024             0.772            69.4%
+    1110             1.00          1.961             1.55             60.3%
+    1111             1.00          2.958             2.40             52.1%
+    1112             1.00          4.032             3.27             43.3%
+    1113             0.999         4.790             4.08             40.1%
+    1114             1.00          6.112             5.22             36.2%
+HMS Live Time Studies
+     HMS:
+EDTM 1 > 1 kHz
+EDTM 2 = 1 kHz
+
+                                                  EDTM 1 Acc.   Computer Live
+    Run #        EDTM 1 (kHz)   EDTM 2 (kHz)
+                                                  EDTM 2 Acc.      Time
+     490             1.00           1.00            1.00           18.4%
+     491             2.00           1.00            2.90           13.0%
+     492             3.00           1.00            9.08           10.6%
+     493             4.00           1.00            68.5           8.86%
+     494             5.00          0.998            2.99           7.06%
+     495             6.00           1.00           879.6           6.11%
+
+
+
+
+                                           HMS long BUSY of 2.2 ms
+                                           is reflected on the small
+                                               live times measured
+                       Deadtime vs. Total Rate Measurements for SHMS
+             30
+   Deadtime (%)
+
+                       SHMS
+
+                       SHMS EDTM
+
+                       deadtime = 100 usec
+
+                       deadtime = 220 usec
+             25        deadtime = 250 usec
+
+                       deadtime = 280 usec
+
+
+
+
+             20
+
+
+
+             15
+
+
+
+             10
+
+
+
+                  5
+
+
+
+                  0
+                   0                  500    1000   1500   2000   2500          3000
+                                                                         Rate (Hz)
+
+
+Plot made by: Mark Jones
+

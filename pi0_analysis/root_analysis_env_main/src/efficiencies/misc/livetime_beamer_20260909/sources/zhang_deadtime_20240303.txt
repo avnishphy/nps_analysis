@@ -1,0 +1,358 @@
+EDTM Calculation for All the runs
+1. Apply the narrow EDTM TDC Time Raw cut automatically for each run (T.hms.hEDTM_tdcTimeRaw bin content>10)
+2. Apply the 2𝜇A beam current cut
+3. Correct for the EDTM scaler rate sudden drop
+4. Ignore the last several closely spaced scaler readouts because they’re not very reliable
+5. Generate root files with information related with the dead-time
+
+
+
+
+               403 runs failed in runs from 1501 to 4826
+                     Most of them are short runs
+                                                                                                        1
+Live Time from Different Methods
+                                  Comparation between different dead time calculation methods
+
+
+       Live Time
+                       1
+
+
+                   0.995
+
+
+                    0.99
+
+
+                   0.985
+
+
+                    0.98
+
+                                                                               EDTM LT
+                   0.975
+                                                                               TI LT
+                                                                               Tdiff Fit LT
+                    0.97
+                                                                               Time Percent LT
+                           4220   4240   4260   4280   4300   4320   4340   4360    4380      4400
+                                                                                        Run Number
+
+                                                                                                     2
+DVCS charge normalized yield                                                                                                                                   dvcs selection: Emax > 2 GeV
+                                                                                                                                                                                 145 < 𝑐𝑙𝑢sT < 155
+                                                                                    TI Live Time Correction
+                                                                                                                                                                                  Include col 1-28
+                                 Charge normalized DVCS events(LD2) / Mean value                                                      Charge normalized DVCS events(LH2) / Mean value
+
+                             random events removed                                                                                   random events removed
+counts / Mean value
+
+
+
+
+                                                                                                        counts / Mean value
+                      1.05
+                                                                                                                              1.05
+                      1.04
+                                                                                                                              1.04
+                      1.03
+                                                                                                                              1.03
+                      1.02
+                                                                                                                              1.02
+                      1.01
+                                                                                                                              1.01
+                         1
+
+                                                                                                                                 1
+                      0.99
+
+                                 Fit result: y = -0.0022x + 1.0408                                                            0.99    Fit result: y = -0.0012x + 1.0383
+                      0.98
+                                 χ2 / NDf = 240.226 / 32                                                                              χ2 / NDf = 32.235 / 11
+                                                                                                                              0.98
+                      0.97
+                             6            8           10             12   14   16     18       20                                    10           15             20         25   30      35           40
+                                                                                    Beam Current (µA)                                                                                 Beam Current / µA
+
+
+                                                               LD2                                                                                                        LH2
+
+                                                                                                                                                                                                  3
+              KinC_x60_4a
+DVCS charge normalized yield                                                                                                                                   dvcs selection: Emax > 2 GeV
+                                                                                                                                                                                 145 < 𝑐𝑙𝑢sT < 155
+                                                                               EDTM Live Time Correction
+                                                                                                                                                                                      Include col 1-28
+                                 Charge normalized DVCS events(LD2) / Mean value                                                      Charge normalized DVCS events(LH2) / Mean value
+
+                             random events removed                                                                                   random events removed
+                                                                                                                              1.06
+counts / Mean value
+
+
+
+
+                                                                                                        counts / Mean value
+                      1.05
+                                                                                                                              1.05
+                      1.04
+                                                                                                                              1.04
+                      1.03
+                                                                                                                              1.03
+                      1.02
+                                                                                                                              1.02
+                      1.01
+
+                                                                                                                              1.01
+                         1
+
+                                                                                                                                 1
+                      0.99
+
+                      0.98       Fit result: y = -0.0020x + 1.0369
+                                                                                                                              0.99    Fit result: y = -0.0013x + 1.0444
+                                 χ2 / NDf = 285.900 / 32                                                                              χ2 / NDf = 57.590 / 14
+                      0.97                                                                                                    0.98
+
+                             6            8           10             12   14   16     18       20                                    10           15            20          25   30       35           40
+                                                                                    Beam Current (µA)                                                                                   Beam Current / µA
+
+
+                                                               LD2                                                                                                        LH2
+
+                                                                                                                                                                                                    4
+              KinC_x60_4a
+DVCS charge normalized yield                                                                     dvcs selection: Emax > 2 GeV
+                                                                                                           145 < 𝑐𝑙𝑢sT < 155
+                                                TI Live Time Correction
+                                                                                                             Include col 1-28
+                                              Charge normalized DVCS events(LD2)
+
+                                    random events removed
+
+
+               counts/mC-1
+                             980
+
+
+
+                             970
+
+
+
+                             960
+
+
+
+                             950
+
+
+
+                             940      Fit result: y = 958.261
+                                      χ2 / NDf = 229.658 / 22
+
+
+                                   4280         4300            4320   4340   4360   4380      4400
+                                                                                        Run Number
+
+
+                                                                 20 uA runs
+
+                                                                                                                      5
+KinC_x60_4a
+DVCS charge normalized yield                                                                     dvcs selection: Emax > 2 GeV
+                                                                                                           145 < 𝑐𝑙𝑢sT < 155
+                                          EDTM Live Time Correction
+                                                                                                             Include col 1-28
+                                              Charge normalized DVCS events(LD2)
+
+                                    random events removed
+
+
+               counts/mC-1
+                             980
+
+
+
+                             970
+
+
+
+                             960
+
+
+
+                             950
+
+
+
+                             940
+                                      Fit result: y = 956.264
+                                      χ2 / NDf = 257.102 / 22
+                             930
+                                   4280         4300            4320   4340   4360   4380      4400
+                                                                                        Run Number
+
+
+                                                                 20 uA runs
+
+                                                                                                                      6
+KinC_x60_4a
+DVCS charge normalized yield                                                                                                                           dvcs selection: Emax > 2 GeV
+                                                                                                                                                                        145 < 𝑐𝑙𝑢sT < 155
+                                                                            TI Live Time Correction
+                                                                                                                                                                             Include col 1-28
+                              Charge normalized DVCS events(LD2) / Mean value                                                 Charge normalized DVCS events(LH2) / Mean value
+
+                             random events removed                                                                           random events removed
+counts / Mean value
+
+
+
+
+                                                                                                counts / Mean value
+                      1.05
+                                                                                                                      1.04
+                      1.04
+                                                                                                                      1.03
+                      1.03
+                                                                                                                      1.02
+                      1.02
+
+                      1.01                                                                                            1.01
+
+                         1                                                                                               1
+
+                      0.99
+                                                                                                                      0.99
+                      0.98
+                              Fit result: y = -0.0012x + 1.0228                                                       0.98    Fit result: y = -0.0007x + 1.0237
+                      0.97    χ2 / NDf = 191.760 / 28                                                                         χ2 / NDf = 46.912 / 18
+
+                                                                                                                      0.97
+                              8           10            12        14   16   18        20                                     10          15            20          25   30      35         40
+                                                                            Beam Current (µA)                                                                                  Beam Current / µA
+
+
+                                                             LD2                                                                                                  LH2
+
+                                                                                                                                                                                           7
+             KinC_x60_4b
+DVCS charge normalized yield                                                                                                                             dvcs selection: Emax > 2 GeV
+                                                                                                                                                                          145 < 𝑐𝑙𝑢sT < 155
+                                                                            EDTM Live Time Correction
+                                                                                                                                                                               Include col 1-28
+                              Charge normalized DVCS events(LD2) / Mean value                                                   Charge normalized DVCS events(LH2) / Mean value
+
+                             random events removed                                                                             random events removed
+counts / Mean value
+
+
+
+
+                                                                                                  counts / Mean value
+                      1.06                                                                                              1.05
+
+
+                                                                                                                        1.04
+                      1.04
+                                                                                                                        1.03
+
+                      1.02                                                                                              1.02
+
+                                                                                                                        1.01
+                         1
+                                                                                                                           1
+
+
+                      0.98                                                                                              0.99
+                              Fit result: y = -0.0017x + 1.0313                                                                 Fit result: y = -0.0008x + 1.0280
+                              χ2 / NDf = 222.280 / 28                                                                   0.98    χ2 / NDf = 57.623 / 18
+                      0.96
+                              8           10            12        14   16     18        20                                     10          15            20          25   30      35         40
+                                                                              Beam Current (µA)                                                                                  Beam Current / µA
+
+
+                                                             LD2                                                                                                    LH2
+
+                                                                                                                                                                                             8
+             KinC_x60_4b
+DVCS charge normalized yield                                                                dvcs selection: Emax > 2 GeV
+                                                                                                      145 < 𝑐𝑙𝑢sT < 155
+                                             TI Live Time Correction
+                                                                                                        Include col 1-28
+                                           Charge normalized DVCS events(LD2)
+
+                                   random events removed
+
+
+               counts/mC-1
+                             970
+
+
+
+                             960
+
+
+
+                             950
+
+
+
+                             940
+
+
+
+                             930   Fit result: y = 950.485
+                                   χ2 / NDf = 174.189 / 21
+
+
+                                      4320             4340      4360   4380   4400       4420
+                                                                                   Run Number
+
+
+                                                              20 uA runs
+
+                                                                                                                 9
+KinC_x60_4b
+DVCS charge normalized yield                                                                dvcs selection: Emax > 2 GeV
+                                                                                                      145 < 𝑐𝑙𝑢sT < 155
+                                       EDTM Live Time Correction
+                                                                                                        Include col 1-28
+                                           Charge normalized DVCS events(LD2)
+
+                                   random events removed
+
+
+               counts/mC-1
+                             970
+
+
+                             960
+
+
+                             950
+
+
+                             940
+
+
+                             930
+
+
+                             920
+                                   Fit result: y = 946.909
+                                   χ2 / NDf = 206.602 / 21
+
+                             910
+                                      4320             4340      4360   4380   4400       4420
+                                                                                   Run Number
+
+
+                                                              20 uA runs
+
+                                                                                                                10
+KinC_x60_4b
+

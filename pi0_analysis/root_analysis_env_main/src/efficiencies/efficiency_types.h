@@ -49,6 +49,7 @@ struct RunConfigRow {
   int run_number = 0;
   std::string kin_old;
   std::string run_type;
+  std::string target;
   std::string prescale_token;
 };
 

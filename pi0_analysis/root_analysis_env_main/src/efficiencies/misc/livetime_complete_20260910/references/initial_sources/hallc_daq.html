@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html class="client-nojs" lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8"/>
+<title>Hall C DAQ - HallCWiki</title>
+<script>document.documentElement.className="client-js";RLCONF={"wgBreakFrames":!1,"wgSeparatorTransformTable":["",""],"wgDigitTransformTable":["",""],"wgDefaultDateFormat":"dmy","wgMonthNames":["","January","February","March","April","May","June","July","August","September","October","November","December"],"wgRequestId":"aqGRFxWTQlweF7P093BhUgAAAhM","wgCSPNonce":!1,"wgCanonicalNamespace":"","wgCanonicalSpecialPageName":!1,"wgNamespaceNumber":0,"wgPageName":"Hall_C_DAQ","wgTitle":"Hall C DAQ","wgCurRevisionId":29688,"wgRevisionId":29688,"wgArticleId":1048,"wgIsArticle":!0,"wgIsRedirect":!1,"wgAction":"view","wgUserName":null,"wgUserGroups":["*"],"wgCategories":[],"wgPageContentLanguage":"en","wgPageContentModel":"wikitext","wgRelevantPageName":"Hall_C_DAQ","wgRelevantArticleId":1048,"wgIsProbablyEditable":!1,"wgRelevantPageIsProbablyEditable":!1,"wgRestrictionEdit":[],"wgRestrictionMove":[]};RLSTATE={"site.styles":"ready","noscript":"ready","user.styles":"ready","user":
+"ready","user.options":"loading","mediawiki.toc.styles":"ready","mediawiki.skinning.content.externallinks":"ready","skins.monobook.responsive":"ready"};RLPAGEMODULES=["site","mediawiki.page.startup","mediawiki.page.ready","mediawiki.toc","skins.monobook.mobile"];</script>
+<script>(RLQ=window.RLQ||[]).push(function(){mw.loader.implement("user.options@1hzgi",function($,jQuery,require,module){/*@nomin*/mw.user.tokens.set({"patrolToken":"+\\","watchToken":"+\\","csrfToken":"+\\"});
+});});</script>
+<link rel="stylesheet" href="/wiki/load.php?lang=en&amp;modules=mediawiki.skinning.content.externallinks%7Cmediawiki.toc.styles%7Cskins.monobook.responsive&amp;only=styles&amp;skin=monobook"/>
+<script async="" src="/wiki/load.php?lang=en&amp;modules=startup&amp;only=scripts&amp;raw=1&amp;skin=monobook"></script>
+<!--[if lt IE 9]><link rel="stylesheet" href="/wiki/skins/MonoBook/resources/screen-desktop.css?d010f" media="screen"/><![endif]-->
+<meta name="generator" content="MediaWiki 1.35.7"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, minimum-scale=0.25, maximum-scale=5.0"/>
+<link rel="shortcut icon" href="/favicon.ico"/>
+<link rel="search" type="application/opensearchdescription+xml" href="/wiki/opensearch_desc.php" title="HallCWiki (en)"/>
+<link rel="EditURI" type="application/rsd+xml" href="https://hallcweb.jlab.org/wiki/api.php?action=rsd"/>
+<link rel="alternate" type="application/atom+xml" title="HallCWiki Atom feed" href="/wiki/index.php?title=Special:RecentChanges&amp;feed=atom"/>
+<!--[if lt IE 9]><script src="/wiki/resources/lib/html5shiv/html5shiv.js"></script><![endif]-->
+</head>
+<body class="mediawiki ltr sitedir-ltr mw-hide-empty-elt ns-0 ns-subject page-Hall_C_DAQ rootpage-Hall_C_DAQ skin-monobook action-view"><div id="globalWrapper"><div id="column-content"><div id="content" class="mw-body" role="main"><a id="top"></a><div class="mw-indicators mw-body-content">
+</div>
+<h1 id="firstHeading" class="firstHeading" lang="en">Hall C DAQ</h1><div id="bodyContent" class="mw-body-content"><div id="siteSub">From HallCWiki</div><div id="contentSub" lang="en" dir="ltr"></div><div id="jump-to-nav"></div><a href="#column-one" class="mw-jump-link">Jump to navigation</a><a href="#searchInput" class="mw-jump-link">Jump to search</a><!-- start content --><div id="mw-content-text" lang="en" dir="ltr" class="mw-content-ltr"><div class="mw-parser-output"><div id="toc" class="toc" role="navigation" aria-labelledby="mw-toc-heading"><input type="checkbox" role="button" id="toctogglecheckbox" class="toctogglecheckbox" style="display:none" /><div class="toctitle" lang="en" dir="ltr"><h2 id="mw-toc-heading">Contents</h2><span class="toctogglespan"><label class="toctogglelabel" for="toctogglecheckbox"></label></span></div>
+<ul>
+<li class="toclevel-1 tocsection-1"><a href="#How_to_kill.2Freset.2Frestart_the_DAQ.2C_or.2C_.22The_DAQ_is_dead.2C_now_what....22"><span class="tocnumber">1</span> <span class="toctext">How to kill/reset/restart the DAQ, or, "The DAQ is dead, now what..."</span></a>
+<ul>
+<li class="toclevel-2 tocsection-2"><a href="#How_to_connect_to_VNC_session"><span class="tocnumber">1.1</span> <span class="toctext">How to connect to VNC session</span></a></li>
+<li class="toclevel-2 tocsection-3"><a href="#If_you_are_connected_to_the_appropriate_DAQ_vncsession"><span class="tocnumber">1.2</span> <span class="toctext">If you are connected to the appropriate DAQ vncsession</span></a></li>
+<li class="toclevel-2 tocsection-4"><a href="#If_the_kill_.2F_start_process_doesn.27t_work"><span class="tocnumber">1.3</span> <span class="toctext">If the kill / start process doesn't work</span></a></li>
+<li class="toclevel-2 tocsection-5"><a href="#If_the_CODA_vnc_session_disappeared_and_.27go_shms_daq.27_doesn.27t_work"><span class="tocnumber">1.4</span> <span class="toctext">If the CODA vnc session disappeared and 'go_shms_daq' doesn't work</span></a>
+<ul>
+<li class="toclevel-3 tocsection-6"><a href="#Further_hints_on_resets"><span class="tocnumber">1.4.1</span> <span class="toctext">Further hints on resets</span></a></li>
+<li class="toclevel-3 tocsection-7"><a href="#If_the_Event_Builder_.28PEB.29_dying_or_not_fully_ending"><span class="tocnumber">1.4.2</span> <span class="toctext">If the Event Builder (PEB) dying or not fully ending</span></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-8"><a href="#How_to_bring_up_the_DAQ_screens_on_a_workstation"><span class="tocnumber">2</span> <span class="toctext">How to bring up the DAQ screens on a workstation</span></a></li>
+<li class="toclevel-1 tocsection-9"><a href="#If_you_need_to_reboot_a_ROC"><span class="tocnumber">3</span> <span class="toctext">If you need to reboot a ROC</span></a>
+<ul>
+<li class="toclevel-2 tocsection-10"><a href="#HMS"><span class="tocnumber">3.1</span> <span class="toctext">HMS</span></a></li>
+<li class="toclevel-2 tocsection-11"><a href="#SHMS"><span class="tocnumber">3.2</span> <span class="toctext">SHMS</span></a></li>
+<li class="toclevel-2 tocsection-12"><a href="#Scaler_servers"><span class="tocnumber">3.3</span> <span class="toctext">Scaler servers</span></a></li>
+<li class="toclevel-2 tocsection-13"><a href="#Rebooting_the_DAQ_computers"><span class="tocnumber">3.4</span> <span class="toctext">Rebooting the DAQ computers</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-14"><a href="#RCGUI_platform_cannot_connect"><span class="tocnumber">4</span> <span class="toctext">RCGUI platform cannot connect</span></a></li>
+<li class="toclevel-1 tocsection-15"><a href="#Live_Time_Display"><span class="tocnumber">5</span> <span class="toctext">Live Time Display</span></a></li>
+<li class="toclevel-1 tocsection-16"><a href="#Setting_Prescales"><span class="tocnumber">6</span> <span class="toctext">Setting Prescales</span></a>
+<ul>
+<li class="toclevel-2 tocsection-17"><a href="#How_to_pick_a_prescale_value"><span class="tocnumber">6.1</span> <span class="toctext">How to pick a prescale value</span></a></li>
+<li class="toclevel-2 tocsection-18"><a href="#If_the_scaler_rates_in_the_prescale_GUI_are_not_updating"><span class="tocnumber">6.2</span> <span class="toctext">If the scaler rates in the prescale GUI are not updating</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-19"><a href="#Expert_notes"><span class="tocnumber">7</span> <span class="toctext">Expert notes</span></a></li>
+<li class="toclevel-1 tocsection-20"><a href="#EDTM_Settings"><span class="tocnumber">8</span> <span class="toctext">EDTM Settings</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Remotely_adjustable_EDTM"><span class="tocnumber">8.1</span> <span class="toctext">Remotely adjustable EDTM</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-21"><a href="#F250_Pedestal_Updates_.28run_before_2024_Fall.29"><span class="tocnumber">9</span> <span class="toctext">F250 Pedestal Updates (run before 2024 Fall)</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Overview"><span class="tocnumber">9.1</span> <span class="toctext">Overview</span></a></li>
+<li class="toclevel-2"><a href="#Taking_Pedestal_Runs"><span class="tocnumber">9.2</span> <span class="toctext">Taking Pedestal Runs</span></a></li>
+<li class="toclevel-2"><a href="#Determining_the_FADC_thresholds"><span class="tocnumber">9.3</span> <span class="toctext">Determining the FADC thresholds</span></a></li>
+<li class="toclevel-2"><a href="#Loading_the_FADC_Thresholds"><span class="tocnumber">9.4</span> <span class="toctext">Loading the FADC Thresholds</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-22"><a href="#F250_Pedestal_Updates_.28run_after_2024_Fall.29"><span class="tocnumber">10</span> <span class="toctext">F250 Pedestal Updates (run after 2024 Fall)</span></a></li>
+</ul>
+</div>
+
+<h1><span id="How_to_kill/reset/restart_the_DAQ,_or,_&quot;The_DAQ_is_dead,_now_what...&quot;"></span><span class="mw-headline" id="How_to_kill.2Freset.2Frestart_the_DAQ.2C_or.2C_.22The_DAQ_is_dead.2C_now_what....22">How to kill/reset/restart the DAQ, or, "The DAQ is dead, now what..."</span></h1>
+<h3><span class="mw-headline" id="How_to_connect_to_VNC_session">How to connect to VNC session</span></h3>
+<p>ssh into cdaq@cdaql1 and from there type:
+go_shms_daq
+</p><p>However, you most likely already have those screens on one of the hcdesk machines.
+</p>
+<h3><span class="mw-headline" id="If_you_are_connected_to_the_appropriate_DAQ_vncsession">If you are connected to the appropriate DAQ vncsession</span></h3>
+<p>If you are connected to the appropriate DAQ vncsession and
+CODA has hung or gotten into a funny state, then bring a terminal window 
+to the foreground and type the appropriate kill and start script, see below.
+</p>
+<pre>&#160;% kcoda
+</pre>
+<p>Wait for a bit (10 sec).  Then restart coda by typing this in the same terminal:
+</p>
+<pre>&#160;% startCoda
+</pre>
+<p>A note about the "platform", which is one of the CODA components that runs on the workstation
+like cdaql4.  It should be running using "systemd".  But things can go wrong here, so see the
+Expert link <a rel="nofollow" class="external free" href="https://hallcweb.jlab.org/wiki/index.php/Hall_C_DAQ#Expert_notes">https://hallcweb.jlab.org/wiki/index.php/Hall_C_DAQ#Expert_notes</a>
+</p><p>You will then have to complete the 'standard' CODA steps:
+</p>
+<ol><li>Choose 'Platform:Connect' from the CODA Run Control GUI menu bar. <a href="/wiki/index.php?title=(Ask_the_RC_which_config_to_use,_but_the_one_that_comes_up_is_the_last_config_that_successfully_ran.)&amp;action=edit&amp;redlink=1" class="new" title="(Ask the RC which config to use, but the one that comes up is the last config that successfully ran.) (page does not exist)">(Ask the RC which config to use, but the one that comes up is the last config that successfully ran.)</a></li>
+<li>Click on the 'Tools' icon.</li>
+<li>Then you should be able to start a run as usual.</li></ol>
+<p>If you the components can't connect, it may be that the platform has a problem.
+</p>
+<h3><span id="If_the_kill_/_start_process_doesn&#39;t_work"></span><span class="mw-headline" id="If_the_kill_.2F_start_process_doesn.27t_work">If the kill / start process doesn't work</span></h3>
+<p>If the system does not restore using the kcoda/startCoda procedure, then you may need to reboot the ROCs
+following this process
+</p>
+<pre><a href="/wiki/index.php?title=Hall_C_DAQ#If_you_need_to_reboot_a_ROC" title="Hall C DAQ">Hall_C_DAQ#If_you_need_to_reboot_a_ROC</a>.
+</pre>
+<h3><span id="If_the_CODA_vnc_session_disappeared_and_&#39;go_shms_daq&#39;_doesn&#39;t_work"></span><span class="mw-headline" id="If_the_CODA_vnc_session_disappeared_and_.27go_shms_daq.27_doesn.27t_work">If the CODA vnc session disappeared and 'go_shms_daq' doesn't work</span></h3>
+<pre>NOTE: Ask a DAQ expert and/or the RC <b>before</b> you do this.  It really should never be needed.
+</pre>
+<p>Check if the VNC server is running on cdaql4, by doing 
+</p>
+<pre>systemctl status vncserver@\:4.service
+</pre>
+<p>If not, call the DAQ expert; Meanwhile, you can try to run the DAQ using x11-forwarding. 
+</p>
+<h4><span class="mw-headline" id="Further_hints_on_resets">Further hints on resets</span></h4>
+<p>If CODA hangs up
+</p>
+<pre>1. Sometimes a simple reset in rcgui fixes it and is the fastest way to restart.  It's the backward-arrow in the rcgui (if you let the mouse hover over the buttons it tells you the name of the button).
+2. But if there's a complaint about a VME crate, you may need to power cycle that crate.   
+</pre>
+<p><br />
+</p>
+<h4><span id="If_the_Event_Builder_(PEB)_dying_or_not_fully_ending"></span><span class="mw-headline" id="If_the_Event_Builder_.28PEB.29_dying_or_not_fully_ending">If the Event Builder (PEB) dying or not fully ending</span></h4>
+<p>There is a chance that when the run ends, the event builder (PEB) will not fully end.  It goes to the state "ending" and the DAQ is frozen.  The solution is simple: find the event builder (usually a light-blue xterm with the title PEB1), and ctrl-C to exit the event builder, and wait.  The PEB will restart on its own and you can start a new run.  Sorry, this is a bug in CODA, and the chance of this happening appears to increase if we run with blockLevel&gt;1 and especially if we use USER-end events.  
+</p><p>Another possibility is that the event builder may die.  This often means there is a memory issue on one of the ROCs.  It is simplest to follow the <a href="/wiki/index.php?title=Hall_C_DAQ#If_you_need_to_reboot_a_ROC" title="Hall C DAQ"> Reboot ROCs</a> procedure to resolve this.
+</p>
+<h1><span class="mw-headline" id="How_to_bring_up_the_DAQ_screens_on_a_workstation">How to bring up the DAQ screens on a workstation</span></h1>
+<p>The DAQs run inside their own VNC sessions.  They can be brought up on any
+of the Hall C Counting House machines by running these commands logged in
+as the 'cdaq' user:  
+</p><p>go_shms_daq  ... HMS, SHMS, LAD, GEM
+</p><p>HMS standalone&#160;?  Deprecated, but see <a rel="nofollow" class="external free" href="https://hallcweb.jlab.org/wiki/index.php/Hall_C_DAQ#Expert_notes">https://hallcweb.jlab.org/wiki/index.php/Hall_C_DAQ#Expert_notes</a>
+</p><p>Generally, a crate can only operate with one running DAQ.
+</p>
+<h1><span class="mw-headline" id="If_you_need_to_reboot_a_ROC">If you need to reboot a ROC</span></h1>
+<p>If a ROC gets in a really bad state, its crate may need to be power cycled using the procedure and links below.
+</p>
+<pre>It pays to be a little patient with this process.  Stagger turning the crate power back on by 10--20 seconds.
+For example, turn on hccrate01, wait 10s, turn on hccrate02, wait 10s, etc...
+</pre>
+<pre><b>NOTE</b>: Open a browser window in the CODA VNC session (usually there is one already running in the left-most workspace).
+      All of the crate reset links are there along with stored <b>username and password login credentials</b>.
+</pre>
+<pre><b>Make an hclog when you do this!</b>
+</pre>
+<h4><span class="mw-headline" id="HMS">HMS</span></h4>
+<p>The HMS has three ROCs.  Follow these links to power-cycle:
+</p>
+<ul><li><a rel="nofollow" class="external text" href="http://hccrate01">ROC01</a> (Counting House Electronics Room)</li>
+<li><a rel="nofollow" class="external text" href="http://hccrate03">ROC03</a> (HMS Electronics Hut -- the wire chambers)</li>
+<li><a rel="nofollow" class="external text" href="http://hccrate05">ROC05</a> (Counting House Electronics Room)  --- On APC switch.  See note below.</li></ul>
+<p><b>ROC5/hccrate05</b> is on an APC switch.  Pick the 'Outlet Status' Tab; click on <i>On</i> to the left of <i>hccrate05</i> on Outlet 1.  Set the <i>Control Action</i> to <i>Reboot Delayed</i>, click the checkbox to the left of <i>hccrate05</i>, then click the <i>Next&gt;&gt;</i> button and click <i>Apply</i> on the next screen.  <i>If</i> you know where hccrate05 is in the Counting House Electronics Room, you can power cycle it with the switch on the front panel.  Turn it off, wait 5 seconds, and turn it
+back on.
+</p>
+<h4><span class="mw-headline" id="SHMS">SHMS</span></h4>
+<ul><li><a rel="nofollow" class="external text" href="http://hccrate02.jlab.org">ROC02</a> (Counting House Electronics Room)</li>
+<li><a rel="nofollow" class="external text" href="http://hccrate04.jlab.org">ROC04</a> (SHMS hut --- Shower and pre-Shower FADC crate)</li>
+<li><a rel="nofollow" class="external text" href="http://hccrate06.jlab.org">ROC06</a> (SHMS hut --- Drift Chamber crate)</li>
+<li><a rel="nofollow" class="external text" href="http://hccrate08.jlab.org">ROC08</a> (Counting House Electronics Room)</li></ul>
+<p><br />
+Reboot them by clicking on the link and cycling the power. Use the "Main Power" button, not the VME SYSRESET button. <b>Wait for 60s after clicking the 'power' button <i>before</i> clicking it again</b>.  The page will automatically refresh when it is ready. After power on the crate, it would take 2 minutes for the ROC to come back. CODA would show the ROC is connected again.
+</p>
+<h4><span class="mw-headline" id="Scaler_servers">Scaler servers</span></h4>
+<p>The scaler servers on hcvme01, hcvme02, hcvme04, hcvme05, hcvme08 are running and checked by a cron job every 5 minutes (2 and 7 of the 10 minutes); If the scaler server is not running, CODA would go into an error state when trying to start a run. Please be patient to wait until the scaler server running on the ROC after rebooting. 
+</p>
+<h4><span class="mw-headline" id="Rebooting_the_DAQ_computers">Rebooting the DAQ computers</span></h4>
+<p>In rare instances, we have to reboot the cdaql5 (HMS) and/or the cdaql4 (coinc or SHMS) computers. This is best done under the guidance of the DAQ expert, but the link to the general procedure is documented here: <a rel="nofollow" class="external text" href="https://logbooks.jlab.org/entry/4123883">https://logbooks.jlab.org/entry/4123883</a>
+</p>
+<h1><span class="mw-headline" id="RCGUI_platform_cannot_connect">RCGUI platform cannot connect</span></h1>
+<p>go to expert notes down in this page, and look at how to restart platform instructions
+</p>
+<h1><span class="mw-headline" id="Live_Time_Display">Live Time Display</span></h1>
+<p>In should be visible on rcgui.  There is tab in the lower right area of the GUI.
+</p>
+<h1><span class="mw-headline" id="Setting_Prescales">Setting Prescales</span></h1>
+<div class="thumb tright"><div class="thumbinner" style="width:302px;"><a href="/wiki/index.php?title=File:Prescales.png" class="image"><img alt="Prescales.png" src="/wiki/images/thumb/f/f4/Prescales.png/300px-Prescales.png" decoding="async" width="300" height="243" class="thumbimage" srcset="/wiki/images/thumb/f/f4/Prescales.png/450px-Prescales.png 1.5x, /wiki/images/f/f4/Prescales.png 2x" /></a>  <div class="thumbcaption"><div class="magnify"><a href="/wiki/index.php?title=File:Prescales.png" class="internal" title="Enlarge"></a></div></div></div></div>
+<p>Run the prescale GUI using one of these commands from a terminal in the DAQ VNC session [<b>make sure you are using hccoda@cdaql4</b>].  <b>Do this from a terminal in the appropriate CODA VNC session.</b>
+</p>
+<pre>&#160;% go_prescale_SHMS
+</pre>
+<pre>Sometimes go_prescale_SHMS returns an error message below.  Sadly, this
+might happen several times in a row.  Keep trying to start it.  Eventually
+it will start and it will work.  The long-term solution might be to rewrite
+this GUI, since the original author / maintainer is long gone.
+
+Error in startup script: can't read "config ... (etc)"
+</pre>
+<h2><span class="mw-headline" id="How_to_pick_a_prescale_value">How to pick a prescale value</span></h2>
+<p>The relationship between the prescale setting and the actual prescale value is somewhat complicated.  You can click on the 'Help' button for details.
+</p>
+<ul><li>The best way to do it is to type in the prescaled rate you <i>want</i> into the <b>Target Rate</b> field and hit return.  The <b>Prescaled Rate</b> field will update to show you the rate the DAQ will be accepting.
+<ul><li>You can try adding or subtracting '1' to the 'Value' field if you want to try to tweak the <b>Prescaled Rate</b> a bit.</li></ul></li></ul>
+<pre> NOTE: <i>You MUST hit <b>SAVE</b> *before* "PreStart" the run!</i>
+</pre>
+<p>Details of prescale are in coda-flags.dat attached to each Start-of-Run logbook entry
+</p>
+<pre>  The new TI has 4 bits to prescale the individual inputs.
+</pre>
+<dl><dt>Set psN=-1     to DISABLE that trigger.</dt>
+<dt>Set psN=0      for NO PRESCALING (ie. accept all)</dt>
+<dt>The way the input rates are prescaled follows</dt>
+<dd></dd>
+<dt>input-rate/(2^{val - 1} + 1)</dt>
+<dt>So, for 10,000 Hz on the input</dt>
+<dd></dd>
+<dt>val       scale_factor      prescaled rate example</dt>
+<dt>0   -&gt;        1           100kHz -&gt;100000 Hz</dt>
+<dt>1   -&gt;        2           100kHz -&gt; 50000 Hz</dt>
+<dt>2   -&gt;        3           100kHz -&gt; 33333 Hz</dt>
+<dt>3   -&gt;        5           100kHz -&gt; 20000 Hz</dt>
+<dt>4   -&gt;        9           100kHz -&gt; 11111 Hz</dt>
+<dt>5   -&gt;       17           100kHz -&gt;  5882 Hz</dt>
+<dt>6   -&gt;       33           100kHz -&gt;  3030 Hz</dt>
+<dt>16   -&gt;    32769           100kHz -&gt;     3 Hz</dt></dl>
+<h2><span class="mw-headline" id="If_the_scaler_rates_in_the_prescale_GUI_are_not_updating">If the scaler rates in the prescale GUI are not updating</span></h2>
+<p>This can happen after CODA gets in a funny state, for example.
+</p>
+<ul><li>Quit the prescale GUI (Exit button)</li>
+<li>Run the GUI again (as above).</li></ul>
+<h1><span class="mw-headline" id="Expert_notes">Expert notes</span></h1>
+<p>Most shifter workers may not need these notes.  But it's a reminder to the experts.
+</p>
+<ul><li>What if cdaql4 goes bad&#160;?</li></ul>
+<p>We should still be able to run on cdaql5 or another cdaq.  Just ensure that the environment is valid (see below).  There could be
+some remnant in the log-in scripts or in coda scripts which relies on cdaql4; ideally not.
+</p>
+<pre>[hccoda@cdaql4 ~]$  echo $EXPID
+LAD
+
+[hccoda@cdaql4 ~]$  echo $SESSION
+LAD
+</pre>
+<p>and these are currently "HMS" on cdaql5, which is sometimes used for HMS standalone DAQ.  (actually this is deprecated).
+</p>
+<ul><li>CODA configurations for the LAD experiment: <a rel="nofollow" class="external free" href="https://logbooks.jlab.org/entry/4339540">https://logbooks.jlab.org/entry/4339540</a></li>
+<li><font color="magenta">Scripts.</font></li></ul>
+<p>The hall C philosophy is to call one script at the start of run and call another script at the end of run.  These scripts, in turn, call several other scripts.
+CODA experts familiar with jcedit will realize what the following snapshots mean. Caution! only experts should change things
+How scripts tied to event builder PEB  <a rel="nofollow" class="external free" href="http://userweb.jlab.org/~rom/hallc/PEB_process.png">http://userweb.jlab.org/~rom/hallc/PEB_process.png</a>
+Process 1 is start_logruninfo.sh and various versions of that like start_logruninfo_nps_coin.sh <a rel="nofollow" class="external free" href="http://userweb.jlab.org/~rom/hallc/PEB_process1_start_logruninfo.sh.png">http://userweb.jlab.org/~rom/hallc/PEB_process1_start_logruninfo.sh.png</a>
+Process 2 is the end-of-run script <a rel="nofollow" class="external free" href="http://userweb.jlab.org/~rom/hallc/process2_end_of_run-master.sh.png">http://userweb.jlab.org/~rom/hallc/process2_end_of_run-master.sh.png</a>
+Look at what's actually in the database, as these things tend to evolve.  Experts only.
+</p><p>MSS copying script.  All the "action" is on hccoda@cdaql4.  It's a cron job on the coda account, type "crontab -l" to see. Here is a detailed log entry about the scripts: <a rel="nofollow" class="external free" href="https://logbooks.jlab.org/entry/4330500">https://logbooks.jlab.org/entry/4330500</a>  
+</p>
+<h1><span class="mw-headline" id="EDTM_Settings">EDTM Settings</span></h1>
+<h2><span class="mw-headline" id="Remotely_adjustable_EDTM">Remotely adjustable EDTM</span></h2>
+<p>Currently set with a a command-line helper <code>go_edtm</code><b></b>
+</p>
+<ul><li>There is a command-line helper <code>go_edtm</code> to set/readback this PV.  (the prescale_GUI does not set it at the moment.)</li>
+<li>More details are in this log entry:  <a rel="nofollow" class="external text" href="https://logbooks.jlab.org/entry/3893007">EDTM pulser switched to cdaqpi1 output</a>
+<ul><li>The RPi that controls this is cdaqpi1 which runs an EPICS softIOC.</li></ul></li></ul>
+<p><br />
+</p>
+<h1><span id="F250_Pedestal_Updates_(run_before_2024_Fall)"></span><span class="mw-headline" id="F250_Pedestal_Updates_.28run_before_2024_Fall.29">F250 Pedestal Updates (run before 2024 Fall)</span></h1>
+<h2><span class="mw-headline" id="Overview">Overview</span></h2>
+<ul><li>This is for the old Hall C firmware (before 2024 Fall)</li></ul>
+<p>This How-To discusses the necessary steps required in order to take a pedestal run utilizing the <a rel="nofollow" class="external text" href="https://hallcweb.jlab.org/wiki/index.php/Hall_C_DAQ">single arm DAQ's</a>.  Furthermore, the steps required in-order to determine the appropriate FADC thresholds are discussed.
+</p>
+<pre><b>NOTE</b>: This is for <b>EXPERTS ONLY</b>.  If this is done poorly and not caught the FADCs will not work correctly and the data maybe garbage!
+</pre>
+<h2><span class="mw-headline" id="Taking_Pedestal_Runs">Taking Pedestal Runs</span></h2>
+<ul><li>Ensure that both single arm DAQ's are configured with the "fadcnothr" flag, which is activated via. of the pre-scale GUI, and the configuration has been saved
+<ul><li>The FADC's can either be in mode 9 or 10</li></ul></li>
+<li>With both arms take at least 1000 cosmic or EDTM triggers and note the run numbers</li></ul>
+<h2><span class="mw-headline" id="Determining_the_FADC_thresholds">Determining the FADC thresholds</span></h2>
+<ul><li>The following example will illustrate the necessary steps required to determine the FADC thresholds for SHMS ROC 2</li>
+<li>On the SHMS side, this procedure will have to be repeated for both ROC's 2 and 4</li>
+<li>On the HMS side, this procedure only has to be executed for ROC 1</li>
+<li>With the pedestal runs complete, open a terminal and SSH into cdaql1</li></ul>
+<pre>ssh cdaq@cdaql1
+</pre>
+<ul><li>Setup the hallc-online analyzer</li></ul>
+<pre>go_analysis
+</pre>
+<ul><li>Descend into the hallc-online hcana/podd directory</li></ul>
+<pre>cd ../hcana/podd/hana_decode/apps
+</pre>
+<ul><li>Exectue the tstfadc_main.C script</li></ul>
+<pre>./tstfadc
+</pre>
+<ul><li>Input the appropriate configurations: raw data file location, run number, number of events, spectrometer name, crate number</li></ul>
+<pre>Enter the location of the raw CODA file (raw, raw.copiedtotape): raw
+Enter a Run Number (-1 to exit): 1537 
+Enter Number of Events to Analyze (-1 = All): -1
+All Events in Run 1537 Will be Analayzed
+Enter the Spectrometer Name (hms or shms): shms
+Enter the Crate Number to be Analyzed: 2
+</pre>
+<ul><li>If successful, the for file "fadc_data.root" will have been produced</li>
+<li>In order to produce the threshold text file "thresholds.dat" one needs to execute the calc_thresh_hallc.C ROOT script</li></ul>
+<pre>root -l ./calc_thresh_hallc.cxx
+</pre>
+<ul><li>Input the appropriate configurations: spectrometer name, crate number, FADC mode, threshold in channels</li></ul>
+<pre>Enter the Spectrometer Name (hms or shms): shms
+Enter the Crate Number to be Analyzed: 2
+Enter The Mode of The F250's: 9
+Enter The Number of Channels Above Baseline the Threshold Should Be [40 (10 mV) recommended]: 40
+</pre>
+<ul><li>A ROOT file "fadc_ped_data.root" will have been created which contains the final fits and determines the baseline values and thus the threshold values which are written to the text file "thresholds.dat"</li>
+<li>Open the "thresholds.dat" file and have a sanity check the thresholds
+<ul><li>Most FADC channels should have thresholds set to 400-700 channels</li>
+<li>For channels set to 4095, these channels are empty</li>
+<li>For ROC2 slot 14 channels 12-15 are set to 1 by default since they are fast raster FADC channels</li>
+<li>For ROC4 slot 18 channels 12-15 are set to 1 by default since they are fast raster FADC channels</li></ul></li>
+<li>In the event that a few thresholds are set to unrealistic values, simply open the "fadc_ped_data.root" file and perform the fit manually if possible
+<ul><li>If a manual fit is not possible, then a new pedestal run with more statistics is recommended</li></ul></li></ul>
+<h2><span class="mw-headline" id="Loading_the_FADC_Thresholds">Loading the FADC Thresholds</span></h2>
+<ul><li>These instructions only pertain to the HMS at the moment.  For NPS, it is different.</li>
+<li>In order to have the CRL's load the appropriate FADC threshold files the newly created "thresholds.dat" file must be placed in the correct location</li>
+<li>SSH into cdaql1 as coda</li></ul>
+<pre>ssh coda@cdaql1
+</pre>
+<ul><li>Descend into the respective thresholds directory for the appropriate ROC</li></ul>
+<pre>cd coda/config_files/SHMS/ROC02/thresholds
+</pre>
+<ul><li>Copy the newly created "thresholds.dat" into the current working directory and tag the "thresholds.dat" file with the current date</li></ul>
+<pre>cp hana_decode/thresholds.dat thresholds_DDMONYYYY.dat
+</pre>
+<ul><li>Ascend one directory and symbolically link the newly created thresholds file as "thresholds.dat"</li></ul>
+<pre>cd ../
+ln -fs thresholds/thresholds_DDMONYYYY.dat thresholds.dat
+</pre>
+<h1><span id="F250_Pedestal_Updates_(run_after_2024_Fall)"></span><span class="mw-headline" id="F250_Pedestal_Updates_.28run_after_2024_Fall.29">F250 Pedestal Updates (run after 2024 Fall)</span></h1>
+<pre><b>NOTE</b>: This is for <b>EXPERTS ONLY</b>.  If this is done poorly and not caught the FADCs will not work correctly and the data maybe garbage!
+</pre>
+<p>With the new FADC firmware, there is a program in the FADC library that will calculate the pedestals for all the FADC channels of that ROC, and the output is saved in a file that it's format in a way for the FADC configuration file.
+</p>
+<ol><li>You need to ssh into the ROC where the FADCs are</li>
+<li>cd linuxvme/fadc/test</li>
+<li>./fadc250peds &lt;FADC configuration file&gt; &lt;output file&gt;</li></ol>
+<!-- 
+NewPP limit report
+Cached time: 20260909170215
+Cache expiry: 86400
+Dynamic content: false
+Complications: []
+CPU time usage: 0.032 seconds
+Real time usage: 0.044 seconds
+Preprocessor visited node count: 115/1000000
+Post‐expand include size: 4537/2097152 bytes
+Template argument size: 0/2097152 bytes
+Highest expansion depth: 3/40
+Expensive parser function count: 0/100
+Unstrip recursion depth: 0/20
+Unstrip post‐expand size: 747/5000000 bytes
+-->
+<!--
+Transclusion expansion time report (%,ms,calls,template)
+100.00%   10.464      1 -total
+ 70.51%    7.378      1 Hall_C_EDTM_Pulser
+ 28.49%    2.981      1 Hall_C_Pedestal_Runs_and_Determining_FADC_Thresholds
+-->
+
+<!-- Saved in parser cache with key hallcwiki:pcache:idhash:1048-0!canonical and timestamp 20260909170215 and revision id 29688
+ -->
+</div></div><div class="printfooter">
+Retrieved from "<a dir="ltr" href="https://hallcweb.jlab.org/wiki/index.php?title=Hall_C_DAQ&amp;oldid=29688">https://hallcweb.jlab.org/wiki/index.php?title=Hall_C_DAQ&amp;oldid=29688</a>"</div>
+<div id="catlinks" class="catlinks catlinks-allhidden" data-mw="interface"></div><!-- end content --><div class="visualClear"></div></div></div><div class="visualClear"></div></div><div id="column-one" lang="en" dir="ltr"><h2>Navigation menu</h2><div role="navigation" class="portlet" id="p-cactions" aria-labelledby="p-cactions-label"><h3 id="p-cactions-label" lang="en" dir="ltr">Page actions</h3><div class="pBody"><ul lang="en" dir="ltr"><li id="ca-nstab-main" class="selected"><a href="/wiki/index.php?title=Hall_C_DAQ" title="View the content page [c]" accesskey="c">Page</a></li><li id="ca-talk" class="new"><a href="/wiki/index.php?title=Talk:Hall_C_DAQ&amp;action=edit&amp;redlink=1" rel="discussion" title="Discussion about the content page (page does not exist) [t]" accesskey="t">Discussion</a></li><li id="ca-viewsource"><a href="/wiki/index.php?title=Hall_C_DAQ&amp;action=edit" title="This page is protected.&#10;You can view its source [e]" accesskey="e">View source</a></li><li id="ca-history"><a href="/wiki/index.php?title=Hall_C_DAQ&amp;action=history" title="Past revisions of this page [h]" accesskey="h">History</a></li></ul></div></div><div role="navigation" class="portlet" id="p-cactions-mobile" aria-labelledby="p-cactions-mobile-label"><h3 id="p-cactions-mobile-label" lang="en" dir="ltr">Page actions</h3><div class="pBody"><ul lang="en" dir="ltr"><li id="ca-nstab-main-mobile" class="selected"><a href="/wiki/index.php?title=Hall_C_DAQ" title="Page">Page</a></li><li id="ca-talk-mobile" class="new"><a href="/wiki/index.php?title=Talk:Hall_C_DAQ&amp;action=edit&amp;redlink=1" rel="discussion" title=" (page does not exist)">Discussion</a></li><li id="ca-more"><a href="#p-cactions">More</a></li><li id="ca-tools"><a href="#p-tb" title="Tools">Tools</a></li><li id="ca-languages"><a href="#p-lang" title="In other languages">In other languages</a></li></ul></div></div><div role="navigation" class="portlet" id="p-personal" aria-labelledby="p-personal-label"><h3 id="p-personal-label" lang="en" dir="ltr">Personal tools</h3><div class="pBody"><ul lang="en" dir="ltr"><li id="pt-login"><a href="/wiki/index.php?title=Special:UserLogin&amp;returnto=Hall+C+DAQ" title="You are encouraged to log in; however, it is not mandatory [o]" accesskey="o">Log in</a></li></ul></div></div><div class="portlet" id="p-logo" role="banner"><a href="/wiki/index.php?title=Main_Page" class="mw-wiki-logo" title="Visit the main page"></a></div><div id="sidebar"><div role="navigation" class="portlet generated-sidebar" id="p-navigation" aria-labelledby="p-navigation-label"><h3 id="p-navigation-label" lang="en" dir="ltr">Navigation</h3><div class="pBody"><ul lang="en" dir="ltr"><li id="n-Hall-C-JLab-Page"><a href="https://www.jlab.org/Hall-C/" rel="nofollow">Hall C JLab Page</a></li><li id="n-Wiki-Main-Page"><a href="/wiki/index.php?title=Main_Page">Wiki Main Page</a></li><li id="n-Analyzer"><a href="/wiki/index.php?title=Analyzer">Analyzer</a></li><li id="n-recentchanges"><a href="/wiki/index.php?title=Special:RecentChanges" title="A list of recent changes in the wiki [r]" accesskey="r">Recent changes</a></li><li id="n-randompage"><a href="/wiki/index.php?title=Special:Random" title="Load a random page [x]" accesskey="x">Random page</a></li><li id="n-help"><a href="https://www.mediawiki.org/wiki/Special:MyLanguage/Help:Contents" title="The place to find out">Help</a></li></ul></div></div><div role="navigation" class="portlet generated-sidebar" id="p-Shift_Crew_Information" aria-labelledby="p-Shift_Crew_Information-label"><h3 id="p-Shift_Crew_Information-label" lang="en" dir="ltr">Shift Crew Information</h3><div class="pBody"><ul lang="en" dir="ltr"><li id="n-Shift-HowTo"><a href="/wiki/index.php?title=Information_for_Shift_Takers">Shift HowTo</a></li><li id="n-Experts-On-Call"><a href="/wiki/index.php?title=Experts_on_call">Experts On Call</a></li><li id="n-Live-Status-Pages"><a href="https://hallcweb.jlab.org/live_status/" rel="nofollow">Live Status Pages</a></li><li id="n-Mya-Plotting-Tool"><a href="https://epicsweb.jlab.org/wave" rel="nofollow">Mya Plotting Tool</a></li></ul></div></div><div role="search" class="portlet" id="p-search"><h3 id="p-search-label" lang="en" dir="ltr"><label for="searchInput">Search</label></h3><div class="pBody" id="searchBody"><form action="/wiki/index.php" id="searchform"><input type="hidden" value="Special:Search" name="title"/><input type="search" name="search" placeholder="Search HallCWiki" title="Search HallCWiki [f]" accesskey="f" id="searchInput"/><input type="submit" name="go" value="Go" title="Go to a page with this exact name if it exists" id="searchGoButton" class="searchButton"/>  <input type="submit" name="fulltext" value="Search" title="Search the pages for this text" id="mw-searchButton" class="searchButton"/></form></div></div><div role="navigation" class="portlet" id="p-tb" aria-labelledby="p-tb-label"><h3 id="p-tb-label" lang="en" dir="ltr">Tools</h3><div class="pBody"><ul lang="en" dir="ltr"><li id="t-whatlinkshere"><a href="/wiki/index.php?title=Special:WhatLinksHere/Hall_C_DAQ" title="A list of all wiki pages that link here [j]" accesskey="j">What links here</a></li><li id="t-recentchangeslinked"><a href="/wiki/index.php?title=Special:RecentChangesLinked/Hall_C_DAQ" rel="nofollow" title="Recent changes in pages linked from this page [k]" accesskey="k">Related changes</a></li><li id="t-specialpages"><a href="/wiki/index.php?title=Special:SpecialPages" title="A list of all special pages [q]" accesskey="q">Special pages</a></li><li id="t-print"><a href="javascript:print();" rel="alternate" title="Printable version of this page [p]" accesskey="p">Printable version</a></li><li id="t-permalink"><a href="/wiki/index.php?title=Hall_C_DAQ&amp;oldid=29688" title="Permanent link to this revision of the page">Permanent link</a></li><li id="t-info"><a href="/wiki/index.php?title=Hall_C_DAQ&amp;action=info" title="More information about this page">Page information</a></li></ul></div></div></div><a href="#sidebar" title="navigation" class="menu-toggle" id="sidebar-toggle"></a><a href="#p-personal" title="user tools" class="menu-toggle" id="p-personal-toggle"></a><a href="#globalWrapper" title="back to top" class="menu-toggle" id="globalWrapper-toggle"></a></div><!-- end of the left (by default at least) column --><div class="visualClear"></div><div id="footer" class="mw-footer" role="contentinfo" lang="en" dir="ltr"><div id="f-poweredbyico" class="footer-icons"><a href="https://www.mediawiki.org/"><img src="/wiki/resources/assets/poweredby_mediawiki_88x31.png" alt="Powered by MediaWiki" srcset="/wiki/resources/assets/poweredby_mediawiki_132x47.png 1.5x, /wiki/resources/assets/poweredby_mediawiki_176x62.png 2x" width="88" height="31" loading="lazy"/></a></div><ul id="f-list"><li id="lastmod"> This page was last edited on 6 August 2026, at 10:39.</li><li id="privacy"><a href="/wiki/index.php?title=HallCWiki:Privacy_policy" title="HallCWiki:Privacy policy">Privacy policy</a></li><li id="about"><a href="/wiki/index.php?title=HallCWiki:About" title="HallCWiki:About">About HallCWiki</a></li><li id="disclaimer"><a href="/wiki/index.php?title=HallCWiki:General_disclaimer" title="HallCWiki:General disclaimer">Disclaimers</a></li></ul></div></div>
+<script>(RLQ=window.RLQ||[]).push(function(){mw.config.set({"wgPageParseReport":{"limitreport":{"cputime":"0.032","walltime":"0.044","ppvisitednodes":{"value":115,"limit":1000000},"postexpandincludesize":{"value":4537,"limit":2097152},"templateargumentsize":{"value":0,"limit":2097152},"expansiondepth":{"value":3,"limit":40},"expensivefunctioncount":{"value":0,"limit":100},"unstrip-depth":{"value":0,"limit":20},"unstrip-size":{"value":747,"limit":5000000},"timingprofile":["100.00%   10.464      1 -total"," 70.51%    7.378      1 Hall_C_EDTM_Pulser"," 28.49%    2.981      1 Hall_C_Pedestal_Runs_and_Determining_FADC_Thresholds"]},"cachereport":{"timestamp":"20260909170215","ttl":86400,"transientcontent":false}}});mw.config.set({"wgBackendResponseTime":299});});</script></body></html>

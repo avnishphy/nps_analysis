@@ -20,8 +20,9 @@ import os
 import platform
 import sys
 from dataclasses import asdict, dataclass, field
+from multiprocessing import get_all_start_methods, get_context
 from pathlib import Path
-from typing import Sequence
+from typing import Callable, Sequence
 
 import numpy as np
 import scipy
@@ -46,6 +47,7 @@ except ImportError:  # Direct execution from src/background_fit.
 
 COMPONENTS = ("pi0", "combinatorial", "horizontal", "vertical", "random", "diagonal")
 BACKGROUND_GROUPS = ("combinatorial", "horizontal_vertical", "random", "diagonal")
+_PARALLEL_OBJECTIVE: Callable[[np.ndarray], float] | None = None
 
 
 def _require(condition: bool, message: str) -> None:
@@ -61,6 +63,7 @@ class JointMassFitConfig:
     starts: int = 3
     seed: int = 20261001
     coordinate_cycles: int = 2
+    nproc: int = 1
     mass_maxiter: int = 120
     timing_refit_maxiter: int = 25
     optimizer_tolerance: float = 2.0e-7
@@ -76,6 +79,8 @@ class JointMassFitConfig:
             raise ValueError(f"unsupported combinatorial model: {self.combinatorial_model}")
         if self.starts < 1 or self.coordinate_cycles < 1:
             raise ValueError("starts and coordinate_cycles must be positive")
+        if self.nproc < 1:
+            raise ValueError("nproc must be positive")
         if self.mass_maxiter < 1 or self.timing_refit_maxiter < 1:
             raise ValueError("mass and timing iteration limits must be positive")
         if self.yield_em_maxiter < 1 or self.yield_em_tolerance <= 0.0:
@@ -525,6 +530,62 @@ def _load_timing_states(
     return output
 
 
+def _scipy_supports_parallel_workers() -> bool:
+    numbers = scipy.__version__.split(".")
+    try:
+        return (int(numbers[0]), int(numbers[1])) >= (1, 16)
+    except (IndexError, ValueError):
+        return False
+
+
+def _evaluate_parallel_objective(values: np.ndarray) -> float:
+    if _PARALLEL_OBJECTIVE is None:
+        raise RuntimeError("parallel objective was not initialized")
+    return _PARALLEL_OBJECTIVE(values)
+
+
+def _minimize_lbfgsb(
+    objective: Callable[[np.ndarray], float], start: np.ndarray,
+    bounds: Sequence[tuple[float, float]], maxiter: int,
+    config: JointMassFitConfig,
+) -> object:
+    options: dict[str, object] = {
+        "maxiter": maxiter,
+        "ftol": config.optimizer_tolerance,
+        "gtol": config.optimizer_tolerance,
+        "maxls": 40,
+    }
+    if config.nproc == 1:
+        return minimize(
+            objective, start, method="L-BFGS-B", bounds=bounds,
+            options=options)
+    _require(
+        _scipy_supports_parallel_workers(),
+        "nproc > 1 requires SciPy >= 1.16; use the managed analysis Python",
+    )
+    _require(
+        "fork" in get_all_start_methods(),
+        "nproc > 1 requires the POSIX fork multiprocessing start method",
+    )
+    # Forked workers share the read-only fit dataset through copy-on-write and
+    # bypass Python's global interpreter lock during numerical differentiation.
+    global _PARALLEL_OBJECTIVE
+    _PARALLEL_OBJECTIVE = objective
+    try:
+        with get_context("fork").Pool(processes=config.nproc) as pool:
+            def parallel_map(
+                _scipy_function: Callable[[np.ndarray], float],
+                values: Sequence[np.ndarray],
+            ) -> list[float]:
+                return pool.map(_evaluate_parallel_objective, values)
+            options["workers"] = parallel_map
+            return minimize(
+                objective, start, method="L-BFGS-B", bounds=bounds,
+                options=options)
+    finally:
+        _PARALLEL_OBJECTIVE = None
+
+
 def _fit_mass_block(
     start: np.ndarray, layout: MassLayout, timing: Sequence[TimingState],
     dataset: JointDataset, config: JointMassFitConfig,
@@ -535,10 +596,8 @@ def _fit_mass_block(
             return value if np.isfinite(value) else 1.0e100
         except (FitError, FloatingPointError, ValueError, OverflowError):
             return 1.0e100
-    result = minimize(objective, start, method="L-BFGS-B", bounds=layout.bounds,
-                      options={"maxiter": config.mass_maxiter,
-                               "ftol": config.optimizer_tolerance,
-                               "gtol": config.optimizer_tolerance, "maxls": 40})
+    result = _minimize_lbfgsb(
+        objective, start, layout.bounds, config.mass_maxiter, config)
     _require(np.isfinite(result.fun), "nonfinite mass-block optimizer result")
     return np.asarray(result.x), result
 
@@ -549,18 +608,19 @@ def _fit_timing_block(
 ) -> object:
     state = timing[s]
     def objective(values: np.ndarray) -> float:
-        original = state.parameters; state.parameters = np.asarray(values)
+        trial_timing = list(timing)
+        trial_timing[s] = TimingState(
+            np.asarray(values), state.names, state.layout, state.bounds)
         try:
-            value = _evaluate(mass, layout, timing, dataset, config, only_stratum=s).objective
+            value = _evaluate(
+                mass, layout, trial_timing, dataset, config,
+                only_stratum=s).objective
             return value if np.isfinite(value) else 1.0e100
         except (FitError, FloatingPointError, ValueError, OverflowError):
             return 1.0e100
-        finally:
-            state.parameters = original
-    result = minimize(objective, state.parameters, method="L-BFGS-B", bounds=state.bounds,
-                      options={"maxiter": config.timing_refit_maxiter,
-                               "ftol": config.optimizer_tolerance,
-                               "gtol": config.optimizer_tolerance, "maxls": 40})
+    result = _minimize_lbfgsb(
+        objective, state.parameters, state.bounds,
+        config.timing_refit_maxiter, config)
     _require(np.isfinite(result.fun), f"nonfinite timing result for {dataset.strata[s].tag}")
     state.parameters = np.asarray(result.x)
     return result

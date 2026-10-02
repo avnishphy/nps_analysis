@@ -139,7 +139,7 @@ def main() -> None:
             )
         smoke_config = JointMassFitConfig(
             starts=1, coordinate_cycles=1, mass_maxiter=1,
-            timing_refit_maxiter=1, yield_em_maxiter=30,
+            timing_refit_maxiter=1, yield_em_maxiter=30, nproc=2,
         )
         output = Path(temporary) / "shadow-output"
         result = fit_and_write_joint_model(

@@ -76,7 +76,9 @@ def main() -> int:
             legacy_comparison.get("represented_runs") == len(represented) and
             legacy_comparison.get("missing_runs") == [6569] and
             legacy_comparison.get("legacy_timing_estimate_used_by_alg002b") is False and
-            legacy_comparison.get("legacy_subtracted_histogram_used_by_alg002b") is False
+            legacy_comparison.get("legacy_subtracted_histogram_used_by_alg002b") is False and
+            legacy_comparison.get("legacy_timing_histogram_ranges_ns") == [[139.0, 161.0]] and
+            legacy_comparison.get("legacy_complete_shifted_support") is True
         )
 
     gates = {
@@ -167,7 +169,7 @@ def main() -> int:
              else "pending" if legacy_comparison_valid or legacy_comparison is None
              else "fail"),
             legacy_comparison,
-            "all 56 represented LH2 runs report the original production estimate beside a converged ALG-002B prompt-accidental prediction",
+            "all 56 represented LH2 runs use the 139--161 ns legacy histogram and report its estimate beside a converged ALG-002B prompt-accidental prediction",
             "The original estimator is retained as an independent comparator and never used as an ALG-002B likelihood input.",
         ),
         "no_pi0_weight_output": gate(

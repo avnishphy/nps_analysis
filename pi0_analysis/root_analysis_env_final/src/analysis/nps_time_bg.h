@@ -145,8 +145,8 @@ inline CoincidenceBGResult estimate_coincidence_background_default(TH2D *h2,
                                                                    std::vector<std::pair<double,double>> side_windows = default_side_windows(),
                                                                    std::pair<double,double> full1_t1 = default_full_acc1_t1(),
                                                                    std::pair<double,double> full1_t2 = default_full_acc1_t2(),
-                                                                   std::pair<double,double> full2_t2 = default_full_acc2_t2(),
-                                                                   std::pair<double,double> full2_t1 = default_full_acc2_t1())
+                                                                   std::pair<double,double> full2_t1 = default_full_acc2_t1(),
+                                                                   std::pair<double,double> full2_t2 = default_full_acc2_t2())
 {
     CoincidenceBGResult R;
 
@@ -207,7 +207,7 @@ inline CoincidenceBGResult estimate_coincidence_background_default(TH2D *h2,
 
     // 5) "complete accidental" boxes used for subtraction (two rectangles)
     auto full1_pr = integral_and_area_TH2(h2, full1_t2.first, full1_t2.second, full1_t1.first, full1_t1.second);
-    auto full2_pr = integral_and_area_TH2(h2, full2_t1.first, full2_t1.second, full2_t2.first, full2_t2.second);
+    auto full2_pr = integral_and_area_TH2(h2, full2_t2.first, full2_t2.second, full2_t1.first, full2_t1.second);
     R.n_full1_raw = full1_pr.first;
     R.area_full1 = full1_pr.second;
     R.n_full2_raw = full2_pr.first;

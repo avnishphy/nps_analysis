@@ -34,6 +34,11 @@ def main() -> int:
                         default="bernstein3")
     parser.add_argument("--starts", type=int, default=3)
     parser.add_argument("--coordinate-cycles", type=int, default=2)
+    parser.add_argument(
+        "--nproc", type=int, default=1,
+        help=("CPU workers for parallel numerical gradients (requires SciPy "
+              ">=1.16; pass the shell value with --nproc \"$nproc\")."),
+    )
     parser.add_argument("--mass-maxiter", type=int, default=120)
     parser.add_argument("--timing-refit-maxiter", type=int, default=25)
     parser.add_argument("--timing-initial-dir", type=Path,
@@ -57,6 +62,7 @@ def main() -> int:
             combinatorial_model=args.combinatorial_model,
             starts=args.starts,
             coordinate_cycles=args.coordinate_cycles,
+            nproc=args.nproc,
             mass_maxiter=args.mass_maxiter,
             timing_refit_maxiter=args.timing_refit_maxiter,
             seed=args.seed,

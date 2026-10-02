@@ -223,6 +223,7 @@ env OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
   --kin KinC_x36_4 \
   --output-dir validation/runtime/alg002b_x36_4_joint_mass_smoke_v2 \
   --timing-initial-dir validation/runtime/alg002a_x36_4_fit_all_v2 \
+  --nproc "$nproc" \
   --starts 1 --coordinate-cycles 1 \
   --mass-maxiter 3 --timing-refit-maxiter 2 --seed 20261001
 ```
@@ -240,6 +241,35 @@ After running the independent comparison command below, the validator is:
 ```
 
 Exit 3 is expected for the bounded smoke result.
+
+## 2026-10-01 legacy support and CPU update
+
+The production legacy timing histogram now spans `[139,161)` ns with 220 bins,
+retaining its 0.1 ns resolution. This includes the complete shifted waveform
+sidebands. Diagnostics produced before this source change still contain the old
+`[140,160)` histogram and must be regenerated before the updated legacy
+comparison gate can pass.
+
+The same validation exposed an older argument-order defect: the scalar legacy
+estimator counted the first complete-accidental rectangle twice instead of
+using the reflected `F2` rectangle. The helper contract and production call now
+use the natural `(full2_t1, full2_t2)` order. On regenerated production-LH2 run
+6407, the stored estimate is 30.111111 events and the independent raw-region
+formula is 30.111111 events (difference `3.55e-15`); the stored histogram axes
+are exactly 139 and 161 ns. This single-run check validates implementation, but
+the complete 56-run diagnostics still need regeneration before comparison.
+
+ALG-002B accepts `--nproc N`. With SciPy 1.16 or newer, L-BFGS-B distributes its
+finite-difference objective calls over `N` forked CPU workers. Fork provides
+copy-on-write access to the read-only fit dataset and avoids Python's thread
+interpreter lock. Keep BLAS libraries at one thread as shown above to avoid
+nested oversubscription. The configured worker count is stored in
+`provenance.json` through the fit configuration.
+
+On eight representative real-data objective calls, eight forked workers took
+0.279 s versus 1.850 s serial, a 6.62x throughput gain with identical objective
+values. A bounded 56-run production-LH2 CLI smoke with eight workers completed
+and recorded `nproc=8`, `target=LH2`, and `lh2_only_enforced=true` in provenance.
 
 The independent legacy comparison is:
 

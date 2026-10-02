@@ -125,6 +125,13 @@ def _read_legacy_regions(manifest: list[dict[str, object]]) -> dict[int, dict[st
             stored_estimate = float(root_file["accidental_est"].member("fVal"))
             stored_error = float(root_file["accidental_err"].member("fVal"))
             stored_prompt = float(root_file["coin_raw"].member("fVal"))
+            timing_histogram = root_file["h_t1_t2"]
+            x_edges = timing_histogram.axis(0).edges()
+            y_edges = timing_histogram.axis(1).edges()
+            _require(
+                np.array_equal(x_edges, y_edges),
+                f"legacy timing axes differ in {path}",
+            )
         runs = np.unique(arrays["run_number"].astype(np.int64))
         _require(len(runs) == 1, f"legacy comparison expected one run in {path}")
         run = int(runs[0])
@@ -139,6 +146,8 @@ def _read_legacy_regions(manifest: list[dict[str, object]]) -> dict[int, dict[st
             "production_prompt_raw": stored_prompt,
             "production_accidental_estimate": stored_estimate,
             "production_accidental_standard_error": stored_error,
+            "timing_histogram_min_ns": float(x_edges[0]),
+            "timing_histogram_max_ns": float(x_edges[-1]),
         }
     return output
 
@@ -233,6 +242,10 @@ def compare(output: Path, destination: Path, config_csv: Path, kin: str) -> None
             "legacy_production_accidental_estimate": legacy_estimate,
             "legacy_production_accidental_standard_error":
                 legacy_values["production_accidental_standard_error"],
+            "legacy_timing_histogram_min_ns":
+                legacy_values["timing_histogram_min_ns"],
+            "legacy_timing_histogram_max_ns":
+                legacy_values["timing_histogram_max_ns"],
             **mask_formula,
             "raw_mask_minus_stored_legacy_accidental":
                 mask_formula["raw_mask_box_formula_estimate"] - legacy_estimate,
@@ -256,6 +269,12 @@ def compare(output: Path, destination: Path, config_csv: Path, kin: str) -> None
     joint_vector = np.asarray([row["joint_prompt_accidental"] for row in rows])
     correlation = (float(np.corrcoef(legacy_vector, joint_vector)[0, 1])
                    if len(rows) > 1 else None)
+    timing_histogram_ranges = sorted({
+        (float(row["legacy_timing_histogram_min_ns"]),
+         float(row["legacy_timing_histogram_max_ns"]))
+        for row in rows
+    })
+    complete_shifted_support = timing_histogram_ranges == [(139.0, 161.0)]
     summary = {
         "status": status,
         "publication_ready": False,
@@ -265,6 +284,8 @@ def compare(output: Path, destination: Path, config_csv: Path, kin: str) -> None
         "missing_runs": run_manifest["missing_runs"],
         "legacy_timing_estimate_used_by_alg002b": False,
         "legacy_subtracted_histogram_used_by_alg002b": False,
+        "legacy_timing_histogram_ranges_ns": timing_histogram_ranges,
+        "legacy_complete_shifted_support": complete_shifted_support,
         "shared_inputs": ["t1_ns", "t2_ns", "selected event sample"],
         "shared_conceptual_components": [
             "horizontal", "vertical", "two-random", "diagonal"
@@ -289,9 +310,11 @@ def compare(output: Path, destination: Path, config_csv: Path, kin: str) -> None
             "requires a joint replica calculation"
         ),
         "support_note": (
-            "stored production values are authoritative; the raw-mask formula "
-            "also includes exported events in shifted 139--140 and 160--161 ns "
-            "sideband slices that lie outside the legacy 140--160 ns histogram"
+            "the legacy timing histogram covers every shifted sideband slice"
+            if complete_shifted_support else
+            "these diagnostics predate the 139--161 ns production update; "
+            "the raw-mask formula also includes exported events in shifted "
+            "139--140 and 160--161 ns slices outside their stored histogram"
         ),
     }
 

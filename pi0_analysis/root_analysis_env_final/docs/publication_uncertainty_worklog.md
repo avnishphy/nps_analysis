@@ -426,3 +426,30 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
 - Comparison implementation commit:
   `7575aa7d275f765102987a95484e3ee4673b0702`
   (`feat(background): compare legacy timing method`).
+
+### 2026-10-01 — legacy support correction and parallel ALG-002B gradients
+
+- By user direction, expanded production timing histograms from 140--160 ns
+  with 200 bins to 139--161 ns with 220 bins, preserving 0.1 ns resolution and
+  covering the complete shifted waveform sidebands.
+- The focused real-run check exposed a pre-existing second-full-box argument
+  defect: the scalar estimator counted `F1` twice. Normalized the helper and
+  call contract to `(full2_t1, full2_t2)`, so the implemented legacy formula is
+  now `D + 0.5*(H+V) - 0.5*(F1+F2)` with distinct reflected boxes.
+- Regenerated production-LH2 run 6407 in an isolated runtime directory. Its
+  timing support is 139--161 ns; the stored accidental estimate 30.111111 and
+  independent raw-region estimate 30.111111 agree to `3.55e-15`. The old
+  140--160 ns file stored 24.861111 against the same raw-region value 30.111111.
+- Added actual histogram-axis provenance to the independent comparator. The
+  validation gate now requires every compared file to report 139--161 ns, so
+  pre-update diagnostics fail closed until all 56 represented LH2 runs are
+  regenerated.
+- Added `--nproc` to ALG-002B. SciPy L-BFGS-B numerical derivatives use forked
+  CPU workers over read-only fit state; the configured count is preserved in
+  provenance. Eight workers evaluated eight real 56-run objectives in 0.279 s
+  versus 1.850 s serial (6.62x) with zero objective difference.
+- The threaded implementation was rejected after its measured speedup was only
+  0.92x. A bounded full 56-run production-LH2 CLI smoke with eight forked
+  workers completed at objective 151259.147278 and recorded the LH2-only
+  manifest. It remains an intentionally unconverged shadow diagnostic.
+- Efficiency calculations and all non-LH2 inputs remain excluded.

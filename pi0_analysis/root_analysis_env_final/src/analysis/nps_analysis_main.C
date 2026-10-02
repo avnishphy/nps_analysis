@@ -2748,8 +2748,10 @@ void nps_analysis_main(const TString &kinematic_in = "",
         TH1D *h_mmiss_all = make1D("h_mmiss_all","Missing mass;M_{miss} [GeV];Events",200,0.0,2.0);
         TH1D *h_mmiss_all_corr = make1D("h_mmiss_all_corr","Missing mass;M_{miss} [GeV];Events",200,0.0,2.0);
 
-        const double t_min = 140.0, t_max = 160.0;
-        const int nbins_t = 200;
+        // Cover the complete shifted timing sidebands [139,161) while
+        // preserving the legacy 0.1 ns histogram bin width.
+        const double t_min = 139.0, t_max = 161.0;
+        const int nbins_t = 220;
         TH2D *h_t1_t2 = make2D("h_t1_t2", "t1 (y) vs t2 (x);t2 [ns];t1 [ns]", nbins_t, t_min, t_max, nbins_t, t_min, t_max);
         TH1D *h_t1_proj = make1D("h_t1_proj", "t1 projection; t1 [ns];Entries", nbins_t, t_min, t_max);
         TH1D *h_t2_proj = make1D("h_t2_proj", "t2 projection; t2 [ns];Entries", nbins_t, t_min, t_max);
@@ -3348,7 +3350,7 @@ void nps_analysis_main(const TString &kinematic_in = "",
         // Use custom shifted windows (all except coin shifted by +3ns)
         nps::CoincidenceBGResult bg = nps::estimate_coincidence_background_default(
             h_t1_t2, coin_win, diag_windows, side_windows, 
-            full1_t1, full1_t2, full2_t2, full2_t1
+            full1_t1, full1_t2, full2_t1, full2_t2
         );
 
         // Data-driven accidental subtraction (returns bg-subtracted histogram)

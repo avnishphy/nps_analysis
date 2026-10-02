@@ -18,6 +18,7 @@ from background_fit.joint_timing_mass_model import (  # noqa: E402
     JointMassFitConfig,
     _mass_layout,
     _mass_probabilities,
+    _validate_shadow_output_path,
     build_joint_dataset,
     enforce_lh2_manifest,
     expected_lh2_runs,
@@ -114,6 +115,17 @@ def main() -> None:
             pass
         else:
             raise AssertionError("canonical production output was accepted")
+
+        authorized = REPO / "output" / "KinC_x36_4" / "alg002b" / "unit"
+        assert _validate_shadow_output_path(authorized.resolve(), True)
+        try:
+            _validate_shadow_output_path(authorized.resolve(), False)
+        except FitError:
+            pass
+        else:
+            raise AssertionError("canonical shadow output lacked explicit authorization")
+
+        assert JointMassFitConfig(start_index_offset=19).start_index_offset == 19
 
         fit_config = JointMassFitConfig(starts=1, coordinate_cycles=1)
         dataset = build_joint_dataset(bundle, fit_config.timing)

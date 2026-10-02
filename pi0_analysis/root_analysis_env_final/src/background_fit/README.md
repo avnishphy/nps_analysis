@@ -7,7 +7,9 @@ simultaneous timing/mass shadow fitter restricted to configured production-LH2
 runs in `KinC_x36_4`.
 
 It does **not** write `pi0_weight`, read or calculate efficiencies, modify the
-legacy timing subtraction, form a cross section, or write below `output/`.
+legacy timing subtraction, or form a cross section. Output below canonical
+`output/` requires an explicit flag and is restricted to the isolated
+`output/KinC_x36_4/alg002b/` shadow subtree.
 
 Entry points:
 
@@ -20,6 +22,11 @@ Entry points:
 - `joint_timing_mass_model.py`: joint timing/mass model and isolated outputs.
 - `compare_legacy_timing_background.py`: report the original production
   timing-box estimate beside ALG-002B without using it as a fit input.
+- `compare_raw_observation_inputs.py`: prove two diagnostic bundles have
+  identical `raw_observation` entries and branch buffers before reusing a fit
+  initialization.
+- `run_joint_timing_mass_campaign.py`: schedule independently dispersed,
+  resumable starts and aggregate the approved 20-start reproducibility gate.
 
 See `docs/ALG002A_combined_timing_background_20261001.md` for the full model,
 reasoning, commands, output schema, validation history, and current blockers.

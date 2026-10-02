@@ -279,6 +279,39 @@ default and requires the explicit
 restricted to run-only diagnostics; it does not authorize combination,
 efficiency, smearing, cross-section, or event-weight stages.
 
+The authorized canonical regeneration completed on 2026-10-01 with eight
+parallel ROOT jobs. It produced 56 diagnostic ROOT files, 56 per-run summaries,
+and 57 logs under `output/KinC_x36_4/`; only input-missing run 6569 failed.
+The new files contain 76,242 raw observations, and every `h_t1_t2` axis spans
+exactly 139--161 ns with 0.1 ns bins.
+
+`compare_raw_observation_inputs.py` hashes the exact Awkward buffers for every
+branch and run. The regenerated bundle matches the earlier ALG-002A input for
+all 56 runs and all 76,242 entries, so the existing timing initialization is
+reusable. The machine-readable report is
+`output/KinC_x36_4/validation/raw_observation_equivalence.json`.
+
+The regenerated independent legacy comparison has exact setting closure:
+
+| Diagnostic | Value |
+|---|---:|
+| Stored legacy accidental sum | 1771.722222 |
+| Independent raw-mask formula sum | 1771.722222 |
+| Raw-mask minus stored sum | 0.0 |
+| Timing histogram ranges | 139--161 ns only |
+
+An eight-worker, one-iteration canonical integration smoke at
+`output/KinC_x36_4/alg002b/smoke_139_161_v1/` has objective 151259.147278 and
+count-closure difference `5.59e-8`. It remains intentionally unconverged and
+`NOT_PROMOTABLE`.
+
+`run_joint_timing_mass_campaign.py` runs deterministic absolute start IDs as
+independent atomic jobs, limits the total CPU budget, resumes matching complete
+starts, and aggregates the approved 20-start thresholds. A two-start real-data
+smoke used two concurrent starts with four gradient workers each. Both outputs
+completed; rerunning the identical command reused them in two seconds. Its
+one-iteration objective and yield spreads are deliberately nonpromotable.
+
 The independent legacy comparison is:
 
 ```bash

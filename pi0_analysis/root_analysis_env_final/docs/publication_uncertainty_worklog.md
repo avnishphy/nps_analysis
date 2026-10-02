@@ -464,3 +464,22 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
 - The authorization is limited to run-only production-LH2 diagnostics for
   `KinC_x36_4`; combine, efficiency, smearing, cross-section, and ALG-002C
   event-weight stages remain excluded.
+- Added `compare_raw_observation_inputs.py` to hash every Awkward branch buffer
+  per run. Reuse of the existing ALG-002A timing initialization is allowed only
+  when all 56 represented runs and all raw branches match exactly.
+- Added a separate explicit authorization for isolated ALG-002B results below
+  `output/KinC_x36_4/alg002b/`. The fitter still rejects all other canonical
+  paths and records both its resolved destination and authorization in
+  provenance. Absolute start IDs make separately scheduled starts reproducible.
+- Added `run_joint_timing_mass_campaign.py`. It schedules one atomic output per
+  deterministic start, limits total requested CPUs, resumes only identity-
+  matching completed starts, and writes JSON/CSV aggregation for the approved
+  20-start objective and setting-yield reproducibility thresholds.
+- Canonical production-LH2 regeneration completed with 56/57 runs; only 6569
+  lacked waveform input. All 76,242 observations have 139--161 ns timing
+  histograms. The old and new raw trees match exactly in all branches and runs.
+- The regenerated stored legacy and independent raw-mask estimates both sum to
+  1771.722222, eliminating the prior 243.06-event clipping discrepancy.
+- The authorized eight-worker integration smoke closes to `5.59e-8` events at
+  objective 151259.147278 and remains intentionally unconverged. The two-start
+  scheduler smoke completed and a repeated command resumed in two seconds.

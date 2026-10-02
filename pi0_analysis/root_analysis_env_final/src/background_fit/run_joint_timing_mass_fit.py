@@ -33,6 +33,10 @@ def main() -> int:
                         choices=("logistic", "bernstein3", "bernstein4"),
                         default="bernstein3")
     parser.add_argument("--starts", type=int, default=3)
+    parser.add_argument(
+        "--start-index-offset", type=int, default=0,
+        help="Absolute first start ID for deterministic resumable campaigns.",
+    )
     parser.add_argument("--coordinate-cycles", type=int, default=2)
     parser.add_argument(
         "--nproc", type=int, default=1,
@@ -43,6 +47,11 @@ def main() -> int:
     parser.add_argument("--timing-refit-maxiter", type=int, default=25)
     parser.add_argument("--timing-initial-dir", type=Path,
                         help="Directory containing ALG-002A profile-covariance NPZ files.")
+    parser.add_argument(
+        "--allow-canonical-shadow-output", action="store_true",
+        help=("Permit an isolated result below output/KinC_x36_4/alg002b; "
+              "canonical output remains refused otherwise."),
+    )
     parser.add_argument("--seed", type=int, default=20261001)
     args = parser.parse_args()
 
@@ -61,6 +70,7 @@ def main() -> int:
             signal_model=args.signal_model,
             combinatorial_model=args.combinatorial_model,
             starts=args.starts,
+            start_index_offset=args.start_index_offset,
             coordinate_cycles=args.coordinate_cycles,
             nproc=args.nproc,
             mass_maxiter=args.mass_maxiter,
@@ -75,6 +85,7 @@ def main() -> int:
             allowed_missing=(6569,),
             command=sys.argv,
             timing_initial_dir=args.timing_initial_dir,
+            allow_canonical_shadow_output=args.allow_canonical_shadow_output,
         )
     except (FitError, ValueError, OSError) as error:
         print(f"ALG-002B fit failed: {error}", file=sys.stderr)

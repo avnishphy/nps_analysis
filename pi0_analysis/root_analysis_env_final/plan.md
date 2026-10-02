@@ -10,6 +10,19 @@
   remains rejected by default.
 - Regeneration is run-only: no combine, efficiency, smearing, or cross-section
   stage is authorized by this exception.
+- Compare the regenerated and prior shadow `raw_observation` trees branch by
+  branch before reusing ALG-002A timing initialization. Any changed branch or
+  event count requires a fresh timing fit.
+- ALG-002B results may use only `output/KinC_x36_4/alg002b/<result>` and only
+  with `--allow-canonical-shadow-output`; the default canonical-output refusal
+  remains active. Stable absolute start IDs support resumable campaigns.
+- Run the 20-start gate as atomic one-start jobs with deterministic absolute
+  IDs. A campaign config is immutable, completed starts are reusable, and the
+  aggregator applies the approved relative-objective and setting-yield limits.
+- Canonical regeneration is complete: 56 represented runs, only 6569 missing,
+  76,242 observations, uniform 139--161 ns support, and exact old/new raw-tree
+  equivalence. A bounded canonical fit and two-start resumability smoke pass
+  mechanics but remain correctly `NOT_PROMOTABLE` for optimizer convergence.
 
 ## 2026-10-01: ALG-002B approved LH2-only shadow implementation
 

@@ -35,6 +35,9 @@ def main() -> int:
     args = parser.parse_args()
 
     output = args.output_dir.resolve()
+    repo = Path(__file__).resolve().parents[2]
+    canonical = (repo / "output").resolve()
+    authorized_shadow_root = (canonical / "KinC_x36_4" / "alg002b").resolve()
     provenance = json.loads((output / "provenance.json").read_text())
     model_selection = json.loads((output / "model_selection.json").read_text())
     yields = list(csv.DictReader((output / "run_pi0_yields.csv").open()))
@@ -82,6 +85,17 @@ def main() -> int:
         )
 
     gates = {
+        "shadow_output_scope": gate(
+            "pass" if (
+                (canonical not in output.parents and output != canonical) or
+                (authorized_shadow_root in output.parents and
+                 provenance.get("canonical_shadow_output_authorized") is True)
+            ) else "fail",
+            {"output": str(output),
+             "authorized": provenance.get("canonical_shadow_output_authorized")},
+            "shadow output is isolated outside canonical output or explicitly authorized below output/KinC_x36_4/alg002b",
+            "Authorization changes location only; production-ready status remains false.",
+        ),
         "lh2_only_manifest": gate(
             "pass" if provenance.get("target") == "LH2" and
             provenance.get("lh2_only_enforced") is True and not unexpected and

@@ -7,8 +7,9 @@ per-run component yields are profiled for every trial; mass parameters are
 optimized at the current timing iterate; then all ALG-002A timing parameters
 are refitted against the mass-resolved likelihood.
 
-No event-level pi0 weight, efficiency, charge normalization, cross section, or
-canonical production output is produced.
+No event-level pi0 weight, efficiency, charge normalization, or cross section
+is produced. Canonical output remains refused unless the caller explicitly
+authorizes the isolated `output/KinC_x36_4/alg002b/` shadow subtree.
 """
 
 from __future__ import annotations
@@ -61,6 +62,7 @@ class JointMassFitConfig:
     signal_model: str = "dscb"
     combinatorial_model: str = "bernstein3"
     starts: int = 3
+    start_index_offset: int = 0
     seed: int = 20261001
     coordinate_cycles: int = 2
     nproc: int = 1
@@ -79,6 +81,8 @@ class JointMassFitConfig:
             raise ValueError(f"unsupported combinatorial model: {self.combinatorial_model}")
         if self.starts < 1 or self.coordinate_cycles < 1:
             raise ValueError("starts and coordinate_cycles must be positive")
+        if self.start_index_offset < 0:
+            raise ValueError("start_index_offset must be nonnegative")
         if self.nproc < 1:
             raise ValueError("nproc must be positive")
         if self.mass_maxiter < 1 or self.timing_refit_maxiter < 1:
@@ -633,12 +637,15 @@ def fit_joint_model(
            list[dict[str, object]], list[dict[str, object]]]:
     initial, layout = _mass_layout(dataset, config)
     base_timing = _load_timing_states(dataset, config, timing_initial_dir)
-    rng = np.random.default_rng(config.seed); best = None
+    best = None
     start_summaries: list[dict[str, object]] = []; all_cycles: list[dict[str, object]] = []
     for start_index in range(config.starts):
+        absolute_start_index = config.start_index_offset + start_index
         mass = initial.copy()
         timing = [TimingState(x.parameters.copy(), x.names, x.layout, x.bounds) for x in base_timing]
-        if start_index:
+        if absolute_start_index:
+            rng = np.random.default_rng(
+                np.random.SeedSequence([config.seed, absolute_start_index]))
             lower = np.asarray([x[0] for x in layout.bounds]); upper = np.asarray([x[1] for x in layout.bounds])
             mass = np.clip(mass + rng.normal(0.0, 0.05, len(mass)) * (upper - lower), lower, upper)
             for state in timing:
@@ -656,7 +663,7 @@ def fit_joint_model(
                                        "iterations": int(timing_result.nit),
                                        "message": str(timing_result.message)})
             evaluation = _evaluate(mass, layout, timing, dataset, config)
-            cycles.append({"start_index": start_index, "cycle": cycle,
+            cycles.append({"start_index": absolute_start_index, "cycle": cycle,
                            "objective": evaluation.objective,
                            "mass_success": bool(mass_result.success),
                            "mass_iterations": int(mass_result.nit),
@@ -670,7 +677,7 @@ def fit_joint_model(
             all(bool(item["success"]) for item in record["timing"])
             for record in cycles
         )
-        start_summaries.append({"start_index": start_index, "objective": final.objective,
+        start_summaries.append({"start_index": absolute_start_index, "objective": final.objective,
                                 "pi0_yield_sum": float(sum(x[:, 0].sum() for x in final.yields)),
                                 "finite": bool(np.isfinite(final.objective)),
                                 "converged": converged, "cycles": len(cycles)})
@@ -787,14 +794,30 @@ def _materialize(
                           covariance, labels, profiles, closure)
 
 
+def _validate_shadow_output_path(
+    destination: Path, allow_canonical_shadow_output: bool,
+) -> bool:
+    repo = Path(__file__).resolve().parents[2]
+    canonical = (repo / "output").resolve()
+    if destination != canonical and canonical not in destination.parents:
+        return False
+    authorized_root = (canonical / "KinC_x36_4" / "alg002b").resolve()
+    _require(
+        allow_canonical_shadow_output and authorized_root in destination.parents,
+        "ALG-002B canonical output requires explicit authorization and a "
+        "child path under output/KinC_x36_4/alg002b",
+    )
+    return True
+
+
 def write_joint_result(
     result: JointFitResult, output_dir: Path | str,
     run_manifest: dict[str, object], command: Sequence[str] | None = None,
+    allow_canonical_shadow_output: bool = False,
 ) -> None:
     destination = Path(output_dir).resolve(); repo = Path(__file__).resolve().parents[2]
-    canonical = (repo / "output").resolve()
-    _require(destination != canonical and canonical not in destination.parents,
-             "ALG-002B refuses canonical production output paths")
+    canonical_shadow = _validate_shadow_output_path(
+        destination, allow_canonical_shadow_output)
     _require(not destination.exists(), f"output path already exists: {destination}")
     output = destination.with_name(f".{destination.name}.partial-{os.getpid()}")
     _require(not output.exists(), f"staging output path already exists: {output}")
@@ -847,6 +870,8 @@ def write_joint_result(
     provenance = {
         "status": "ALG002B_SHADOW_NOT_PRODUCTION", "publication_ready": False,
         "production_ready": False, "target": "LH2", "lh2_only_enforced": True,
+        "output_directory": str(destination),
+        "canonical_shadow_output_authorized": canonical_shadow,
         "pi0_weight_written": False, "efficiency_inputs_read": False,
         "charge_scaling_used": False, "cross_section_formed": False,
         "command": list(command) if command is not None else None,
@@ -880,16 +905,17 @@ def fit_and_write_joint_model(
     bundle: ObservationBundle, output_dir: Path | str, expected_runs: Sequence[int],
     config: JointMassFitConfig | None = None, allowed_missing: Sequence[int] = (6569,),
     command: Sequence[str] | None = None, timing_initial_dir: Path | str | None = None,
+    allow_canonical_shadow_output: bool = False,
 ) -> JointFitResult:
     config = config or JointMassFitConfig(); output = Path(output_dir).resolve()
-    repo = Path(__file__).resolve().parents[2]; canonical = (repo / "output").resolve()
-    _require(output != canonical and canonical not in output.parents,
-             "ALG-002B refuses canonical production output paths")
+    _validate_shadow_output_path(output, allow_canonical_shadow_output)
     _require(not output.exists(), f"output path already exists: {output}")
     manifest = enforce_lh2_manifest(bundle, expected_runs, allowed_missing)
     dataset = build_joint_dataset(bundle, config.timing)
     mass, layout, timing, evaluation, starts, cycles = fit_joint_model(
         dataset, config, timing_initial_dir=timing_initial_dir)
     result = _materialize(dataset, config, mass, layout, timing, evaluation, starts, cycles)
-    write_joint_result(result, output, manifest, command=command)
+    write_joint_result(
+        result, output, manifest, command=command,
+        allow_canonical_shadow_output=allow_canonical_shadow_output)
     return result

@@ -453,3 +453,14 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
   workers completed at objective 151259.147278 and recorded the LH2-only
   manifest. It remains an intentionally unconverged shadow diagnostic.
 - Efficiency calculations and all non-LH2 inputs remain excluded.
+
+### 2026-10-01 — authorized canonical `KinC_x36_4` raw export
+
+- The user required regenerated production artifacts under the standard
+  `output/KinC_x36_4/` contract.
+- Added `--allow-canonical-raw-observation-export` as a second, explicit opt-in.
+  Raw export still requires an explicit `--output-base`, and canonical output
+  remains rejected when this flag is absent.
+- The authorization is limited to run-only production-LH2 diagnostics for
+  `KinC_x36_4`; combine, efficiency, smearing, cross-section, and ALG-002C
+  event-weight stages remain excluded.

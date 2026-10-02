@@ -271,6 +271,14 @@ On eight representative real-data objective calls, eight forked workers took
 values. A bounded 56-run production-LH2 CLI smoke with eight workers completed
 and recorded `nproc=8`, `target=LH2`, and `lh2_only_enforced=true` in provenance.
 
+The user subsequently authorized regeneration under the canonical setting
+directory `output/KinC_x36_4/`. The analysis driver retains its fail-closed
+default and requires the explicit
+`--allow-canonical-raw-observation-export` option in addition to
+`--raw-observation-export` and `--output-base <repo>/output`. The exception is
+restricted to run-only diagnostics; it does not authorize combination,
+efficiency, smearing, cross-section, or event-weight stages.
+
 The independent legacy comparison is:
 
 ```bash

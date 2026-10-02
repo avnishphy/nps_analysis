@@ -1,5 +1,16 @@
 # NPS Pi0 Analysis Refactor Plan (Living Document)
 
+## 2026-10-01: Explicit canonical raw-export authorization
+
+- User-authorized production destination for the regenerated `KinC_x36_4`
+  production-LH2 diagnostics is `output/KinC_x36_4/`.
+- Preserve the raw-export safety boundary by requiring both an explicit
+  `--output-base` and `--allow-canonical-raw-observation-export` when that base
+  is the repository's canonical `output/` directory. Canonical raw export
+  remains rejected by default.
+- Regeneration is run-only: no combine, efficiency, smearing, or cross-section
+  stage is authorized by this exception.
+
 ## 2026-10-01: ALG-002B approved LH2-only shadow implementation
 
 - Approved physics increment: a shadow simultaneous timing-and-mass

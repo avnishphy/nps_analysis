@@ -32,6 +32,7 @@ COMBINE_AFTER_RUN="yes"
 COMBINE_TARGET=""
 COMBINE_EFFICIENCY_CSV=""
 RAW_OBSERVATION_EXPORT="${NPS_RAW_OBSERVATION_EXPORT:-no}"
+ALLOW_CANONICAL_RAW_OBSERVATION_EXPORT="no"
 RUN_ONLY="no"
 FINALIZE_ONLY="no"
 
@@ -107,6 +108,9 @@ Options:
   --finalize-only           Rebuild summaries/post-processing; run no ROOT analyses
   --combine-target <name>   Restrict combine stage to one selected target
   --raw-observation-export  ALG-001 opt-in raw tree and complete run/segment ledgers
+  --allow-canonical-raw-observation-export
+                            Permit raw export under canonical output/ only when
+                            explicitly requested together with --output-base
   --run-smearing            Run simulation smearing stage after combine
   --smearing-kin <Kin_old>  Restrict smearing to one Kin_old (repeatable)
   --smearing-script <path>  Smearing pipeline script path
@@ -500,6 +504,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --raw-observation-export)
       RAW_OBSERVATION_EXPORT="yes"
+      shift
+      ;;
+    --allow-canonical-raw-observation-export)
+      ALLOW_CANONICAL_RAW_OBSERVATION_EXPORT="yes"
       shift
       ;;
     --run-smearing)
@@ -1050,8 +1058,13 @@ case "${RAW_OBSERVATION_EXPORT,,}" in
     ;;
 esac
 if [[ "${RAW_OBSERVATION_EXPORT}" == "yes" ]]; then
-  if [[ "${OUTPUT_BASE_EXPLICIT}" != "yes" || "${OUTPUT_BASE}" == "${REPO_ROOT}/output" ]]; then
-    echo "--raw-observation-export requires an explicit noncanonical --output-base to prevent overwriting legacy outputs." >&2
+  if [[ "${OUTPUT_BASE_EXPLICIT}" != "yes" ]]; then
+    echo "--raw-observation-export requires an explicit --output-base." >&2
+    exit 1
+  fi
+  if [[ "${OUTPUT_BASE}" == "${REPO_ROOT}/output" &&
+        "${ALLOW_CANONICAL_RAW_OBSERVATION_EXPORT}" != "yes" ]]; then
+    echo "Canonical raw export requires --allow-canonical-raw-observation-export." >&2
     exit 1
   fi
 fi
@@ -1168,6 +1181,9 @@ echo "Execution:       $([[ "${RUN_ONLY}" == yes ]] && echo run-only || { [[ "${
 echo "Combine step:    ${COMBINE_AFTER_RUN} (targets=${COMBINE_TARGETS[*]})"
 if [[ "${RAW_OBSERVATION_EXPORT}" == "yes" ]]; then
   echo "Raw observations:yes (ALG-001 opt-in)"
+  if [[ "${ALLOW_CANONICAL_RAW_OBSERVATION_EXPORT}" == "yes" ]]; then
+    echo "Canonical raw opt-in: yes"
+  fi
 fi
 if [[ "${RUN_SMEARING_STAGE}" == "yes" ]]; then
   echo "Smearing stage:  yes (target=${SMEAR_TARGET})"

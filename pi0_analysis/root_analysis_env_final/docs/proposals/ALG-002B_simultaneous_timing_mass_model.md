@@ -3,11 +3,12 @@
 Date: 2026-10-01
 Workspace: `root_analysis_env_final`
 Validation setting: `KinC_x36_4`
-Status: **proposal awaiting explicit user approval; not implemented**
+Status: **approved 2026-10-01 with production-LH2-only condition; shadow
+implementation installed, validation campaign incomplete**
 
-## Decision requested
+## Approved decision
 
-Approve an isolated shadow extension of ALG-002A that splits the fitted
+The user approved an isolated shadow extension of ALG-002A that splits the fitted
 true-coincidence timing component into pi0 signal and true-coincidence
 combinatorial background by fitting invariant mass and timing simultaneously.
 
@@ -259,23 +260,23 @@ Every gate is fail-closed and recorded in machine-readable JSON.
 Passing these gates establishes a validated yield-and-covariance model. It
 does not by itself validate weighted phi, t, Q2, xB, or missing-mass spectra.
 
-## Exact implementation boundary after approval
+## Approved implementation boundary
 
-The approved implementation would add:
+The approved implementation adds:
 
 - `src/background_fit/joint_timing_mass_model.py`;
 - `src/background_fit/run_joint_timing_mass_fit.py`;
 - `src/background_fit/validate_joint_timing_mass_output.py`;
 - `tests/test_joint_timing_mass_background.py`;
-- `docs/ALG002B_simultaneous_timing_mass_YYYYMMDD.md` after validation.
+- `docs/ALG002B_simultaneous_timing_mass_20261001.md`.
 
-It would update only:
+It updates only:
 
 - `src/background_fit/README.md`;
 - `plan.md`;
 - `docs/publication_uncertainty_worklog.md`.
 
-The implementation will use the existing ALG-002A geometry and timing model
+The implementation uses the existing ALG-002A geometry and timing model
 without changing ALG-002A results. Any required behavioral change to
 `joint_timing_model.py` will be brought back for separate approval.
 
@@ -287,7 +288,7 @@ The shadow output would contain:
 - `parameter_estimates.csv`;
 - `run_pi0_yields.csv`;
 - `pi0_yield_covariance.npz`;
-- `profile_intervals.csv`;
+- `conditional_intervals.csv` until calibrated profile intervals are available;
 - `mass_timing_predictions.csv`;
 - `run_coverage.csv`;
 - `validation_gates.json`;
@@ -295,7 +296,7 @@ The shadow output would contain:
 
 No existing ROOT tree or production CSV schema changes in ALG-002B.
 
-## Reproduction command planned after approval
+## Reproduction command
 
 The initial real-data fit would use the existing shadow bundle:
 
@@ -303,9 +304,11 @@ The initial real-data fit would use the existing shadow bundle:
 cd /w/hallc-scshelf2102/nps/singhav/nps_analysis/pi0_analysis/root_analysis_env_final
 
 env OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
-python3 src/background_fit/run_joint_timing_mass_fit.py \
+/group/nps/singhav/software/python/bin/python \
+  src/background_fit/run_joint_timing_mass_fit.py \
   --input 'validation/runtime/alg002a_x36_4_raw_all/KinC_x36_4/root/diagnostics_run*.root' \
   --kin KinC_x36_4 \
+  --timing-initial-dir validation/runtime/alg002a_x36_4_fit_all_v2 \
   --output-dir validation/runtime/alg002b_x36_4_joint_mass_v1
 ```
 
@@ -340,6 +343,8 @@ complete model, not through `sum(w^2)` with fixed fitted weights.
   relationship between discriminating and control variables:
   <https://arxiv.org/abs/physics/0402083>.
 
-## Approval question
+## Decision record
 
-Approve implementation of ALG-002B under this exact boundary?
+Approved by the user on 2026-10-01 with the additional instruction to use
+only LH2 runs. Implementation and current validation evidence are recorded in
+`docs/ALG002B_simultaneous_timing_mass_20261001.md`.

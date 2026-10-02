@@ -1,20 +1,28 @@
 # NPS Pi0 Analysis Refactor Plan (Living Document)
 
-## 2026-10-01: ALG-002B proposal awaiting approval
+## 2026-10-01: ALG-002B approved LH2-only shadow implementation
 
-- Proposed next physics increment: a shadow simultaneous timing-and-mass
+- Approved physics increment: a shadow simultaneous timing-and-mass
   extended-Poisson model for `KinC_x36_4`.
-- It would split the central true-coincidence timing component into pi0 signal
+- It splits the central true-coincidence timing component into pi0 signal
   and true-coincidence combinatorial background, retain run-specific peak
-  shifts, widths, and yields through partial pooling, and save the complete
-  cross-run yield covariance.
-- It would not write `pi0_weight`, alter production outputs, combine physics
+  shifts, widths, and yields through partial pooling. The complete cross-run
+  replica covariance remains a required validation product.
+- It does not write `pi0_weight`, alter production outputs, combine physics
   spectra, calculate efficiencies, or run cross-section extraction.
 - Exact model, candidate selection, missing-run policy, validation thresholds,
   file scope, and deferred ALG-002C boundary are in
   `docs/proposals/ALG-002B_simultaneous_timing_mass_model.md`.
-- Status: documentation only; explicit user approval is required before code
-  implementation.
+- User condition: only configured production-LH2 runs may enter. The launcher
+  is locked to `KinC_x36_4`/`LH2`; 56/57 runs are represented and only run
+  6569 is an explicit missing-input exclusion.
+- Status: fitter, strict manifest, validator, and synthetic regression are
+  implemented. A bounded real-data smoke fit closes exactly but is
+  `NOT_PROMOTABLE`; multi-start convergence, candidate selection, profile/full
+  replica covariance, factorization, leave-one-run-out, timing calibration,
+  and 2,000-toy coverage remain open.
+- Technical record:
+  `docs/ALG002B_simultaneous_timing_mass_20261001.md`.
 
 ## 2026-10-01: Final-workspace migration and approval boundary
 

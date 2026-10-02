@@ -116,7 +116,8 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
 | Proposal | Exact scope | User decision/date | Conditions | Implementation commit | Validation |
 |---|---|---|---|---|---|
 | ALG-001 | Parallel raw-observation forward-inference prototype for one setting; passive exports and run ledger; legacy defaults unchanged | Approved 2026-10-01 with explicit condition: do not touch efficiency calculations; defer them | Efficiency sources/definitions/models frozen; later approvals still required for detailed background, smearing, production default, and publication use | `17a77208642f03479c53d3ca8709203364795f90` | Synthetic/passive-export checks pass; real-data shadow unresolved |
-| ALG-002A | Joint accepted-lattice timing Poisson pilot, stratified by run, mode, and multiplicity; no pi0/combinatorial mass model | Approved 2026-10-01 after explicit review of combined-statistics and run-specific center/width safeguards | Efficiency entirely excluded; opt-in shadow output only; no production pi0 weight or cross section | working-tree implementation pending commit | Synthetic mechanics pass; 56-run KinC_x36_4 v2 converges but is NOT_PROMOTABLE |
+| ALG-002A | Joint accepted-lattice timing Poisson pilot, stratified by run, mode, and multiplicity; no pi0/combinatorial mass model | Approved 2026-10-01 after explicit review of combined-statistics and run-specific center/width safeguards | Efficiency entirely excluded; opt-in shadow output only; no production pi0 weight or cross section | `cef0c69a8335d65276d2bedd5e105cd0d764598f` | Synthetic mechanics pass; 56-run KinC_x36_4 v2 converges but is NOT_PROMOTABLE |
+| ALG-002B | Six-component simultaneous timing/mass shadow fit with run-specific partially pooled pi0 calibration | Approved 2026-10-01; user additionally required LH2 runs only | Exact configured production-LH2 set for KinC_x36_4; efficiency frozen; no pi0 weight, production output, or cross section | working-tree implementation pending commit | Synthetic end-to-end pass; 56-run bounded smoke closes exactly and is NOT_PROMOTABLE |
 
 ## Chronological change record
 
@@ -336,7 +337,7 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
   results, and next-decision boundary are in
   `docs/ALG002A_combined_timing_background_20261001.md`.
 
-### 2026-10-01 — ALG-002B exact proposal; no implementation
+### 2026-10-01 — ALG-002B exact proposal
 
 - Closed the already approved ALG-002A increment in commit
   `cef0c69a8335d65276d2bedd5e105cd0d764598f` after synthetic, output-isolation,
@@ -351,6 +352,50 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
   run-specific partially pooled peak calibration, predeclared positive
   background candidates, full cross-run yield covariance, explicit run-6569
   exclusion, and fail-closed validation thresholds.
-- ALG-002B remains documentation only. No mass-model source, `pi0_weight`,
-  production macro, combiner, efficiency, smearing, or cross-section file was
-  changed or executed.
+- This proposal-only state was committed as
+  `89f13fc272a63e087c11d23e5d11d7aeb0bcb2e8`. It was superseded later the
+  same day by explicit user approval with an LH2-only condition.
+
+### 2026-10-01 — ALG-002B approved production-LH2 shadow implementation
+
+- User approved the exact ALG-002B boundary and required only LH2 runs. The
+  launcher and validator are locked to `KinC_x36_4`/`LH2`; the configuration
+  reader accepts only `Type=production` and target exactly `LH2`. Inputs with
+  LD2, fan-test, wrong-kinematic, arbitrary, or unapproved-missing runs fail
+  before model construction.
+- Added `joint_timing_mass_model.py`, its launcher, fail-closed validator, and
+  focused synthetic regression. The likelihood has pi0, true combinatorial,
+  horizontal, vertical, random, and diagonal components; run-specific pi0
+  yields and partially pooled peak calibration; exact ALG-002A timing support;
+  positive normalized mass shapes; and explicit mass flow categories.
+- Timing initializes from ALG-002A and is refitted in coordinate blocks. Six
+  nonnegative run yields are profiled at every shape point. Reference logits
+  remove exact softmax degeneracies. The ordered optimizer parameters,
+  run/stratum yields, predictions, manifest, closure, provisional model choice,
+  and conditional covariance diagnostics are written only to a new shadow
+  directory.
+- The focused regression passes production-LH2 filtering, rejection of four
+  invalid run classes, six-component mass normalization, end-to-end synthetic
+  fitting, exact closure, output isolation, and absence of `pi0_weight`.
+- The full real bundle contains 57 expected and 56 represented production-LH2
+  runs, with only 6569 missing, and 76,242 observations in two waveform
+  multiplicity strata. The initial objective is finite and its profiled yields
+  close exactly to 76,242.
+- A deliberately bounded real-data smoke fit (one start, one cycle, three mass
+  and two timing iterations) reduced the objective from 153817.237547 to
+  150879.268285 and closed to 8.29e-8 events. All 112 inner yield profiles pass
+  with maximum KKT residual 2.58e-8. It correctly reports nonconvergence at
+  the iteration limits, four timing population-scale boundaries, 37 zero
+  component yields, and `NOT_PROMOTABLE`/validator exit 3. Its provisional
+  pi0 yield is not a physics result.
+- The system Python has an unsupported NumPy/SciPy combination. The
+  user-provided `/group/nps/singhav/software/python/bin/python` supplies Python
+  3.12.13, NumPy 2.5.0, SciPy 1.18.0, and uproot 5.7.4 and evaluates the full
+  likelihood about twice as fast. No new package was needed.
+- Full candidate selection, converged 20-start reproducibility, standalone and
+  leave-one-run-out checks, mass/timing factorization, timing calibration,
+  profile/full replica covariance, and 2,000-toy coverage remain blocking.
+  Efficiency calculations remain frozen and ALG-002C event weights remain
+  unapproved.
+- Complete equations, commands, outputs, evidence, and blockers are in
+  `docs/ALG002B_simultaneous_timing_mass_20261001.md`.

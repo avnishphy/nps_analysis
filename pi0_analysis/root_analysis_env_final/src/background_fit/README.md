@@ -16,4 +16,3 @@ Entry points:
 
 See `docs/ALG002A_combined_timing_background_20261001.md` for the full model,
 reasoning, commands, output schema, validation history, and current blockers.
-

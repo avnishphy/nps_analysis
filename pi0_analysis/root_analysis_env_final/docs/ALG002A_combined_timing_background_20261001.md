@@ -1,8 +1,8 @@
 # ALG-002A combined-statistics timing-background pilot
 
-Date: 2026-10-01  
-Workspace: `root_analysis_env_final`  
-Validation setting: `KinC_x36_4`  
+Date: 2026-10-01
+Workspace: `root_analysis_env_final`
+Validation setting: `KinC_x36_4`
 Status: **implemented shadow pilot; not promotable; no pi0 weight**
 
 ## Purpose and approval boundary
@@ -372,4 +372,3 @@ The next dependency is a simultaneous true-coincidence mass model with shared
 signal/combinatorial shapes, run-specific yields, validated peak shifts/widths,
 and full nuisance propagation. That is a separate physics update and requires
 explicit approval before implementation.
-

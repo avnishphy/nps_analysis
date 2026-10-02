@@ -335,3 +335,22 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
 - Complete reasoning, equations, numerical method, commands, outputs, measured
   results, and next-decision boundary are in
   `docs/ALG002A_combined_timing_background_20261001.md`.
+
+### 2026-10-01 — ALG-002B exact proposal; no implementation
+
+- Closed the already approved ALG-002A increment in commit
+  `cef0c69a8335d65276d2bedd5e105cd0d764598f` after synthetic, output-isolation,
+  existing ALG-001, and expected `NOT_PROMOTABLE` gate checks passed.
+- Quantified the setting-wide mass evidence without changing analysis files.
+  Across the 56 represented runs, legacy pi0 means span 133.521--135.247 MeV
+  and widths span 3.249--5.581 MeV. The raw bundle contains 29,477 prompt
+  observations, with 41--838 per run. Thirty-four of 56 legacy per-run
+  Fermi/logistic widths reach the 100 MeV upper bound.
+- Prepared `docs/proposals/ALG-002B_simultaneous_timing_mass_model.md` for user
+  approval. It specifies a six-component joint timing/mass Poisson model,
+  run-specific partially pooled peak calibration, predeclared positive
+  background candidates, full cross-run yield covariance, explicit run-6569
+  exclusion, and fail-closed validation thresholds.
+- ALG-002B remains documentation only. No mass-model source, `pi0_weight`,
+  production macro, combiner, efficiency, smearing, or cross-section file was
+  changed or executed.

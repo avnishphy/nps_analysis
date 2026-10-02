@@ -1,5 +1,21 @@
 # NPS Pi0 Analysis Refactor Plan (Living Document)
 
+## 2026-10-01: ALG-002B proposal awaiting approval
+
+- Proposed next physics increment: a shadow simultaneous timing-and-mass
+  extended-Poisson model for `KinC_x36_4`.
+- It would split the central true-coincidence timing component into pi0 signal
+  and true-coincidence combinatorial background, retain run-specific peak
+  shifts, widths, and yields through partial pooling, and save the complete
+  cross-run yield covariance.
+- It would not write `pi0_weight`, alter production outputs, combine physics
+  spectra, calculate efficiencies, or run cross-section extraction.
+- Exact model, candidate selection, missing-run policy, validation thresholds,
+  file scope, and deferred ALG-002C boundary are in
+  `docs/proposals/ALG-002B_simultaneous_timing_mass_model.md`.
+- Status: documentation only; explicit user approval is required before code
+  implementation.
+
 ## 2026-10-01: Final-workspace migration and approval boundary
 
 - Baseline commit: `e1e7ecc4b18d359e02140c1785df64b69b3b53aa` in the

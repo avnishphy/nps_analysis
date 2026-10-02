@@ -42,7 +42,8 @@ Entry points:
 
 Pass the completed campaign directory to
 `validate_joint_timing_mass_output.py --start-campaign <directory>` so the
-otherwise fail-closed reproducibility gate uses its aggregate result.
+otherwise fail-closed reproducibility gate uses its aggregate result. The
+campaign and validated common initializer must record the same Git revision.
 
 See `docs/ALG002A_combined_timing_background_20261001.md` for the full model,
 reasoning, commands, output schema, validation history, and current blockers.

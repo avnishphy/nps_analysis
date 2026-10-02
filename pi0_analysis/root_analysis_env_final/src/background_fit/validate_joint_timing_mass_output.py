@@ -106,6 +106,7 @@ def main() -> int:
             len(campaign_starts) == campaign.get("expected_starts") and
             all(item.get("status") == "complete" for item in campaign_starts) and
             campaign.get("identity_consistent") is True and
+            campaign.get("git_head") == provenance.get("git_head") and
             campaign.get("input_manifest_sha256") == input_manifest_digest and
             campaign.get("campaign_config_sha256") == hashlib.sha256(
                 campaign_config_path.read_bytes()).hexdigest() and

@@ -24,6 +24,32 @@ efficiency, charge normalization, legacy purity weight, or cross-section
 product. It does not write `pi0_weight` or modify a production tree. Output
 under the canonical `output/` tree is refused.
 
+## Relationship to the original timing-background method
+
+The production macro still uses the original timing estimator and was not
+changed. For each run it calculates
+
+```text
+N_acc = D + 0.5*(H + V) - 0.5*(F1 + F2),
+```
+
+where each control-box count is scaled to the nominal prompt-box area. It then
+subtracts the resulting mass template before fitting the true-coincidence
+combinatorial background.
+
+ALG-002B does not use `N_acc`, its uncertainty, or the subtracted mass
+histogram. It uses the same selected events and measured photon times, and its
+horizontal, vertical, two-random, and diagonal components represent the same
+physical timing-background mechanisms. Their shapes and normalizations are
+instead inferred simultaneously over the accepted timing support.
+
+`compare_legacy_timing_background.py` preserves the original estimator as an
+independent validation comparator. It reads the authoritative
+`accidental_est` and `accidental_err` values stored by production, reconstructs
+the nominal box formula from raw region masks as a separate support diagnostic,
+and compares both with the ALG-002B prompt-accidental prediction. Nothing from
+that comparison is passed back into the fit.
+
 ## Implemented likelihood
 
 Every selected event keeps its run, acquisition mode, multiplicity class,
@@ -108,7 +134,8 @@ with code 3 while any promotion gate fails or remains pending. It checks the
 exact LH2 manifest, closure, optimizer finiteness and convergence, multi-start
 agreement, boundaries, model selection, full covariance, toy coverage,
 leave-one-run-out prediction, factorization, timing calibration, absence of a
-pi0-weight product, and exclusion of efficiencies and cross sections.
+pi0-weight product, exclusion of efficiencies and cross sections, and the
+independent legacy-method comparison.
 
 ## Validation completed
 
@@ -159,6 +186,22 @@ The smoke bundle is
 `validation/runtime/alg002b_x36_4_joint_mass_smoke_v2/`. Runtime products are
 ignored and are not part of the source commit.
 
+The independent comparison for this unconverged smoke result reports:
+
+| Timing-background diagnostic | Setting sum |
+|---|---:|
+| Stored production legacy estimate | 1528.67 |
+| Same nominal box formula on exported 139--161 ns support | 1771.72 |
+| Raw-support formula minus stored legacy | 243.06 |
+| ALG-002B prompt-accidental prediction | 2088.28 |
+| Run-level ALG-002B/legacy correlation | 0.98945 |
+
+The shifted production boxes extend to 139 and 161 ns, while the legacy timing
+histogram spans 140--160 ns. The raw-support difference therefore confirms the
+known clipping mismatch. The ALG-002B difference cannot be interpreted until
+the outer fit converges and the shared-data covariance is obtained through
+replicas.
+
 ## Reproduction
 
 From the FINAL workspace, the focused regression is:
@@ -183,17 +226,31 @@ env OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
   --mass-maxiter 3 --timing-refit-maxiter 2 --seed 20261001
 ```
 
-The validator is:
+After running the independent comparison command below, the validator is:
 
 ```bash
 /group/nps/singhav/software/python/bin/python \
   src/background_fit/validate_joint_timing_mass_output.py \
   validation/runtime/alg002b_x36_4_joint_mass_smoke_v2 \
   --config-csv config/nps_dvcs_all_kins_main.csv \
-  --kin KinC_x36_4 --target LH2
+  --kin KinC_x36_4 --target LH2 \
+  --legacy-comparison \
+    validation/runtime/alg002b_x36_4_joint_mass_smoke_v2_legacy_timing_v2
 ```
 
 Exit 3 is expected for the bounded smoke result.
+
+The independent legacy comparison is:
+
+```bash
+env OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+/group/nps/singhav/software/python/bin/python \
+  src/background_fit/compare_legacy_timing_background.py \
+  validation/runtime/alg002b_x36_4_joint_mass_smoke_v2 \
+  validation/runtime/alg002b_x36_4_joint_mass_smoke_v2_legacy_timing_v2 \
+  --config-csv config/nps_dvcs_all_kins_main.csv \
+  --kin KinC_x36_4
+```
 
 ## Open gates
 

@@ -21,6 +21,10 @@
   `NOT_PROMOTABLE`; multi-start convergence, candidate selection, profile/full
   replica covariance, factorization, leave-one-run-out, timing calibration,
   and 2,000-toy coverage remain open.
+- The original production timing-box subtraction remains unchanged and is not
+  an ALG-002B input. A new independent comparator reports its stored per-run
+  estimate beside the joint model and exposes the known 140--160 ns legacy
+  histogram versus 139--161 ns shifted-sideband support mismatch.
 - Technical record:
   `docs/ALG002B_simultaneous_timing_mass_20261001.md`.
 

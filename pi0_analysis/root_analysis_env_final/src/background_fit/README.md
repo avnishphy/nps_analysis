@@ -18,6 +18,8 @@ Entry points:
 - `run_joint_timing_mass_fit.py`: run the ALG-002B six-component shadow fit;
 - `validate_joint_timing_mass_output.py`: write fail-closed ALG-002B gates;
 - `joint_timing_mass_model.py`: joint timing/mass model and isolated outputs.
+- `compare_legacy_timing_background.py`: report the original production
+  timing-box estimate beside ALG-002B without using it as a fit input.
 
 See `docs/ALG002A_combined_timing_background_20261001.md` for the full model,
 reasoning, commands, output schema, validation history, and current blockers.

@@ -401,3 +401,25 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
   `docs/ALG002B_simultaneous_timing_mass_20261001.md`.
 - Implementation commit: `ec833cf614c0d3acbc48b0a57a9f3887acf58f28`
   (`feat(background): add LH2 timing-mass fitter`).
+
+### 2026-10-01 — independent original timing-method comparison
+
+- Confirmed from production source that the original estimator remains active:
+  `D + 0.5*(H+V) - 0.5*(F1+F2)` is nominal-area scaled and its mass template is
+  subtracted before the combinatorial fit. ALG-002B reads neither that scalar
+  estimate nor the subtracted histogram.
+- Added `compare_legacy_timing_background.py`. It treats the stored per-run
+  `accidental_est`/`accidental_err` objects as the authoritative legacy result,
+  reconstructs the same algebra from raw region masks as a support diagnostic,
+  and calculates the ALG-002B H/V/random/diagonal expectation in the prompt
+  box. Fit-input hashes and the strict production-LH2 manifest must match.
+- The 56-run bounded smoke comparison gives legacy sum 1528.67, raw-mask
+  nominal-formula sum 1771.72, and unconverged ALG-002B prompt-accidental sum
+  2088.28; run-level legacy/ALG-002B correlation is 0.98945. The 243.06-event
+  raw-mask versus stored-legacy difference confirms the shifted 139--161 ns
+  sidebands are clipped by the legacy 140--160 ns timing histogram.
+- These values are diagnostics only. The joint fit has not converged, the two
+  estimators use the same events, and their difference covariance is not yet
+  available. The validator therefore keeps the legacy-comparison gate pending.
+- The original method remains unchanged in production and independent in
+  validation; no legacy estimate is fed into ALG-002B.

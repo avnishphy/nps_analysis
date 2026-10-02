@@ -15,6 +15,7 @@ authorizes the isolated `output/KinC_x36_4/alg002b/` shadow subtree.
 from __future__ import annotations
 
 import csv
+import importlib.metadata
 import json
 import math
 import os
@@ -27,6 +28,9 @@ from typing import Callable, Sequence
 
 import numpy as np
 import scipy
+import autograd.numpy as anp
+from autograd import grad as autograd_grad
+from autograd.scipy.special import erf as autograd_erf
 from scipy.optimize import minimize
 from scipy.special import betainc, erf
 
@@ -35,14 +39,14 @@ try:
         FitError, ObservationBundle, StratumData, TimingFitConfig,
         _component_probabilities, _git_head, _initial_parameters,
         _multiplicity_class, _shape_penalty, _write_csv,
-        _zero_sum_deviations, build_strata, fit_stratum,
+        _zero_sum_contrast, _zero_sum_deviations, build_strata, fit_stratum,
     )
 except ImportError:  # Direct execution from src/background_fit.
     from joint_timing_model import (  # type: ignore
         FitError, ObservationBundle, StratumData, TimingFitConfig,
         _component_probabilities, _git_head, _initial_parameters,
         _multiplicity_class, _shape_penalty, _write_csv,
-        _zero_sum_deviations, build_strata, fit_stratum,
+        _zero_sum_contrast, _zero_sum_deviations, build_strata, fit_stratum,
     )
 
 
@@ -66,10 +70,12 @@ class JointMassFitConfig:
     seed: int = 20261001
     coordinate_cycles: int = 2
     nproc: int = 1
-    mass_maxiter: int = 120
-    timing_refit_maxiter: int = 25
+    mass_maxiter: int = 300
+    timing_refit_maxiter: int = 100
     coordinate_tolerance: float = 1.0e-6
-    optimizer_tolerance: float = 2.0e-7
+    optimizer_ftol: float = 1.0e-10
+    optimizer_gtol: float = 1.0e-6
+    mass_gradient_backend: str = "autograd"
     yield_em_maxiter: int = 500
     yield_em_tolerance: float = 1.0e-9
     background_smoothness: float = 0.5
@@ -90,6 +96,10 @@ class JointMassFitConfig:
             raise ValueError("mass and timing iteration limits must be positive")
         if self.coordinate_tolerance <= 0.0:
             raise ValueError("coordinate_tolerance must be positive")
+        if self.optimizer_ftol <= 0.0 or self.optimizer_gtol <= 0.0:
+            raise ValueError("optimizer tolerances must be positive")
+        if self.mass_gradient_backend not in {"autograd", "finite"}:
+            raise ValueError("mass_gradient_backend must be autograd or finite")
         if self.yield_em_maxiter < 1 or self.yield_em_tolerance <= 0.0:
             raise ValueError("yield EM controls must be positive")
 
@@ -286,6 +296,44 @@ def _dscb_cdf(
     return np.clip(result / total, 0.0, 1.0)
 
 
+def _autograd_softmax(values: anp.ndarray) -> anp.ndarray:
+    shifted = values - anp.max(values)
+    result = anp.exp(anp.clip(shifted, -700.0, 0.0))
+    return result / anp.sum(result)
+
+
+def _autograd_safe_power(base: anp.ndarray, exponent: anp.ndarray) -> anp.ndarray:
+    return anp.exp(anp.clip(
+        exponent * anp.log(anp.maximum(base, 1.0e-300)), -700.0, 300.0))
+
+
+def _autograd_dscb_cdf(
+    x: anp.ndarray, mean: anp.ndarray, sigma: anp.ndarray,
+    alpha_left: anp.ndarray, n_left: anp.ndarray,
+    alpha_right: anp.ndarray, n_right: anp.ndarray,
+) -> anp.ndarray:
+    t = (x - mean) / sigma
+    al, nl, ar, nr = alpha_left, n_left, alpha_right, n_right
+    acl = _autograd_safe_power(nl / al, nl) * anp.exp(-0.5 * al * al)
+    acr = _autograd_safe_power(nr / ar, nr) * anp.exp(-0.5 * ar * ar)
+    bl = nl / al - al; br = nr / ar - ar
+    left_total = acl / (nl - 1.0) * _autograd_safe_power(bl + al, 1.0 - nl)
+    core_total = math.sqrt(math.pi / 2.0) * (
+        autograd_erf(ar / math.sqrt(2.0)) +
+        autograd_erf(al / math.sqrt(2.0)))
+    right_total = acr / (nr - 1.0) * _autograd_safe_power(br + ar, 1.0 - nr)
+    left = acl / (nl - 1.0) * _autograd_safe_power(
+        anp.maximum(bl - t, 1.0e-300), 1.0 - nl)
+    core = left_total + math.sqrt(math.pi / 2.0) * (
+        autograd_erf(t / math.sqrt(2.0)) +
+        autograd_erf(al / math.sqrt(2.0)))
+    right = left_total + core_total + acr / (nr - 1.0) * (
+        _autograd_safe_power(br + ar, 1.0 - nr) -
+        _autograd_safe_power(anp.maximum(br + t, 1.0e-300), 1.0 - nr))
+    result = anp.where(t < -al, left, anp.where(t <= ar, core, right))
+    return anp.clip(result / (left_total + core_total + right_total), 0.0, 1.0)
+
+
 def _mass_layout(dataset: JointDataset, config: JointMassFitConfig) -> tuple[np.ndarray, MassLayout]:
     names: list[str] = []; bounds: list[tuple[float, float]] = []
     values: list[float] = []; index: dict[str, slice | int] = {}
@@ -416,6 +464,128 @@ def _mass_probabilities(
     return outputs, details, penalty
 
 
+def _mass_probabilities_autograd(
+    parameters: anp.ndarray, layout: MassLayout,
+    dataset: JointDataset, config: JointMassFitConfig,
+) -> tuple[list[anp.ndarray], anp.ndarray]:
+    nrun = len(dataset.runs)
+    if nrun > 1:
+        mean_free = parameters[layout.index["mass_mean_free"]]
+        width_free = parameters[layout.index["mass_width_free"]]
+        contrast = anp.asarray(_zero_sum_contrast(nrun))
+        mean_delta = anp.dot(contrast, mean_free)
+        width_delta = anp.dot(contrast, width_free)
+    else:
+        mean_delta = anp.zeros(1); width_delta = anp.zeros(1)
+    tau_mean = anp.exp(parameters[layout.index["log_tau_mass_mean"]])
+    tau_width = anp.exp(parameters[layout.index["log_tau_mass_width"]])
+    penalty = 0.0
+    if nrun > 1:
+        penalty = (penalty + 0.5 * anp.sum(mean_delta * mean_delta) / tau_mean**2 +
+                   (nrun - 1) * anp.log(tau_mean) +
+                   0.5 * anp.sum(width_delta * width_delta) / tau_width**2 +
+                   (nrun - 1) * anp.log(tau_width))
+    edges = anp.asarray(config.timing.mass_edges)
+    outputs: list[anp.ndarray] = []
+    for joint in dataset.strata:
+        tag = joint.tag
+        base_mean = parameters[layout.index[f"{tag}:signal_mean"]]
+        base_sigma = anp.exp(parameters[layout.index[f"{tag}:log_signal_sigma"]])
+        indices = joint.global_run_index
+        means = base_mean + mean_delta[indices]
+        sigmas = base_sigma * anp.exp(width_delta[indices])
+        x = edges[None, :]
+        if config.signal_model == "dscb":
+            cdf = _autograd_dscb_cdf(
+                x, means[:, None], sigmas[:, None],
+                parameters[layout.index["alpha_left"]],
+                parameters[layout.index["n_left"]],
+                parameters[layout.index["alpha_right"]],
+                parameters[layout.index["n_right"]])
+        else:
+            fraction = parameters[layout.index["wide_fraction"]]
+            scale = parameters[layout.index["wide_scale"]]
+            z1 = (x - means[:, None]) / (sigmas[:, None] * math.sqrt(2.0))
+            z2 = (x - means[:, None]) / (sigmas[:, None] * scale * math.sqrt(2.0))
+            cdf = ((1.0 - fraction) * 0.5 * (1.0 + autograd_erf(z1)) +
+                   fraction * 0.5 * (1.0 + autograd_erf(z2)))
+        cdf = anp.clip(cdf, 0.0, 1.0)
+        signal = anp.concatenate((
+            cdf[:, :1], anp.maximum(cdf[:, 1:] - cdf[:, :-1], 0.0),
+            1.0 - cdf[:, -1:]), axis=1)
+        signal = signal / anp.sum(signal, axis=1, keepdims=True)
+        backgrounds: list[anp.ndarray] = []
+        for group in BACKGROUND_GROUPS:
+            if group == "combinatorial" and config.combinatorial_model == "logistic":
+                turn = parameters[layout.index[f"{tag}:comb_turn"]]
+                width = anp.exp(parameters[layout.index[f"{tag}:log_comb_width"]])
+                z = anp.clip((edges - turn) / width, -700.0, 700.0)
+                anti = edges - width * anp.logaddexp(0.0, z)
+                regular = anp.maximum(anti[1:] - anti[:-1], 1.0e-15)
+                regular = regular / anp.sum(regular)
+            else:
+                degree = (4 if group == "combinatorial" and
+                          config.combinatorial_model == "bernstein4" else 3)
+                logits = anp.concatenate((
+                    parameters[layout.index[f"{tag}:{group}_logits"]],
+                    anp.zeros(1)))
+                basis = anp.asarray(_bernstein_integrals(
+                    np.asarray(config.timing.mass_edges), degree))
+                regular = anp.dot(_autograd_softmax(logits), basis)
+                regular = regular / anp.sum(regular)
+                second_difference = logits[2:] - 2.0 * logits[1:-1] + logits[:-2]
+                penalty = penalty + 0.5 * config.background_smoothness * anp.sum(
+                    second_difference * second_difference)
+            flow_logits = anp.concatenate((
+                parameters[layout.index[f"{tag}:{group}_flow_logits"]],
+                anp.zeros(1)))
+            flow = _autograd_softmax(flow_logits)
+            backgrounds.append(anp.concatenate((
+                flow[:1], flow[1] * regular, flow[2:])))
+        nlocal = len(joint.data.runs)
+        broadcast = [anp.broadcast_to(values[None, :], (nlocal, values.shape[0]))
+                     for values in backgrounds]
+        outputs.append(anp.stack((
+            signal, broadcast[0], broadcast[1], broadcast[1],
+            broadcast[2], broadcast[3]), axis=1))
+    return outputs, penalty
+
+
+def _profiled_mass_objective_autograd(
+    parameters: anp.ndarray, dataset: JointDataset, config: JointMassFitConfig,
+    layout: MassLayout, timing_probabilities: Sequence[np.ndarray],
+    profiled_yields: Sequence[np.ndarray],
+) -> anp.ndarray:
+    mass_probabilities, total = _mass_probabilities_autograd(
+        parameters, layout, dataset, config)
+    for s, joint in enumerate(dataset.strata):
+        timing = anp.asarray(timing_probabilities[s])
+        yields = anp.asarray(profiled_yields[s])
+        for r, event_indices in enumerate(joint.event_indices_by_run):
+            cells = joint.event_cell_index[event_indices]
+            masses = joint.event_mass_index[event_indices]
+            features = (timing[r, :, cells] *
+                        mass_probabilities[s][r, :, masses])
+            intensity = anp.maximum(anp.dot(features, yields[r]), 1.0e-300)
+            total = total + anp.sum(yields[r]) - anp.sum(anp.log(intensity))
+    return total
+
+
+_AUTOGRAD_MASS_GRADIENT = autograd_grad(_profiled_mass_objective_autograd, 0)
+
+
+def _mass_gradient_autograd(
+    parameters: np.ndarray, dataset: JointDataset, config: JointMassFitConfig,
+    layout: MassLayout, evaluation: Evaluation,
+) -> np.ndarray:
+    gradient = _AUTOGRAD_MASS_GRADIENT(
+        anp.asarray(parameters), dataset, config, layout,
+        evaluation.timing_probabilities, evaluation.yields)
+    result = np.asarray(gradient, dtype=float)
+    _require(np.all(np.isfinite(result)), "nonfinite autograd mass gradient")
+    return result
+
+
 def _profile_yields(
     features: np.ndarray, config: JointMassFitConfig,
 ) -> tuple[np.ndarray, float, int, float]:
@@ -465,7 +635,7 @@ def _profile_yields(
                 candidate_residual < residual):
             yields, residual = candidate, candidate_residual
         optimizer_iterations += int(result.nit)
-        if residual > 2.0e-6:
+        if residual > 1.0e-6:
             second = minimize(
                 yield_objective, yields, jac=yield_gradient, method="SLSQP",
                 bounds=[(0.0, None)] * 6,
@@ -478,7 +648,7 @@ def _profile_yields(
                 yields, residual = candidate, candidate_residual
             optimizer_iterations += int(second.nit)
             _require(
-                residual <= 2.0e-6,
+                residual <= 1.0e-6,
                 "six-component yield profile failed KKT check: "
                 f"lbfgs={result.message}; slsqp={second.message}; "
                 f"residual={residual:.6g}",
@@ -617,9 +787,10 @@ def _minimize_lbfgsb(
     options: dict[str, object] = {
         "maxiter": maxiter,
         "maxfun": max(15000, 2 * maxiter * (len(start) + 1)),
-        "ftol": config.optimizer_tolerance,
-        "gtol": config.optimizer_tolerance,
+        "ftol": config.optimizer_ftol,
+        "gtol": config.optimizer_gtol,
         "maxls": 40,
+        "maxcor": 40,
     }
     if config.nproc == 1:
         return minimize(
@@ -656,6 +827,26 @@ def _fit_mass_block(
     start: np.ndarray, layout: MassLayout, timing: Sequence[TimingState],
     dataset: JointDataset, config: JointMassFitConfig,
 ) -> tuple[np.ndarray, object]:
+    if config.mass_gradient_backend == "autograd":
+        def objective_with_gradient(values: np.ndarray) -> tuple[float, np.ndarray]:
+            evaluation = _evaluate(values, layout, timing, dataset, config)
+            gradient = _mass_gradient_autograd(
+                values, dataset, config, layout, evaluation)
+            return evaluation.objective, gradient
+        options = {
+            "maxiter": config.mass_maxiter,
+            "maxfun": max(15000, 2 * config.mass_maxiter * (len(start) + 1)),
+            "ftol": config.optimizer_ftol,
+            "gtol": config.optimizer_gtol,
+            "maxls": 40,
+            "maxcor": 40,
+        }
+        result = minimize(
+            objective_with_gradient, start, jac=True, method="L-BFGS-B",
+            bounds=layout.bounds, options=options)
+        _require(np.isfinite(result.fun), "nonfinite mass-block optimizer result")
+        return np.asarray(result.x), result
+
     def objective(values: np.ndarray) -> float:
         try:
             value = _evaluate(values, layout, timing, dataset, config).objective
@@ -727,12 +918,14 @@ def fit_joint_model(
                 timing_result = _fit_timing_block(s, mass, layout, timing, dataset, config)
                 timing_records.append({"tag": joint.tag, "success": bool(timing_result.success),
                                        "iterations": int(timing_result.nit),
+                                       "max_abs_jacobian": float(np.max(np.abs(timing_result.jac))),
                                        "message": str(timing_result.message)})
             evaluation = _evaluate(mass, layout, timing, dataset, config)
             cycles.append({"start_index": absolute_start_index, "cycle": cycle,
                            "objective": evaluation.objective,
                            "mass_success": bool(mass_result.success),
                            "mass_iterations": int(mass_result.nit),
+                           "mass_max_abs_jacobian": float(np.max(np.abs(mass_result.jac))),
                            "mass_message": str(mass_result.message), "timing": timing_records,
                            "relative_change": ((previous - evaluation.objective) /
                                                max(1.0, abs(previous))) if np.isfinite(previous) else None})
@@ -955,6 +1148,7 @@ def write_joint_result(
         "working_directory": os.getcwd(), "git_head": _git_head(repo),
         "python": sys.version, "platform": platform.platform(),
         "numpy": np.__version__, "scipy": scipy.__version__,
+        "autograd": importlib.metadata.version("autograd"),
         "config": asdict(result.config), "run_manifest": run_manifest,
         "objective_without_count_constants": result.evaluation.objective,
         "optimizer_starts": result.start_summaries,

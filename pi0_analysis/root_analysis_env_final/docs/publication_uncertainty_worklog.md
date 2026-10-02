@@ -502,3 +502,32 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
   from 148346.004585 to 148259.359119, closed counts to `1.67e-6`, and recorded
   the resolved initializer path. Its one-iteration blocks remain intentionally
   nonconverged; the check establishes continuation mechanics only.
+- Eight full continuation cycles reached objective 148125.120457; all blocks
+  succeeded but the final coordinate change was `7.03e-5`. Twenty more
+  successful cycles reached 148015.649466 with final change `2.18e-5`, showing
+  steady improvement rather than a plateau.
+- Tightened block relative-function tolerance from `2e-7` to `1e-10` while
+  retaining a separate `1e-6` projected-gradient tolerance. Aligned the inner
+  six-yield KKT fallback and hard check with the validator's `1e-6` threshold;
+  the previous solver could write residuals between `1e-6` and `2e-6`.
+- The 300/100-limit finite-difference continuation reached objective
+  147816.974225 with KKT `6.58e-7`, but both 160-parameter mass blocks hit 300
+  iterations and required about 24 minutes with 32 workers.
+- Added an exact fork-safe `autograd` gradient for the existing bounded mass
+  parameterization and profiled-yield objective. It reproduces NumPy mass
+  probabilities within `2.36e-16`, penalties exactly, and representative real
+  finite-difference derivatives within `8.4e-7`. Five real mass iterations
+  took 2.78 s versus 28.98 s for 16-worker finite differences (10.4x faster).
+- A two-cycle 300/100 continuation with autograd completed in about five
+  minutes at objective 147748.809615, closure `1.50e-5`, and maximum KKT
+  `9.94e-7`. Mass blocks still reached 300 iterations; increase L-BFGS history
+  to 40 and record final block gradient norms before the next continuation.
+- Removed the unused JAX/JAXLIB evaluation packages; the managed environment
+  retains only pinned `autograd==1.9.1` for this update.
+- With L-BFGS history 40, a continuation crossed the convergence threshold at
+  objective 147713.081597: final coordinate change `9.42e-7`, closure
+  `9.55e-6`, and maximum KKT `2.67e-7`. All final mass/timing blocks succeeded.
+- The converged legacy comparison passes: stored and raw-mask legacy sums are
+  both 1771.722222, the joint prompt-accidental diagnostic is 2045.220786,
+  their difference is 273.498564, and run-level correlation is 0.991843.
+  Multi-start and all remaining scientific gates still block promotion.

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import glob
+import hashlib
 import json
 import math
 import os
@@ -32,6 +33,17 @@ def _resolved_inputs(expressions: Sequence[str]) -> list[Path]:
 
 
 def aggregate_campaign(campaign_dir: Path, expected_starts: int) -> dict[str, object]:
+    config_path = campaign_dir / "campaign_config.json"
+    if not config_path.exists():
+        return {
+            "status": "NOT_PROMOTABLE", "expected_starts": expected_starts,
+            "complete_starts": 0, "all_converged": False,
+            "identity_consistent": False,
+            "identity_error": "campaign_config.json is missing", "starts": [],
+        }
+    campaign_config = json.loads(config_path.read_text())
+    config_digest = hashlib.sha256(config_path.read_bytes()).hexdigest()
+    reference_identity: dict[str, object] | None = None
     rows: list[dict[str, object]] = []
     for start_index in range(expected_starts):
         start_dir = campaign_dir / f"start_{start_index:02d}"
@@ -41,7 +53,39 @@ def aggregate_campaign(campaign_dir: Path, expected_starts: int) -> dict[str, ob
             continue
         provenance = json.loads(provenance_path.read_text())
         summaries = provenance.get("optimizer_starts", [])
-        if len(summaries) != 1 or int(summaries[0]["start_index"]) != start_index:
+        fit_config = provenance.get("config", {})
+        manifest_path = start_dir / "input_manifest.csv"
+        identity = {
+            "git_head": provenance.get("git_head"),
+            "run_manifest": provenance.get("run_manifest"),
+            "input_manifest_sha256": (
+                hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+                if manifest_path.exists() else None
+            ),
+        }
+        expected_fit_initial = campaign_config.get("fit_initial_dir")
+        identity_matches = (
+            len(summaries) == 1 and
+            int(summaries[0]["start_index"]) == start_index and
+            fit_config.get("starts") == 1 and
+            fit_config.get("start_index_offset") == start_index and
+            fit_config.get("signal_model") == campaign_config.get("signal_model") and
+            fit_config.get("combinatorial_model") == campaign_config.get("combinatorial_model") and
+            fit_config.get("mass_gradient_backend") == campaign_config.get("mass_gradient_backend") and
+            fit_config.get("seed") == campaign_config.get("seed") and
+            fit_config.get("coordinate_cycles") == campaign_config.get("coordinate_cycles") and
+            fit_config.get("mass_maxiter") == campaign_config.get("mass_maxiter") and
+            fit_config.get("timing_refit_maxiter") == campaign_config.get("timing_refit_maxiter") and
+            fit_config.get("nproc") == campaign_config.get("workers_per_start") and
+            provenance.get("fit_initial_dir") == expected_fit_initial and
+            provenance.get("output_directory") == str(start_dir.resolve()) and
+            identity["input_manifest_sha256"] is not None
+        )
+        if reference_identity is None and identity_matches:
+            reference_identity = identity
+        elif identity_matches:
+            identity_matches = identity == reference_identity
+        if not identity_matches:
             rows.append({"start_index": start_index, "status": "identity_mismatch"})
             continue
         summary = summaries[0]
@@ -72,8 +116,10 @@ def aggregate_campaign(campaign_dir: Path, expected_starts: int) -> dict[str, ob
     yield_spread = float(yields.max() - yields.min()) if len(yields) else math.inf
     all_complete = len(complete) == expected_starts
     all_converged = all(bool(row["converged"]) for row in complete) and all_complete
+    identity_consistent = all_complete and reference_identity is not None
     reproducible = (
-        expected_starts >= 20 and all_converged and relative_spread <= 1.0e-6 and
+        expected_starts >= 20 and identity_consistent and all_converged and
+        relative_spread <= 1.0e-6 and
         np.isfinite(conditional_sigma) and yield_spread <= 0.1 * conditional_sigma
     )
     return {
@@ -81,6 +127,11 @@ def aggregate_campaign(campaign_dir: Path, expected_starts: int) -> dict[str, ob
         "expected_starts": expected_starts,
         "complete_starts": len(complete),
         "all_converged": all_converged,
+        "identity_consistent": identity_consistent,
+        "campaign_config_sha256": config_digest,
+        "git_head": (reference_identity or {}).get("git_head"),
+        "input_manifest_sha256": (
+            (reference_identity or {}).get("input_manifest_sha256")),
         "relative_objective_spread": relative_spread,
         "yield_spread": yield_spread,
         "best_conditional_setting_sigma": conditional_sigma,
@@ -118,12 +169,14 @@ def main() -> int:
     parser.add_argument("--combinatorial-model",
                         choices=("logistic", "bernstein3", "bernstein4"),
                         default="bernstein3")
+    parser.add_argument("--mass-gradient-backend", choices=("autograd", "finite"),
+                        default="autograd")
     parser.add_argument("--start-count", type=int, default=20)
     parser.add_argument("--parallel-starts", type=int, default=1)
     parser.add_argument("--workers-per-start", type=int, default=8)
     parser.add_argument("--coordinate-cycles", type=int, default=2)
-    parser.add_argument("--mass-maxiter", type=int, default=120)
-    parser.add_argument("--timing-refit-maxiter", type=int, default=25)
+    parser.add_argument("--mass-maxiter", type=int, default=300)
+    parser.add_argument("--timing-refit-maxiter", type=int, default=100)
     parser.add_argument("--seed", type=int, default=20261001)
     parser.add_argument("--allow-canonical-shadow-output", action="store_true")
     args = parser.parse_args()
@@ -150,6 +203,7 @@ def main() -> int:
                             if args.fit_initial_dir is not None else None),
         "signal_model": args.signal_model,
         "combinatorial_model": args.combinatorial_model,
+        "mass_gradient_backend": args.mass_gradient_backend,
         "start_count": args.start_count,
         "parallel_starts": args.parallel_starts,
         "workers_per_start": args.workers_per_start,
@@ -185,6 +239,7 @@ def main() -> int:
             "--output-dir", str(destination), "--timing-initial-dir",
             str(args.timing_initial_dir), "--signal-model", args.signal_model,
             "--combinatorial-model", args.combinatorial_model,
+            "--mass-gradient-backend", args.mass_gradient_backend,
             "--starts", "1", "--start-index-offset", str(start_index),
             "--coordinate-cycles", str(args.coordinate_cycles), "--nproc",
             str(args.workers_per_start), "--mass-maxiter", str(args.mass_maxiter),

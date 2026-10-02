@@ -1,0 +1,2 @@
+# Managed analysis Python additions for ALG-002B.
+autograd==1.9.1

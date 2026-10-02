@@ -32,6 +32,8 @@ def main() -> int:
     parser.add_argument("--combinatorial-model",
                         choices=("logistic", "bernstein3", "bernstein4"),
                         default="bernstein3")
+    parser.add_argument("--mass-gradient-backend", choices=("autograd", "finite"),
+                        default="autograd")
     parser.add_argument("--starts", type=int, default=3)
     parser.add_argument(
         "--start-index-offset", type=int, default=0,
@@ -43,8 +45,8 @@ def main() -> int:
         help=("CPU workers for parallel numerical gradients (requires SciPy "
               ">=1.16; pass the shell value with --nproc \"$nproc\")."),
     )
-    parser.add_argument("--mass-maxiter", type=int, default=120)
-    parser.add_argument("--timing-refit-maxiter", type=int, default=25)
+    parser.add_argument("--mass-maxiter", type=int, default=300)
+    parser.add_argument("--timing-refit-maxiter", type=int, default=100)
     parser.add_argument("--timing-initial-dir", type=Path,
                         help="Directory containing ALG-002A profile-covariance NPZ files.")
     parser.add_argument(
@@ -73,6 +75,7 @@ def main() -> int:
             timing=TimingFitConfig(),
             signal_model=args.signal_model,
             combinatorial_model=args.combinatorial_model,
+            mass_gradient_backend=args.mass_gradient_backend,
             starts=args.starts,
             start_index_offset=args.start_index_offset,
             coordinate_cycles=args.coordinate_cycles,

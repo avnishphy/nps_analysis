@@ -311,6 +311,46 @@ starts, and aggregates the approved 20-start thresholds. A two-start real-data
 smoke used two concurrent starts with four gradient workers each. Both outputs
 completed; rerunning the identical command reused them in two seconds. Its
 one-iteration objective and yield spreads are deliberately nonpromotable.
+The completed aggregate is supplied to the scientific validator with
+`--start-campaign`; absent or nonpassing campaign evidence keeps the gate
+pending or failed, respectively.
+
+## 2026-10-02 converged autograd mass-block baseline
+
+The 160-parameter finite-difference mass block remained iteration-bound after
+300 steps. The managed analysis Python now installs the pinned, fork-safe
+`autograd==1.9.1` dependency. The fitter differentiates the existing bounded
+mass probability, penalty, and profiled-yield likelihood exactly; it does not
+change the statistical model or output schema. Timing gradients retain the
+validated forked SciPy workers.
+
+Validation of the gradient backend found:
+
+- NumPy/autograd mass probabilities agree within `2.36e-16`;
+- mass penalties agree exactly;
+- representative real gradients agree with central finite differences within
+  `8.4e-7`;
+- five real mass iterations took 2.78 s with autograd versus 28.98 s with
+  16-worker finite differences, with objective difference `1.16e-4` after the
+  same iteration count;
+- warning-as-error mechanics and synthetic fit regressions pass.
+
+With L-BFGS history 40, the continuation converged at
+`output/KinC_x36_4/alg002b/autograd_probe_dscb_bernstein3_v3/`:
+
+| Diagnostic | Value |
+|---|---:|
+| Objective | 147713.081597 |
+| Final relative coordinate change | `9.42e-7` |
+| Count-closure difference | `9.55e-6` |
+| Maximum yield-profile KKT residual | `2.67e-7` |
+| Sum of diagnostic pi0 yields | 34985.468217 |
+| Optimizer convergence gate | pass |
+
+The yield sum remains diagnostic until model choice, boundaries, replicas, and
+coverage pass. The converged independent comparison reports legacy accidentals
+1771.722222, joint prompt accidentals 2045.220786, difference 273.498564, and
+run-level correlation 0.991843. The legacy value is not used by the fit.
 
 The independent legacy comparison is:
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -32,6 +33,10 @@ def main() -> int:
     parser.add_argument("--target", choices=("LH2",), default="LH2")
     parser.add_argument("--legacy-comparison", type=Path,
                         help="Directory written by compare_legacy_timing_background.py.")
+    parser.add_argument(
+        "--start-campaign", type=Path,
+        help="Directory containing a 20-start campaign_summary.json.",
+    )
     args = parser.parse_args()
 
     output = args.output_dir.resolve()
@@ -83,6 +88,34 @@ def main() -> int:
             legacy_comparison.get("legacy_timing_histogram_ranges_ns") == [[139.0, 161.0]] and
             legacy_comparison.get("legacy_complete_shifted_support") is True
         )
+    campaign = None
+    campaign_valid = False
+    if args.start_campaign is not None:
+        campaign_dir = args.start_campaign.resolve()
+        campaign_path = campaign_dir / "campaign_summary.json"
+        campaign_config_path = campaign_dir / "campaign_config.json"
+        campaign = json.loads(campaign_path.read_text())
+        campaign_config = json.loads(campaign_config_path.read_text())
+        campaign_starts = campaign.get("starts", [])
+        fit_config = provenance.get("config", {})
+        input_manifest_digest = hashlib.sha256(
+            (output / "input_manifest.csv").read_bytes()).hexdigest()
+        campaign_valid = (
+            campaign.get("expected_starts", 0) >= 20 and
+            campaign.get("complete_starts") == campaign.get("expected_starts") and
+            len(campaign_starts) == campaign.get("expected_starts") and
+            all(item.get("status") == "complete" for item in campaign_starts) and
+            campaign.get("identity_consistent") is True and
+            campaign.get("input_manifest_sha256") == input_manifest_digest and
+            campaign.get("campaign_config_sha256") == hashlib.sha256(
+                campaign_config_path.read_bytes()).hexdigest() and
+            campaign_config.get("kin") == args.kin and
+            campaign_config.get("fit_initial_dir") == str(output) and
+            campaign_config.get("signal_model") == fit_config.get("signal_model") and
+            campaign_config.get("combinatorial_model") == fit_config.get("combinatorial_model") and
+            campaign_config.get("mass_gradient_backend") == fit_config.get("mass_gradient_backend") and
+            campaign_config.get("seed") == fit_config.get("seed")
+        )
 
     gates = {
         "shadow_output_scope": gate(
@@ -131,8 +164,10 @@ def main() -> int:
             "The shared-shape objective is trustworthy only when its inner convex yield solves converge.",
         ),
         "optimizer_reproducibility_20_starts": gate(
-            "pass" if len(starts) >= 20 and converged and relative_spread <= 1.0e-6 and
-            yield_spread <= 0.1 * conditional_setting_sigma else "pending",
+            "pass" if campaign_valid and campaign.get("status") == "PASS" else
+            "fail" if args.start_campaign is not None and not campaign_valid else
+            "pending",
+            campaign if campaign is not None else
             {"starts": len(starts), "relative_objective_spread": relative_spread,
              "pi0_yield_spread": yield_spread,
              "conditional_setting_pi0_standard_error": conditional_setting_sigma},

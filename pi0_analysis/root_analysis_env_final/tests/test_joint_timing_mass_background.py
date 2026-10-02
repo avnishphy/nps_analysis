@@ -18,6 +18,9 @@ sys.path.insert(0, str(REPO / "src"))
 from background_fit.joint_timing_mass_model import (  # noqa: E402
     JointMassFitConfig,
     _dscb_cdf,
+    _evaluate,
+    _load_timing_states,
+    _mass_gradient_autograd,
     _mass_layout,
     _mass_probabilities,
     _validate_shadow_output_path,
@@ -128,6 +131,7 @@ def main() -> None:
             raise AssertionError("canonical shadow output lacked explicit authorization")
 
         assert JointMassFitConfig(start_index_offset=19).start_index_offset == 19
+        assert JointMassFitConfig().optimizer_ftol < JointMassFitConfig().coordinate_tolerance
 
         extreme_cdf = _dscb_cdf(
             np.asarray([-1.0e6, -1.0, 0.0, 1.0, 1.0e6]),
@@ -158,6 +162,20 @@ def main() -> None:
                 parameter_names=np.asarray(names),
                 run_numbers=joint.data.runs,
             )
+        timing_states = _load_timing_states(dataset, fit_config, timing_dir)
+        evaluation = _evaluate(parameters, layout, timing_states, dataset, fit_config)
+        analytic = _mass_gradient_autograd(
+            parameters, dataset, fit_config, layout, evaluation)
+        for index in (0, 1, len(parameters) // 2, len(parameters) - 1):
+            step = 1.0e-6 * max(1.0, abs(float(parameters[index])))
+            plus = parameters.copy(); minus = parameters.copy()
+            plus[index] += step; minus[index] -= step
+            numeric = (
+                _evaluate(plus, layout, timing_states, dataset, fit_config).objective -
+                _evaluate(minus, layout, timing_states, dataset, fit_config).objective
+            ) / (2.0 * step)
+            assert np.isclose(analytic[index], numeric, rtol=2.0e-4, atol=2.0e-4), (
+                index, analytic[index], numeric)
         smoke_config = JointMassFitConfig(
             starts=1, coordinate_cycles=1, mass_maxiter=1,
             timing_refit_maxiter=1, yield_em_maxiter=30, nproc=2,

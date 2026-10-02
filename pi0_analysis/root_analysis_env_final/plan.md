@@ -30,6 +30,13 @@
 - Real warm-start mechanics are validated: a bounded continuation reused the
   probe and improved its objective to 148259.359119 without input or schema
   drift. This result is diagnostic because all blocks used one-iteration caps.
+- Exact fork-safe autograd mass gradients and L-BFGS history 40 reduce the
+  finite-difference bottleneck without changing the likelihood. The common
+  baseline now passes optimizer convergence at objective 147713.081597,
+  coordinate change `9.42e-7`, closure `9.55e-6`, and KKT `2.67e-7`.
+- Next executable gate is the resumable 20-start campaign from this common
+  checked state. Model-selection, boundaries, leave-one-run-out, factorization,
+  timing calibration, replicas, and full covariance remain blocking.
 
 ## 2026-10-01: ALG-002B approved LH2-only shadow implementation
 

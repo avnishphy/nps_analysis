@@ -11,6 +11,18 @@ legacy timing subtraction, or form a cross section. Output below canonical
 `output/` requires an explicit flag and is restricted to the isolated
 `output/KinC_x36_4/alg002b/` shadow subtree.
 
+Install the small mass-gradient dependency into the managed analysis Python:
+
+```bash
+/group/nps/singhav/software/python/bin/python -m pip install \
+  -r src/background_fit/requirements.txt
+```
+
+The default `autograd` mass backend differentiates the same profiled likelihood
+used for final evaluation. `--mass-gradient-backend finite` retains the slower
+finite-difference audit path. Timing gradients continue to use `--nproc` CPU
+workers.
+
 Entry points:
 
 - `run_joint_timing_fit.py`: fit ALG-001 `raw_observation` trees;
@@ -27,6 +39,10 @@ Entry points:
   initialization.
 - `run_joint_timing_mass_campaign.py`: schedule independently dispersed,
   resumable starts and aggregate the approved 20-start reproducibility gate.
+
+Pass the completed campaign directory to
+`validate_joint_timing_mass_output.py --start-campaign <directory>` so the
+otherwise fail-closed reproducibility gate uses its aggregate result.
 
 See `docs/ALG002A_combined_timing_background_20261001.md` for the full model,
 reasoning, commands, output schema, validation history, and current blockers.

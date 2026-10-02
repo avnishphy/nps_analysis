@@ -116,7 +116,7 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
 | Proposal | Exact scope | User decision/date | Conditions | Implementation commit | Validation |
 |---|---|---|---|---|---|
 | ALG-001 | Parallel raw-observation forward-inference prototype for one setting; passive exports and run ledger; legacy defaults unchanged | Approved 2026-10-01 with explicit condition: do not touch efficiency calculations; defer them | Efficiency sources/definitions/models frozen; later approvals still required for detailed background, smearing, production default, and publication use | `17a77208642f03479c53d3ca8709203364795f90` | Synthetic/passive-export checks pass; real-data shadow unresolved |
-| ALG-002 | Joint accepted-lattice timing/mass Poisson model, stratified by mode and multiplicity; timing pilot only | Awaiting user decision; not approved as of 2026-10-01 | Efficiency entirely excluded; no code or real-data run before approval | n/a | Prospective criteria in proposal |
+| ALG-002A | Joint accepted-lattice timing Poisson pilot, stratified by run, mode, and multiplicity; no pi0/combinatorial mass model | Approved 2026-10-01 after explicit review of combined-statistics and run-specific center/width safeguards | Efficiency entirely excluded; opt-in shadow output only; no production pi0 weight or cross section | working-tree implementation pending commit | Synthetic mechanics pass; 56-run KinC_x36_4 v2 converges but is NOT_PROMOTABLE |
 
 ## Chronological change record
 
@@ -302,3 +302,36 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
 - Prepared ALG-002 as the next dependency-ordered decision: an accepted-lattice
   joint timing/mass Poisson pilot with explicit multiplicity/mode strata. It
   excludes efficiency and is not implemented pending user approval.
+
+### 2026-10-01 — ALG-002A approval, implementation, and KinC_x36_4 shadow
+
+- User approved the timing-only first step after requiring combined-setting
+  statistics with explicit run-specific peak/timing safeguards. Timing shapes
+  are shared while yields, timing offsets, and width deviations retain run
+  identity. The pi0 peak and combinatorial mass background are not modeled yet.
+- Added isolated `src/background_fit/` tooling and
+  `tests/test_joint_timing_background.py`. No production analysis, efficiency,
+  smearing, combine, or extraction source was edited.
+- Exact polygon geometry and synthetic checks reproduce 484 ns2 unrestricted
+  support, 403 ns2 after the 13 ns pair cut, and the 36-to-4.5 ns2 full-box
+  reduction. The regression also verifies run-offset direction, flow-bin/count
+  closure, raw ROOT loading, noncanonical output, and no pi0-weight/efficiency
+  output.
+- Generated a separate run-only KinC_x36_4 ALG-001 bundle: 56/57 configured
+  production LH2 runs succeeded with 76,242 observations. Run 6569 has no
+  waveform input and remains explicit missing coverage. No combine, smearing,
+  efficiency calculation, or cross section ran.
+- Retained rejected evidence. V1 forced final run 6568 to absorb a +8.074 ns
+  zero-sum compensation. Balanced orthonormal contrasts replace that basis;
+  corrected v2 offsets span -0.0371 to +0.0435 ns and dominant-stratum
+  curvature conditioning improves from 5.79e6 to 1.95e5.
+- Corrected v2 closes 76,242 raw, mass-stratified, and timing counts; summed
+  expectation is 76,241.9999915. Both strata converge and no pi0 weight is
+  written.
+- Promotion is blocked. Only 1,418/10,848 occupied run/multiplicity/mass bins
+  have full five-component rank; 4,741 put the true-component MLE at zero.
+  Missing run 6569 and pending spline, optional-tail, 2,000-toy coverage, and
+  toy-goodness calibrations are also explicit blockers.
+- Complete reasoning, equations, numerical method, commands, outputs, measured
+  results, and next-decision boundary are in
+  `docs/ALG002A_combined_timing_background_20261001.md`.

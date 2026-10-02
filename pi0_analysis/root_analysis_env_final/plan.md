@@ -1253,3 +1253,17 @@ Update it whenever:
   outputs; full event/purity-fit joint uncertainty remains outside this release.
 - Technical/physics contract and commands: `src/xsec_extract/FORWARD_EXTRACTION.md`.
   Final validation results are recorded there and in the task worklog.
+## 2026-10-01: ALG-002A combined timing-background shadow contract
+
+- Approved scope: opt-in combined-statistics timing fit for `KinC_x36_4`, with
+  run/mode/multiplicity identity retained and efficiencies excluded.
+- `src/background_fit/` reads only ALG-001 `raw_observation` and refuses
+  canonical `output/` destinations.
+- Shadow outputs include manifest, run parameters, run/mass component yields,
+  true-coincidence spectrum, cell residuals, curvature, provenance, run
+  coverage, and validation gates.
+- No `pi0_weight` is written; production analysis, combine, smearing, and
+  extraction paths are unchanged.
+- Validator exit 3 is required while run coverage, identifiability,
+  calibration, coverage, or goodness gates remain unresolved.
+- Detailed record: `docs/ALG002A_combined_timing_background_20261001.md`.

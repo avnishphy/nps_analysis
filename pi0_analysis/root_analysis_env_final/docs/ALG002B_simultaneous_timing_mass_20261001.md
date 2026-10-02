@@ -4,6 +4,7 @@ Date: 2026-10-01
 Setting: `KinC_x36_4`
 Run scope: configured `production` runs with target exactly `LH2`
 Status: implemented shadow fitter; validation gates remain open
+Implementation commit: `ec833cf614c0d3acbc48b0a57a9f3887acf58f28`
 
 ## Approval and boundary
 

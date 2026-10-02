@@ -117,7 +117,7 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
 |---|---|---|---|---|---|
 | ALG-001 | Parallel raw-observation forward-inference prototype for one setting; passive exports and run ledger; legacy defaults unchanged | Approved 2026-10-01 with explicit condition: do not touch efficiency calculations; defer them | Efficiency sources/definitions/models frozen; later approvals still required for detailed background, smearing, production default, and publication use | `17a77208642f03479c53d3ca8709203364795f90` | Synthetic/passive-export checks pass; real-data shadow unresolved |
 | ALG-002A | Joint accepted-lattice timing Poisson pilot, stratified by run, mode, and multiplicity; no pi0/combinatorial mass model | Approved 2026-10-01 after explicit review of combined-statistics and run-specific center/width safeguards | Efficiency entirely excluded; opt-in shadow output only; no production pi0 weight or cross section | `cef0c69a8335d65276d2bedd5e105cd0d764598f` | Synthetic mechanics pass; 56-run KinC_x36_4 v2 converges but is NOT_PROMOTABLE |
-| ALG-002B | Six-component simultaneous timing/mass shadow fit with run-specific partially pooled pi0 calibration | Approved 2026-10-01; user additionally required LH2 runs only | Exact configured production-LH2 set for KinC_x36_4; efficiency frozen; no pi0 weight, production output, or cross section | working-tree implementation pending commit | Synthetic end-to-end pass; 56-run bounded smoke closes exactly and is NOT_PROMOTABLE |
+| ALG-002B | Six-component simultaneous timing/mass shadow fit with run-specific partially pooled pi0 calibration | Approved 2026-10-01; user additionally required LH2 runs only | Exact configured production-LH2 set for KinC_x36_4; efficiency frozen; no pi0 weight, production output, or cross section | `ec833cf614c0d3acbc48b0a57a9f3887acf58f28` | Synthetic end-to-end pass; 56-run bounded smoke closes exactly and is NOT_PROMOTABLE |
 
 ## Chronological change record
 
@@ -399,3 +399,5 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
   unapproved.
 - Complete equations, commands, outputs, evidence, and blockers are in
   `docs/ALG002B_simultaneous_timing_mass_20261001.md`.
+- Implementation commit: `ec833cf614c0d3acbc48b0a57a9f3887acf58f28`
+  (`feat(background): add LH2 timing-mass fitter`).

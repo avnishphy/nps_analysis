@@ -531,3 +531,27 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
   both 1771.722222, the joint prompt-accidental diagnostic is 2045.220786,
   their difference is 273.498564, and run-level correlation is 0.991843.
   Multi-start and all remaining scientific gates still block promotion.
+
+### 2026-10-02 — committed baseline and failed dispersed-start gate
+
+- Bound campaign evidence to the exact input-manifest digest, immutable
+  campaign configuration, per-start model/seed/caps, output identity, common
+  run manifest, and Git revision. The scientific validator accepts a campaign
+  only when it also matches the validated common initializer revision.
+- Regenerated the common baseline after commit `782d1e12`. It converged at
+  objective 147713.033388 with relative coordinate change `1.79e-7`, closure
+  `9.41e-6`, and maximum inner-yield KKT residual `2.64e-7`.
+- Launched the predeclared 20-start campaign with four concurrent starts and
+  32 timing-gradient workers per start. The first perturbed batch demonstrated
+  that this allocation uses only about 25 cores in aggregate; future campaigns
+  should benchmark roughly eight workers per start and favor start-level
+  parallelism.
+- Stopped the campaign after three atomic completions because its all-start
+  gate could no longer pass: start 01 was nonconverged after eight cycles;
+  relative objective spread was `9.85e-5` versus `1e-6`; pi0-yield spread was
+  267.98 events versus the allowed 19.56 events. All active processes were
+  terminated as one isolated process group; completed results were retained
+  and no partial output directory remained.
+- The validator reports `NOT_PROMOTABLE`. A more robust optimization strategy
+  is a new algorithmic decision and is not introduced without explicit user
+  approval. Efficiency, cross section, and event-weight stages remain excluded.

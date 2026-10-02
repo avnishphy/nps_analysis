@@ -352,6 +352,25 @@ coverage pass. The converged independent comparison reports legacy accidentals
 1771.722222, joint prompt accidentals 2045.220786, difference 273.498564, and
 run-level correlation 0.991843. The legacy value is not used by the fit.
 
+### Committed baseline and dispersed-start result
+
+After committing the exact-gradient implementation, a new common baseline at
+`output/KinC_x36_4/alg002b/baseline_dscb_bernstein3_v1/` recorded Git revision
+`782d1e1223ba2dd85d1229cad1a7e631e96f74b8`. It converged in two coordinate
+cycles at objective 147713.033388, relative change `1.79e-7`, closure
+`9.41e-6`, and maximum inner-yield KKT residual `2.64e-7`.
+
+The associated 20-start campaign was stopped after three atomic starts because
+the predeclared all-start gate had already become mathematically impossible to
+pass. Start 01 exhausted eight cycles without convergence; start 02 converged
+to objective 147727.546166 instead of the common basin. Across the three saved
+starts, relative objective spread was `9.85e-5` against the `1e-6` limit, and
+the pi0-yield spread was 267.98 events against `0.1 sigma = 19.56` events.
+The retained aggregate is
+`output/KinC_x36_4/alg002b/campaign_20start_dscb_bernstein3_v1/` and has status
+`NOT_PROMOTABLE`. Running the remaining unchanged starts cannot repair the
+failed all-start conditions; a new optimization update requires approval.
+
 The independent legacy comparison is:
 
 ```bash
@@ -366,7 +385,8 @@ env OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
 
 ## Open gates
 
-The implementation is not promotable until the approved campaign completes:
+The implementation is not promotable. Its first dispersed campaign failed the
+optimizer-reproducibility gate, and the following gates remain open:
 
 1. converged dispersed starts and 20-start reproducibility;
 2. calibrated treatment of yield and population-scale boundaries;

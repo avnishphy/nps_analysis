@@ -34,9 +34,17 @@
   finite-difference bottleneck without changing the likelihood. The common
   baseline now passes optimizer convergence at objective 147713.081597,
   coordinate change `9.42e-7`, closure `9.55e-6`, and KKT `2.67e-7`.
-- Next executable gate is the resumable 20-start campaign from this common
-  checked state. Model-selection, boundaries, leave-one-run-out, factorization,
-  timing calibration, replicas, and full covariance remain blocking.
+- A committed-revision baseline at objective 147713.033388 passes local
+  convergence, closure, and inner-yield KKT checks. The dispersed campaign
+  then failed irreversibly within its first three completed starts: one start
+  exhausted eight cycles, and the finite starts had relative objective spread
+  `9.85e-5` and pi0-yield spread 267.98 events. Do not spend the remaining
+  campaign allocation on the unchanged coordinate optimizer.
+- Next algorithmic decision: approve and specify a more robust global/block
+  optimization strategy, then rerun the predeclared 20-start gate from an
+  immutable revision. Model-selection, boundaries, leave-one-run-out,
+  factorization, timing calibration, replicas, and full covariance remain
+  blocking.
 
 ## 2026-10-01: ALG-002B approved LH2-only shadow implementation
 

@@ -423,3 +423,6 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
   available. The validator therefore keeps the legacy-comparison gate pending.
 - The original method remains unchanged in production and independent in
   validation; no legacy estimate is fed into ALG-002B.
+- Comparison implementation commit:
+  `7575aa7d275f765102987a95484e3ee4673b0702`
+  (`feat(background): compare legacy timing method`).

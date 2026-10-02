@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import sys
 import tempfile
 from pathlib import Path
@@ -173,6 +174,16 @@ def main() -> None:
         )
         assert not list(Path(temporary).glob(".shadow-output.partial-*"))
         assert not any("pi0_weight" in path.name for path in output.iterdir())
+
+        warm_output = Path(temporary) / "warm-output"
+        warm_result = fit_and_write_joint_model(
+            bundle, warm_output, expected, config=smoke_config,
+            allowed_missing=(), command=["synthetic-warm-test"],
+            timing_initial_dir=timing_dir, fit_initial_dir=output,
+        )
+        assert np.isfinite(warm_result.evaluation.objective)
+        warm_provenance = json.loads((warm_output / "provenance.json").read_text())
+        assert warm_provenance["fit_initial_dir"] == str(output.resolve())
 
     print("joint timing/mass LH2 mechanics test: PASS")
 

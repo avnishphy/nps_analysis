@@ -68,6 +68,7 @@ class JointMassFitConfig:
     nproc: int = 1
     mass_maxiter: int = 120
     timing_refit_maxiter: int = 25
+    coordinate_tolerance: float = 1.0e-6
     optimizer_tolerance: float = 2.0e-7
     yield_em_maxiter: int = 500
     yield_em_tolerance: float = 1.0e-9
@@ -87,6 +88,8 @@ class JointMassFitConfig:
             raise ValueError("nproc must be positive")
         if self.mass_maxiter < 1 or self.timing_refit_maxiter < 1:
             raise ValueError("mass and timing iteration limits must be positive")
+        if self.coordinate_tolerance <= 0.0:
+            raise ValueError("coordinate_tolerance must be positive")
         if self.yield_em_maxiter < 1 or self.yield_em_tolerance <= 0.0:
             raise ValueError("yield EM controls must be positive")
 
@@ -542,6 +545,56 @@ def _load_timing_states(
     return output
 
 
+def _load_joint_fit_initial_state(
+    directory: Path | str, dataset: JointDataset, config: JointMassFitConfig,
+    mass: np.ndarray, layout: MassLayout, timing: list[TimingState],
+) -> tuple[np.ndarray, list[TimingState]]:
+    source = Path(directory).resolve()
+    provenance = json.loads((source / "provenance.json").read_text())
+    source_config = provenance.get("config", {})
+    _require(source_config.get("signal_model") == config.signal_model,
+             "warm-start signal model mismatch")
+    _require(source_config.get("combinatorial_model") == config.combinatorial_model,
+             "warm-start combinatorial model mismatch")
+    represented = provenance.get("run_manifest", {}).get("represented_runs", [])
+    _require([int(value) for value in represented] == dataset.runs.astype(int).tolist(),
+             "warm-start run order mismatch")
+    with (source / "input_manifest.csv").open(newline="") as stream:
+        saved_manifest = list(csv.DictReader(stream))
+    saved_identity = sorted(
+        (int(row["run_number"]), row["sha256"], int(row["entries"]))
+        for row in saved_manifest)
+    current_identity = sorted(
+        (int(row["run_number"]), str(row["sha256"]), int(row["entries"]))
+        for row in dataset.bundle.manifest)
+    _require(saved_identity == current_identity, "warm-start input manifest mismatch")
+    with (source / "parameter_estimates.csv").open(newline="") as stream:
+        rows = list(csv.DictReader(stream))
+    lookup = {
+        (row["scope"], row["tag"], row["parameter"]): float(row["value"])
+        for row in rows
+    }
+    try:
+        mass = np.asarray([
+            lookup[("optimizer", "mass", name)] for name in layout.names], dtype=float)
+        for joint, state in zip(dataset.strata, timing):
+            state.parameters = np.asarray([
+                lookup[("optimizer", joint.tag, name)] for name in state.names],
+                dtype=float)
+    except KeyError as error:
+        raise FitError(f"warm-start parameter missing: {error}") from error
+    for values, bounds, label in [
+        (mass, layout.bounds, "mass"),
+        *((state.parameters, state.bounds, joint.tag)
+          for joint, state in zip(dataset.strata, timing)),
+    ]:
+        lower = np.asarray([bound[0] for bound in bounds])
+        upper = np.asarray([bound[1] for bound in bounds])
+        _require(np.all(np.isfinite(values)) and np.all(values >= lower) and
+                 np.all(values <= upper), f"warm-start values outside bounds: {label}")
+    return mass, timing
+
+
 def _scipy_supports_parallel_workers() -> bool:
     numbers = scipy.__version__.split(".")
     try:
@@ -563,6 +616,7 @@ def _minimize_lbfgsb(
 ) -> object:
     options: dict[str, object] = {
         "maxiter": maxiter,
+        "maxfun": max(15000, 2 * maxiter * (len(start) + 1)),
         "ftol": config.optimizer_tolerance,
         "gtol": config.optimizer_tolerance,
         "maxls": 40,
@@ -641,10 +695,14 @@ def _fit_timing_block(
 def fit_joint_model(
     dataset: JointDataset, config: JointMassFitConfig,
     timing_initial_dir: Path | str | None = None,
+    fit_initial_dir: Path | str | None = None,
 ) -> tuple[np.ndarray, MassLayout, list[TimingState], Evaluation,
            list[dict[str, object]], list[dict[str, object]]]:
     initial, layout = _mass_layout(dataset, config)
     base_timing = _load_timing_states(dataset, config, timing_initial_dir)
+    if fit_initial_dir is not None:
+        initial, base_timing = _load_joint_fit_initial_state(
+            fit_initial_dir, dataset, config, initial, layout, base_timing)
     best = None
     start_summaries: list[dict[str, object]] = []; all_cycles: list[dict[str, object]] = []
     for start_index in range(config.starts):
@@ -679,11 +737,19 @@ def fit_joint_model(
                            "relative_change": ((previous - evaluation.objective) /
                                                max(1.0, abs(previous))) if np.isfinite(previous) else None})
             previous = evaluation.objective
+            latest = cycles[-1]
+            if (latest["relative_change"] is not None and
+                abs(float(latest["relative_change"])) <= config.coordinate_tolerance and
+                bool(latest["mass_success"]) and
+                all(bool(item["success"]) for item in latest["timing"])):
+                break
         final = _evaluate(mass, layout, timing, dataset, config)
-        converged = all(
-            bool(record["mass_success"]) and
-            all(bool(item["success"]) for item in record["timing"])
-            for record in cycles
+        last_cycle = cycles[-1]
+        converged = (
+            last_cycle["relative_change"] is not None and
+            abs(float(last_cycle["relative_change"])) <= config.coordinate_tolerance and
+            bool(last_cycle["mass_success"]) and
+            all(bool(item["success"]) for item in last_cycle["timing"])
         )
         start_summaries.append({"start_index": absolute_start_index, "objective": final.objective,
                                 "pi0_yield_sum": float(sum(x[:, 0].sum() for x in final.yields)),
@@ -822,6 +888,7 @@ def write_joint_result(
     result: JointFitResult, output_dir: Path | str,
     run_manifest: dict[str, object], command: Sequence[str] | None = None,
     allow_canonical_shadow_output: bool = False,
+    fit_initial_dir: Path | str | None = None,
 ) -> None:
     destination = Path(output_dir).resolve(); repo = Path(__file__).resolve().parents[2]
     canonical_shadow = _validate_shadow_output_path(
@@ -883,6 +950,8 @@ def write_joint_result(
         "pi0_weight_written": False, "efficiency_inputs_read": False,
         "charge_scaling_used": False, "cross_section_formed": False,
         "command": list(command) if command is not None else None,
+        "fit_initial_dir": (str(Path(fit_initial_dir).resolve())
+                            if fit_initial_dir is not None else None),
         "working_directory": os.getcwd(), "git_head": _git_head(repo),
         "python": sys.version, "platform": platform.platform(),
         "numpy": np.__version__, "scipy": scipy.__version__,
@@ -914,6 +983,7 @@ def fit_and_write_joint_model(
     config: JointMassFitConfig | None = None, allowed_missing: Sequence[int] = (6569,),
     command: Sequence[str] | None = None, timing_initial_dir: Path | str | None = None,
     allow_canonical_shadow_output: bool = False,
+    fit_initial_dir: Path | str | None = None,
 ) -> JointFitResult:
     config = config or JointMassFitConfig(); output = Path(output_dir).resolve()
     _validate_shadow_output_path(output, allow_canonical_shadow_output)
@@ -921,9 +991,11 @@ def fit_and_write_joint_model(
     manifest = enforce_lh2_manifest(bundle, expected_runs, allowed_missing)
     dataset = build_joint_dataset(bundle, config.timing)
     mass, layout, timing, evaluation, starts, cycles = fit_joint_model(
-        dataset, config, timing_initial_dir=timing_initial_dir)
+        dataset, config, timing_initial_dir=timing_initial_dir,
+        fit_initial_dir=fit_initial_dir)
     result = _materialize(dataset, config, mass, layout, timing, evaluation, starts, cycles)
     write_joint_result(
         result, output, manifest, command=command,
-        allow_canonical_shadow_output=allow_canonical_shadow_output)
+        allow_canonical_shadow_output=allow_canonical_shadow_output,
+        fit_initial_dir=fit_initial_dir)
     return result

@@ -23,6 +23,13 @@
   76,242 observations, uniform 139--161 ns support, and exact old/new raw-tree
   equivalence. A bounded canonical fit and two-start resumability smoke pass
   mechanics but remain correctly `NOT_PROMOTABLE` for optimizer convergence.
+- The first full-limit probe improved the objective to 148346.004585 but did
+  not reach coordinate convergence. Continue from its checked saved state with
+  scaled L-BFGS-B function limits; require a successful final cycle and
+  relative coordinate change at or below `1e-6` before launching 20 starts.
+- Real warm-start mechanics are validated: a bounded continuation reused the
+  probe and improved its objective to 148259.359119 without input or schema
+  drift. This result is diagnostic because all blocks used one-iteration caps.
 
 ## 2026-10-01: ALG-002B approved LH2-only shadow implementation
 

@@ -48,6 +48,10 @@ def main() -> int:
     parser.add_argument("--timing-initial-dir", type=Path,
                         help="Directory containing ALG-002A profile-covariance NPZ files.")
     parser.add_argument(
+        "--fit-initial-dir", type=Path,
+        help="Prior compatible ALG-002B result used as a checked warm start.",
+    )
+    parser.add_argument(
         "--allow-canonical-shadow-output", action="store_true",
         help=("Permit an isolated result below output/KinC_x36_4/alg002b; "
               "canonical output remains refused otherwise."),
@@ -85,6 +89,7 @@ def main() -> int:
             allowed_missing=(6569,),
             command=sys.argv,
             timing_initial_dir=args.timing_initial_dir,
+            fit_initial_dir=args.fit_initial_dir,
             allow_canonical_shadow_output=args.allow_canonical_shadow_output,
         )
     except (FitError, ValueError, OSError) as error:

@@ -487,3 +487,18 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
   tails, producing overflow warnings for extreme finite-difference trials.
   Replaced it with identical piecewise branch evaluation and added extreme-tail
   finiteness and monotonicity regression coverage before convergence work.
+- A 16-worker, three-cycle convergence probe finished in about 12 minutes at
+  objective 148346.004585 with closure `2.26e-7` and maximum inner-yield KKT
+  residual `8.62e-8`. Cycle 0 hit SciPy's default function-evaluation cap;
+  later mass and timing blocks converged, but the coordinate change remained
+  `2.18e-3`, so the result is correctly nonconverged.
+- Scaled L-BFGS-B `maxfun` with parameter count and iteration allowance. Start
+  convergence now requires the final successful coordinate cycle and relative
+  objective change within `1e-6`, with early stopping when satisfied; failures
+  in superseded earlier cycles no longer permanently poison a start.
+- Added provenance- and input-hash-checked ALG-002B warm starts so the probe's
+  saved state can continue without discarding its optimization work.
+- A bounded real continuation loaded the saved probe, improved the objective
+  from 148346.004585 to 148259.359119, closed counts to `1.67e-6`, and recorded
+  the resolved initializer path. Its one-iteration blocks remain intentionally
+  nonconverged; the check establishes continuation mechanics only.

@@ -109,6 +109,10 @@ def main() -> int:
     parser.add_argument("--kin", choices=("KinC_x36_4",), required=True)
     parser.add_argument("--campaign-dir", type=Path, required=True)
     parser.add_argument("--timing-initial-dir", type=Path, required=True)
+    parser.add_argument(
+        "--fit-initial-dir", type=Path,
+        help="Compatible prior ALG-002B result used as the common warm start.",
+    )
     parser.add_argument("--signal-model", choices=("dscb", "double_gaussian"),
                         default="dscb")
     parser.add_argument("--combinatorial-model",
@@ -142,6 +146,8 @@ def main() -> int:
         "config_csv": str(args.config_csv.resolve()),
         "kin": args.kin,
         "timing_initial_dir": str(args.timing_initial_dir.resolve()),
+        "fit_initial_dir": (str(args.fit_initial_dir.resolve())
+                            if args.fit_initial_dir is not None else None),
         "signal_model": args.signal_model,
         "combinatorial_model": args.combinatorial_model,
         "start_count": args.start_count,
@@ -185,6 +191,8 @@ def main() -> int:
             "--timing-refit-maxiter", str(args.timing_refit_maxiter),
             "--seed", str(args.seed),
         ))
+        if args.fit_initial_dir is not None:
+            command.extend(("--fit-initial-dir", str(args.fit_initial_dir)))
         if args.allow_canonical_shadow_output:
             command.append("--allow-canonical-shadow-output")
         with (campaign_dir / f"start_{start_index:02d}.log").open("w") as log:

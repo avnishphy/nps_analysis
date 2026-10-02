@@ -16,6 +16,7 @@ sys.path.insert(0, str(REPO / "src"))
 
 from background_fit.joint_timing_mass_model import (  # noqa: E402
     JointMassFitConfig,
+    _dscb_cdf,
     _mass_layout,
     _mass_probabilities,
     _validate_shadow_output_path,
@@ -126,6 +127,13 @@ def main() -> None:
             raise AssertionError("canonical shadow output lacked explicit authorization")
 
         assert JointMassFitConfig(start_index_offset=19).start_index_offset == 19
+
+        extreme_cdf = _dscb_cdf(
+            np.asarray([-1.0e6, -1.0, 0.0, 1.0, 1.0e6]),
+            np.asarray(0.0), np.asarray(0.01), 0.5, 30.0, 0.5, 30.0)
+        assert np.all(np.isfinite(extreme_cdf))
+        assert np.all(np.diff(extreme_cdf) >= 0.0)
+        assert 0.0 <= extreme_cdf[0] <= extreme_cdf[-1] <= 1.0
 
         fit_config = JointMassFitConfig(starts=1, coordinate_cycles=1)
         dataset = build_joint_dataset(bundle, fit_config.timing)

@@ -267,12 +267,20 @@ def _dscb_cdf(
         erf(ar / math.sqrt(2.0)) + erf(al / math.sqrt(2.0)))
     right_total = acr / (nr - 1.0) * (br + ar) ** (1.0 - nr)
     total = left_total + core_total + right_total
-    left = acl / (nl - 1.0) * np.maximum(bl - t, 1.0e-12) ** (1.0 - nl)
-    core = left_total + math.sqrt(math.pi / 2.0) * (
-        erf(t / math.sqrt(2.0)) + erf(al / math.sqrt(2.0)))
-    right = left_total + core_total + acr / (nr - 1.0) * (
-        (br + ar) ** (1.0 - nr) - np.maximum(br + t, 1.0e-12) ** (1.0 - nr))
-    return np.where(t < -al, left, np.where(t <= ar, core, right)) / total
+    # Evaluate only the active branch. np.where evaluates both inputs eagerly,
+    # which overflows unused clipped powers for far-tail finite differences.
+    result = np.empty_like(t, dtype=float)
+    left_mask = t < -al
+    core_mask = (t >= -al) & (t <= ar)
+    right_mask = t > ar
+    result[left_mask] = (
+        acl / (nl - 1.0) * (bl - t[left_mask]) ** (1.0 - nl))
+    result[core_mask] = left_total + math.sqrt(math.pi / 2.0) * (
+        erf(t[core_mask] / math.sqrt(2.0)) + erf(al / math.sqrt(2.0)))
+    result[right_mask] = left_total + core_total + acr / (nr - 1.0) * (
+        (br + ar) ** (1.0 - nr) -
+        (br + t[right_mask]) ** (1.0 - nr))
+    return np.clip(result / total, 0.0, 1.0)
 
 
 def _mass_layout(dataset: JointDataset, config: JointMassFitConfig) -> tuple[np.ndarray, MassLayout]:

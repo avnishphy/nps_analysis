@@ -483,3 +483,7 @@ Audit findings are hypotheses/proposals until revalidated against this checkpoin
 - The authorized eight-worker integration smoke closes to `5.59e-8` events at
   objective 151259.147278 and remains intentionally unconverged. The two-start
   scheduler smoke completed and a repeated command resumed in two seconds.
+- The dispersed start exposed eager `numpy.where` evaluation of inactive DSCB
+  tails, producing overflow warnings for extreme finite-difference trials.
+  Replaced it with identical piecewise branch evaluation and added extreme-tail
+  finiteness and monotonicity regression coverage before convergence work.

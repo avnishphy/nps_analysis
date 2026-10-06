@@ -4,23 +4,22 @@
 # - Resolves canonical input/output paths per kinematic setting
 # - Selects and compiles either supported cross-section extractor
 # - Runs extraction with validated paths
-#
-# Commands for x36_5_407 and x36_4:
-# ./src/xsec_extract/run_xsec_pipeline.sh --kin KinC_x36_5_407 --target LH2 --root-dir output/KinC_x36_5_407/KinC_x36_5/root/ --sim-file /volatile/hallc/nps/singhav/nps_smearing/smear_x36_5_407/smearing_output/KinC_x36_5_407/root/simc_pi0_analysis_output_smeared.root --vertex_simc_file output/simc/simc_x36_5_407/worksim/ --mmiss-lower 0.6 --mmiss-upper 1.1 --partons --positive-xsec --mmiss_select ellipse --xsec_config xsec_config_x36_5_407.json --fit-objective scaled-poisson
-# ./src/xsec_extract/run_xsec_pipeline.sh --kin KinC_x36_4 --target LH2 --root-dir output/KinC_x36_4/root/ --sim-file /volatile/hallc/nps/singhav/nps_smearing/smear_x36_4/smearing_output/KinC_x36_4/root/simc_pi0_analysis_output_smeared.root --vertex_simc_file output/simc/nps_simc_20260824_135058/worksim/simc_gfortran_updated/worksim/ --mmiss-lower 0.6 --mmiss-upper 1.1 --partons --positive-xsec --mmiss_select ellipse --xsec_config xsec_config_x36_4.json --fit-objective scaled-poisson
 
-# src/xsec_extract/run_xsec_pipeline.sh \
-#   --kin KinC_x36_4 \
-#   --data-file output/KinC_x36_4/root/combined_branches_LH2.root \
-#   --sim-file /volatile/hallc/nps/singhav/nps_smearing/smear_x36_4/smearing_output/KinC_x36_4/root/simc_pi0_analysis_output_smeared.root \
-#   --vertex_simc_file output/simc/nps_simc_20260824_135058/worksim/simc_gfortran_updated/worksim/nps_excl_pi0_x36_4.root \
-#   --mmiss_select ellipse --mmiss-cut-file output/KinC_x36_4/root/combined_branches_LH2_combined_2d_mass_cut_debug.txt --mmiss-lower 0.6 --mmiss-upper 1.1 --prepare-forward-inputs --out-dir output/KinC_x36_4/forward_cache'
 # 
 # Default extraction uses the missing-mass window; --mmiss_select chooses a
 # stored combined-data selector. Full 0-2.5 GeV spectra remain diagnostic.
 # ============================================================================
 
+# =================================
+# Commands for x36_5_407 and x36_4:
+# =================================
+# ./src/xsec_extract/run_xsec_pipeline.sh --kin KinC_x36_5_407 --target LH2 --root-dir output/KinC_x36_5_407/KinC_x36_5/root/ --sim-file /volatile/hallc/nps/singhav/nps_smearing/smear_x36_5_407/smearing_output/KinC_x36_5_407/root/simc_pi0_analysis_output_smeared.root --vertex_simc_file output/simc/simc_x36_5_407/worksim/ --mmiss-lower 0.6 --mmiss-upper 1.1 --positive-xsec --mmiss_select ellipse --xsec_config xsec_config_x36_5_407.json --simc-model --fit-strategy staged_feasible --fit-objective gaussian --positive-xsec --publish-calibrated-release
+# ./src/xsec_extract/run_xsec_pipeline.sh --kin KinC_x36_4 --target LH2 --root-dir output/KinC_x36_4/root/ --sim-file /volatile/hallc/nps/singhav/nps_smearing/smear_x36_4/smearing_output/KinC_x36_4/root/simc_pi0_analysis_output_smeared.root --vertex_simc_file output/simc/nps_simc_20260824_135058/worksim/simc_gfortran_updated/worksim/ --mmiss-lower 0.6 --mmiss-upper 1.1 --mmiss_select ellipse --xsec_config xsec_config_x36_4.json --simc-model --fit-strategy staged_feasible --fit-objective gaussian --positive-xsec --publish-calibrated-release
+# /group/nps/singhav/software/python/bin/python src/xsec_extract/run_joint_xsec_fit.py --prepare-setting src/xsec_extract/xsec_config/xsec_config_x36_5_407.json output/simc/simc_x36_5_407/worksim/ --prepare-setting src/xsec_extract/xsec_config/xsec_config_x36_4.json output/simc/nps_simc_20260824_135058/worksim/simc_gfortran_updated/worksim/ --binning-config src/xsec_extract/xsec_config/xsec_config_x36_4.json --mmiss-select ellipse --mmiss-lower 0.6 --mmiss-upper 1.1 --fit-objective gaussian --fit-variance finite-mc --fit-strategy staged_feasible --model-starts 6 --positive-xsec --publish-calibrated-release --toy-jobs 0 --out-dir output/joint_x36_5_407_x36_4_LH2
+# ============================================================================
+
 set -euo pipefail
+ORIGINAL_ARGS=("$@")
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -28,7 +27,10 @@ cd "${REPO_ROOT}"
 
 ROOT_CMD="${ROOT_CMD:-root}"
 CXX_CMD="${CXX:-g++}"
+PYTHON_CMD="/group/nps/singhav/software/python/bin/python"
+export NPS_PYTHON_CMD="${PYTHON_CMD}"
 XSEC_METHOD="${NPS_XSEC_METHOD:-no-simc-model}"
+FIT_STRATEGY="joint_minuit"
 XSEC_SRC=""
 XSEC_CONFIG="${NPS_XSEC_CONFIG:-}"
 
@@ -46,6 +48,7 @@ OUT_ROOT="${NPS_XSEC_OUT_ROOT:-}"
 OUT_CSV="${NPS_XSEC_OUT_CSV:-}"
 OUT_SLICE_CSV="${NPS_XSEC_OUT_SLICE_CSV:-}"
 ALL_PLOTS_PDF="${NPS_XSEC_ALL_PLOTS_PDF:-}"
+REFERENCE_SLICE_CSV="${NPS_XSEC_REFERENCE_SLICE_CSV:-}"
 # Empty means use the selected extractor's configuration header. Explicit
 # environment variables or CLI options below still take precedence.
 MMISS_LOWER="${NPS_XSEC_MMISS_LOWER:-}"
@@ -55,7 +58,6 @@ MMISS_CUT_FILE="${NPS_XSEC_MMISS_CUT_FILE:-}"
 TARGET_CONTAM="${NPS_XSEC_TARGET_CONTAM:-}"
 TARGET_CONTAM_ERR="${NPS_XSEC_TARGET_CONTAM_ERR:-}"
 NORMALIZE_MMISS="${NPS_XSEC_NORMALIZE_MMISS:-0}"
-MODEL_ID=""
 SIMC_YIELD_SCALE=""
 SIMC_EBEAM=""
 MODEL_FIXED=0
@@ -63,6 +65,10 @@ MODEL_FREE=""
 MODEL_MAX_ITERATIONS=""
 MODEL_MAX_EVALUATIONS=""
 MODEL_TOLERANCE=""
+MODEL_INITIAL=""
+MODEL_FIX_U_SLOPE=0
+MODEL_BEFORE_DIR=""
+MODEL_STARTS=""
 
 # Numerical controls diagnose response rank and MC-variance convergence.
 # They never rescale the response to match the measured data integral.
@@ -85,6 +91,13 @@ NO_DIAGNOSTICS=0
 NO_PDF=0
 NO_PNG=0
 PREPARE_FORWARD_INPUTS=0
+PUBLISH_CALIBRATED_RELEASE="${NPS_XSEC_PUBLISH_CALIBRATED_RELEASE:-0}"
+GENERATE_TOYS="${NPS_XSEC_GENERATE_TOYS:-1}"
+TOY_JOBS="${NPS_XSEC_TOY_JOBS:-0}"
+CALIBRATION_SOURCE="${NPS_XSEC_CALIBRATION_SOURCE:-${REPO_ROOT}/validation/preliminary_model_xsec_20261005}"
+CURVATURE_SOURCE="${NPS_XSEC_CURVATURE_SOURCE:-${REPO_ROOT}/validation/preliminary_model_xsec_curvature_20261005}"
+CALIBRATED_OUT_DIR="${NPS_XSEC_CALIBRATED_OUT_DIR:-}"
+FINAL_REPORT_PDF="${NPS_XSEC_FINAL_REPORT_PDF:-}"
 
 trim_ws() {
   local s="$1"
@@ -114,6 +127,7 @@ Usage: $(basename "$0") [options]
 
 Options:
   --prepare-forward-inputs    Export selected events before rectangular binning; no fit/plots
+  --mode <mode>               no_simc_model (default) or simc_model
   --xsec-method <method>       no-simc-model (default) or simc-model
   --simc-model                 Shortcut for --xsec-method simc-model
   --no-simc-model              Shortcut for --xsec-method no-simc-model
@@ -124,31 +138,42 @@ Options:
   --root-dir <path>           Root directory with combined/sim files
   --data-file <path>          Combined data ROOT file
   --sim-file <path>           Simulation ROOT file
-  --vertex_simc_file <file|dir> Required for no-simc-model: original exclusive h10 ROOT or worksim directory
+  --vertex_simc_file <file|dir> Required for both methods: original exclusive h10 ROOT or worksim directory
   --out-dir <path>            Xsec output directory
   --out-root <path>           Xsec output ROOT file
   --out-csv <path>            Xsec output summary CSV
   --out-slice-csv <path>      Xsec output slice CSV
   --all-plots-pdf <path>      Xsec combined plots PDF
+  --reference-slice-csv <path> Optional no-model diagnostic overlay (auto: sibling xsec/)
   --mmiss-lower <GeV>         Shared data/exclusive-SIMC lower bound (default: extractor config)
   --mmiss-upper <GeV>         Shared data/exclusive-SIMC upper bound (default: extractor config)
-  --mmiss_select <mode>       mcd or ellipse (no-simc-model only)
-  --mmiss-cut-file <path>     Combined-data geometric cut metadata (no-simc-model only)
+  --mmiss_select <mode>       mcd or ellipse (both methods)
+  --mmiss-cut-file <path>     Combined-data geometric cut metadata
   --target-contam <factor>    Data yield divisor (default: extractor config; use 1 to omit)
   --target-contam-err <factor> Absolute divisor uncertainty (default: extractor config)
-  --normalize_mmiss          Historical selected-yield rescaling, permitted
-                             only with --fixed-default-model; removes absolute sensitivity
-  --normalize-simc-to-data  Clear-name alias for --normalize_mmiss
-  --simc-yield-scale <x>     Independently justified SIMC normalization (default: 1)
-  --ebeam <GeV>              Beam energy for reporting or simc-model epsilon fallback
-  --model <id>               SIMC physics-model identifier
-  --fixed-default-model      SIMC model: no parameter fit
-  --model-free <names>       SIMC model: comma-separated Fortran coefficients
+  Legacy yield-normalization and fixed-coefficient options are rejected.
+  --ebeam <GeV>              Beam energy for reporting (vertex epsilon uses matched raw SIMC)
+  --model-initial <csv>      Initial values in the extractor's parameter order
+  --model-starts <n>         Number of initial seeds (default: 6)
+  --model-fix-u-slope        Validation: fix DeltaB_U=0 (three free physics parameters)
+  --model-before-dir <dir>   Diagnostic-only prior model output for shape comparison
   --model-max-iterations <n> --model-max-evaluations <n>
-  --model-tolerance <x>      SIMC model Minuit2 controls
+  --model-tolerance <x>      Model minimizer controls
+  --fit-strategy <name>      joint_minuit (default) or staged_feasible (Gaussian central diagnostic)
+  --publish-calibrated-release
+                             After a successful staged fit, generate a fresh additive-M0
+                             500-toy campaign from this run and its selected JSON, then
+                             publish one comprehensive final PDF.
+  --reuse-toys               Explicitly reuse --calibration-source/--curvature-source
+                             instead of generating this execution's campaign
+  --toy-jobs <n>             Toy worker processes (default: 0 = all affinity CPUs)
+  --calibration-source <dir> Existing central/toy campaign used only with --reuse-toys
+  --curvature-source <dir>   Existing curvature campaign used only with --reuse-toys
+  --calibrated-out-dir <dir> Release directory (default: output/<kin>/xsec_calibrated)
+  --final-report-pdf <path>  Combined release PDF inside calibrated-out-dir
   Bin edges and optional diamond: edit the selected xsec_config/xsec_config*.json file
   --svd-rank-tolerance <float> Relative singular-value rank cutoff (default: 1e-10)
-  --mc-max-iterations <int>    MC-variance fit iteration limit (default: 30)
+  --mc-max-iterations <int>    MC-variance fit iteration limit (default: 100)
   --mc-fit-tolerance <float>   Relative MC-variance fit convergence (default: 1e-6)
   --fit-variance <data|finite-mc> Data-only Eq. 5.23 or finite-MC extension (default)
   --fit-objective <gaussian|scaled-poisson>  Fit statistic (default gaussian)
@@ -170,11 +195,17 @@ Environment overrides:
   NPS_XSEC_DATA_FILE, NPS_XSEC_SIM_FILE, NPS_XSEC_VERTEX_SIMC_FILE,
   NPS_XSEC_OUT_DIR, NPS_XSEC_OUT_ROOT, NPS_XSEC_OUT_CSV,
   NPS_XSEC_OUT_SLICE_CSV, NPS_XSEC_ALL_PLOTS_PDF.
+  NPS_XSEC_REFERENCE_SLICE_CSV (diagnostic only).
   NPS_XSEC_MMISS_LOWER, NPS_XSEC_MMISS_UPPER,
   NPS_XSEC_MMISS_SELECT, NPS_XSEC_MMISS_CUT_FILE,
   NPS_XSEC_TARGET_CONTAM, NPS_XSEC_TARGET_CONTAM_ERR,
   NPS_XSEC_NORMALIZE_MMISS (0 or 1),
   NPS_XSEC_POSITIVE_XSEC (0 or 1; last explicit on/off flag wins),
+  NPS_XSEC_PUBLISH_CALIBRATED_RELEASE (0 or 1),
+  NPS_XSEC_GENERATE_TOYS (1 by default; set 0 only to reuse matching sources),
+  NPS_XSEC_TOY_JOBS (0 uses all CPUs granted to the process),
+  NPS_XSEC_CALIBRATION_SOURCE, NPS_XSEC_CURVATURE_SOURCE,
+  NPS_XSEC_CALIBRATED_OUT_DIR, NPS_XSEC_FINAL_REPORT_PDF,
   NPS_PARTONS_WARMUPS, NPS_PARTONS_CALLS, NPS_SOFTWARE_ROOT, NPS_PARTONS_ROOT.
 
 Defaults when --kin is provided:
@@ -183,12 +214,21 @@ Defaults when --kin is provided:
   sim-file      = <root-dir>/simc_pi0_analysis_output_smeared.root
   no-simc-model: <output-base>/<kin>/xsec with *_no_simc_model* filenames
   simc-model:    <output-base>/<kin>/xsec_simc_model with *_simc_model* filenames
+
+Each run saves a unique logs/pipeline_<mode>_<timestamp>_<pid>.log,
+pipeline_status.csv and a verified pipeline_artifacts.json. Repeated runs
+replace same-mode products; stale files cannot satisfy completion checks.
+No automatic recombination or resume is performed. Input validation is mandatory.
+Dependencies: loaded ROOT environment, Python numpy/uproot/matplotlib, pdfunite.
 EOF
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --xsec-method)
+    --mode|--xsec-method)
+      if [[ $# -lt 2 || -z "$2" || "$2" == --* ]]; then
+        echo "[ERROR] $1 requires no_simc_model or simc_model." >&2; exit 1
+      fi
       XSEC_METHOD="$2"
       shift 2
       ;;
@@ -256,6 +296,7 @@ while [[ $# -gt 0 ]]; do
       ALL_PLOTS_PDF="$2"
       shift 2
       ;;
+    --reference-slice-csv) REFERENCE_SLICE_CSV="$2"; shift 2 ;;
     --mmiss-lower)
       MMISS_LOWER="$2"
       shift 2
@@ -286,12 +327,24 @@ while [[ $# -gt 0 ]]; do
       ;;
     --simc-yield-scale) SIMC_YIELD_SCALE="$2"; shift 2 ;;
     --ebeam) SIMC_EBEAM="$2"; shift 2 ;;
-    --model) MODEL_ID="$2"; shift 2 ;;
+    --model) echo "[ERROR] Physics-model selection removed; choose --mode simc_model or no_simc_model." >&2; exit 1 ;;
     --fixed-default-model) MODEL_FIXED=1; shift ;;
     --model-free) MODEL_FREE="$2"; shift 2 ;;
     --model-max-iterations) MODEL_MAX_ITERATIONS="$2"; shift 2 ;;
     --model-max-evaluations) MODEL_MAX_EVALUATIONS="$2"; shift 2 ;;
     --model-tolerance) MODEL_TOLERANCE="$2"; shift 2 ;;
+    --fit-strategy) FIT_STRATEGY="$2"; shift 2 ;;
+    --model-initial) MODEL_INITIAL="$2"; shift 2 ;;
+    --model-fix-u-slope) MODEL_FIX_U_SLOPE=1; shift ;;
+    --model-before-dir) MODEL_BEFORE_DIR="$(to_abs_path "$2")"; shift 2 ;;
+    --model-starts) MODEL_STARTS="$2"; shift 2 ;;
+    --publish-calibrated-release) PUBLISH_CALIBRATED_RELEASE=1; shift ;;
+    --reuse-toys) GENERATE_TOYS=0; shift ;;
+    --toy-jobs) TOY_JOBS="$2"; shift 2 ;;
+    --calibration-source) CALIBRATION_SOURCE="$2"; shift 2 ;;
+    --curvature-source) CURVATURE_SOURCE="$2"; shift 2 ;;
+    --calibrated-out-dir) CALIBRATED_OUT_DIR="$2"; shift 2 ;;
+    --final-report-pdf) FINAL_REPORT_PDF="$2"; shift 2 ;;
 
     --svd-rank-tolerance)
       SVD_RANK_TOLERANCE="$2"
@@ -422,18 +475,10 @@ if [[ "$(dirname "${XSEC_CONFIG_FILE}")" != "${CONFIG_DIR}" ||
   exit 1
 fi
 
-if [[ "${XSEC_METHOD}" == "simc-model" && ( -n "${MMISS_SELECT}" || -n "${MMISS_CUT_FILE}" ) ]]; then
-  echo "[ERROR] --mmiss_select and --mmiss-cut-file apply only to --xsec-method no-simc-model." >&2
-  exit 1
-fi
 case "${MMISS_SELECT}" in
   ""|mcd|ellipse) ;;
   *) echo "[ERROR] --mmiss_select must be mcd or ellipse." >&2; exit 1 ;;
 esac
-if [[ "${XSEC_METHOD}" == "simc-model" && "${POSITIVE_XSEC}" == "1" ]]; then
-  echo "[ERROR] --positive-xsec is supported only with --xsec-method no-simc-model." >&2
-  exit 1
-fi
 if [[ "${FIT_OBJECTIVE}" != "gaussian" && "${FIT_OBJECTIVE}" != "scaled-poisson" ]]; then
   echo "[ERROR] --fit-objective must be gaussian or scaled-poisson." >&2
   exit 1
@@ -445,17 +490,57 @@ if [[ "${FIT_OBJECTIVE}" == "scaled-poisson" ]]; then
   fi
   POSITIVE_XSEC=1
 fi
-if [[ "${XSEC_METHOD}" == "simc-model" && "${FIT_OBJECTIVE}" != "gaussian" ]]; then
-  echo "[ERROR] --fit-objective scaled-poisson applies only to no-simc-model." >&2
-  exit 1
-fi
 if [[ "${FIT_VARIANCE}" != "data" && "${FIT_VARIANCE}" != "finite-mc" ]]; then
   echo "[ERROR] --fit-variance must be data or finite-mc." >&2
   exit 1
 fi
-if [[ "${XSEC_METHOD}" == "simc-model" && "${FIT_VARIANCE}" != "finite-mc" ]]; then
-  echo "[ERROR] --fit-variance applies only to --xsec-method no-simc-model." >&2
+if [[ "${XSEC_METHOD}" == "simc-model" && ( "${MODEL_FIXED}" == "1" || -n "${MODEL_FREE}" || -n "${SIMC_YIELD_SCALE}" || "${NORMALIZE_MMISS}" == "1" ) ]]; then
+  echo "[ERROR] Legacy coefficient/ratio normalization options are unavailable for the forward proxy fit." >&2
   exit 1
+fi
+if [[ "$FIT_STRATEGY" != joint_minuit && "$FIT_STRATEGY" != staged_feasible ]]; then
+  echo "[ERROR] --fit-strategy requires joint_minuit or staged_feasible." >&2
+  exit 1
+fi
+if [[ "$FIT_STRATEGY" != joint_minuit && "$XSEC_METHOD" != simc-model ]]; then
+  echo "[ERROR] staged_feasible is only available for simc-model." >&2
+  exit 1
+fi
+case "${PUBLISH_CALIBRATED_RELEASE}" in
+  0|1) ;;
+  *) echo "[ERROR] NPS_XSEC_PUBLISH_CALIBRATED_RELEASE must be 0 or 1." >&2; exit 1 ;;
+esac
+case "${GENERATE_TOYS}" in
+  0|1) ;;
+  *) echo "[ERROR] NPS_XSEC_GENERATE_TOYS must be 0 or 1." >&2; exit 1 ;;
+esac
+if [[ ! "${TOY_JOBS}" =~ ^[0-9]+$ ]]; then
+  echo "[ERROR] --toy-jobs/NPS_XSEC_TOY_JOBS must be zero or a positive integer." >&2
+  exit 1
+fi
+if [[ "${PUBLISH_CALIBRATED_RELEASE}" -eq 1 ]]; then
+  if [[ "${XSEC_METHOD}" != simc-model ]]; then
+    echo "[ERROR] --publish-calibrated-release requires --simc-model." >&2
+    exit 1
+  fi
+  if [[ "${FIT_STRATEGY}" != staged_feasible || "${FIT_OBJECTIVE}" != gaussian || "${POSITIVE_XSEC}" -ne 1 ]]; then
+    echo "[ERROR] --publish-calibrated-release requires --fit-strategy staged_feasible," >&2
+    echo "        --fit-objective gaussian, and --positive-xsec." >&2
+    exit 1
+  fi
+  if [[ "${GENERATE_TOYS}" -eq 1 && "${MMISS_SELECT}" != ellipse ]]; then
+    echo "[ERROR] Fresh calibrated toys require --mmiss_select ellipse." >&2
+    exit 1
+  fi
+  if [[ "${GENERATE_TOYS}" -eq 1 && ( -n "${TARGET_CONTAM}" || -n "${TARGET_CONTAM_ERR}" ) ]]; then
+    echo "[ERROR] Fresh calibrated toys use the selected JSON target correction;" >&2
+    echo "        do not override --target-contam or --target-contam-err." >&2
+    exit 1
+  fi
+  if [[ "${PREPARE_FORWARD_INPUTS}" -eq 1 || "${NO_PDF}" -eq 1 ]]; then
+    echo "[ERROR] Calibrated publication requires a full fit with PDF output enabled." >&2
+    exit 1
+  fi
 fi
 
 case "${NORMALIZE_MMISS}" in
@@ -535,6 +620,119 @@ OUT_CSV="$(to_abs_path "${OUT_CSV}")"
 OUT_SLICE_CSV="$(to_abs_path "${OUT_SLICE_CSV}")"
 ALL_PLOTS_PDF="$(to_abs_path "${ALL_PLOTS_PDF}")"
 MMISS_CUT_FILE="$(to_abs_path "${MMISS_CUT_FILE}")"
+CALIBRATION_SOURCE="$(to_abs_path "${CALIBRATION_SOURCE}")"
+CURVATURE_SOURCE="$(to_abs_path "${CURVATURE_SOURCE}")"
+if [[ -z "${CALIBRATED_OUT_DIR}" ]]; then
+  if [[ -n "${KIN}" ]]; then
+    CALIBRATED_OUT_DIR="${OUTPUT_BASE}/$(sanitize_name "${KIN}")/xsec_calibrated"
+  else
+    CALIBRATED_OUT_DIR="$(dirname "${OUT_DIR}")/xsec_calibrated"
+  fi
+fi
+CALIBRATED_OUT_DIR="$(to_abs_path "${CALIBRATED_OUT_DIR}")"
+if [[ -z "${FINAL_REPORT_PDF}" ]]; then
+  FINAL_REPORT_PDF="${CALIBRATED_OUT_DIR}/preliminary_cross_section_extraction_report.pdf"
+fi
+FINAL_REPORT_PDF="$(to_abs_path "${FINAL_REPORT_PDF}")"
+if [[ -z "${REFERENCE_SLICE_CSV}" ]]; then
+  REFERENCE_SLICE_CSV="$(dirname "${OUT_DIR}")/xsec/excl_xsec_pi0_analysis_no_simc_model_slice_summary.csv"
+fi
+REFERENCE_SLICE_CSV="$(to_abs_path "${REFERENCE_SLICE_CSV}")"
+
+if [[ ! -x "${PYTHON_CMD}" ]]; then
+  echo "[ERROR] Python interpreter is not executable: ${PYTHON_CMD}" >&2
+  exit 1
+fi
+
+TOY_RUN_TAG="$(date -u +%Y%m%dT%H%M%S)_$$"
+if [[ "${PUBLISH_CALIBRATED_RELEASE}" -eq 1 && "${GENERATE_TOYS}" -eq 1 ]]; then
+  CALIBRATION_SOURCE="${OUT_DIR}/toy_campaigns/${TOY_RUN_TAG}"
+  CURVATURE_SOURCE="${OUT_DIR}/toy_curvature/${TOY_RUN_TAG}"
+fi
+
+if [[ "${PUBLISH_CALIBRATED_RELEASE}" -eq 1 ]]; then
+  if [[ "${KIN}" != KinC_x36_4 ]]; then
+    echo "[WARN] Calibrated-release validation for ${KIN:-<unset>} is still in progress; continuing with the selected kinematic inputs." >&2
+  fi
+  if [[ "${GENERATE_TOYS}" -eq 0 && ( ! -d "${CALIBRATION_SOURCE}" || ! -d "${CURVATURE_SOURCE}" ) ]]; then
+    echo "[ERROR] Missing calibrated-release source campaign(s):" >&2
+    echo "        toys/central: ${CALIBRATION_SOURCE}" >&2
+    echo "        curvature:    ${CURVATURE_SOURCE}" >&2
+    exit 1
+  fi
+  for helper in report_preliminary_pi0_calibrated.py; do
+    [[ -f "${REPO_ROOT}/scripts/${helper}" ]] || { echo "[ERROR] Missing calibrated-release helper: ${helper}" >&2; exit 1; }
+  done
+  if [[ "${GENERATE_TOYS}" -eq 1 ]]; then
+    for helper in run_preliminary_pi0_xsec.sh preliminary_pi0_xsec.py \
+        pi0_preliminary_bridge.cpp report_preliminary_pi0_curvature_dynamic.py; do
+      [[ -f "${REPO_ROOT}/scripts/${helper}" ]] || { echo "[ERROR] Missing toy-generation helper: ${helper}" >&2; exit 1; }
+    done
+  else
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
+      "${PYTHON_CMD}" "${REPO_ROOT}/scripts/report_preliminary_pi0_calibrated.py" \
+        --source "${CALIBRATION_SOURCE}" \
+        --curvature "${CURVATURE_SOURCE}" \
+        --config "${XSEC_CONFIG_FILE}" \
+        --check-only
+  fi
+  if [[ -e "${CALIBRATED_OUT_DIR}" ]]; then
+    echo "[ERROR] Refusing to overwrite calibrated release: ${CALIBRATED_OUT_DIR}" >&2
+    echo "        Choose a fresh --calibrated-out-dir to preserve provenance." >&2
+    exit 1
+  fi
+  if [[ "$(dirname "${FINAL_REPORT_PDF}")" != "${CALIBRATED_OUT_DIR}" ]]; then
+    echo "[ERROR] --final-report-pdf must be directly inside --calibrated-out-dir." >&2
+    exit 1
+  fi
+fi
+
+mkdir -p "${OUT_DIR}/logs"
+# One writer per output directory; refuse explicit cross-mode collisions.
+exec 9>"${OUT_DIR}/.pipeline.lock"
+flock -n 9 || { echo "[ERROR] Output directory is already in use: ${OUT_DIR}" >&2; exit 1; }
+if [[ -f "${OUT_DIR}/.xsec_mode" && "$(cat "${OUT_DIR}/.xsec_mode")" != "${XSEC_METHOD}" ]]; then
+  echo "[ERROR] Output directory belongs to another extraction mode: ${OUT_DIR}" >&2; exit 1
+fi
+other_basename=excl_xsec_pi0_analysis_simc_model
+if [[ "${XSEC_METHOD}" == simc-model ]]; then other_basename=excl_xsec_pi0_analysis_no_simc_model; fi
+if [[ -f "${OUT_DIR}/${other_basename}_summary.csv" ]]; then
+  echo "[ERROR] Opposite-mode products already exist in ${OUT_DIR}; choose a separate --out-dir." >&2; exit 1
+fi
+printf '%s\n' "${XSEC_METHOD}" > "${OUT_DIR}/.xsec_mode"
+if [[ -f "${OUT_DIR}/.xsec_kin" && "$(cat "${OUT_DIR}/.xsec_kin")" != "${KIN:-unset}" ]]; then
+  echo "[ERROR] Output directory belongs to another kinematic: ${OUT_DIR}" >&2; exit 1
+fi
+printf '%s\n' "${KIN:-unset}" > "${OUT_DIR}/.xsec_kin"
+RUN_LOG="${OUT_DIR}/logs/pipeline_${XSEC_METHOD//-/_}_$(date -u +%Y%m%dT%H%M%S)_$$.log"
+exec > >(tee "${RUN_LOG}") 2>&1
+STARTED_NS="$("${PYTHON_CMD}" -c 'import time; print(time.time_ns())')"
+STAGE=upstream-input-preparation
+BUILD_DIR=""
+pipeline_exit() {
+  local code=$?
+  trap - EXIT
+  if [[ "$code" -ne 0 ]]; then
+    echo "[FAILURE] kin=${KIN:-unset} mode=${XSEC_METHOD} stage=${STAGE} exit=${code}; log=${RUN_LOG}"
+  fi
+  printf 'mode,stage,exit_code,started_ns\n%s,%s,%s,%s\n' "${XSEC_METHOD}" "${STAGE}" "$code" "${STARTED_NS}" > "${OUT_DIR}/pipeline_status.csv.partial"
+  mv "${OUT_DIR}/pipeline_status.csv.partial" "${OUT_DIR}/pipeline_status.csv"
+  if [[ -n "${BUILD_DIR}" ]]; then rm -rf "${BUILD_DIR}"; fi
+  exit "$code"
+}
+trap pipeline_exit EXIT
+echo "[pipeline] kin=${KIN:-unset} mode=${XSEC_METHOD} config=${XSEC_CONFIG_FILE}"
+echo "[python] interpreter=${PYTHON_CMD}"
+echo "[inputs] data=${DATA_FILE} smeared=${SIM_FILE} raw=${VERTEX_SIMC_FILE}"
+echo "[output] directory=${OUT_DIR} log=${RUN_LOG}"
+echo "[fit] objective=${FIT_OBJECTIVE} variance=${FIT_VARIANCE}"
+if [[ "${PUBLISH_CALIBRATED_RELEASE}" -eq 1 ]]; then
+  echo "[release] toy mode=$([[ "${GENERATE_TOYS}" -eq 1 ]] && echo fresh || echo reuse) jobs=${TOY_JOBS} (0=all) additive-M0 source=${CALIBRATION_SOURCE}"
+  echo "[release] curvature source=${CURVATURE_SOURCE} output=${CALIBRATED_OUT_DIR}"
+fi
+printf '[invocation] '; printf '%q ' "${SCRIPT_DIR}/run_xsec_pipeline.sh" "${ORIGINAL_ARGS[@]}"; printf '\n'
+"${PYTHON_CMD}" "${SCRIPT_DIR}/xsec_pipeline_products.py" preflight --kin "${KIN:-unset}" \
+  --data "${DATA_FILE}" --sim "${SIM_FILE}" --raw "${VERTEX_SIMC_FILE}"
 
 if [[ -z "${DATA_FILE}" || -z "${SIM_FILE}" ]]; then
   echo "[ERROR] Unable to resolve data/sim input files." >&2
@@ -566,6 +764,10 @@ if ! command -v "${CXX_CMD}" >/dev/null 2>&1; then
   echo "[ERROR] C++ compiler not found in PATH (${CXX_CMD})" >&2
   exit 1
 fi
+if [[ "${PUBLISH_CALIBRATED_RELEASE}" -eq 1 ]] && ! command -v pdfunite >/dev/null 2>&1; then
+  echo "[ERROR] pdfunite is required for --publish-calibrated-release." >&2
+  exit 1
+fi
 if [[ ! -f "${XSEC_SRC}" ]]; then
   echo "[ERROR] Missing xsec source file: ${XSEC_SRC}" >&2
   exit 1
@@ -594,7 +796,7 @@ if [[ "${MMISS_SELECT}" == "mcd" || "${MMISS_SELECT}" == "ellipse" ]]; then
     else
       MMISS_CUT_FILE="${OUT_DIR}/$(basename "${DATA_FILE%.*}")_combined_2d_mass_cut_debug.txt"
       echo "[mass-cut] Exporting verified geometry from ${DATA_FILE}"
-      python3 "${SCRIPT_DIR}/../analysis/export_combined_mass_cut_metadata.py" "${DATA_FILE}" --out "${MMISS_CUT_FILE}"
+      "${PYTHON_CMD}" "${SCRIPT_DIR}/../analysis/export_combined_mass_cut_metadata.py" "${DATA_FILE}" --out "${MMISS_CUT_FILE}"
     fi
   fi
 fi
@@ -609,11 +811,8 @@ echo "  output base:     ${OUTPUT_BASE}"
 echo "  root dir:        ${ROOT_DIR:-<not-set>}"
 echo "  data file:       ${DATA_FILE}"
 echo "  sim file:        ${SIM_FILE}"
-if [[ "${XSEC_METHOD}" == "no-simc-model" ]]; then
-  echo "  vertex SIMC:     ${VERTEX_SIMC_FILE:-<off>}"
-else
-  echo "  SIMC weighting:  simc_yield_scale*(full_weight/sigcm)*model(vertex,p)"
-fi
+echo "  vertex SIMC:     ${VERTEX_SIMC_FILE:-<required>}"
+echo "  SIMC response:   full_weight/sigcm times vertex Fourier basis"
 echo "  selection:       ${MMISS_SELECT:-window} (${MMISS_LOWER:-<config>} < Mmiss < ${MMISS_UPPER:-<config>} GeV for window)"
 echo "  target factor:   ${TARGET_CONTAM:-<config>} +/- ${TARGET_CONTAM_ERR:-<config>} (data divided by factor)"
 echo "  SIMC/data yield normalization: ${NORMALIZE_MMISS} (global selected-yield area match)"
@@ -629,14 +828,20 @@ echo "  out root:        ${OUT_ROOT}"
 echo "  out csv:         ${OUT_CSV}"
 echo "  out slice csv:   ${OUT_SLICE_CSV}"
 echo "  all plots pdf:   ${ALL_PLOTS_PDF}"
+if [[ "${PUBLISH_CALIBRATED_RELEASE}" -eq 1 ]]; then
+  echo "  calibrated release: ${CALIBRATED_OUT_DIR}"
+  echo "  final report PDF:   ${FINAL_REPORT_PDF}"
+fi
 echo "============================================================================"
 
 BUILD_DIR="$(mktemp -d "${OUT_DIR}/.build_xsec.XXXXXX")"
-trap 'rm -rf "${BUILD_DIR}"' EXIT
+STAGE=build
 XSEC_BIN="${BUILD_DIR}/${XSEC_BASENAME}"
 
 echo "[build] Generating xsec_config.h from ${XSEC_CONFIG_FILE}"
-python3 "${SCRIPT_DIR}/generate_xsec_config.py" "${XSEC_CONFIG_FILE}" "${BUILD_DIR}/xsec_config.h"
+"${PYTHON_CMD}" "${SCRIPT_DIR}/generate_xsec_config.py" "${XSEC_CONFIG_FILE}" "${BUILD_DIR}/xsec_config.h"
+cp "${XSEC_CONFIG_FILE}" "${OUT_DIR}/pipeline_config.json"
+cp "${BUILD_DIR}/xsec_config.h" "${OUT_DIR}/pipeline_config.h"
 echo "[build] Compiling xsec executable"
 if [[ "${PARTONS_ENABLED}" -eq 1 ]]; then
   # The installed v5 C++ example supplies a verified library/include layout.
@@ -714,7 +919,7 @@ if [[ -n "${MMISS_UPPER}" ]]; then xsec_cmd+=(--mmiss-upper "${MMISS_UPPER}"); f
 if [[ -n "${TARGET_CONTAM}" ]]; then xsec_cmd+=(--target-contam "${TARGET_CONTAM}"); fi
 if [[ -n "${TARGET_CONTAM_ERR}" ]]; then xsec_cmd+=(--target-contam-err "${TARGET_CONTAM_ERR}"); fi
 
-if [[ "${XSEC_METHOD}" == "no-simc-model" ]]; then
+if [[ "${XSEC_METHOD}" == "no-simc-model" || "${XSEC_METHOD}" == "simc-model" ]]; then
   if [[ -n "${MMISS_SELECT}" ]]; then xsec_cmd+=(--mmiss_select "${MMISS_SELECT}"); fi
   if [[ "${PREPARE_FORWARD_INPUTS}" -eq 1 ]]; then xsec_cmd+=(--prepare-forward-inputs); fi
   if [[ -n "${MMISS_CUT_FILE}" ]]; then xsec_cmd+=(--mmiss-cut-file "${MMISS_CUT_FILE}"); fi
@@ -736,19 +941,20 @@ if [[ "${XSEC_METHOD}" == "no-simc-model" ]]; then
   if [[ -n "${VERTEX_SIMC_FILE}" ]]; then
     xsec_cmd+=(--vertex_simc_file "${VERTEX_SIMC_FILE}")
   fi
-elif [[ -n "${VERTEX_SIMC_FILE}" ]]; then
-  echo "[WARN] vertex SIMC input ignored by simc-model extractor." >&2
 fi
 
 if [[ "${XSEC_METHOD}" == "simc-model" ]]; then
   if [[ -n "${SIMC_YIELD_SCALE}" ]]; then xsec_cmd+=(--simc-yield-scale "${SIMC_YIELD_SCALE}"); fi
   if [[ -n "${SIMC_EBEAM}" ]]; then xsec_cmd+=(--ebeam "${SIMC_EBEAM}"); fi
-  if [[ -n "${MODEL_ID}" ]]; then xsec_cmd+=(--model "${MODEL_ID}"); fi
   if [[ "${MODEL_FIXED}" == "1" ]]; then xsec_cmd+=(--fixed-default-model); fi
   if [[ -n "${MODEL_FREE}" ]]; then xsec_cmd+=(--model-free "${MODEL_FREE}"); fi
   if [[ -n "${MODEL_MAX_ITERATIONS}" ]]; then xsec_cmd+=(--model-max-iterations "${MODEL_MAX_ITERATIONS}"); fi
   if [[ -n "${MODEL_MAX_EVALUATIONS}" ]]; then xsec_cmd+=(--model-max-evaluations "${MODEL_MAX_EVALUATIONS}"); fi
   if [[ -n "${MODEL_TOLERANCE}" ]]; then xsec_cmd+=(--model-tolerance "${MODEL_TOLERANCE}"); fi
+  if [[ -n "${MODEL_INITIAL}" ]]; then xsec_cmd+=(--model-initial "${MODEL_INITIAL}"); fi
+  if [[ "${MODEL_FIX_U_SLOPE}" -eq 1 ]]; then xsec_cmd+=(--model-fix-u-slope); fi
+  if [[ -n "${MODEL_STARTS}" ]]; then xsec_cmd+=(--model-starts "${MODEL_STARTS}"); fi
+  xsec_cmd+=(--fit-strategy "$FIT_STRATEGY")
 fi
 if [[ "${PARTONS_ENABLED}" -eq 1 ]]; then
   xsec_cmd+=(--partons --partons-warmups "${PARTONS_WARMUPS}" --partons-calls "${PARTONS_CALLS}")
@@ -779,9 +985,10 @@ if [[ "${NO_PNG}" -eq 1 ]]; then
 fi
 
 echo "[run] Running xsec extraction"
+STAGE=cross-section-extraction
 if [[ "${PREPARE_FORWARD_INPUTS}" -eq 1 ]]; then
   cp "${BUILD_DIR}/xsec_config.h" "${OUT_DIR}/forward_export_config.h"
-  python3 - "${OUT_DIR}" "${SCRIPT_DIR}" "${BUILD_DIR}/xsec_config.h" "${xsec_cmd[@]}" <<'PY'
+  "${PYTHON_CMD}" - "${OUT_DIR}" "${SCRIPT_DIR}" "${BUILD_DIR}/xsec_config.h" "${xsec_cmd[@]}" <<'PY'
 import hashlib, json, os, pathlib, sys
 out, source, config = map(pathlib.Path, sys.argv[1:4])
 files = sorted(source.glob('*.h')) + [source/'xsec_config_template.h.in',
@@ -796,8 +1003,163 @@ with temporary.open('x') as stream:
 os.replace(temporary, out/'forward_export_provenance.json')
 PY
 fi
-"${xsec_cmd[@]}"
+if "${xsec_cmd[@]}" 2>&1 | tee "${BUILD_DIR}/extraction.log"; then
+  :
+else
+  extract_status=$?
+  if grep -Eq 'manifest|Current run status|Yield and validated exposure|geometry disagrees|Combined input lacks' "${BUILD_DIR}/extraction.log"; then
+    STAGE=upstream-input-preparation
+    echo "[ERROR] Validated analysis/combine products are required for kin=${KIN:-unset}; data=${DATA_FILE}"
+  fi
+  exit "${extract_status}"
+fi
 
-echo "============================================================================"
-echo "Xsec pipeline complete"
-echo "============================================================================"
+if [[ "${XSEC_METHOD}" == simc-model ]]; then
+  STAGE=model-diagnostics
+  plot_cmd=("${PYTHON_CMD}" "${SCRIPT_DIR}/plot_model_diagnostics.py" --out "${OUT_DIR}"
+    --combined "${ALL_PLOTS_PDF}" --reference "${REFERENCE_SLICE_CSV}" --kin "${KIN:-unset}"
+    --config "${XSEC_CONFIG_FILE}" --objective "${FIT_OBJECTIVE}")
+  [[ "${NO_PDF}" -eq 1 ]] && plot_cmd+=(--no-pdf)
+  [[ -n "${MODEL_BEFORE_DIR}" ]] && plot_cmd+=(--before "${MODEL_BEFORE_DIR}")
+  [[ "${NO_PNG}" -eq 1 ]] && plot_cmd+=(--no-png)
+  [[ "${NO_DIAGNOSTICS}" -eq 1 ]] && plot_cmd+=(--no-diagnostics)
+  "${plot_cmd[@]}"
+fi
+
+declare -a calibrated_artifacts=()
+if [[ "${PUBLISH_CALIBRATED_RELEASE}" -eq 1 ]]; then
+  if [[ "${GENERATE_TOYS}" -eq 1 ]]; then
+    STAGE=toy-generation
+    TOY_VERTEX_FILE="${VERTEX_SIMC_FILE}"
+    if [[ -d "${TOY_VERTEX_FILE}" ]]; then
+      vertex_candidate="${TOY_VERTEX_FILE%/}/nps_excl_pi0_${KIN#KinC_}.root"
+      if [[ -f "${vertex_candidate}" ]]; then
+        TOY_VERTEX_FILE="${vertex_candidate}"
+      else
+        mapfile -t vertex_candidates < <(find "${TOY_VERTEX_FILE}" -maxdepth 1 -type f -name 'nps_excl_pi0_*.root' -print)
+        if [[ "${#vertex_candidates[@]}" -ne 1 ]]; then
+          echo "[ERROR] Cannot uniquely resolve raw exclusive SIMC ROOT file in ${TOY_VERTEX_FILE}." >&2
+          exit 1
+        fi
+        TOY_VERTEX_FILE="${vertex_candidates[0]}"
+      fi
+    fi
+    mkdir -p "$(dirname "${CALIBRATION_SOURCE}")" "$(dirname "${CURVATURE_SOURCE}")"
+    echo "[toys] Generating 500 fresh additive-M0 toys with jobs=${TOY_JOBS} (0=all affinity CPUs) for ${XSEC_CONFIG_FILE}"
+    bash "${REPO_ROOT}/scripts/run_preliminary_pi0_xsec.sh" \
+      "${CALIBRATION_SOURCE}" "${OUT_DIR}" "${XSEC_CONFIG_FILE}" \
+      "${DATA_FILE}" "${SIM_FILE}" "${TOY_VERTEX_FILE}" 500 "${TOY_JOBS}"
+    STAGE=toy-curvature
+    echo "[toys] Computing bin-matched curvature/profile products"
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
+      "${PYTHON_CMD}" "${REPO_ROOT}/scripts/report_preliminary_pi0_curvature_dynamic.py" \
+        --source "${CALIBRATION_SOURCE}" --output "${CURVATURE_SOURCE}"
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
+      "${PYTHON_CMD}" "${REPO_ROOT}/scripts/report_preliminary_pi0_calibrated.py" \
+        --source "${CALIBRATION_SOURCE}" --curvature "${CURVATURE_SOURCE}" \
+        --config "${XSEC_CONFIG_FILE}" --check-only
+  fi
+  STAGE=calibrated-release-report
+  echo "[release] Publishing validated bin-matched 500-toy additive-M0 intervals"
+  OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
+    "${PYTHON_CMD}" "${REPO_ROOT}/scripts/report_preliminary_pi0_calibrated.py" \
+      --source "${CALIBRATION_SOURCE}" \
+      --curvature "${CURVATURE_SOURCE}" \
+      --config "${XSEC_CONFIG_FILE}" \
+      --output "${CALIBRATED_OUT_DIR}"
+
+  STAGE=calibrated-release-pdf
+  final_report_partial="${FINAL_REPORT_PDF}.partial"
+  if [[ -e "${final_report_partial}" || -e "${FINAL_REPORT_PDF}" ]]; then
+    echo "[ERROR] Refusing to overwrite final calibrated PDF: ${FINAL_REPORT_PDF}" >&2
+    exit 1
+  fi
+  pdfunite \
+    "${CALIBRATED_OUT_DIR}/final_preliminary_model_diagnostics.pdf" \
+    "${CALIBRATED_OUT_DIR}/sigma_U_preliminary_calibrated.pdf" \
+    "${CALIBRATED_OUT_DIR}/sigma_LT_preliminary_calibrated.pdf" \
+    "${CALIBRATED_OUT_DIR}/sigma_TT_preliminary_calibrated.pdf" \
+    "${CALIBRATED_OUT_DIR}/fit_diagnostics_scope.pdf" \
+    "${ALL_PLOTS_PDF}" \
+    "${final_report_partial}"
+  mv "${final_report_partial}" "${FINAL_REPORT_PDF}"
+
+  "${PYTHON_CMD}" - "${CALIBRATED_OUT_DIR}" "${OUT_DIR}" "${OUT_CSV}" "${OUT_SLICE_CSV}" \
+    "${CALIBRATION_SOURCE}" "${CURVATURE_SOURCE}" "${ALL_PLOTS_PDF}" "${FINAL_REPORT_PDF}" \
+    "${XSEC_CONFIG_FILE}" <<'PY'
+import json
+import pathlib
+import sys
+
+release, fit_out, fit_summary, fit_slices, toys, curvature, fit_diagnostics, final_pdf, selected_config = map(pathlib.Path, sys.argv[1:])
+payload = {
+    "schema_version": 2,
+    "release_estimator": "frozen constrained additive-weight M0",
+    "generic_pipeline_estimator": "upstream pi0_weight SIMC-model diagnostic",
+    "uncertainties_apply_to": str(release / "preliminary_cross_sections_calibrated.csv"),
+    "uncertainties_do_not_apply_to": [str(fit_summary), str(fit_slices)],
+    "generic_fit_output": str(fit_out),
+    "toy_central_source": str(toys),
+    "curvature_source": str(curvature),
+    "selected_config": str(selected_config),
+    "included_fit_diagnostics_pdf": str(fit_diagnostics),
+    "final_report_sections": [
+        "calibrated release summary and uncertainty audit",
+        "toy coverage, bias, and covariance diagnostics",
+        "U, LT, and TT preliminary calibrated cross sections",
+        "complete SIMC-model extraction diagnostics",
+    ],
+    "final_report_pdf": str(final_pdf),
+}
+temporary = release / "pipeline_linkage.json.partial"
+temporary.write_text(json.dumps(payload, indent=2) + "\n")
+temporary.replace(release / "pipeline_linkage.json")
+PY
+
+  calibrated_artifacts=(
+    "${CALIBRATED_OUT_DIR}/REPORT.md"
+    "${CALIBRATED_OUT_DIR}/calibration_summary.json"
+    "${CALIBRATED_OUT_DIR}/pipeline_linkage.json"
+    "${CALIBRATED_OUT_DIR}/preliminary_cross_sections_calibrated.csv"
+    "${CALIBRATED_OUT_DIR}/toy_residual_statistics.csv"
+    "${CALIBRATED_OUT_DIR}/cross_validated_coverage.csv"
+    "${CALIBRATED_OUT_DIR}/bin_statistics.csv"
+    "${CALIBRATED_OUT_DIR}/sigma_U_preliminary_calibrated.pdf"
+    "${CALIBRATED_OUT_DIR}/sigma_LT_preliminary_calibrated.pdf"
+    "${CALIBRATED_OUT_DIR}/sigma_TT_preliminary_calibrated.pdf"
+    "${CALIBRATED_OUT_DIR}/final_preliminary_model_diagnostics.pdf"
+    "${CALIBRATED_OUT_DIR}/fit_diagnostics_scope.pdf"
+    "${FINAL_REPORT_PDF}"
+  )
+  if [[ "${GENERATE_TOYS}" -eq 1 ]]; then
+    calibrated_artifacts+=(
+      "${CALIBRATION_SOURCE}/generation_summary.json"
+      "${CALIBRATION_SOURCE}/config_snapshot.json"
+      "${CALIBRATION_SOURCE}/central_results.json"
+      "${CALIBRATION_SOURCE}/toys/summary.json"
+      "${CALIBRATION_SOURCE}/toys/replicas.npz"
+      "${CURVATURE_SOURCE}/preliminary_cross_sections.csv"
+      "${CURVATURE_SOURCE}/published_covariance_curvature.csv"
+    )
+  fi
+  echo "[release] Final comprehensive report (calibration + all diagnostics): ${FINAL_REPORT_PDF}"
+fi
+
+STAGE=artifact-verification
+verify_cmd=("${PYTHON_CMD}" "${SCRIPT_DIR}/xsec_pipeline_products.py" verify --out "${OUT_DIR}"
+  --started "${STARTED_NS}" --mode "${XSEC_METHOD}" --kin "${KIN:-unset}" --config "${XSEC_CONFIG_FILE}")
+if [[ "${PREPARE_FORWARD_INPUTS}" -eq 1 ]]; then
+  verify_cmd+=(--prepare)
+else
+  verify_cmd+=("${OUT_ROOT}" "${OUT_CSV}" "${OUT_SLICE_CSV}")
+  [[ "${NO_PDF}" -eq 0 ]] && verify_cmd+=("${ALL_PLOTS_PDF}")
+fi
+if [[ "${#calibrated_artifacts[@]}" -gt 0 ]]; then
+  verify_cmd+=("${calibrated_artifacts[@]}")
+fi
+"${verify_cmd[@]}"
+STAGE=complete
+echo "SUCCESS kin=${KIN:-unset} mode=${XSEC_METHOD} outputs=${OUT_DIR} log=${RUN_LOG}"
+if [[ "${PUBLISH_CALIBRATED_RELEASE}" -eq 1 ]]; then
+  echo "RELEASE_PDF ${FINAL_REPORT_PDF}"
+fi

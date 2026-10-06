@@ -31,6 +31,7 @@
 #include "nps_time_bg.h"
 // #include "nps_comb_bg.h"  // Legacy polynomial combinatorial subtraction.
 #include "nps_comb_bg_pepsi.h"  // PEPSI-motivated positive Fermi background.
+#include "nps_run_status.h"
 #include "nps_mmiss_cor.h"
 #include "acceptance_cuts.h"
 #include "nps_2d_mass_cut.h"
@@ -212,12 +213,16 @@ struct RunSummaryRow {
 };
 
 struct TreeEntry {
+    Double_t photon_time_1 = 0.0, photon_time_2 = 0.0;
     Double_t mpi0_all = 0.0;
     Double_t mmiss_all = 0.0;
     Double_t mmiss_all_corr = 0.0;
     Double_t mmiss_all_no_mom_offset = 0.0;
     Double_t mmiss_all_corr_no_mom_offset = 0.0;
     Double_t pi0_weight = 0.0;
+    // Primitives only: no downstream exclusivity selection enters either.
+    Double_t pi0_timing_coeff = std::numeric_limits<double>::quiet_NaN();
+    Double_t pi0_timing_bin_mean = std::numeric_limits<double>::quiet_NaN();
     Int_t is_exclusive = 0;
     Int_t is_exclusive_ellipse = 0;
     Int_t is_exclusive_mcd = 0;
@@ -261,7 +266,9 @@ inline void write_event_physics_tree(TFile* fout,
     TTree *treeOut = new TTree("physics", "Event-level physics data with weights and exclusivity flags");
 
     Int_t event_id = 0;
+    Double_t photon_time_1=0, photon_time_2=0;
     Double_t mpi0_all = 0, mmiss_all = 0, mmiss_all_corr = 0, mmiss_all_no_mom_offset = 0, mmiss_all_corr_no_mom_offset = 0, pi0_weight = 0;
+    Double_t pi0_timing_coeff = 0, pi0_timing_bin_mean = 0;
     Int_t is_exclusive = 0, is_exclusive_ellipse = 0, is_exclusive_mcd = 0, is_weighted = 0, helicity = 0;
     Double_t Q2 = 0, W = 0, t = 0, tmin = 0, pt = 0;
     Double_t theta = 0, phi = 0, s = 0, xB = 0, z = 0;
@@ -273,12 +280,16 @@ inline void write_event_physics_tree(TFile* fout,
     Double_t exclusive_sep = 0;
 
     treeOut->Branch("event_id", &event_id, "event_id/I");
+    treeOut->Branch("photon_time_1", &photon_time_1, "photon_time_1/D");
+    treeOut->Branch("photon_time_2", &photon_time_2, "photon_time_2/D");
     treeOut->Branch("mpi0_all", &mpi0_all, "mpi0_all/D");
     treeOut->Branch("mmiss_all", &mmiss_all, "mmiss_all/D");
     treeOut->Branch("mmiss_all_corr", &mmiss_all_corr, "mmiss_all_corr/D");
     treeOut->Branch("mmiss_all_no_mom_offset", &mmiss_all_no_mom_offset, "mmiss_all_no_mom_offset/D");
     treeOut->Branch("mmiss_all_corr_no_mom_offset", &mmiss_all_corr_no_mom_offset, "mmiss_all_corr_no_mom_offset/D");
     treeOut->Branch("pi0_weight", &pi0_weight, "pi0_weight/D");
+    treeOut->Branch("pi0_timing_coeff", &pi0_timing_coeff, "pi0_timing_coeff/D");
+    treeOut->Branch("pi0_timing_bin_mean", &pi0_timing_bin_mean, "pi0_timing_bin_mean/D");
     treeOut->Branch("is_exclusive", &is_exclusive, "is_exclusive/I");
     treeOut->Branch("is_exclusive_ellipse", &is_exclusive_ellipse, "is_exclusive_ellipse/I");
     treeOut->Branch("is_exclusive_mcd", &is_exclusive_mcd, "is_exclusive_mcd/I");
@@ -319,12 +330,15 @@ inline void write_event_physics_tree(TFile* fout,
     for (const auto& pair : tree_data) {
         event_id = pair.first;
         const auto& entry = pair.second;
+        photon_time_1=entry.photon_time_1; photon_time_2=entry.photon_time_2;
         mpi0_all = entry.mpi0_all;
         mmiss_all = entry.mmiss_all;
         mmiss_all_corr = entry.mmiss_all_corr;
         mmiss_all_no_mom_offset = entry.mmiss_all_no_mom_offset;
         mmiss_all_corr_no_mom_offset = entry.mmiss_all_corr_no_mom_offset;
         pi0_weight = entry.pi0_weight;
+        pi0_timing_coeff = entry.pi0_timing_coeff;
+        pi0_timing_bin_mean = entry.pi0_timing_bin_mean;
         is_exclusive = entry.is_exclusive;
         is_exclusive_ellipse = entry.is_exclusive_ellipse;
         is_exclusive_mcd = entry.is_exclusive_mcd;
@@ -1816,14 +1830,19 @@ void nps_analysis_main(const TString &kinematic_in = "",
         // Per-run processing with RAII file management and exception safety
         // ====================================================================
         std::string run_status = "OK";  // Track whether run completes without errors
+        const std::string status_path = std::string(outRootDir.Data()) +
+            "analysis_status_run" + std::to_string(run) + ".csv";
+        write_nps_run_status(status_path,run,false,"processing");
         try {
             std::unique_ptr<TChain> chain;
             TString tree_name_used;
             int nfiles_added = 0;
             std::string open_error;
             if (!open_chain_for_run(input_dir, run, requested_mode, chain, tree_name_used, nfiles_added, open_error)) {
-                logmsg(WARN, Form("Skipping run %d: %s", run, open_error.c_str()));
-                continue;
+                write_nps_run_status(status_path,run,false,"input",false,-1,-1,open_error);
+                logmsg(ERROR, Form("Required run %d input unavailable: %s", run, open_error.c_str()));
+                gApplication->Terminate(2);
+                return;
             }
 
             TTree *T = chain.get();  // Use the chain as a TTree
@@ -2600,8 +2619,9 @@ void nps_analysis_main(const TString &kinematic_in = "",
         TH1D *h_mmiss_all = make1D("h_mmiss_all","Missing mass;M_{miss} [GeV];Events",200,0.0,2.0);
         TH1D *h_mmiss_all_corr = make1D("h_mmiss_all_corr","Missing mass;M_{miss} [GeV];Events",200,0.0,2.0);
 
-        const double t_min = 140.0, t_max = 160.0;
-        const int nbins_t = 200;
+        const double t_min = use_shifted_timing_windows ? 139.0 : 140.0;
+        const double t_max = use_shifted_timing_windows ? 161.0 : 160.0;
+        const int nbins_t = use_shifted_timing_windows ? 220 : 200;
         TH2D *h_t1_t2 = make2D("h_t1_t2", "t1 (y) vs t2 (x);t2 [ns];t1 [ns]", nbins_t, t_min, t_max, nbins_t, t_min, t_max);
         TH1D *h_t1_proj = make1D("h_t1_proj", "t1 projection; t1 [ns];Entries", nbins_t, t_min, t_max);
         TH1D *h_t2_proj = make1D("h_t2_proj", "t2 projection; t2 [ns];Entries", nbins_t, t_min, t_max);
@@ -3087,6 +3107,7 @@ void nps_analysis_main(const TString &kinematic_in = "",
                 
                 // Store tree data in memory (will be updated in second pass with weights/exclusivity)
                 TreeEntry entry;
+                entry.photon_time_1=t1; entry.photon_time_2=t2;
                 entry.mpi0_all = mgg;  // Invariant mass
                 entry.mmiss_all = mm_p;
                 entry.mmiss_all_corr = mm_p_corr;
@@ -3165,6 +3186,16 @@ void nps_analysis_main(const TString &kinematic_in = "",
 
 
         // -------------------------
+        // Pre-weight physical events: independent resampling units. This cache
+        // exists even if the later fit fails; no fitted weights enter it.
+        {
+            TFile cache(Form("%ssignal_events_run%d.root",outRootDir.Data(),run),"RECREATE");
+            if (cache.IsZombie()) throw std::runtime_error("Cannot write signal event cache");
+            write_event_physics_tree(&cache,treeData);
+            h_t1_t2->Write("timing_plane");
+            h_mpi0_all->Write("mass_denominator");
+            cache.Close();
+        }
         // Summaries & background estimate
         // -------------------------
         // Use custom shifted windows (all except coin shifted by +3ns)
@@ -3202,17 +3233,29 @@ void nps_analysis_main(const TString &kinematic_in = "",
         h_final = res.h_final; // assigned as in original; caller owns h_final
         }
 
+        if (!res.success || !h_final) {
+            write_nps_run_status(status_path,run,false,"combinatorial_background_fit",
+                false,res.minimizer_status,res.covariance_status,
+                res.failure_reason,res.attempts,res.at_boundary);
+            logmsg(ERROR, Form("Run %d: rejected invalid combinatorial fit; status=%d covariance=%d",
+                run,res.minimizer_status,res.covariance_status));
+            gApplication->Terminate(2);
+            return;
+        }
+
         // -----------------------------------------------
         // Compute π⁰ bin-by-bin weights for statistical background subtraction
         // -----------------------------------------------
         // weight_i = N_final(i) / N_all(i)
-        // This accounts for π⁰ purity in each invariant mass bin
+        // Signed yield redistribution, not an event probability or purity.
         bool weights_computed = false;
         if (h_mpi0_all && h_final) {
             int nbins = h_mpi0_all->GetNbinsX();
             for (int bin = 1; bin <= nbins; ++bin) {
                 double n_all = h_mpi0_all->GetBinContent(bin);
                 double n_final = h_final->GetBinContent(bin);
+                if (!std::isfinite(n_all) || !std::isfinite(n_final) || n_all < 0.0)
+                    throw std::runtime_error("Invalid mass-bin count in signal-weight construction");
                 double weight = (n_all > 0.0) ? (n_final / n_all) : 0.0;
                 h_pi0_weight->SetBinContent(bin, weight);
             }
@@ -3221,6 +3264,49 @@ void nps_analysis_main(const TString &kinematic_in = "",
         } else {
             logmsg(WARN, Form("Run %d: Could not compute π⁰ weights (h_mpi0_all=%p, h_final=%p)", 
                               run, (void*)h_mpi0_all, (void*)h_final));
+        }
+
+        // Store timing primitives from the same window membership and areas
+        // as the timing histograms. Leave the legacy mass redistribution intact.
+        // NaN bin mean denotes mass under/overflow (or a pre-fit event cache).
+        if (weights_computed) {
+            const auto inside = [](double t, const pair<double,double>& w) {
+                return t > w.first && t < w.second;
+            };
+            std::vector<double> timing_sum(h_mpi0_all->GetNbinsX()+2, 0.0);
+            for (auto& item : treeData) {
+                auto& entry = item.second;
+                const double t1 = entry.photon_time_1, t2 = entry.photon_time_2;
+                const bool c1 = inside(t1,coin_win), c2 = inside(t2,coin_win);
+                double c = (c1 && c2) ? 1.0 : 0.0;
+                for (const auto& w : diag_windows) {
+                    if (inside(t1,w) && inside(t2,w)) {
+                        c -= bg.area_coin/bg.area_diag; break;
+                    }
+                }
+                for (const auto& w : side_windows) {
+                    if (c1 && inside(t2,w)) { c -= 0.5*bg.area_coin/bg.area_hor; break; }
+                }
+                for (const auto& w : side_windows) {
+                    if (c2 && inside(t1,w)) { c -= 0.5*bg.area_coin/bg.area_ver; break; }
+                }
+                if (inside(t1,full1_t1) && inside(t2,full1_t2)) c += 0.5*bg.area_coin/bg.area_full1;
+                if (inside(t1,full2_t1) && inside(t2,full2_t2)) c += 0.5*bg.area_coin/bg.area_full2;
+                entry.pi0_timing_coeff = c;
+                const int bin = h_mpi0_all->FindBin(entry.mpi0_all);
+                timing_sum.at(bin) += c;
+                if (bin >= 1 && bin <= h_mpi0_all->GetNbinsX()) {
+                    const double n = h_mpi0_all->GetBinContent(bin);
+                    if (!(n > 0)) throw std::runtime_error("Event in empty mass denominator bin");
+                    entry.pi0_timing_bin_mean = h_coin_bgsub->GetBinContent(bin)/n;
+                }
+            }
+            for (int bin=1; bin<=h_mpi0_all->GetNbinsX(); ++bin) {
+                const double expected = h_coin_bgsub->GetBinContent(bin);
+                if (!std::isfinite(timing_sum[bin]) ||
+                    std::abs(timing_sum[bin]-expected) > 1e-10*(1+h_mpi0_all->GetBinContent(bin)))
+                    throw std::runtime_error("Timing primitive does not reproduce production mass histogram");
+            }
         }
 
         // -----------------------------------------------
@@ -3309,7 +3395,8 @@ void nps_analysis_main(const TString &kinematic_in = "",
                     int bin = h_pi0_weight->FindBin(mgg);
                     double weight = h_pi0_weight->GetBinContent(bin);
 
-                    if (weight > 0.0 && std::isfinite(weight)) {
+                    // Keep finite signed residuals, including negative fluctuations.
+                    if (std::isfinite(weight)) {
                         h_mmiss_all_weighted->Fill(mm_p_corr, weight);
                         
                         // Update tree data with weight and exclusivity information
@@ -3428,7 +3515,7 @@ void nps_analysis_main(const TString &kinematic_in = "",
             mass_cut_event_ids.reserve(treeData.size());
             for (const auto& kv : treeData) {
                 const auto& entry = kv.second;
-                if (entry.pi0_weight <= 0.0 || !std::isfinite(entry.pi0_weight)) continue;
+                if (!std::isfinite(entry.pi0_weight)) continue;
                 nps2d::Point p;
                 p.id = kv.first;
                 p.mpi0 = entry.mpi0_all;
@@ -3498,7 +3585,7 @@ void nps_analysis_main(const TString &kinematic_in = "",
             for (const auto& item : treeData) {
                 const TreeEntry& entry = item.second;
                 const double value = entry.*fields.at(output_stem);
-                if (!std::isfinite(value) || !std::isfinite(entry.pi0_weight) || entry.pi0_weight <= 0.0) continue;
+                if (!std::isfinite(value) || !std::isfinite(entry.pi0_weight)) continue;
                 if (entry.is_exclusive_ellipse) h_ellipse->Fill(value, entry.pi0_weight);
                 if (entry.is_exclusive_mcd) h_mcd->Fill(value, entry.pi0_weight);
             }
@@ -3788,9 +3875,11 @@ void nps_analysis_main(const TString &kinematic_in = "",
         TString outf = Form("%s/diagnostics_run%d.root", outRootDir.Data(), run);
         TFile *fout = TFile::Open(outf, "RECREATE");
         if (!fout || fout->IsZombie()) {
-        logmsg(WARN, Form("Could not create ROOT output %s", outf.Data()));
+        throw std::runtime_error("Cannot create production ROOT output");
         } else {
         fout->cd();
+        TNamed fit_success("analysis_fit_status", "valid");
+        fit_success.Write();
 
         // Create, fill, and write event-level physics tree from treeData map.
         plot_diagnostics.write();
@@ -4233,15 +4322,22 @@ void nps_analysis_main(const TString &kinematic_in = "",
 
         // Chain is automatically cleaned up by unique_ptr destructor
         sw_run.Stop();
+        write_nps_run_status(status_path,run,true,"complete",true,
+            res.minimizer_status,res.covariance_status,"",res.attempts,res.at_boundary,
+            res.zero_background?"zero_background":"interior_valid");
         logmsg(INFO, Form("Run %d finished. Runtime: %f s (real)", run, sw_run.RealTime()));
         } catch (const std::exception& e) {
             logmsg(ERROR, Form("Exception during run %d processing: %s", run, e.what()));
             run_status = "ERROR";
-            continue;  // unique_ptr cleans up automatically
+            write_nps_run_status(status_path,run,false,"analysis",false,-1,-1,e.what());
+            gApplication->Terminate(2);
+            return;
         } catch (...) {
             logmsg(ERROR, Form("Unknown exception during run %d processing", run));
             run_status = "ERROR";
-            continue;  // unique_ptr cleans up automatically
+            write_nps_run_status(status_path,run,false,"analysis",false,-1,-1,"unknown_exception");
+            gApplication->Terminate(2);
+            return;
         }
     } // end runs
 

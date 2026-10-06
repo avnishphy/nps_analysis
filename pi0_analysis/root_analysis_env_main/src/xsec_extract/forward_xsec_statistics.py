@@ -46,24 +46,25 @@ def _validate(problem):
     y = np.asarray(problem['y'], dtype=float)
     sumw2 = np.asarray(problem['sumw2'], dtype=float)
     epsilon = np.asarray(problem['epsilon_max'], dtype=float)
+    fixed = np.asarray(problem.get('fixed_prediction', np.zeros(len(y))), dtype=float)
     _require(design.ndim == 2 and design.shape[1] > 0 and
              design.shape[1] % 3 == 0, 'design must have three columns per truth block')
-    _require(y.shape == sumw2.shape == (design.shape[0],), 'yield array shape mismatch')
+    _require(y.shape == sumw2.shape == fixed.shape == (design.shape[0],), 'yield array shape mismatch')
     _require(epsilon.shape == (design.shape[1] // 3,), 'epsilon_max shape mismatch')
-    _require(all(np.all(np.isfinite(v)) for v in (design, y, sumw2, epsilon)),
+    _require(all(np.all(np.isfinite(v)) for v in (design, y, sumw2, epsilon, fixed)),
              'non-finite fit input')
-    _require(np.all(y >= 0) and np.all(sumw2 >= 0),
+    _require(np.all(y >= 0) and np.all(sumw2 >= 0) and np.all(fixed >= 0),
              'scaled-Poisson inference requires nonnegative, unsubtracted event weights')
     _require(np.all((y > 0) == (sumw2 > 0)), 'yield and sumw2 zero patterns disagree')
     _require(np.all((epsilon >= 0) & (epsilon <= 1)), 'epsilon must lie in [0,1]')
     _require(y.sum() > 0, 'no positive data yield')
     _require(np.all(design[:, ::3] >= 0), 'negative unpolarized response contribution')
-    supported = np.any(design != 0, axis=1)
+    supported = np.any(design != 0, axis=1) | (fixed != 0)
     _require(not np.any((y > 0) & ~supported), 'positive data yield in row without MC support')
     pooled = float(sumw2.sum() / y.sum())
     scales = np.full_like(y, pooled)
     np.divide(sumw2, y, out=scales, where=y > 0)
-    return design, y, sumw2, epsilon, scales
+    return design, y, sumw2, epsilon, scales, fixed
 
 
 def _angular_row(npar, block, epsilon, x):
@@ -75,7 +76,7 @@ def _angular_row(npar, block, epsilon, x):
 
 
 def _fit(problem, initial=None, maxiter=2000, tolerance=1e-8, equality=None):
-    design, y, sumw2, epsilon, scales = _validate(problem)
+    design, y, sumw2, epsilon, scales, fixed_prediction = _validate(problem)
     nrow, npar = design.shape
     # Row scaling estimates variance for numerical conditioning only. It does
     # not change the scaled-Poisson objective or drop empty observations.
@@ -101,14 +102,14 @@ def _fit(problem, initial=None, maxiter=2000, tolerance=1e-8, equality=None):
     _require(mu_floor > 0, 'yield scale below floating-point numerical range')
 
     def objective(v):
-        mu = scaled_design @ v
+        mu = fixed_prediction + scaled_design @ v
         safe_mu = np.maximum(mu, mu_floor * 1e-6)
         terms = mu / scales - observed_effective
         terms[positive] += observed_effective[positive] * np.log(y[positive] / safe_mu[positive])
         return float(terms.sum())
 
     def gradient(v):
-        mu = np.maximum(scaled_design @ v, mu_floor * 1e-6)
+        mu = np.maximum(fixed_prediction + scaled_design @ v, mu_floor * 1e-6)
         return scaled_design.T @ ((1.0 - y / mu) / scales)
 
     angular_rows = [_angular_row(npar, block, eps, x)
@@ -116,9 +117,9 @@ def _fit(problem, initial=None, maxiter=2000, tolerance=1e-8, equality=None):
                     for x in (-1.0, -0.5, 0.0, 0.5, 1.0)]
     # Explicit prediction constraints also protect profiles with trial negative
     # yields. Entirely unsupported empty rows contribute zero and stay recorded.
-    supported = np.any(design != 0, axis=1)
+    supported = np.any(design != 0, axis=1) | (fixed_prediction != 0)
     prediction = LinearConstraint(scaled_design[supported] / numerical_sigma[supported, None],
-                                 np.where(positive[supported], mu_floor, 0.0)
+                                 (np.where(positive[supported], mu_floor, 0.0)-fixed_prediction[supported])
                                  / numerical_sigma[supported], np.inf)
     fixed = []
     if equality is not None:
@@ -150,7 +151,7 @@ def _fit(problem, initial=None, maxiter=2000, tolerance=1e-8, equality=None):
             break
     else:
         raise FitError('angular cutting-plane constraints did not converge')
-    predicted = design @ parameters
+    predicted = fixed_prediction + design @ parameters
     _require(np.all(predicted >= -1e-8 * float(y.max())), 'negative fitted prediction')
     _require(np.all(predicted[positive] > 0), 'nonpositive fitted prediction in occupied row')
     if equality is not None:
@@ -178,18 +179,21 @@ def _fit(problem, initial=None, maxiter=2000, tolerance=1e-8, equality=None):
 
 
 def fit_problem(problem, *, initial=None, maxiter=2000, tolerance=1e-8):
-    """Fit every truth block, including exterior nuisance blocks, without priors."""
+    """Fit interior and low-tprime blocks; Q2/xB feed-in is fixed."""
     return _fit(problem, initial=initial, maxiter=maxiter, tolerance=tolerance)
 
 
 def _event_arrays(problem):
-    design, y, sumw2, _, _ = _validate(problem)
+    design, y, sumw2, _, _, fixed_prediction = _validate(problem)
     data_rows = np.asarray(problem['data_rows'], dtype=int)
     data_weights = np.asarray(problem['data_weights'], dtype=float)
     mc_rows = np.asarray(problem['mc_rows'], dtype=int)
     mc_blocks = np.asarray(problem['mc_blocks'], dtype=int)
     mc_basis = np.asarray(problem['mc_basis'], dtype=float)
     mc_ids = np.asarray(problem['mc_ids'])
+    fixed_rows=np.asarray(problem.get('fixed_mc_rows',[]),dtype=int)
+    fixed_weights=np.asarray(problem.get('fixed_mc_weights',[]),dtype=float)
+    fixed_ids=np.asarray(problem.get('fixed_mc_ids',[]))
     _require(data_rows.shape == data_weights.shape and data_rows.ndim == 1,
              'data event arrays mismatch')
     _require(np.all(np.isfinite(data_weights)) and np.all(data_weights >= 0),
@@ -210,6 +214,10 @@ def _event_arrays(problem):
              np.all((mc_blocks >= 0) & (mc_blocks < design.shape[1] // 3)), 'invalid MC event index')
     _require(np.all(np.isfinite(mc_basis)) and np.all(mc_basis[:, 0] >= 0),
              'invalid MC event basis')
+    _require(fixed_rows.shape==fixed_weights.shape==fixed_ids.shape and fixed_rows.ndim==1,
+             'fixed feed-in event arrays mismatch')
+    _require(np.all((fixed_rows>=0)&(fixed_rows<len(y))) and np.all(np.isfinite(fixed_weights)) and np.all(fixed_weights>=0),
+             'invalid fixed feed-in event arrays')
     # Every snapshot must reproduce the estimator before resampling. Otherwise
     # a filtered or misnormalized cache could yield plausible, incorrect errors.
     _require(np.allclose(np.bincount(data_rows, weights=data_weights, minlength=len(y)), y,
@@ -221,12 +229,18 @@ def _event_arrays(problem):
         np.add.at(rebuilt, (mc_rows, 3 * mc_blocks + harmonic), mc_basis[:, harmonic])
     _require(np.allclose(rebuilt, design, rtol=2e-10, atol=1e-14 * np.max(np.abs(design))),
              'MC cache does not reproduce nominal response normalization')
-    return data_rows, data_weights, mc_rows, mc_blocks, mc_basis, mc_ids, data_ids
+    keys=np.asarray([f'{row}:{event}' for row,event in zip(fixed_rows,fixed_ids)])
+    _,inverse=np.unique(keys,return_inverse=True);grouped=np.bincount(inverse,weights=fixed_weights)
+    grouped_rows=np.zeros(len(grouped),dtype=int);grouped_rows[inverse]=fixed_rows
+    rebuilt_fixed=np.bincount(grouped_rows,weights=grouped,minlength=len(y))
+    _require(np.allclose(rebuilt_fixed,fixed_prediction,rtol=2e-10,atol=1e-14*max(1.,np.max(fixed_prediction))),
+             'fixed feed-in cache does not reproduce nominal row prediction')
+    return data_rows, data_weights, mc_rows, mc_blocks, mc_basis, mc_ids, data_ids, fixed_rows, fixed_weights, fixed_ids
 
 
 def _resampling_plan(problem):
     arrays = _event_arrays(problem)
-    data_rows, weights, mc_rows, mc_blocks, basis, mc_ids, data_ids = arrays
+    data_rows, weights, mc_rows, mc_blocks, basis, mc_ids, data_ids, fixed_rows, fixed_weights, fixed_ids = arrays
 
     def catalog_indices(ids, catalog_key):
         catalog = np.unique(np.asarray(problem.get(catalog_key, ids)))
@@ -236,13 +250,14 @@ def _resampling_plan(problem):
         _require(np.array_equal(catalog[indices], ids), 'selected event absent from bootstrap catalog')
         return len(catalog), indices
 
+    all_mc_ids=np.r_[mc_ids,fixed_ids]
     return (arrays, catalog_indices(data_ids, 'bootstrap_data_ids'),
-            catalog_indices(mc_ids, 'bootstrap_mc_ids'))
+            catalog_indices(all_mc_ids, 'bootstrap_mc_ids'))
 
 
 def _resample_from_plan(problem, rng, plan, resample_data=True, resample_mc=True):
     arrays, (ndata, data_index), (nmc, mc_index) = plan
-    data_rows, weights, mc_rows, mc_blocks, basis, _, _ = arrays
+    data_rows, weights, mc_rows, mc_blocks, basis, mc_ids, _, fixed_rows, fixed_weights, fixed_ids = arrays
     design = np.asarray(problem['design'], dtype=float)
     result = dict(problem)
     if resample_data:
@@ -251,10 +266,15 @@ def _resample_from_plan(problem, rng, plan, resample_data=True, resample_mc=True
         result['sumw2'] = np.bincount(data_rows, weights=weights**2 * multiplier, minlength=len(design))
     if resample_mc:
         multiplier = rng.poisson(1.0, nmc)[mc_index]
+        fitted_multiplier=multiplier[:len(mc_ids)];fixed_multiplier=multiplier[len(mc_ids):]
         rebuilt = np.zeros_like(design)
         for harmonic in range(3):
-            np.add.at(rebuilt, (mc_rows, 3 * mc_blocks + harmonic), basis[:, harmonic] * multiplier)
+            np.add.at(rebuilt, (mc_rows, 3 * mc_blocks + harmonic), basis[:, harmonic] * fitted_multiplier)
         result['design'] = rebuilt
+        result['mc_basis']=basis*fitted_multiplier[:,None]
+        result['fixed_prediction']=np.bincount(fixed_rows,weights=fixed_weights*fixed_multiplier,minlength=len(design))
+        result['fixed_mc_sumw2']=np.bincount(fixed_rows,weights=fixed_weights**2*fixed_multiplier,minlength=len(design))
+        result['fixed_mc_weights']=fixed_weights*fixed_multiplier
     return result
 
 

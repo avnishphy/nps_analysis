@@ -14,12 +14,7 @@
   "hms_p_gev": 4.637,
   "phi_bins": 12,
   "tprime_bin_edges": [
-    -0.75,
-    -0.55,
-    -0.40,
-    -0.25,
-    -0.13,
-    0.0
+    -0.7, -0.319544, -0.221239, -0.153472, -0.086719, 0.0
   ],
   "q2_bin_edges": [
     3.3,
@@ -65,7 +60,7 @@
   "simc_yield_scale": 1.0,
   "normalize_mmiss": false,
   "model_xsec_mode": "sigcm",
-  "model_identifier": "SIMC_sig_param_2021_pi0_W_ge_2",
+  "model_identifier": "sigparam2021_pi0",
   "model_free_parameters": "plus.p5,plus.p7,plus.p9",
   "model_max_iterations": 1000,
   "model_max_evaluations": 10000,

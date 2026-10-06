@@ -76,13 +76,21 @@ inline const char *guard_name(int face) {
     return names[face];
 }
 
-// Six disjoint exterior regions receive free U/LT/TT nuisance coefficients.
-// Corners follow explicit priority t', Q2, xB; only populated blocks are fit.
-// No discarded feed-in, fixed generator-model background, or edge clamping.
-// Coarse exterior shapes still require guard-definition/closure variations.
-// Small migration probability does not imply a small fitted contribution:
-// unconstrained exterior coefficients may compensate other bins. Full rank
-// establishes a numerical solution, not precise or physical nuisance values.
+// Fit treatment is selected by the semantic face, never by a campaign-local
+// truth-block number.  Only the populated low-tprime face remains a fitted
+// exterior triplet; every other exterior face is a fixed model contribution.
+inline bool is_fitted_tprime_feedin(int truth_block, int published_blocks) {
+    return truth_block >= published_blocks &&
+           std::string(guard_name(truth_block - published_blocks)) == "tprime_below";
+}
+inline bool is_fixed_model_feedin(int truth_block, int published_blocks) {
+    return truth_block >= published_blocks &&
+           !is_fitted_tprime_feedin(truth_block, published_blocks);
+}
+
+// Six disjoint exterior regions preserve migration bookkeeping. Corners follow
+// explicit priority t', Q2, xB. The low-tprime face has one fitted U/LT/TT
+// triplet; Q2/xB faces are folded with their fixed event-level model values.
 inline int truth_block(double q, double x, double tp, const std::vector<double> &qe,
                        const std::vector<std::vector<double>> &xe, const std::vector<double> &te) {
     const int nq = static_cast<int>(qe.size()) - 1, nx = static_cast<int>(xe.front().size()) - 1;

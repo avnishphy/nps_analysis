@@ -5,6 +5,8 @@
 #include "xsec_analysis.h"
 
 inline void ExclPi0XSecAnalysis::write_joint_inputs() {
+    if (!event_model())
+        die("Joint M0 preparation requires the SIMC-model entry point");
     const auto open = [&](const char* name) {
         std::ofstream out(fs::path(cfg.out_dir) / name);
         if (!out) die(std::string("Cannot create joint input: ") + name);
@@ -17,8 +19,19 @@ inline void ExclPi0XSecAnalysis::write_joint_inputs() {
     };
     auto bins = open("joint_input_slices.csv");
     bins << "it,iq,ix,tprime_lo,tprime_hi,q2_lo,q2_hi,xb_lo,xb_hi\n";
+    std::vector<double> fixed_prediction(slices.size()*cfg.n_phi,0.0);
+    std::vector<double> fixed_variance(slices.size()*cfg.n_phi,0.0);
+    for (const auto& event:model_events) {
+        if (!nps_xsec::is_fixed_model_feedin(event.block,static_cast<int>(slices.size()))) continue;
+        double value=0.;
+        const auto nominal=event.baseline.unseparated();
+        for (int component=0;component<3;++component)
+            value+=event.basis[component]*nominal[component];
+        fixed_prediction[event.row]+=value;
+        fixed_variance[event.row]+=value*value;
+    }
     auto reco = open("migration_reco_rows.csv");
-    reco << "reco_row,it,iq,ix,ip,phi_lo,phi_hi,data,data_variance\n";
+    reco << "reco_row,it,iq,ix,ip,phi_lo,phi_hi,data,data_variance,fixed_feedin_prediction,fixed_feedin_mc_variance\n";
     for (int it=0; it<cfg.n_tprime; ++it)
         for (int iq=0; iq<cfg.n_q2; ++iq)
             for (int ix=0; ix<cfg.n_xb; ++ix) {
@@ -30,13 +43,15 @@ inline void ExclPi0XSecAnalysis::write_joint_inputs() {
                     const auto& p = slices[b].phi[ip];
                     reco << b*cfg.n_phi+ip << ',' << it << ',' << iq << ',' << ix << ','
                          << ip << ',' << phi_edges[ip] << ',' << phi_edges[ip+1] << ','
-                         << p.data << ',' << p.data_sumw2 << '\n';
+                         << p.data << ',' << p.data_sumw2 << ','<<fixed_prediction[b*cfg.n_phi+ip]
+                         <<','<<fixed_variance[b*cfg.n_phi+ip]<<'\n';
                 }
             }
     auto truth = open("migration_truth_blocks.csv");
-    truth << "truth_block,events,epsilon_max\n";
+    truth << "truth_block,events,epsilon_max,fit_treatment\n";
     for (size_t b=0; b<truth_moments.size(); ++b)
-        truth << b << ',' << truth_moments[b].events << ',' << truth_moments[b].epsilon_max << '\n';
+        truth << b << ',' << truth_moments[b].events << ',' << truth_moments[b].epsilon_max << ','
+              <<(b<slices.size()?"physics":nps_xsec::is_fitted_tprime_feedin(b,slices.size())?"fitted_tprime_feedin":"fixed_model_feedin")<<'\n';
     auto response = open("migration_response_cells.csv");
     response << "reco_row,truth_block,events,basis_U,basis_LT,basis_TT";
     for (const char* a : {"U", "LT", "TT"})
@@ -50,12 +65,28 @@ inline void ExclPi0XSecAnalysis::write_joint_inputs() {
             for (double v : cell.covariance) response << ',' << v;
             response << '\n';
         }
-    for (auto* stream : {&bins, &reco, &truth, &response}) finish(*stream);
+    auto events = open("joint_model_events.csv");
+    events << "event_index,reco_row,truth_block,truth_phi,treatment,response_weight,Q2,W2,t,tprime,tau,theta_cm,epsilon,phi,baseline_T,baseline_L,baseline_U,baseline_LT,baseline_TT,basis_U,basis_LT,basis_TT\n";
+    for (size_t index=0;index<model_events.size();++index) {
+        const auto& event=model_events[index];
+        const char* treatment=event.block<int(slices.size())?"physics_model":
+            nps_xsec::is_fitted_tprime_feedin(event.block,static_cast<int>(slices.size()))?
+                "fitted_tprime_feedin":"fixed_model_feedin";
+        const auto& x=event.kinematics;const auto& f=event.baseline;
+        events<<index<<','<<event.row<<','<<event.block<<','<<event.truth_phi<<','<<treatment<<','<<event.weight<<','
+              <<x.Q2<<','<<x.W2<<','<<x.t<<','<<x.tprime<<','<<x.tau<<','<<x.theta_cm<<','<<x.epsilon<<','<<event.phi<<','
+              <<f.sigma_T<<','<<f.sigma_L<<','<<f.sigma_U<<','<<f.sigma_LT<<','<<f.sigma_TT;
+        for(double value:event.basis)events<<','<<value;
+        events<<'\n';
+    }
+    for (auto* stream : {&bins, &reco, &truth, &response, &events}) finish(*stream);
 
     // Written last: this marker distinguishes a completed preparation from
     // a fitted extraction and from interrupted preparation artifacts.
     auto meta = open("joint_input_metadata.txt");
-    meta << "input_stage=prepared_joint_inputs_v1\nfit_objective=not_run\n";
+    meta << "input_stage=prepared_joint_m0_inputs_v3\nfit_objective=not_run\n";
+    meta << "joint_model=sigparam2021_pi0_event_level_M0\n";
+    meta << "fixed_feedin=Q2_xB_exterior_nominal_event_model_row_offset_no_fit_coordinates\n";
     meta << "configured_kinematic=" << cfg.configured_kinematic
          << "\ninput_data_file=" << cfg.data_file << "\ninput_simc_file=" << cfg.simc_file
          << "\nvertex_source=" << cfg.vertex_simc_file

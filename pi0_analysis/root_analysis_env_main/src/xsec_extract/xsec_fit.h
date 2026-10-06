@@ -6,6 +6,9 @@
 // positivity is imposed inside each fit, never by clipping fitted points.
 #include "xsec_analysis.h"
 #include "xsec_positive_solver.h"
+#include "xsec_proxy_fit.h"
+#include <set>
+#include <TMatrixDSymEigen.h>
 
 inline void ExclPi0XSecAnalysis::compute_ratios_and_xsec() {
     // Hydrogen yield reduction is external to MC and data fitting. Its common
@@ -151,6 +154,7 @@ inline void ExclPi0XSecAnalysis::invalidate_fit_results() {
         auto& s = slices[b];
         s.fit_scope = fit_fallback ? "global_migration_subset" : "global_migration";
         if (cfg.fit_objective == "scaled-poisson") s.fit_scope += "_scaled_poisson";
+        if (model_fit_mode) s.fit_scope += "_sigparam2021_pi0";
         if (cfg.positive_xsec) s.fit_scope += "_positive";
         s.fit_failure_reason.clear();
         s.fit_rank = s.fit_mc_iterations = 0;
@@ -169,7 +173,7 @@ inline void ExclPi0XSecAnalysis::invalidate_fit_results() {
 }
 
 inline void ExclPi0XSecAnalysis::fit_global_subset(const std::vector<bool>& groups) {
-    active_truth_blocks.clear(); fit_rows.clear(); fit_variance.clear(); scaled_rows.clear();
+    active_truth_blocks.clear(); fixed_truth_blocks.clear(); fit_rows.clear(); fit_variance.clear(); scaled_rows.clear();
     scaled_minuit_status=scaled_covariance_status=-1;
     scaled_edm=std::numeric_limits<double>::quiet_NaN();
     scaled_calls=0;
@@ -184,8 +188,8 @@ inline void ExclPi0XSecAnalysis::fit_global_subset(const std::vector<bool>& grou
     const auto selected = [&](size_t b) {
         return groups[b % (cfg.n_q2 * cfg.n_xb)];
     };
-    // All published bins must be identifiable. Empty overflow regions have no
-    // contribution and need no columns; populated ones are always fitted.
+    // All published bins must be identifiable. Only low-tprime exterior
+    // feed-in receives fitted columns; other exterior events remain fixed.
     for (size_t b = 0; b < truth_moments.size(); ++b) {
         bool contributes = false;
         for (size_t r = 0; r < migration_response.size(); ++r)
@@ -193,10 +197,11 @@ inline void ExclPi0XSecAnalysis::fit_global_subset(const std::vector<bool>& grou
                 const auto& basis = migration_response[r][b].basis;
                 contributes = contributes || std::any_of(basis.begin(), basis.end(), [](double v) { return v != 0; });
             }
-        // Excluded Q2/xB truth bins that feed retained rows remain free nuisance
-        // coefficients. Dropping them would bias the extracted cross section.
-        if ((b < slices.size() && selected(b)) || contributes)
-            active_truth_blocks.push_back(static_cast<int>(b));
+        if ((b < slices.size() && selected(b)) || contributes) {
+            if(!event_model() && nps_xsec::is_fixed_model_feedin(static_cast<int>(b),static_cast<int>(slices.size())))
+                fixed_truth_blocks.push_back(static_cast<int>(b));
+            else active_truth_blocks.push_back(static_cast<int>(b));
+        }
     }
     const size_t npar = 3 * active_truth_blocks.size();
     response_design.assign(migration_response.size(), std::vector<double>(npar, 0));
@@ -217,7 +222,8 @@ inline void ExclPi0XSecAnalysis::fit_global_subset(const std::vector<bool>& grou
                 row[3 * b + a] = migration_response[r][active_truth_blocks[b]].basis[a];
         if (!selected(r / cfg.n_phi)) continue;
         const auto &p = slices[r / cfg.n_phi].phi[r % cfg.n_phi];
-        const bool support = std::any_of(row.begin(), row.end(), [](double v) { return v != 0; });
+        const bool support = std::any_of(row.begin(), row.end(), [](double v) { return v != 0; }) ||
+                             (!event_model() && fixed_feedin_prediction[r]!=0.);
         if (!support && (p.data != 0 || p.data_sumw2 > 0))
             die("Data outside MC support in row " + std::to_string(r) +
                 " (it=" + std::to_string(r / cfg.n_phi / (cfg.n_q2 * cfg.n_xb)) +
@@ -235,7 +241,7 @@ inline void ExclPi0XSecAnalysis::fit_global_subset(const std::vector<bool>& grou
         if (!support)
             continue;
         X.push_back(row);
-        data.push_back(p.data);
+        data.push_back(p.data-(event_model()?0.:fixed_feedin_prediction[r]));
         data_variance.push_back(p.data_sumw2);
         fit_rows.push_back(static_cast<int>(r));
     }
@@ -243,8 +249,10 @@ inline void ExclPi0XSecAnalysis::fit_global_subset(const std::vector<bool>& grou
         warn(std::to_string(omitted_zero_variance_rows) +
              " MC-supported rows have zero observed variance; excluded and recorded");
 
-    // Every active block is constrained, including external feed-in and
-    // excluded published bins retained as nuisance parameters. At fixed
+    if (model_fit_mode) { fit_proxy_subset(groups); return; }
+
+    // Every fitted block is constrained, including low-tprime feed-in and
+    // excluded published bins retained as independent parameters. At fixed
     // binwise U/LT/TT the angular minimum decreases with epsilon, so checking
     // the largest response-event epsilon covers its full observed envelope.
     std::vector<double> epsilon_max;
@@ -270,7 +278,8 @@ inline void ExclPi0XSecAnalysis::fit_global_subset(const std::vector<bool>& grou
         std::vector<double> next_variance = data_variance;
         for (size_t i = 0; i < fit_rows.size(); ++i)
             next_variance[i] += nps_xsec::mc_prediction_variance(
-                migration_response[fit_rows[i]], active_truth_blocks, migration_fit.parameters);
+                migration_response[fit_rows[i]], active_truth_blocks, migration_fit.parameters)+
+                fixed_feedin_mc_variance[fit_rows[i]];
         auto next = solve(next_variance);
         double parameter_change = 0, variance_change = 0;
         // Error-scaled convergence avoids relative division by a coefficient
@@ -295,6 +304,46 @@ inline void ExclPi0XSecAnalysis::fit_global_subset(const std::vector<bool>& grou
         die("Finite-MC iteration did not converge; inspect MC statistics or increase --mc-max-iterations");
 
     fit_curvature_inverse = migration_fit.covariance;
+    if (auto* statistics=dynamic_cast<TTree*>(f_data->Get("analysis_sigma_covariance"))) {
+        if(cfg.fit_objective!="gaussian" || cfg.fit_variance_mode!="data" || cfg.positive_xsec ||
+           !f_data->Get("analysis_reco_yields"))
+            die("External event-bootstrap covariance requires the matching unconstrained data-only point estimator");
+        int i=0,j=0,truth_i=0,truth_j=0;
+        double cdata=0,cmc=0,nominal_i=0,nominal_j=0;
+        bind_branch(statistics,"i",&i);bind_branch(statistics,"j",&j);
+        bind_branch(statistics,"truth_i",&truth_i);bind_branch(statistics,"truth_j",&truth_j);
+        bind_branch(statistics,"data_covariance",&cdata);bind_branch(statistics,"mc_covariance",&cmc);
+        bind_branch(statistics,"nominal_i",&nominal_i);bind_branch(statistics,"nominal_j",&nominal_j);
+        const size_t np=migration_fit.parameters.size();
+        if(statistics->GetEntries()!=static_cast<Long64_t>(np*np)) die("Bootstrap covariance dimension mismatch");
+        std::set<std::pair<int,int>> seen;
+        std::vector<double> covariance(np*np);
+        const auto same_point=[](double a,double b) { return std::abs(a-b)<=1e-10*std::max(std::abs(a),std::abs(b))+1e-20; };
+        for(Long64_t row=0;row<statistics->GetEntries();++row) {
+            statistics->GetEntry(row);
+            if(i<0 || j<0 || i>=static_cast<int>(np) || j>=static_cast<int>(np) || !seen.emplace(i,j).second ||
+               truth_i!=active_truth_blocks[i/3] || truth_j!=active_truth_blocks[j/3] ||
+               !same_point(nominal_i,migration_fit.parameters[i]) || !same_point(nominal_j,migration_fit.parameters[j]) ||
+               !std::isfinite(cdata) || !std::isfinite(cmc) || (i==j && (cdata<0 || cmc<0)))
+                die("Bootstrap covariance does not match this nominal estimator");
+            covariance[i*np+j]=cdata+cmc;
+        }
+        statistics->ResetBranchAddresses();
+        for(size_t i=0;i<np;++i) for(size_t j=0;j<np;++j)
+            if(std::abs(covariance[i*np+j]-covariance[j*np+i])>
+               1e-10*std::sqrt(covariance[i*np+i]*covariance[j*np+j])+1e-30)
+                die("Asymmetric bootstrap covariance");
+        TMatrixDSym correlation(np);
+        for(size_t i=0;i<np;++i) {
+            if(!(covariance[i*np+i]>0)) die("Bootstrap covariance has no variance for an active coefficient");
+            for(size_t j=0;j<np;++j)
+                correlation(i,j)=covariance[i*np+j]/std::sqrt(covariance[i*np+i]*covariance[j*np+j]);
+        }
+        const auto eigenvalues=TMatrixDSymEigen(correlation).GetEigenValues();
+        for(size_t i=0;i<np;++i) if(eigenvalues[i]<-1e-10*np) die("Bootstrap covariance is not positive semidefinite");
+        migration_fit.covariance=std::move(covariance);
+        log("Reported covariance: full event data bootstrap plus supplied independent finite-MC estimate; nominal coefficients unchanged");
+    }
     if (positivity_boundary_active) {
         // A boundary changes the sampling distribution and invalidates the
         // unconstrained hat-matrix prediction errors. Do not report zero or
@@ -353,11 +402,12 @@ inline void ExclPi0XSecAnalysis::finalize_fit_subset(const std::vector<bool>& gr
         auto &s = slices[r / cfg.n_phi];
         auto &p = s.phi[r % cfg.n_phi];
         const auto &row = response_design[r];
-        p.sim = std::inner_product(row.begin(), row.end(), migration_fit.parameters.begin(), 0.0);
+        p.sim = fixed_feedin_prediction[r]+std::inner_product(row.begin(), row.end(), migration_fit.parameters.begin(), 0.0);
         double variance = 0;
         for (size_t i = 0; i < npar; ++i)
             for (size_t j = 0; j < npar; ++j)
                 variance += row[i] * migration_fit.covariance[i * npar + j] * row[j];
+        if(event_model()){p.sim=model_rows[r].prediction;variance=model_row_variance(r);}
         // The response MC also determined the fitted coefficients. Its effect
         // on this same-fit prediction is therefore correlated with the fit.
         // With H = X (X' V^-1 X)^-1 X' V^-1, first-order propagation gives
@@ -365,9 +415,9 @@ inline void ExclPi0XSecAnalysis::finalize_fit_subset(const std::vector<bool>& gr
         // For an excluded row H_rr=0: its MC is independent of fitted rows.
         // This is conditional on final GLS weights; it is not a posterior
         // predictive uncertainty or a treatment of systematic correlations.
-        const double mc_variance = (cfg.fit_objective == "scaled-poisson" || cfg.fit_variance_mode == "data") ? 0.0 :
+        const double mc_variance = (cfg.fit_objective == "scaled-poisson" || cfg.fit_variance_mode == "data") ? 0.0 : event_model()?model_rows[r].mc_variance:
             nps_xsec::mc_prediction_variance(
-                migration_response[r], active_truth_blocks, migration_fit.parameters);
+                migration_response[r], active_truth_blocks, migration_fit.parameters)+fixed_feedin_mc_variance[r];
         const auto fitted = std::find(fit_rows.begin(), fit_rows.end(), static_cast<int>(r));
         const double leverage = (cfg.fit_objective == "scaled-poisson" || fitted == fit_rows.end())
                                     ? 0
@@ -404,7 +454,7 @@ inline void ExclPi0XSecAnalysis::finalize_fit_subset(const std::vector<bool>& gr
         warn(std::to_string(nonphysical_truth_bins) +
              " generated bins have negative fitted cross section at some phi; inspect covariance/closure, no "
              "clipping applied");
-    std::cout << "Global migration fit: rows=" << fit_rows.size() << ", parameters=" << npar
+    std::cout << "Global migration fit: rows=" << fit_rows.size() << ", parameters=" << (model_fit_mode ? proxy_result.parameters.size() : npar)
               << ", rank=" << migration_fit.rank << ", condition=" << migration_fit.condition
               << ", " << (cfg.fit_objective == "scaled-poisson" ? "deviance/nominal_ndf=" : "chi2/ndf=")
               << migration_fit.chi2 << "/" << migration_fit.ndf

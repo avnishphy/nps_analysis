@@ -69,7 +69,7 @@ def main(argv=None):
         parser.error('Output already exists; choose a fresh directory')
     manifest_path = args.cache / 'forward_cache_manifest.json'
     manifest = json.loads(manifest_path.read_text())
-    if manifest.get('complete') is not True or manifest.get('schema_version') != 1:
+    if manifest.get('complete') is not True or manifest.get('schema_version') != 2:
         parser.error('Cache is incomplete or has an unsupported schema')
     config = json.loads(args.config.read_text())
     if not (np.isfinite(manifest.get('target_divisor', np.nan)) and manifest['target_divisor'] > 0
@@ -120,7 +120,8 @@ def main(argv=None):
                 problem, parameters=coefficients, row_variance=total_variance)
         write_json(args.output/'variance_diagnostics.json', variance_diagnostics)
         np.savez_compressed(args.output/'response_problem.npz', design=problem['design'],
-                            y=problem['y'], sumw2=problem['sumw2'], epsilon_max=problem['epsilon_max'])
+                            y=problem['y'], sumw2=problem['sumw2'], epsilon_max=problem['epsilon_max'],
+                            fixed_prediction=problem['fixed_prediction'],fixed_mc_sumw2=problem['fixed_mc_sumw2'])
         write_json(args.output/'bin_metadata.json', {
             key: problem[key] for key in ('truth_blocks', 'parameter_metadata', 'reco_rows',
                                          'published_blocks', 'active_global_blocks')})
@@ -151,6 +152,7 @@ def main(argv=None):
         write_json(args.output/'status.json', {
             'complete': True, 'fit_succeeded': True, 'publication_ready': False,
             'inference': 'conditional scaled-Poisson; event bootstrap includes data and finite MC',
+            'fit_parameterization': 'independent interior plus tprime_below U/LT/TT; Q2/xB feed-in fixed',
             'missing_publication_validation': [
                 'Upstream pi0_weight/background-fit shared uncertainty',
                 'Detector/radiative response and normalization validation',

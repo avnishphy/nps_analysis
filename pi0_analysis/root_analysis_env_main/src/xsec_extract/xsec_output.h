@@ -111,19 +111,34 @@ inline void ExclPi0XSecAnalysis::write_results() {
     for (double x : phi_edges) meta << " " << x;
     meta << "\nconfigured_kinematic=" << cfg.configured_kinematic;
     meta << "\ninput_data_file=" << cfg.data_file;
+    if(f_data->Get("analysis_sigma_covariance"))
+        meta << "\ndata_covariance_method=full_event_Poisson_bootstrap"
+             << "\nfinite_mc_covariance_method=supplied_response_cell_delta_estimate"
+             << "\nreported_covariance=bootstrap_data_plus_supplied_finite_MC"
+             << "\npoint_estimator=nominal_Gaussian_data_only_weights"
+             << "\nfit_curvature_inverse=conditional_diagnostic_not_reported_covariance";
     meta << "\ninput_simc_file=" << cfg.simc_file;
     meta << "\nmodel_xsec_branch=" << (has_model_xsec ? model_xsec_branch : "NONE");
     meta << "\nresponse_mode=global_generated_to_reconstructed_forward_fit";
+    if (model_fit_mode) {
+        meta << "\nmodel="<<nps_xsec::xsec_model().id<<"; U=N_U*exp(-DeltaB_U*(tau-tau0))*U0; LT=N_LT*LT0; TT=N_TT*TT0; tau0="
+             <<model_all_rows.tau0<<"; PROVISIONAL pi0; T/L model assumed; synthetic="<<synthetic_validation;
+        meta << "\nmodel_evaluation=exact_cached_generated_event_fold; reported_bins=response_weighted_event_SF_average; curves=fixed_generated_mean_context";
+        meta << "\nmodel_primary_fit=Minuit2_four_physics_parameters_plus_tprime_below_U_LT_TT";
+        meta << "\nmodel_fixed_feedin=Q2_and_xB_exterior_events_folded_once_with_cached_event_level_baseline_no_fit_coordinates";
+        meta << "\nmodel_covariance=full_parameter_Hessian_propagated_J_C_Jt; boundary_errors_unavailable";
+        meta << "\nmodel_authoritative_diagnostics=model_fit_status.csv,model_parameters.csv,model_covariance.csv";
+    }
     meta << "\nfit_subset_recovery=" << (fit_fallback ? "yes" : "no");
     meta << "\nfit_retained_q2_xb_groups=" << successful_fit_groups;
-    meta << "\nfit_subset_policy=exclude_whole_reco_Q2_xB_groups_retain_all_truth_feed_in_as_free_nuisance";
+    meta << "\nfit_subset_policy=exclude_whole_reco_Q2_xB_groups_keep_low_tprime_feed_in_fitted_and_other_feed_in_fixed";
     meta << "\nfit_subset_selection=largest_supported_converged_subset_first_tie_by_increasing_excluded_group_index";
     meta << "\nfit_subset_caveat=data_dependent_exclusion_requires_closure_covariance_is_conditional_on_selected_subset";
-    meta << "\nresponse_equation=y_reco_r=sum_truth_b_component_a_A_rba_sigma_ba";
-    meta << "\nresponse_columns=active_truth_block_times_U_LT_TT_integrated_event_basis_no_probability_normalization";
+    meta << "\nresponse_equation=y_reco_r=sum_fitted_truth_b_component_a_A_rba_sigma_ba_plus_fixed_Q2_xB_feedin_Cr";
+    meta << "\nresponse_columns=fitted_truth_block_times_U_LT_TT_integrated_event_basis_no_probability_normalization_fixed_feedin_has_no_columns";
     meta << "\ntruth_region_guards=six_disjoint_exterior_faces_tprime_below_above_then_Q2_below_above_then_xB_below_above";
-    meta << "\ntruth_guard_treatment=only_populated_guards_have_free_U_LT_TT_no_fixed_generator_background_no_edge_clamping";
-    meta << "\ntruth_guard_limitation=piecewise_constant_exterior_shapes_require_guard_variation_and_closure";
+    meta << "\ntruth_guard_treatment=tprime_below_has_free_U_LT_TT_Q2_xB_and_other_exterior_faces_are_fixed_event_model_feed_in";
+    meta << "\ntruth_guard_limitation=low_tprime_piecewise_constant_shape_requires_guard_variation_and_closure";
     meta << "\nfit_objective=" << cfg.fit_objective;
     meta << "\nscaled_poisson_upstream_pi0_weight=fixed_background_correction";
     meta << "\nscaled_poisson_mc_stat=fixed_response";
@@ -133,10 +148,10 @@ inline void ExclPi0XSecAnalysis::write_results() {
     meta << "\nscaled_poisson_covariance_status=" << scaled_covariance_status;
     meta << "\nscaled_poisson_edm=" << scaled_edm;
     meta << "\nscaled_poisson_calls=" << scaled_calls;
-    meta << "\nfit_method=" << (cfg.fit_objective=="scaled-poisson" ? "Minuit2_scaled_Poisson_fixed_response_continuous_phi_positivity" : (cfg.positive_xsec ? "full_rank_SVD_then_continuous_angular_positivity_constrained_WLS" :
+    meta << "\nfit_method=" << (model_fit_mode ? "Minuit2_proxy_inside_reference_objective" : cfg.fit_objective=="scaled-poisson" ? "Minuit2_scaled_Poisson_fixed_response_continuous_phi_positivity" : (cfg.positive_xsec ? "full_rank_SVD_then_continuous_angular_positivity_constrained_WLS" :
         "full_rank_whitened_column_normalized_SVD_no_regularization_no_positivity_clipping"));
     meta << "\nfit_positive_xsec=" << (cfg.positive_xsec ? "yes" : "no");
-    meta << "\nfit_positivity_scope=all_active_truth_blocks_all_phi_epsilon_up_to_observed_block_maximum";
+    meta << "\nfit_positivity_scope=fitted_physics_and_tprime_below_only_all_phi_epsilon_up_to_observed_block_maximum";
     meta << "\nfit_positivity_boundary_active=" << (positivity_boundary_active ? "yes" : "no");
     meta << "\nfit_positivity_zero_allowed=yes_no_artificial_positive_floor";
     meta << "\nfit_variance_mode=" << (cfg.fit_objective=="scaled-poisson" ? "ignored_fixed_response" : cfg.fit_variance_mode);
@@ -144,10 +159,10 @@ inline void ExclPi0XSecAnalysis::write_results() {
         "not_used_fixed_response_scaled_Poisson" : (cfg.fit_variance_mode == "data" ?
         "data_sumw2_after_target_divisor_squared_Eq_5_23" :
         "data_sumw2_plus_iterated_Poissonized_MC_event_outer_products_extension"));
-    meta << "\nfit_covariance=" << (positivity_boundary_active ? "unavailable_boundary_constrained_estimator_NaN" :
+    meta << "\nfit_covariance=" << (positivity_boundary_active ? "unavailable_boundary_or_invalid_covariance_NaN" : model_fit_mode ? "Minuit2_Hessian_full_model_nuisance_covariance_propagated_J_C_Jt" :
         cfg.fit_objective=="scaled-poisson" ? "Minuit2_Hessian_physical_transformation_conditional_fixed_response" :
         "conditional_known_variance_inverse_information_no_chi2_ndf_rescaling");
-    meta << "\nfit_curvature_inverse=" << (cfg.fit_objective=="scaled-poisson" ?
+    meta << "\nfit_curvature_inverse=" << (model_fit_mode ? "propagated_raw_model_Hessian_diagnostic_not_boundary_interval" : cfg.fit_objective=="scaled-poisson" ?
         "Minuit2_Hessian_physical_transform_diagnostic_not_boundary_interval" :
         "unconstrained_inverse_information_at_final_weights_diagnostic_not_boundary_covariance");
     meta << "\npositive_plot_errors=" << (cfg.fit_objective=="scaled-poisson" ?

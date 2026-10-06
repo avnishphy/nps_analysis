@@ -19,6 +19,7 @@ the main driver:
 from __future__ import annotations
 
 import argparse
+import csv
 import os
 import re
 import sys
@@ -36,7 +37,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 DEFAULT_TARGET = "LH2"
 DEFAULT_CONFIG = "nps_dvcs_all_kins_main.csv"
-BRANCHES_TO_EXCLUDE = {"event_id"}
+# Physical-event resampling uses (run_number, event_id) as its identity.
+BRANCHES_TO_EXCLUDE: Set[str] = set()
 REQUIRED_EFFICIENCY_COLUMNS = (
     "run_number",
     "kinematic_setting",
@@ -287,6 +289,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
                         help="Allowed Type values in config CSV (comma-separated).")
     parser.add_argument("--run", action="append", nargs="+", default=[],
                         help="Restrict to one or more run numbers (repeatable; accepts space- or comma-separated values).")
+    parser.add_argument("--run-quality-manifest", type=Path,
+                        help="CSV listing every requested run, accepted (0/1), and exclusion_reason.")
     parser.add_argument("--no-analysis-plots", action="store_true",
                         help="Skip creation of analysis plot PDF.")
     parser.add_argument("--fp-debug-plots", action="store_true",
@@ -562,6 +566,78 @@ def fit_gaussian_from_histogram(
     return amplitude, mean, sigma
 
 
+def require_run_success(root_dir: Path, run: int) -> Optional[Dict[str, str]]:
+    """Return a validated success status, or None for a recorded failed run.
+
+    A missing or malformed status remains fatal because it is not a trustworthy
+    fit decision.  A well-formed unsuccessful status is an explicit per-run
+    result, so the caller can exclude that run without aborting the combine.
+    """
+    path = root_dir / f"analysis_status_run{run}.csv"
+    if not path.is_file():
+        raise RuntimeError(f"Run {run}: missing success status {path}; rerun with validated fitter")
+    with path.open() as stream:
+        rows = list(csv.DictReader(stream))
+    if len(rows) != 1 or rows[0].get("run") != str(run):
+        raise RuntimeError(f"Run {run}: malformed run status")
+    row = rows[0]
+    if any(row.get(k) != v for k, v in {
+        "success": "1", "stage": "complete", "fit_valid": "1"}.items()) or (
+        row.get("classification") != "zero_background" and
+        (row.get("minimizer_status") != "0" or row.get("covariance_status") != "3")):
+        details = " ".join(
+            f"{key}={row.get(key, '')}"
+            for key in (
+                "stage", "fit_valid", "minimizer_status", "covariance_status",
+                "classification", "reason", "attempts",
+            )
+        )
+        print(
+            f"[EXCLUDED RUN] run={run} unsuccessful per-run analysis; "
+            f"not included in combined dataset ({details})"
+        )
+        return None
+    return row
+
+
+def accepted_manifest_runs(path: Path, requested: Set[int]) -> Set[int]:
+    with path.open() as stream:
+        reader = csv.DictReader(stream)
+        required_columns = {"run", "accepted", "exclusion_reason"}
+        missing_columns = required_columns.difference(reader.fieldnames or [])
+        if missing_columns:
+            raise RuntimeError(
+                f"Quality manifest is missing columns: {sorted(missing_columns)}"
+            )
+        rows = list(reader)
+    try:
+        numbers = [int(row["run"].strip()) for row in rows]
+    except (AttributeError, TypeError, ValueError) as ex:
+        raise RuntimeError("Quality manifest contains an invalid run number") from ex
+    if len(numbers) != len(set(numbers)) or set(numbers) != requested:
+        missing = sorted(requested.difference(numbers))
+        extra = sorted(set(numbers).difference(requested))
+        raise RuntimeError(
+            "Quality manifest must enumerate exactly the requested runs, once each; "
+            f"missing={missing}, extra={extra}"
+        )
+    accepted: Set[int] = set()
+    for run, row in zip(numbers, rows):
+        decision = (row.get("accepted") or "").strip()
+        reason = (row.get("exclusion_reason") or "").strip()
+        if decision == "1":
+            if reason:
+                raise RuntimeError(f"Accepted run has exclusion reason: {row}")
+            accepted.add(run)
+        elif decision == "0" and reason:
+            print(f"[EXPECTED EXCLUSION] run={run} reason={reason}")
+        else:
+            raise RuntimeError(f"Malformed quality decision: {row}")
+    if not accepted:
+        raise RuntimeError("No accepted production runs")
+    return accepted
+
+
 def combine_branches(lookup: Dict[int, RunConfig],
                      root_dir: Path,
                      target_to_combine: str,
@@ -569,28 +645,29 @@ def combine_branches(lookup: Dict[int, RunConfig],
                      run_filter: Optional[Set[int]] = None) -> pd.DataFrame:
     combined_data: List[pd.DataFrame] = []
     seen_runs: List[int] = []
+    excluded_runs: List[int] = []
     total_events = 0
+    reference_schema: Optional[Dict[str, str]] = None
+    reference_schema_run: Optional[int] = None
 
     for run in sorted(lookup.keys()):
-        if run_filter and run not in run_filter:
-            continue
-        if run == 4349:
-            print(f"[WARN] Run {run} ignored due to known bad focal-plane data")
+        if run_filter is not None and run not in run_filter:
             continue
 
         cfg = lookup[run]
         if target_to_combine and cfg.target and cfg.target.lower() != target_to_combine.lower():
             continue
 
+        if require_run_success(root_dir, run) is None:
+            excluded_runs.append(run)
+            continue
         fpath = root_dir / f"diagnostics_run{run}.root"
         if not fpath.exists():
-            print(f"[WARN] Missing diagnostics ROOT for run {run}: {fpath.name}")
-            continue
+            raise RuntimeError(f"Missing required production run {run}: {fpath}")
 
         eff = efficiency_map.get(run)
         if eff is None:
-            print(f"[WARN] No valid efficiency metadata for run {run}; skipping run")
-            continue
+            raise RuntimeError(f"No valid efficiency metadata for required run {run}")
 
         ps_value = cfg.prescale_value
         charge_uC = eff.charge_uC
@@ -613,15 +690,44 @@ def combine_branches(lookup: Dict[int, RunConfig],
 
         try:
             with uproot.open(fpath) as uf:
+                if "analysis_fit_status" not in uf or uf["analysis_fit_status"].member("fTitle") != "valid":
+                    raise RuntimeError(f"Run {run}: ROOT file has no valid-fit provenance")
                 if "physics" not in uf:
-                    print(f"[WARN] Missing 'physics' tree in {fpath.name}")
-                    continue
+                    raise RuntimeError(f"Missing physics tree in required run {run}")
 
                 physics = uf["physics"]
                 branch_names = [b.name for b in physics.branches if b.name not in BRANCHES_TO_EXCLUDE]
+                if "event_id" not in branch_names:
+                    raise RuntimeError(
+                        f"Run {run}: physics tree lacks event_id required for event resampling"
+                    )
+
+                # All branches are copied without an event selection. Require
+                # one production schema so pandas cannot silently introduce
+                # missing values or promote branch types across runs.
+                current_schema = {
+                    name: str(physics[name].typename) for name in branch_names
+                }
+                if reference_schema is None:
+                    reference_schema = current_schema
+                    reference_schema_run = run
+                elif current_schema != reference_schema:
+                    missing = sorted(set(reference_schema).difference(current_schema))
+                    extra = sorted(set(current_schema).difference(reference_schema))
+                    changed = sorted(
+                        name for name in set(current_schema).intersection(reference_schema)
+                        if current_schema[name] != reference_schema[name]
+                    )
+                    raise RuntimeError(
+                        f"Run {run}: schema differs from run {reference_schema_run}; "
+                        f"missing={missing}, extra={extra}, changed_types={changed}"
+                    )
+                timing_names = {"pi0_timing_coeff", "pi0_timing_bin_mean"}
+                present = timing_names.intersection(branch_names)
+                if present and present != timing_names:
+                    raise RuntimeError(f"Run {run}: incomplete timing primitive schema")
                 if not branch_names:
-                    print(f"[WARN] No branches available for run {run}")
-                    continue
+                    raise RuntimeError(f"No branches in required run {run}")
 
                 branch_data: Dict[str, np.ndarray] = {}
                 reference_len: Optional[int] = None
@@ -629,22 +735,24 @@ def combine_branches(lookup: Dict[int, RunConfig],
                     try:
                         arr = physics[branch_name].array(library="np")
                     except Exception as ex:
-                        print(f"[WARN] Could not read branch '{branch_name}' for run {run}: {ex}")
-                        continue
+                        raise RuntimeError(
+                            f"Could not read branch '{branch_name}' for run {run}: {ex}"
+                        ) from ex
 
                     if reference_len is None:
                         reference_len = len(arr)
                     if len(arr) != reference_len:
-                        print(
-                            f"[WARN] Skipping branch '{branch_name}' for run {run}: "
-                            f"length {len(arr)} != {reference_len}"
+                        raise RuntimeError(
+                            f"Branch '{branch_name}' for run {run} has length {len(arr)} "
+                            f"but expected {reference_len}"
                         )
-                        continue
                     branch_data[branch_name] = arr
 
                 if not branch_data or reference_len is None or reference_len == 0:
-                    print(f"[WARN] No usable branch data for run {run}")
-                    continue
+                    raise RuntimeError(f"No usable events in required run {run}; exposure cannot be silently dropped")
+                event_ids = branch_data["event_id"]
+                if len(np.unique(event_ids)) != len(event_ids):
+                    raise RuntimeError(f"Run {run}: duplicate event_id values")
 
                 n_events = reference_len
                 branch_data["scale"] = np.full(n_events, scale, dtype=np.float32)
@@ -668,7 +776,13 @@ def combine_branches(lookup: Dict[int, RunConfig],
                 seen_runs.append(run)
                 total_events += n_events
         except Exception as ex:
-            print(f"[ERROR] Failed to process run {run}: {ex}")
+            raise RuntimeError(f"Failed required run {run}: {ex}") from ex
+
+    if excluded_runs:
+        print(
+            f"[INFO] Excluded {len(excluded_runs)} unsuccessful run(s) from combine: "
+            f"{excluded_runs}"
+        )
 
     if not combined_data:
         return pd.DataFrame()
@@ -1230,11 +1344,15 @@ def _fit_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
 
     ellipse_flags = np.zeros(len(df), dtype=np.int32)
     mcd_flags = np.zeros(len(df), dtype=np.int32)
-    valid_idx = np.where(valid)[0]
-    event_ellipse_d2 = covariance_d2(core_model, x_all[valid], y_all[valid])
+    # Preserve the existing geometry fit, then apply it to every finite event.
+    selectable = (np.isfinite(x_all) & np.isfinite(y_all) & np.isfinite(event_w) &
+        (x_all >= cfg["mpi0_min"]) & (x_all < cfg["mpi0_max"]) &
+        (y_all >= cfg["mmiss_min"]) & (y_all < cfg["mmiss_max"]))
+    valid_idx = np.where(selectable)[0]
+    event_ellipse_d2 = covariance_d2(core_model, x_all[selectable], y_all[selectable])
     ellipse_flags[valid_idx[event_ellipse_d2 <= ellipse_d2_cut]] = 1
     if mcd_valid:
-        event_mcd_d2 = covariance_d2(best_mcd_model, x_all[valid], y_all[valid])
+        event_mcd_d2 = covariance_d2(best_mcd_model, x_all[selectable], y_all[selectable])
         mcd_flags[valid_idx[event_mcd_d2 <= mcd_d2_cut]] = 1
 
     df["is_exclusive_ellipse_combined"] = ellipse_flags
@@ -1402,7 +1520,7 @@ def add_combined_2d_mass_cut(df: pd.DataFrame) -> Optional[Dict[str, Any]]:
     w = df["pi0_weight"].to_numpy(dtype=float)
     if "scale" in df:
         w = w * df["scale"].to_numpy(dtype=float)
-    finite = np.isfinite(x) & np.isfinite(y) & np.isfinite(w) & (w > 0)
+    finite = np.isfinite(x) & np.isfinite(y) & np.isfinite(w)
     valid = finite & (x >= cfg["mpi0_min"]) & (x < cfg["mpi0_max"]) & (
         y >= cfg["mmiss_min"]) & (y < cfg["mmiss_max"])
     debug["params"]["diagnostic_outside_window_weight"] = float(w[finite & ~valid].sum())
@@ -1435,7 +1553,18 @@ def save_to_root(df: pd.DataFrame, output_path: Path, mass_cut_debug: Optional[D
     for col in df.columns:
         payload[col] = df[col].to_numpy()
 
-    with uproot.recreate(str(output_path)) as out_file:
+    temporary_path = output_path.with_name(output_path.name + ".tmp")
+    with uproot.recreate(str(temporary_path)) as out_file:
+        runs = df[["run_number", "charge_uC", "scale"]].drop_duplicates()
+        if runs["run_number"].duplicated().any():
+            raise RuntimeError("Inconsistent exposure within run")
+        manifest = out_file.mktree("analysis_runs", {
+            "run_number": np.dtype("int32"), "success": np.dtype("int32"),
+            "charge_uC": np.dtype("float32"), "scale": np.dtype("float32")})
+        manifest.extend({"run_number": runs.run_number.to_numpy(dtype=np.int32),
+            "success": np.ones(len(runs), dtype=np.int32),
+            "charge_uC": runs.charge_uC.to_numpy(dtype=np.float32),
+            "scale": runs.scale.to_numpy(dtype=np.float32)})
         branch_types = {name: arr.dtype for name, arr in payload.items()}
         tree = out_file.mktree("physics", branch_types)
         tree.extend(payload)
@@ -1456,6 +1585,7 @@ def save_to_root(df: pd.DataFrame, output_path: Path, mass_cut_debug: Optional[D
                         for key in scan[0].keys()
                     }
 
+    os.replace(temporary_path, output_path)
     print(f"[INFO] Wrote {len(df)} events with {len(payload)} branches")
     if mass_cut_debug:
         print(f"[INFO] Wrote combined 2D mass-cut debug objects with tag '{COMBINED_MASS_CUT_TAG}'")
@@ -1990,6 +2120,11 @@ def run(argv: Optional[Sequence[str]] = None) -> int:
     eff_map = load_efficiency_metadata(cfg.efficiency_csv, cfg.kin_setting)
 
     run_filter_set = set(cfg.run_filter) if cfg.run_filter else None
+    if args.run_quality_manifest:
+        requested = {r for r, meta in lookup.items()
+                     if (not cfg.target_to_combine or meta.target.lower() == cfg.target_to_combine.lower())
+                     and (run_filter_set is None or r in run_filter_set)}
+        run_filter_set = accepted_manifest_runs(args.run_quality_manifest, requested)
     df_combined = combine_branches(
         lookup=lookup,
         root_dir=cfg.root_dir,

@@ -59,6 +59,8 @@
 #include <TPaveText.h>
 #include <TMatrixDSym.h>
 #include <TFitResultPtr.h>
+#include <TFitResult.h>
+#include <TDecompChol.h>
 #include <TFile.h>
 #include <TNamed.h>
 #include <TLatex.h>
@@ -69,6 +71,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
+#include <fstream>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -86,7 +89,95 @@ struct BGSubtractionResult {
     double mu_MeV = 0.0;
     double sigma_MeV = 0.0;
     double signal_counts = 0.0;
+    bool success = false;
+    int minimizer_status = -1;
+    int covariance_status = -1;
+    int attempts = 0;
+    double chi2 = 0.0;
+    int ndf = 0;
+    double edm = 0.0;
+    unsigned int calls = 0;
+    bool at_boundary = false;
+    bool zero_background = false;
+    bool active_shape_limits = false;
+    double amplitude = 0.0;
+    double background_integral = 0.0;
+    double zero_chi2 = 0.0;
+    double boundary_score_upper = 0.0;
+    std::string failure_reason = "invalid_input";
 };
+
+// For chi2(A,theta)=chi2(0)-2*A*q(theta)+A*A*d(theta), A>=0,
+// zero is the global optimum iff q(theta)<=0 for every allowed shape.
+// Bound q on rectangles using exact corner extrema of the logistic function.
+// Refine ambiguous rectangles deterministically; never infer zero from a
+// small fitted amplitude or a failed covariance. The tolerance bounds only
+// floating-point summation error, in units of q, not amplitude.
+inline bool CertifyPepsiZero(const TGraphErrors& graph, double tlo, double thi,
+        double wlo, double whi, double& upper, double& chi0) {
+    struct Cell { double tl,th,wl,wh; int depth; };
+    std::vector<Cell> cells{{tlo,thi,wlo,whi,0}};
+    double scale=0; chi0=0; upper=-std::numeric_limits<double>::infinity();
+    for (int i=0;i<graph.GetN();++i) {
+        double x,y; graph.GetPoint(i,x,y); const double e=graph.GetErrorY(i);
+        scale+=std::abs(y/(e*e)); chi0+=(y/e)*(y/e);
+    }
+    const double tol=32*std::numeric_limits<double>::epsilon()*graph.GetN()*scale;
+    const double objective_precision=64*std::numeric_limits<double>::epsilon()*graph.GetN()*std::max(1.,chi0);
+    int visited=0;
+    while (!cells.empty()) {
+        const auto cell=cells.back(); cells.pop_back();
+        double bound=0, score=0, dlow=0, dmid=0;
+        for(int i=0;i<graph.GetN();++i) {
+            double x,y; graph.GetPoint(i,x,y); const double e=graph.GetErrorY(i);
+            const double c=y/(e*e);
+            double low=1,high=0;
+            for(double t:{cell.tl,cell.th}) for(double w:{cell.wl,cell.wh}) {
+                const double f=1/(1+std::exp((x-t)/w));
+                low=std::min(low,f); high=std::max(high,f);
+            }
+            bound+=c*(c>=0?high:low);
+            const double mid=1/(1+std::exp((x-(cell.tl+cell.th)/2)/std::sqrt(cell.wl*cell.wh)));
+            score+=c*mid; dlow+=low*low/(e*e); dmid+=mid*mid/(e*e);
+        }
+        if (bound<=tol || (dlow>0 && bound*bound/dlow<=objective_precision)) {
+            upper=std::max(upper,bound); continue;
+        }
+        if ((score>tol && score*score/dmid>objective_precision) || ++visited>65536 || cell.depth>=40) {
+            upper=bound; return false;
+        }
+        if ((cell.th-cell.tl)/(thi-tlo) >= std::log(cell.wh/cell.wl)/std::log(whi/wlo)) {
+            const double m=(cell.tl+cell.th)/2;
+            cells.push_back({cell.tl,m,cell.wl,cell.wh,cell.depth+1});
+            cells.push_back({m,cell.th,cell.wl,cell.wh,cell.depth+1});
+        } else {
+            const double m=std::sqrt(cell.wl*cell.wh);
+            cells.push_back({cell.tl,cell.th,cell.wl,m,cell.depth+1});
+            cells.push_back({cell.tl,cell.th,m,cell.wh,cell.depth+1});
+        }
+    }
+    return true;
+}
+
+inline bool ValidPepsiFit(const TFitResultPtr& fit) {
+    if (!fit.Get() || !fit->IsValid() || int(fit) != 0 ||
+        fit->CovMatrixStatus() != 3 || fit->Ndf() <= 0 ||
+        !std::isfinite(fit->Chi2()) || !std::isfinite(fit->Edm())) return false;
+    const auto cov = fit->GetCovarianceMatrix();
+    for (unsigned int i=0; i<fit->NPar(); ++i) {
+        if (!std::isfinite(fit->Parameter(i)) || !std::isfinite(fit->ParError(i))) return false;
+        for (unsigned int j=0; j<fit->NPar(); ++j)
+            if (!std::isfinite(cov(i,j))) return false;
+    }
+    std::vector<unsigned int> free;
+    for(unsigned int i=0;i<fit->NPar();++i) if(!fit->IsParameterFixed(i)) free.push_back(i);
+    if(free.empty()) return false;
+    TMatrixDSym free_cov(free.size());
+    for(unsigned int i=0;i<free.size();++i) for(unsigned int j=0;j<free.size();++j)
+        free_cov(i,j)=cov(free[i],free[j]);
+    TDecompChol chol(free_cov);
+    return chol.Decompose();
+}
 
 inline bool InPepsiSideband(double x,
                             double left_lo, double left_hi,
@@ -264,23 +355,169 @@ inline BGSubtractionResult FitCombinatorialBGAndSubtract(
 
     // R: respect TF1 range, Q: quiet, S: return covariance, N: do not attach
     // the temporary fit function to the graph.
-    TFitResultPtr fit_result = sidebands->Fit(f_bg.get(), "RQSN");
-    const bool fit_valid = fit_result.Get() && fit_result->IsValid() &&
-                           static_cast<int>(fit_result) == 0;
+    result.zero_background = sidebands->GetN()>3 && CertifyPepsiZero(*sidebands,
+        turn_lower,turn_upper,width_lower,width_upper,
+        result.boundary_score_upper,result.zero_chi2);
+    // Histogram-only replicas need no fit of undefined shape parameters once
+    // the global zero prediction has been certified. Nominal diagnostic runs
+    // retain the ordinary-fit status for the historical comparison.
+    const bool skip_undefined_fit=result.zero_background && !draw && (!outDir || !*outDir);
+    TFitResultPtr fit_result(-1);
+    if (!skip_undefined_fit) fit_result=sidebands->Fit(f_bg.get(), "RQSN");
+    result.attempts = skip_undefined_fit?0:1;
+    auto log_attempt = [&]() {
+        std::cout << "[COMB_FIT] run=" << run << " attempt=" << result.attempts
+                  << " status=" << int(fit_result)
+                  << " valid=" << (fit_result.Get() && fit_result->IsValid())
+                  << " covariance=" << (fit_result.Get() ? fit_result->CovMatrixStatus() : -1)
+                  << " edm=" << (fit_result.Get() ? fit_result->Edm() : -1) << '\n';
+        if (outDir && std::string(outDir).size()) {
+            gSystem->mkdir(outDir,true);
+            const std::string path=std::string(outDir)+"/combinatorial_fit_run"+std::to_string(run)+".csv";
+            std::ofstream out(path, result.attempts==1 ? std::ios::out : std::ios::app);
+            if (result.attempts==1) out << "run,attempt,accepted,minimizer_status,covariance_status,chi2,ndf,edm,ncalls,A,A_error,m_turn,m_turn_error,width,width_error\n";
+            out << std::setprecision(17) << run << ',' << result.attempts << ','
+                << ValidPepsiFit(fit_result) << ',' << int(fit_result) << ','
+                << (fit_result.Get()?fit_result->CovMatrixStatus():-1) << ','
+                << (fit_result.Get()?fit_result->Chi2():-1) << ','
+                << (fit_result.Get()?fit_result->Ndf():-1) << ','
+                << (fit_result.Get()?fit_result->Edm():-1) << ','
+                << (fit_result.Get()?fit_result->NCalls():0);
+            for (int i=0;i<3;++i) out << ',' << f_bg->GetParameter(i) << ',' << f_bg->GetParError(i);
+            out << '\n';
+        }
+    };
+    if (!skip_undefined_fit) log_attempt();
+    // One deterministic restart from the current point; same objective, data,
+    // bounds and options. Never resample/retry until a replica passes.
+    if (!skip_undefined_fit && !ValidPepsiFit(fit_result)) {
+        fit_result = sidebands->Fit(f_bg.get(), "RQSN");
+        ++result.attempts;
+        log_attempt();
+    }
+    // A local Minuit minimum very near zero can miss a positive-amplitude
+    // branch. Profile A analytically on a deterministic shape grid, then
+    // restart once from its best point if it improves the current objective.
+    // This is an optimizer seed/check, never a significance or amplitude cut.
+    bool active_shape_check_failed=false;
+    const double objective_roundoff=64*std::numeric_limits<double>::epsilon()*sidebands->GetN()*std::max(1.,result.zero_chi2);
+    const bool healthy_positive_fit=ValidPepsiFit(fit_result) && result.zero_chi2-fit_result->Chi2()>objective_roundoff;
+    if (!result.zero_background && !healthy_positive_fit && sidebands->GetN()>3) {
+        double best=result.zero_chi2, best_a=0, best_t=turn_lower, best_w=width_lower;
+        for(int it=0;it<=32;++it) for(int iw=0;iw<=32;++iw) {
+            const double t=turn_lower+(turn_upper-turn_lower)*it/32.;
+            const double w=width_lower*std::pow(width_upper/width_lower,iw/32.);
+            double q=0,d=0;
+            for(int i=0;i<sidebands->GetN();++i) {
+                double x,y; sidebands->GetPoint(i,x,y); const double e=sidebands->GetErrorY(i);
+                const double f=1/(1+std::exp((x-t)/w)); q+=y*f/(e*e); d+=f*f/(e*e);
+            }
+            const double a=d>0?std::min(amplitude_upper,std::max(0.,q/d)):0.;
+            const double objective=result.zero_chi2-2*a*q+a*a*d;
+            if(objective<best) { best=objective; best_a=a; best_t=t; best_w=w; }
+        }
+        const double precision=64*std::numeric_limits<double>::epsilon()*sidebands->GetN()*std::max(1.,result.zero_chi2);
+        if (!fit_result.Get() || fit_result->Chi2()>best+precision) {
+            f_bg->SetParameters(best_a,best_t,best_w);
+            fit_result=sidebands->Fit(f_bg.get(),"RQSN"); ++result.attempts; log_attempt();
+            if (!ValidPepsiFit(fit_result)) {
+                fit_result=sidebands->Fit(f_bg.get(),"RQSN"); ++result.attempts; log_attempt();
+            }
+        }
+        // Test active shape limits with inward KKT gradients. Covariance is
+        // required only on the remaining free parameters. Recheck the fixed
+        // gradients after refitting, because the free optimum may move.
+        if (!ValidPepsiFit(fit_result) && best_a>0 && best_a<amplitude_upper &&
+            (best_t==turn_lower || best_t==turn_upper || best_w==width_lower || best_w==width_upper)) {
+            double gt=0,gw=0,st=0,sw=0;
+            for(int i=0;i<sidebands->GetN();++i) {
+                double x,y; sidebands->GetPoint(i,x,y); const double e=sidebands->GetErrorY(i);
+                const double f=1/(1+std::exp((x-best_t)/best_w));
+                const double common=-2*best_a*(y-best_a*f)*f*(1-f)/(e*e);
+                const double dt=common/best_w, dw=dt*(x-best_t)/best_w;
+                gt+=dt; gw+=dw; st+=std::abs(dt); sw+=std::abs(dw);
+            }
+            const double rounding=64*std::numeric_limits<double>::epsilon()*sidebands->GetN();
+            const bool kkt_t=(best_t==turn_lower || best_t==turn_upper) && (best_t==turn_lower?gt:-gt)>=-rounding*st;
+            const bool kkt_w=(best_w==width_lower || best_w==width_upper) && (best_w==width_lower?gw:-gw)>=-rounding*sw;
+            if(kkt_t || kkt_w) {
+                const double previous=fit_result.Get()?fit_result->Chi2():std::numeric_limits<double>::infinity();
+                f_bg->SetParameters(best_a,best_t,best_w);
+                if(kkt_t) f_bg->FixParameter(1,best_t);
+                if(kkt_w) f_bg->FixParameter(2,best_w);
+                fit_result=sidebands->Fit(f_bg.get(),"RQSN"); ++result.attempts; log_attempt();
+                gt=gw=st=sw=0;
+                const double a=f_bg->GetParameter(0),t=f_bg->GetParameter(1),w=f_bg->GetParameter(2);
+                for(int i=0;i<sidebands->GetN();++i) {
+                    double x,y; sidebands->GetPoint(i,x,y); const double e=sidebands->GetErrorY(i);
+                    const double f=1/(1+std::exp((x-t)/w));
+                    const double dt=-2*a*(y-a*f)*f*(1-f)/(e*e*w),dw=dt*(x-t)/w;
+                    gt+=dt;gw+=dw;st+=std::abs(dt);sw+=std::abs(dw);
+                }
+                result.active_shape_limits=ValidPepsiFit(fit_result) && fit_result->Chi2()<=previous+precision &&
+                    (!kkt_t || (best_t==turn_lower?gt:-gt)>=-rounding*st) &&
+                    (!kkt_w || (best_w==width_lower?gw:-gw)>=-rounding*sw);
+                if(!result.active_shape_limits) {
+                    // Fixed limits that fail the constrained-optimum check
+                    // cannot become an accepted covariance rescue.
+                    active_shape_check_failed=true;
+                }
+            }
+        }
+    }
+    const bool fit_valid = result.zero_background || (!active_shape_check_failed && ValidPepsiFit(fit_result) &&
+        f_bg->GetParameter(0)>0 && fit_result->Chi2()<result.zero_chi2);
+    result.success = fit_valid;
+    result.minimizer_status = int(fit_result);
+    result.covariance_status = fit_result.Get() ? fit_result->CovMatrixStatus() : -1;
+    result.failure_reason = active_shape_check_failed?"active_shape_limit_check_failed":fit_valid ? "" :
+        (!fit_result.Get() ? "missing_fit_result" :
+         fit_result->Ndf() <= 0 ? "insufficient_degrees_of_freedom" :
+         int(fit_result) == 1 ? "covariance_forced_positive_definite" :
+         int(fit_result) != 0 ? "minimizer_failure" :
+         fit_result->CovMatrixStatus() != 3 ? "inaccurate_covariance" :
+         "invalid_minimum_or_nonpositive_covariance");
+    if (fit_result.Get()) {
+        result.chi2 = fit_result->Chi2(); result.ndf = fit_result->Ndf();
+        result.edm = fit_result->Edm(); result.calls = fit_result->NCalls();
+    }
+    if (result.zero_background) {
+        // No Hessian exists for the absent shape. Preserve Minuit diagnostics
+        // above, but publish exactly zero prediction and the nested objective.
+        f_bg->SetParameters(0.0,(turn_lower+turn_upper)/2,std::sqrt(width_lower*width_upper));
+        for(int i=0;i<3;++i) f_bg->SetParError(i,0.0);
+        result.chi2=result.zero_chi2; result.ndf=sidebands->GetN();
+        result.at_boundary=true;
+    }
+    result.amplitude=f_bg->GetParameter(0);
+    for (int i=0; i<3; ++i) {
+        double lo=0, hi=0; f_bg->GetParLimits(i,lo,hi);
+        const double p=f_bg->GetParameter(i);
+        result.at_boundary |= std::min(p-lo,hi-p) < 1e-6*(hi-lo);
+    }
+    if (!fit_valid) {
+        std::cerr << "[nps::PEPSICombBG] FAILED run=" << run
+                  << " status=" << result.minimizer_status
+                  << " covariance=" << result.covariance_status << '\n';
+        if (outDir && std::string(outDir).size()) {
+            TFile diagnostics((std::string(outDir)+"/failed_combinatorial_fit_run"+
+                std::to_string(run)+".root").c_str(),"RECREATE");
+            h_coin_bgsub->Write("fit_input");
+            sidebands->Write("sideband_points");
+            f_bg->Write("rejected_background_parameters");
+            if (fit_result.Get()) fit_result->Write("rejected_fit_result");
+        }
+        return result; // No subtraction histogram or signal weights from a bad fit.
+    }
 
     TMatrixDSym covariance(3);
     covariance.Zero();
-    if (fit_valid) {
+    if (fit_valid && !result.zero_background) {
         covariance = fit_result->GetCovarianceMatrix();
-    } else {
-        std::cerr << "[nps::PEPSICombBG] WARNING: invalid Fermi fit for run "
-                  << run << "; using the minimizer's current parameters and "
-                  << "zero fit-covariance contribution\n";
     }
 
-    const double chi2 = fit_result.Get() ? fit_result->Chi2()
-                                          : f_bg->GetChisquare();
-    const int ndf = fit_result.Get() ? fit_result->Ndf() : f_bg->GetNDF();
+    const double chi2 = result.chi2;
+    const int ndf = result.ndf;
     result.chi2_ndf = (ndf > 0) ? chi2 / static_cast<double>(ndf) : -1.0;
 
     std::cout << "[nps::PEPSICombBG] run=" << run
@@ -318,6 +555,7 @@ inline BGSubtractionResult FitCombinatorialBGAndSubtract(
             data_error = (data > 0.0) ? std::sqrt(data) : 1.0;
 
         const double background = f_bg->Eval(x);
+        result.background_integral += background;
         const double background_error = PepsiFermiErrorAtX(*f_bg, covariance, x);
         h_final->SetBinContent(bin, data - background);
         h_final->SetBinError(bin,
@@ -328,6 +566,11 @@ inline BGSubtractionResult FitCombinatorialBGAndSubtract(
     // comparison changes only the combinatorial-background model.  This
     // Gaussian is diagnostic; h_final itself is the subtraction product used
     // by the main analysis.
+    if (!draw && (!outDir || !*outDir)) {
+        result.h_final=h_final;
+        result.signal_counts=h_final->Integral();
+        return result;
+    }
     const double exclusion_lo = left_hi;
     const double exclusion_hi = right_lo;
     const int maximum_bin = h_final->GetMaximumBin();
@@ -355,6 +598,15 @@ inline BGSubtractionResult FitCombinatorialBGAndSubtract(
     const int signal_bin_hi = h_final->FindBin(signal_hi);
     result.signal_counts = h_final->Integral(signal_bin_lo, signal_bin_hi);
     result.h_final = h_final;
+    if (outDir && std::string(outDir).size()) {
+        std::ofstream out(std::string(outDir)+"/background_classification_run"+std::to_string(run)+".csv");
+        out << "run,classification,amplitude,minimizer_status,covariance_status,chi2,ndf,background_integral,zero_chi2,boundary_score_upper,reason\n"
+            << std::setprecision(17) << run << ',' << (result.zero_background?"zero_background":"interior_valid")
+            << ',' << result.amplitude << ',' << result.minimizer_status << ',' << result.covariance_status
+            << ',' << result.chi2 << ',' << result.ndf << ',' << result.background_integral
+            << ',' << result.zero_chi2 << ',' << result.boundary_score_upper << ','
+            << (result.zero_background?"global_nonpositive_amplitude_score":"valid_minimum_and_covariance") << '\n';
+    }
 
     if (draw) {
         if (outDir && std::string(outDir).size() > 0) gSystem->mkdir(outDir, true);

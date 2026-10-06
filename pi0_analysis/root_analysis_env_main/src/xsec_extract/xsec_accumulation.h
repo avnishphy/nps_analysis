@@ -1,14 +1,18 @@
 #pragma once
+#include <set>
 
 // Book owned histograms, read event trees, accumulate weighted data and Monte Carlo response.
 #include "xsec_analysis.h"
 #include "xsec_vertex_epsilon.h"
+#include "xsec_proxy_matching.h"
 
 inline void ExclPi0XSecAnalysis::init_storage() {
     slices.assign(cfg.n_tprime * cfg.n_q2 * cfg.n_xb, SliceResult{});
     truth_moments.resize(slices.size()+6);
     migration_response.assign(slices.size()*cfg.n_phi,
         std::vector<nps_xsec::ResponseCell>(truth_moments.size()));
+    fixed_feedin_prediction.assign(migration_response.size(),0.);
+    fixed_feedin_mc_variance.assign(migration_response.size(),0.);
     truth_phi_response.resize(migration_response.size());
     truth_phi_moments.resize(truth_moments.size()*cfg.n_phi);
     for (auto& s : slices) s.phi.resize(cfg.n_phi);
@@ -199,11 +203,13 @@ inline void ExclPi0XSecAnalysis::fill_data_event(double q2, double t, double tmi
     // contributions; compare their tails in the companion notebook.
     double w = pi0_weight * static_cast<double>(scale) * charge_fraction;
 
+    if (cfg.fit_objective == "scaled-poisson" && w < 0.0)
+        die("Signed background-subtracted data require --fit-objective gaussian; scaled-Poisson requires nonnegative weights.");
     PhiBin& pb = slice(it, iq, ix).phi[ip];
     pb.data += w;
-    // Conditional weighted-count variance only. pi0_weight was itself inferred
-    // from mass/background fits upstream; their shared uncertainty is not
-    // contained in sum(w^2), nor in the extraction's finite-MC covariance.
+    // Conditional variance for fixed weights only. Production data statistics
+    // require full event-level Poisson replicas that reconstruct timing and
+    // combinatorial subtraction and pi0_weight; sum(w^2) is not that covariance.
     pb.data_sumw2 += w * w;
     pb.n_data += 1;
     pb.weights.add(w);
@@ -272,7 +278,7 @@ inline void ExclPi0XSecAnalysis::fill_sim_event(float q2,
             die("Forward event cache: invalid MC weight/xB/epsilon");
         forward_mc_stream << forward_event_id << ',' << q2 << ',' << xb << ',' << tprime << ','
                           << wrap_phi(phi) << ',' << vertex_q2 << ',' << tx << ',' << tp << ','
-                          << wrap_phi(vertex_phi) << ',' << eps << ',' << base << '\n';
+                          << wrap_phi(vertex_phi) << ',' << eps << ',' << base << ','<<full_weight<<'\n';
         ++forward_mc_count;
         return;
     }
@@ -348,6 +354,28 @@ inline void ExclPi0XSecAnalysis::fill_sim_event(float q2,
     // Reconstructed phi determines the row; generated phi and vertex epsilon
     // determine the Fourier integrand. A phi migration needs no fitted phi bins.
     const int row=slice_index(it,iq,ix)*cfg.n_phi+ip;
+    if(nps_xsec::is_fixed_model_feedin(origin,static_cast<int>(slices.size()))) {
+        // full_weight is the existing nominal generator-model event yield.
+        // Keep it exactly once as a parameter-independent reconstructed-row
+        // contribution for independent-coefficient fit modes.
+        fixed_feedin_prediction[row]+=full_weight;
+        fixed_feedin_mc_variance[row]+=static_cast<double>(full_weight)*full_weight;
+    }
+    if(event_model()) {
+        nps_xsec::ModelEvent event;
+        event.row=row;event.block=origin;event.truth_phi=truth_ip;
+        event.weight=base_w;event.phi=physics_phiw;event.basis=event_basis;
+        event.kinematics={physics_q2,physics_W*physics_W,physics_t,physics_tprime,-physics_tprime,0.,eps_event};
+        // The low-tprime exterior retains its independent fitted triplet.
+        // Every other populated exterior event is evaluated once with the
+        // existing event-level model and remains a fixed folded contribution.
+        if(!nps_xsec::is_fitted_tprime_feedin(origin,static_cast<int>(slices.size()))) {
+            event.kinematics=nps_xsec::sigparam2021::kinematics(physics_q2,physics_W,physics_t,
+                physics_tprime,eps_event,cfg.mp,cfg.mpi0);
+            event.baseline=nps_xsec::xsec_model().baseline(event.kinematics);
+        }
+        model_events.push_back(event);
+    }
     migration_response[row][origin].add(event_basis,q2,xb,tprime,base_w*eps_event);
     truth_phi_response[row][origin*cfg.n_phi+truth_ip].add(event_basis,q2,xb,tprime,
                                                            base_w*eps_event);
@@ -430,12 +458,49 @@ inline void ExclPi0XSecAnalysis::fill_from_trees() {
         die("Combined data have no valid total run charge");
     }
 
+    auto* manifest = dynamic_cast<TTree*>(f_data->Get("analysis_runs"));
+    if (!manifest) die("Data lack validated run manifest; regenerate analysis and combined inputs.");
+    int manifest_run=0, manifest_success=0;
+    float manifest_charge=0, manifest_scale=0;
+    bind_branch(manifest,"run_number",&manifest_run);
+    bind_branch(manifest,"success",&manifest_success);
+    bind_branch(manifest,"charge_uC",&manifest_charge);
+    bind_branch(manifest,"scale",&manifest_scale);
+    std::set<int> manifest_runs;
+    for (Long64_t i=0; i<manifest->GetEntries(); ++i) {
+        manifest->GetEntry(i);
+        // A later failed/interrupted rerun must not make an older combined
+        // file beside it look like the current successful nominal sample.
+        const auto status_path=fs::path(cfg.data_file).parent_path()/
+            ("analysis_status_run"+std::to_string(manifest_run)+".csv");
+        if (fs::exists(status_path)) {
+            std::ifstream status_file(status_path);
+            std::string header,row;
+            std::getline(status_file,header); std::getline(status_file,row);
+            const std::string complete=std::to_string(manifest_run)+",1,complete,1,";
+            const std::string expected=complete+"0,3,";
+            const std::string zero=",zero_background";
+            const bool certified_zero=row.rfind(complete,0)==0 &&
+                row.size()>=zero.size() && row.compare(row.size()-zero.size(),zero.size(),zero)==0;
+            if (row.compare(0,expected.size(),expected)!=0 && !certified_zero)
+                die("Current run status invalidates combined input for run "+std::to_string(manifest_run));
+        }
+        auto it=exposure_by_run.find(manifest_run);
+        if (manifest_success!=1 || !manifest_runs.insert(manifest_run).second ||
+            it==exposure_by_run.end() || manifest_charge!=it->second.first ||
+            manifest_scale!=it->second.second)
+            die("Run-success manifest disagrees with yield/exposure set; extraction refused.");
+    }
+    manifest->ResetBranchAddresses();
+    if (manifest_runs.size()!=exposure_by_run.size())
+        die("Yield and validated exposure run sets differ; extraction refused.");
+
     // Second pass: fill events using total_charge_uC
     for (Long64_t i = 0; i < ndata; ++i) {
         t_data->GetEntry(i);
         forward_event_id = static_cast<unsigned long long>(i);
         if ((cfg.mmiss_select == "mcd" || cfg.mmiss_select == "ellipse") &&
-            std::isfinite(dpi0_weight * dscale) && dpi0_weight * dscale > 0 &&
+            std::isfinite(dpi0_weight * dscale) &&
             mass_geometry.contains(dmpi0_all, dmmiss_all) != (dexclusive_flag != 0))
             die("Combined " + cfg.mmiss_select + " geometry disagrees with stored data flag at entry " +
                 std::to_string(i) + "; use metadata from the matching data file.");
@@ -460,12 +525,63 @@ inline void ExclPi0XSecAnalysis::fill_from_trees() {
     }
 
     // SIMC loop
+    // A selected-sample subtraction can predict background in an empty mass
+    // bin. Such a model term has no physical event to carry an event weight.
+    // These explicit residual rows are authoritative for the unpolarized fit;
+    // the accompanying physical tree carries timing-only diagnostic weights.
+    if (auto* residuals=dynamic_cast<TTree*>(f_data->Get("analysis_reco_yields"))) {
+        if(cfg.fit_objective!="gaussian" || cfg.mmiss_select!="window")
+            die("Selected-sample residual inputs require Gaussian fitting and their fixed window selector");
+        int row=0,run_count=0;
+        double data=0,variance=0,charge=0,tlo=0,thi=0,plo=0,phi=0,qlo=0,qhi=0,xlo=0,xhi=0,mlo=0,mhi=0;
+        double vertices[8]{};
+        bind_branch(residuals,"reco_row",&row);bind_branch(residuals,"data",&data);
+        bind_branch(residuals,"data_variance",&variance);bind_branch(residuals,"total_charge_uC",&charge);
+        bind_branch(residuals,"run_count",&run_count);bind_branch(residuals,"diamond",vertices);
+        bind_branch(residuals,"tprime_lo",&tlo);bind_branch(residuals,"tprime_hi",&thi);
+        bind_branch(residuals,"phi_lo",&plo);bind_branch(residuals,"phi_hi",&phi);
+        bind_branch(residuals,"q2_lo",&qlo);bind_branch(residuals,"q2_hi",&qhi);
+        bind_branch(residuals,"xb_lo",&xlo);bind_branch(residuals,"xb_hi",&xhi);
+        bind_branch(residuals,"mmiss_lo",&mlo);bind_branch(residuals,"mmiss_hi",&mhi);
+        if(residuals->GetEntries()!=static_cast<Long64_t>(slices.size()*cfg.n_phi) || cfg.diamond_xb_q2_vertices.size()!=4)
+            die("Binned residual selection/bin count mismatch");
+        std::set<int> seen;
+        const auto same=[](double a,double b) {
+            return std::isfinite(a) && std::isfinite(b) && std::abs(a-b)<=
+                8*std::numeric_limits<double>::epsilon()*std::max({1.,std::abs(a),std::abs(b)});
+        };
+        for(Long64_t i=0;i<residuals->GetEntries();++i) {
+            residuals->GetEntry(i);
+            if(row<0 || row>=static_cast<int>(slices.size()*cfg.n_phi) || !seen.insert(row).second ||
+               !std::isfinite(data) || !std::isfinite(variance) || variance<0 ||
+               charge!=total_charge_uC || run_count!=static_cast<int>(manifest_runs.size()))
+                die("Invalid binned signal residual or exposure mismatch");
+            const int b=row/cfg.n_phi,ip=row%cfg.n_phi,ix=b%cfg.n_xb,iq=(b/cfg.n_xb)%cfg.n_q2,it=b/(cfg.n_xb*cfg.n_q2);
+            if(!same(tlo,tprime_edges[it]) || !same(thi,tprime_edges[it+1]) || !same(plo,phi_edges[ip]) || !same(phi,phi_edges[ip+1]) ||
+               !same(qlo,q2_edges[iq]) || !same(qhi,q2_edges[iq+1]) || !same(xlo,xb_edges_by_q2[iq][ix]) || !same(xhi,xb_edges_by_q2[iq][ix+1]) ||
+               !same(mlo,cfg.mmiss_lower_gev) || !same(mhi,cfg.mmiss_upper_gev))
+                die("Binned residuals were made with different extraction cuts or edges");
+            for(int j=0;j<4;++j) for(int k=0;k<2;++k)
+                if(vertices[2*j+k]!=cfg.diamond_xb_q2_vertices[j][k]) die("Binned residual diamond mismatch");
+            slices[b].phi[ip].data=data;slices[b].phi[ip].data_sumw2=variance;
+        }
+        residuals->ResetBranchAddresses();
+        for(auto& s:slices) {
+            s.sumw_data=s.sumw2_data=0;
+            for(const auto& p:s.phi) { s.sumw_data+=p.data;s.sumw2_data+=p.data_sumw2; }
+        }
+        log("Using validated selected-sample residuals; physical-tree weights are timing-only diagnostics");
+    }
+
     float sim_q2 = 0, sim_t = 0, sim_tmin = 0, sim_xb = 0, sim_phi = 0, full_weight = 0, sim_model_xsec = 0, sim_W = 0;
     int sim_is_exclusive = 0, sim_helicity = 0;
     float sim_mmiss = 0, sim_mpi0 = 0, sim_vertex_q2 = 0, sim_vertex_W = 0, sim_vertex_t = 0, sim_vertex_phi = 0;
     ULong64_t sim_event_id = 0;
     Float_t raw_q2i = 0, raw_Wi = 0, raw_ti = 0, raw_phipqi = 0, raw_sigcm = 0;
     Float_t raw_hsxptari = 0, raw_hsyptari = 0;
+    ProxyMatchAudit proxy_match(model_fit_mode,cfg.out_dir);
+    float epsilon_reconstructed=std::numeric_limits<float>::quiet_NaN();
+    if(model_fit_mode && t_sim->GetBranch("epsilon_i")) bind_branch(t_sim,"epsilon_i",&epsilon_reconstructed);
     bind_branch(t_sim,"Q2", &sim_q2);
     bind_branch(t_sim,"t", &sim_t);
     bind_branch(t_sim,"tmin", &sim_tmin);
@@ -507,18 +623,36 @@ inline void ExclPi0XSecAnalysis::fill_from_trees() {
                 h_mass_sim_selected->Fill(sim_mpi0, sim_mmiss);
         }
         if (selected_sim(sim_is_exclusive, sim_mmiss, sim_mpi0)) {
+            if(model_fit_mode && !proxy_match.seen.insert(sim_event_id).second) {
+                ++proxy_match.duplicate;proxy_match.reject(i,sim_event_id,"duplicate");continue;
+            }
             if (sim_event_id >= static_cast<ULong64_t>(t_vertex->GetEntries()) ||
-                t_vertex->GetEntry(static_cast<Long64_t>(sim_event_id)) <= 0)
+                t_vertex->GetEntry(static_cast<Long64_t>(sim_event_id)) <= 0) {
+                if(model_fit_mode){++proxy_match.unmatched;proxy_match.reject(i,sim_event_id,"unmatched");continue;}
                 die("Raw h10 entry unavailable for smeared event_id " + std::to_string(sim_event_id));
+            }
             // Both values are copied from the same generated event in this
             // production. An event-wise match guards against a different
             // SIMC file or altered GEANT entry ordering.
             const double tolerance = 1e-6 * std::max(std::fabs(static_cast<double>(raw_sigcm)),
                                                      std::fabs(static_cast<double>(sim_model_xsec))) + 1e-20;
             if (!std::isfinite(raw_sigcm) || !std::isfinite(sim_model_xsec) ||
-                std::fabs(static_cast<double>(raw_sigcm) - static_cast<double>(sim_model_xsec)) > tolerance)
+                std::fabs(static_cast<double>(raw_sigcm) - static_cast<double>(sim_model_xsec)) > tolerance) {
+                if(model_fit_mode){++proxy_match.mismatch;proxy_match.reject(i,sim_event_id,"sigcm_mismatch");continue;}
                 die("Raw SIMC sigcm mismatch for smeared event_id " + std::to_string(sim_event_id) +
                     "; wrong SIMC production or event ordering.");
+            }
+            if(model_fit_mode) {
+                // epsilon_i from the smeared tree is reconstructed epsilon.
+                // The response uses vertex epsilon from the matched raw event;
+                // invalid events are counted/rejected, never given a fallback.
+                try {
+                    if(!(std::isfinite(raw_ti) && raw_ti>0 && std::isfinite(raw_phipqi) && raw_Wi>cfg.mp+cfg.mpi0))
+                        throw std::domain_error("Invalid generated t/phi/W");
+                    const double eps=nps_xsec::vertex_epsilon_from_exclusive_simc(raw_q2i,raw_Wi,raw_hsxptari,raw_hsyptari,cfg.hms_theta_deg,cfg.mp);
+                    proxy_match.compare(epsilon_reconstructed,eps);
+                }catch(const std::exception&){++proxy_match.invalid;proxy_match.reject(i,sim_event_id,"invalid_vertex");continue;}
+            }
             sim_vertex_q2 = raw_q2i; sim_vertex_W = raw_Wi;
             sim_vertex_t = raw_ti; sim_vertex_phi = raw_phipqi;
             ++n_vertex_matched;

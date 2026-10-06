@@ -1,5 +1,109 @@
 # NPS Pi0 Analysis Refactor Plan (Living Document)
 
+## 2026-10-04: Primitive-count objective validation (release withheld)
+
+The observed-variance Fermi chi-square bias is reproduced. A diagnostic
+primitive-category Poisson profile likelihood removes the fixed-shape bias,
+but the free-shape estimator still fails the low-signal, A=0.5 toy: yield
+bias -7.599 +/- 0.369 events (0.326 empirical sigma; 4,000 valid fits).
+Truth-fixed shape gives +0.049 +/- 0.397. Narrow-width modes were scanned
+explicitly and checked against an independent optimizer before drawing this
+conclusion. No empirical correction or change to timing, Fermi bounds, mass
+bins, selected-yield architecture, or event weights is introduced.
+
+New diagnostic contracts: `scripts/pi0_primitive_objective.cpp`, objective
+toy/collection/shape-diagnosis scripts, `run_pi0_objective_studies.sh`, and
+`check_pi0_objective_release.py`; evidence under
+`validation/pi0_objective_20261004/` and `output/pi0_objective_20261004/`.
+Production fitter and real-data products remain unchanged. Corrected nominal
+data, new 2,000-replica data/MC ensembles, and revised cross sections are
+withheld because the requested estimator-validation condition fails.
+
+`finalize_pi0_uncertainty.py --release` now requires generated
+`--objective-validation readiness.json` with every objective/coverage,
+covariance-provenance and published-rank gate passing for the same ensembles.
+Diagnostic collection cannot mark unvalidated results preliminary-ready.
+Existing validation evidence is preserved. The report contains exact
+reproduction commands; no commit is made.
+
+## 2026-10-04: Minimal pivoted U slope
+
+Current physics ordering is `(N_U,DeltaB_U,N_LT,N_TT)`, then existing migration
+nuisances. Only U gains `exp[-DeltaB_U*(tau-tau0)]`; LT/TT shapes and the entire
+SigParam2021 baseline remain unchanged. The fixed tau0 uses positive accepted
+physical response weights; no new T/L separation is introduced.
+
+New output contract: model_context.csv and ROOT tau0_GeV2/U_slope_fixed metadata;
+parameter CSV adds fixed/unit fields. --model-fix-u-slope gives the three-free-
+parameter validation route; the fixed slot stays in the four-dimensional vector.
+--model-before-dir supplies diagnostic-only prior outputs; model_shape_comparison.csv
+and model_before_after.json quantify the same-data trend change. model_U_correction.csv
+records the dimensionless correction. All internal/CSV structure-function units
+remain microbarn/MeV2; all plot displays use nb/GeV2 via 1e9. Event-average points
+are primary, fixed-reference curves dashed, accepted ranges shaded. ROOT fixture
+provenance drives SYNTHETIC VALIDATION headers automatically. Plot objectives are
+descriptive Objective / nominal DOF, never scaled-Poisson chi-square labels.
+
+Validation and reproducible commands: validation/xsec_uslope_20261004/REPORT.md.
+Historical three- and six-parameter packages are read-only.
+
+## 2026-10-04: Three-normalization SigParam2021 pi0 model
+
+The model production entry is now only `sigparam2021_pi0`: fixed inherited
+baseline shapes times `(N_U,N_LT,N_TT)`, plus existing exterior nuisance
+coefficients. Extra fitted shape factors and the alternative exponential
+production path have been removed. Historical validation artifacts are retained.
+The physics-model CLI selector is rejected; use `--mode simc_model` or
+`--mode no_simc_model`. JSON model_identifier is identifying metadata.
+
+The charged component routines, neutral smooth L prescription, W2/units/angular
+normalization, generated-event evaluation, matched vertex epsilon and statistical
+treatment are unchanged. Covariance uses the three-parameter linear Jacobian
+and full nuisance correlations. Physical correlation plots are now 3 by 3.
+
+Output additions: model_tprime_shape.csv (residuals/mean pulls/objective by reco
+tprime), model_shape_ratios.csv and model_shape_summary.csv (diagnostic-only
+no-model/model ratios with denominator guards), model_charged_spread.csv and its
+summary (signed pi+/pi- spread, not an uncertainty). All model tables/vectors
+contain exactly three physics parameters. Reported model bin points additionally
+identify it/iq/ix for unambiguous no-model matching.
+
+Validation: charged Fortran agreement remains 2.03e-14; normalization closure
+passes Gaussian and scaled-Poisson tests; 13 existing Python tests plus three
+ratio tests pass. Removing fitted shape freedom on the previous synthetic
+sample exposes a tprime residual trend (objective increases by 6.02559), while
+the correlation condition improves from 46.08 to 2.02. No parameters restored.
+See src/xsec_extract/SIGPARAM2021_PI0.md and
+validation/xsec_sigparam3_20261004/REPORT.md for all-page plot inspection,
+no-model regression, exact commands and physics limitations.
+
+## 2026-10-04: Provisional SigParam2021 pi0 event model
+
+The model entry defaults to `sigparam2021_pi0_proxy`; explicit
+`simple_exponential_proxy` preserves the previous regression path. Fixed pp/pm
+tables are evaluated separately and averaged component-wise. The neutral L
+kernel replaces the charged pole with `(Q2/1 GeV2)*G(Q2)^2`; T/L are model assumed.
+Six correction parameters fit exact cached generated-event predictions, including
+matched vertex epsilon, analytic derivatives and event-squared MC variance.
+Independent migration nuisance coefficients and statistical row masks are retained.
+
+Output contract: raw migration cells/design remain unchanged; event-model bin
+coefficients are response-weighted event averages, not sufficient to reconstruct
+the fold. `model_event_cache.csv`, `model_row_jacobian.csv`, context-labelled
+baseline diagnostics, kinematic ranges and before/after positivity scans are new.
+Legacy residual-corrected truth-cell points are explicitly unavailable for the
+event model; exact detector predictions and model/no-model comparisons remain.
+
+Validation: charged original Fortran agrees to 2.03e-14 relative (18,750 checks
+including 6,000 accepted contexts for each charge); exact-pi convention differs by
+the explained 4.66e-8. Old no-model 20 CSVs and old exponential CSVs reproduce
+byte-for-byte; 13 Python tests pass. Varying-event closure and Gaussian/Poisson
+tests pass, including nuisance derivatives, finite-MC replay and covariance.
+The full synthetic pipeline produces an inspected 52-page PDF. Weak interference
+slopes remain documented. Real run-status gates are unchanged.
+See `src/xsec_extract/SIGPARAM2021_PI0_PROXY.md` and
+`validation/xsec_sigparam2021_20261004/REPORT.md` for formulas, commands and limits.
+
 ## 2026-09-29: Optional scaled-Poisson xsec objective
 
 The no-SIMC-model extractor now accepts `--fit-objective scaled-poisson` as an
@@ -1044,6 +1148,27 @@ Update it whenever:
   numeric edits, queued rapid clicks, and changes to modes/bins/limits.
   This does not establish behavior in VS Code, classic Notebook, or other browsers.
 
+## 2026-10-06: Joint event-level M0 extraction
+
+- Replace the production joint driver's aggregated U-per-bin linear solve with
+  the current event-level SigParam2021 M0 model.  Each setting has independent
+  `N_U` and `DeltaB_U`; `N_LT` and `N_TT` are shared.  Low-tprime feed-in has
+  per-setting U and shared LT/TT, for ten fitted coordinates with two settings.
+- Joint preparation now compiles the SIMC-model entry point and writes the v3
+  `joint_model_events.csv` cache.  Q2/xB exterior events carry their cached
+  nominal model baseline into fixed row offsets and have no fit coordinates.
+- Add an analytic-Jacobian active-set SLSQP solver with exact continuous
+  angular constraints, multistarts, event-level finite-MC variance iteration,
+  rank/SVD diagnostics, derived per-setting structure functions, CSV/ROOT
+  products, and a dedicated seven-page plot report.
+- Keep the old C++ aggregated solver only as an explicitly retired historical
+  diagnostic.  V2 prepared inputs are rejected instead of being silently mixed
+  with the new model.
+- Real x36_5_407/x36_4 validation: 120 rows, 10 parameters, rank 10, scaled
+  condition 11.7826160029, chi2/ndf 170.905622511/110, eight finite-MC
+  iterations.  Two starts converge to the same solution; the low-tprime cone
+  is active, so Gaussian covariance remains unavailable.
+
 ## 2026-09-30: Joint LT/TT with independent setting U
 
 - `run_joint_xsec_fit.py` now fits shared sigmaLT and sigmaTT per truth block
@@ -1229,3 +1354,174 @@ Update it whenever:
   outputs; full event/purity-fit joint uncertainty remains outside this release.
 - Technical/physics contract and commands: `src/xsec_extract/FORWARD_EXTRACTION.md`.
   Final validation results are recorded there and in the task worklog.
+
+## 2026-10-04: conventional subtraction safety (NOT READY)
+
+- Waveform timing histograms now cover 139--161 ns in 220 bins. Signal and
+  sideband definitions are unchanged; out-of-range timing rectangles fail.
+- Preserve signed timing/combinatorial residuals through event weights,
+  geometric selection, merging and Gaussian accumulation. Scaled-Poisson and
+  smearing recalibration reject incompatible signed input explicitly.
+- Combinatorial fits expose status and require a valid minimum, status 0,
+  accurate finite positive-definite covariance and positive NDF. One fixed
+  deterministic restart uses the same objective, bounds and data.
+- New contracts: root/analysis_status_run<R>.csv is written as unsuccessful
+  before processing and atomically marked complete only after output writing.
+  ROOT files carry analysis_fit_status; combined files carry analysis_runs with
+  run, success, charge and scale. Legacy files require regeneration. Failed or
+  missing runs block combination and extraction rather than being dropped.
+- Production gate remains CLOSED: the signed KinC_x36_4 check rejected 11/56
+  fitted runs, with one additional missing waveform input (6569). Near-zero
+  Fermi amplitude leaves its shape parameters unidentifiable. Bootstrap and
+  statistical covariance remain unimplemented pending a validated boundary
+  treatment for this existing model; sum(w^2) is only a conditional diagnostic.
+- Evidence, exact commands, affected runs and remaining work:
+  validation/pi0_stat_safety_20261004/README.md.
+
+## 2026-10-04: forward-folded structure-function proxy
+
+- Replace the SIMC-model entry's legacy coefficient/ratio/Fourier extraction
+  with a six-parameter exponential model inside the reference detector fit.
+  Physical bins share theta; populated exterior/feed-in blocks retain free
+  U/LT/TT nuisance coefficients. Preserve signed tprime and use tau=-tprime.
+- Reuse reference raw event_id/sigcm matching and hard-vertex epsilon. Model
+  mode counts/rejects unmatched, duplicate, mismatched and invalid events;
+  epsilon_i is a reconstructed-only diagnostic. Reference behavior is unchanged.
+- Preserve reference Gaussian fixed-variance/finite-MC iteration, scaled-Poisson
+  empty-row scales, selection, normalization and masks. Model covariance is the
+  full Minuit parameter Hessian propagated through the model Jacobian. Boundary
+  errors are unavailable; saved raw Hessians are diagnostic, not intervals.
+- Model output contracts: model_parameters/covariance/structure_functions/
+  structure_covariance/fit_status/starts/reconstructed_yields/prediction_validity
+  CSVs, model_fit.root, model_vertex_matching/rejections CSVs and epsilon ROOT
+  histogram, plus model curve and detector-yield plots. Existing summary outputs
+  contain evaluated model values. Legacy ratio-method CLI options are rejected.
+- Reference source remains byte-identical; 20 fixture CSV products match the
+  pre-edit executable exactly. Response equivalence and deterministic closure
+  pass. Full validation commands/results: validation/xsec_proxy_20261004/REPORT.md.
+- The production gate above remains CLOSED. Recombination was attempted with
+  the existing combiner and refused missing run 6407 success provenance. Archived
+  real-response fits are diagnostics only, not a new validated production result.
+
+### Cross-section production integration (2026-10-04)
+
+- Added backward-compatible --mode no_simc_model|simc_model; default and legacy
+  aliases remain no-model. Existing xsec/ and xsec_simc_model/ layouts persist.
+- Input preflight requires real combined analysis_runs provenance and raw SIMC;
+  authoritative extractor validation is unchanged. Unique logs and staged
+  failure status distinguish upstream preparation, build, fit, plots and
+  artifact verification. SUCCESS requires fresh nonempty readable artifacts.
+- Output-directory ownership and locking prevent mode/kin collisions and
+  simultaneous writers. Same-mode reruns replace products without automatic
+  resume; old disabled optional plots are excluded from the current manifest.
+- Model-only exports append parameter bounds/relative errors, folded component
+  and uncertainty fields, bin identifiers and model-evaluated continuous curves.
+  Modular post-fit plotting assembles common ROOT pages and model diagnostics
+  into one PDF; optional no-model overlays never enter the objective.
+- Invalid confidence errors stay NaN; central diagnostics and explicitly raw
+  Hessian correlations remain available. No model or objective change.
+- Operational/schema documentation: src/xsec_extract/PIPELINE.md. Validation
+  and plot-parity report: validation/xsec_pipeline_20261004/REPORT.md.
+
+## 2026-10-04: completed no-model data-statistical implementation
+
+- Supersedes the earlier statistical gate for KinC_x36_4: 56 accepted runs,
+  54 certified zero-background and 2 positive-background fits; only missing
+  waveform run 6569 excluded, with its exposure consistently removed.
+- Corrected differential estimator uses physical-event timing coefficients and
+  explicit selected-sample binned background. Legacy mass-only redistribution
+  failed the downstream closure comparison by 8.85 sigma.
+- Event Poisson bootstrap: 498/500 valid replicas, fixed accepted exposure,
+  complete reco/parameter covariance. Final reported statistical covariance
+  adds the separate first-order finite-MC estimate; nominal values retained.
+- Regression suite, exact-seed 20/100-replica reproducibility and final-input
+  normalization/error checks pass. READY FOR PRELIMINARY under documented
+  shared-shape and first-order MC assumptions for this selection only.
+- Full 15-part report, exact commands, limitations and machine-readable
+  evidence: validation/pi0_bootstrap_20261004/README.md. Completed outputs:
+  output/pi0_bootstrap_20261004/preliminary_xsec/. No commit made.
+
+## 2026-10-04: follow-up uncertainty study changes readiness assessment
+
+- 2000 data replicas completed: 1992 valid, 8 rejected (0.4%); accepted exposure
+  fixed. Last 500 draws change published errors by at most 1.394%. Rejected-
+  replica published-parameter sensitivity is 0.2003%.
+- Full event MC rebuilt from 103984 independent exclusive generator events.
+  Sparse exterior support causes nuisance-only rank loss in 1226/2000 draws;
+  all published coefficients remain uniquely estimable. Their all-replica
+  MC errors differ from the old first-order estimate by up to 11.72%.
+- NEW ANALYSIS-LEVEL ISSUE: observed-count variances bias the combinatorial
+  fit downward. At the observed signal/accidental scale, small positive
+  background gives 56.3% +/-2.9% coverage instead of 68.3%, with yield bias
+  +38.4 +/-3.7 counts. True-shape/oracle-variance controls isolate the cause.
+- This supersedes the earlier READY FOR PRELIMINARY assessment. Central
+  values and estimator source are unchanged; new covariances/cross-section
+  errors remain diagnostics until the background objective passes coverage.
+- Evidence and exact commands: validation/pi0_uncertainty_20261004/README.md;
+  output/pi0_uncertainty_20261004/. Old validation directory preserved.
+  No commit; concurrent unrelated source edits left untouched.
+
+## 2026-10-04: ellipse-independent timing primitive validation
+
+- Preserve legacy pi0_weight exactly. Add double pi0_timing_coeff=c_e and
+  pi0_timing_bin_mean=T_rb/N_rb at the run producer, before downstream cuts.
+  Pre-fit caches have NaN primitives; mass under/overflow has NaN bin mean.
+- The combiner copies both primitives and now retains event_id, so physical
+  identity is (run_number,event_id). Mixed old/new primitive schemas fail.
+  Existing diagnostic ellipse flags do not filter combined events.
+- All 11200 run/mass bins checked: defined sums conserve the fitted residual;
+  253 empty bins have unrepresentable residuals totaling -0.654126293454 counts.
+  Multiplicative weights additionally have 54 populated T=0,B!=0 bins.
+- Both candidates exactly recover 6.720622325662/mC in the same 54 zero-continuum
+  runs, versus legacy 6.085747084449/mC. Fixed-ellipse combinatorial toys reject
+  both candidate constructions, including controls with the injected background.
+- No pi0_weight_transport branch or corrected cross-section is promoted.
+  This is a statistical transport blocker; no non-exclusive contamination or
+  ellipse-systematic study is required or used as a gate.
+- Three runs regenerated by the normal launcher, then combined for schema and
+  legacy parity validation. Report, commands, full closure tables and toys:
+  validation/pi0_timing_transport_20261004/REPORT.md.
+
+## 2026-10-05: bin-aware calibrated-release contract
+
+- The calibrated release must never combine a selected extraction JSON with a
+  toy or curvature campaign produced for different phi, tprime, Q2, xB, or
+  diamond bins. `--publish-calibrated-release` now validates this compatibility
+  before extraction and fails closed with both tprime edge sets on mismatch.
+- Calibrated report dimensions, quantity ordering, row counts, component
+  offsets, page-2 labels/tables, and covariance axes derive from the campaign's
+  snapshotted JSON. Curvature table edges, covariance ordering, central-vector
+  length, and the 500-toy vector shape must agree with that snapshot.
+- `calibration_summary.json` now records `tprime_bin_edges`, selected-config
+  path/hash, and toy-config snapshot hash. `pipeline_linkage.json` records the
+  selected config. Existing filenames and release-directory layout are stable.
+- A changed bin definition requires a newly generated matching central/toy and
+  curvature campaign; reporting does not remap or reuse an older ensemble.
+
+## 2026-10-06: publication-calibrated joint M0 release
+
+- Added a joint release campaign for the actual ten-coordinate event-level M0
+  model: per-setting U normalization/slope, shared LT/TT normalization,
+  per-setting low-tprime U, and shared low-tprime LT/TT. Q2/xB exterior terms
+  remain fixed event-model contributions in every central and toy fit.
+- The release central estimator uses the validated additive timing weight. Each
+  replica shares one Poisson(1) draw across all contributions of a physical
+  data event, reruns the mass fit, independently Poisson-resamples exclusive
+  physical SIMC events per setting, and refits all joint coordinates with
+  iterated finite-MC variance and continuous angular positivity.
+- Publication requires exactly 500 accepted toys. Deterministic five-fold
+  held-out coverage, finite positive delta68 radii, and bias/delta68 gates fail
+  closed. Curvature, raw toy, correlation and calibrated68 representations are
+  kept distinct; target-divisor uncertainty is a separate fully correlated
+  scale covariance. Central values are not bias corrected.
+- Campaign reuse validates the complete joint bin/config/event-cache contract
+  plus data/SIMC/raw-vertex identities. Final release creation is staged and
+  non-overwriting; a hash manifest verifies central, campaign, table, ROOT and
+  PDF artifacts.
+- Real x36_5_407/x36_4 validation reconstructed 60 additive rows per setting,
+  selected 3894/4946 ellipse events, and uniquely matched 44913/102610 cached
+  SIMC records. The additive central fit converged with rank 10, condition
+  11.568 and Q=162.404; one full physical-event replica converged in six MC
+  iterations with 30 finite published values. A labeled synthetic 500-toy
+  fixture exercised all release gates, matrices, plots and the 13-page final
+  PDF. It is a software test, not a physics campaign.

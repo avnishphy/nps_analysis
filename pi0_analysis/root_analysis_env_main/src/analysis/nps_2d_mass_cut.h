@@ -321,7 +321,7 @@ inline Result apply_mass_cuts(const std::vector<Point>& input_points,
     for (std::size_t i = 0; i < input_points.size(); ++i) {
         const auto& p = input_points[i];
         if (!std::isfinite(p.mpi0) || !std::isfinite(p.mmiss) ||
-            !std::isfinite(p.weight) || p.weight <= 0.0) continue;
+            !std::isfinite(p.weight)) continue;
         if (p.mpi0 < cfg.mpi0_min || p.mpi0 >= cfg.mpi0_max ||
             p.mmiss < cfg.mmiss_min || p.mmiss >= cfg.mmiss_max) continue;
         total_weight += p.weight;
@@ -719,7 +719,9 @@ inline Result evaluate_mass_cuts(const std::vector<Point>& input_points, const C
     double mcd_weight = 0.0;
     for (std::size_t i = 0; i < input_points.size(); ++i) {
         const auto& p = input_points[i];
-        if (!std::isfinite(p.mpi0) || !std::isfinite(p.mmiss) || !std::isfinite(p.weight) || p.weight <= 0.0) continue;
+        // Geometry is fitted using its existing positive-density algorithm;
+        // applying that geometry must not discard signed signal residuals.
+        if (!std::isfinite(p.mpi0) || !std::isfinite(p.mmiss) || !std::isfinite(p.weight)) continue;
         if (p.mpi0 < cfg.mpi0_min || p.mpi0 >= cfg.mpi0_max || p.mmiss < cfg.mmiss_min || p.mmiss >= cfg.mmiss_max) continue;
         const double d2 = covariance_d2(model, p.mpi0, p.mmiss);
         if (d2 <= ellipse_d2_cut) {

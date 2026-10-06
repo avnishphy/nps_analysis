@@ -3,10 +3,10 @@
 This is extraction infrastructure, not certification of a physics result.
 Input ``data_events.csv`` columns: event_id,run_number,q2,xb,tprime,phi,weight.
 Input ``mc_events.csv`` columns: event_id,reco_q2,reco_xb,reco_tprime,reco_phi,
-truth_q2,truth_xb,truth_tprime,truth_phi,epsilon,base_weight. Angles are radians;
+truth_q2,truth_xb,truth_tprime,truth_phi,epsilon,base_weight,nominal_weight. Angles are radians;
 tprime is the signed t-t_min in GeV^2. Data weight is the corrected yield/mC,
 including the target correction. MC base_weight is full_weight/sigcm, with
-the original generator normalization. The common selection in the cache must
+the original generator normalization; nominal_weight is full_weight. The common selection in the cache must
 precede rectangular fit cuts. This module never renormalizes MC columns.
 
 Configuration JSON (or equivalent dict)::
@@ -21,10 +21,10 @@ Configuration JSON (or equivalent dict)::
 
 Interior IDs iterate tprime, then Q2, then xB. Variable xB bin counts per Q2
 are supported. Six exterior IDs follow all interior IDs, with disjoint corner
-priority tprime, Q2, xB. Every supported interior and exterior block retains
-three independent U/LT/TT coefficients. Only publication selection changes
-which coefficients are reported. Unsupported publication blocks are errors;
-zero-response nuisance blocks are recorded but have no fitted parameters.
+priority tprime, Q2, xB. Supported interior blocks and tprime_below retain
+independent U/LT/TT coefficients. Q2/xB and all other exterior events enter as
+a fixed nominal reconstructed-row contribution with no parameter columns.
+Only publication selection changes which interior coefficients are reported.
 Edges use [low, high), including the final high edge except periodic phi.
 Reco phi edges partition a full period with any origin; phi wraps into
 [phi_edges[0], phi_edges[0]+2*pi). Empty count rows are preserved.
@@ -194,14 +194,16 @@ def build_problem(cache_dir, config):
             manifest = json.load(handle)
         if manifest.get("complete") is not True:
             raise ValueError("Event cache manifest is incomplete; export must finish before fitting")
+        if manifest.get("schema_version") != 2:
+            raise ValueError("Regenerate forward cache with nominal_weight support for fixed Q2/xB feed-in")
     data = _read_csv(cache_dir / "data_events.csv",
                      ["event_id", "run_number", "q2", "xb", "tprime", "phi", "weight"],
                      {"event_id", "run_number"})
     mc = _read_csv(cache_dir / "mc_events.csv",
                    ["event_id", "reco_q2", "reco_xb", "reco_tprime", "reco_phi",
-                    "truth_q2", "truth_xb", "truth_tprime", "truth_phi", "epsilon", "base_weight"],
+                    "truth_q2", "truth_xb", "truth_tprime", "truth_phi", "epsilon", "base_weight", "nominal_weight"],
                    {"event_id"})
-    if np.any(data["weight"] < 0) or np.any(mc["base_weight"] < 0):
+    if np.any(data["weight"] < 0) or np.any(mc["base_weight"] < 0) or np.any(mc["nominal_weight"] < 0):
         raise ValueError("This positive-weight likelihood requires nonnegative data and MC weights")
     if np.any((mc["epsilon"] < 0) | (mc["epsilon"] > 1)):
         raise ValueError("Vertex epsilon must lie in [0, 1]")
@@ -209,22 +211,23 @@ def build_problem(cache_dir, config):
     data_keep, mc_keep = data_row_all >= 0, mc_row_all >= 0
     mc_global_all = _assign_blocks(truth, mc["truth_q2"], mc["truth_xb"],
                                     mc["truth_tprime"], exterior=True)
-    active_global = np.unique(mc_global_all[mc_keep & (mc["base_weight"] > 0)])
-    unsupported = sorted(set(publication) - set(active_global.tolist()))
+    supported_global = np.unique(mc_global_all[mc_keep & (mc["base_weight"] > 0)])
+    unsupported = sorted(set(publication) - set(supported_global.tolist()))
     if unsupported:
         raise ValueError(f"Published truth blocks have no positive MC response: {unsupported}")
-    # Zero-weight events in zero-response blocks carry no information and no
-    # resampling variance. Their removal is explicit in selection_counts.
-    mc_keep &= np.isin(mc_global_all, active_global)
+    fitted_global = np.asarray([gid for gid in supported_global
+        if gid < truth["nblocks"] or GUARD_NAMES[int(gid)-truth["nblocks"]] == "tprime_below"], dtype=int)
+    fitted_keep = mc_keep & (mc["base_weight"] > 0) & np.isin(mc_global_all, fitted_global)
+    fixed_keep = mc_keep & (mc["nominal_weight"] > 0) & ~np.isin(mc_global_all, fitted_global)
     rows, weights = data_row_all[data_keep], data["weight"][data_keep]
-    mc_rows = mc_row_all[mc_keep]
-    mc_blocks = np.searchsorted(active_global, mc_global_all[mc_keep])
-    eps = mc["epsilon"][mc_keep]
-    phi = np.mod(mc["truth_phi"][mc_keep], 2*np.pi)
-    base = mc["base_weight"][mc_keep] * (1e-9 / (2 * np.pi))
+    mc_rows = mc_row_all[fitted_keep]
+    mc_blocks = np.searchsorted(fitted_global, mc_global_all[fitted_keep])
+    eps = mc["epsilon"][fitted_keep]
+    phi = np.mod(mc["truth_phi"][fitted_keep], 2*np.pi)
+    base = mc["base_weight"][fitted_keep] * (1e-9 / (2 * np.pi))
     basis = base[:, None] * np.column_stack((np.ones(len(base)),
              np.sqrt(2 * eps * (1 + eps)) * np.cos(phi), eps * np.cos(2 * phi)))
-    nrow, nblock = reco["nblocks"] * (len(reco["p"]) - 1), len(active_global)
+    nrow, nblock = reco["nblocks"] * (len(reco["p"]) - 1), len(fitted_global)
     design = np.zeros((nrow, 3 * nblock))
     for harmonic in range(3):
         np.add.at(design, (mc_rows, 3 * mc_blocks + harmonic), basis[:, harmonic])
@@ -240,7 +243,15 @@ def build_problem(cache_dir, config):
     group_rows = np.zeros(len(group_weights), dtype=np.int64)
     group_rows[inverse] = rows
     sumw2 = np.bincount(group_rows, weights=group_weights**2, minlength=nrow)
-    supported_rows = np.any(design[:, ::3] > 0, axis=1)
+    fixed_rows=mc_row_all[fixed_keep];fixed_ids=mc["event_id"][fixed_keep]
+    fixed_weights=mc["nominal_weight"][fixed_keep]
+    fixed_keys=np.asarray([f"{row}:{event}" for row,event in zip(fixed_rows,fixed_ids)])
+    _,fixed_inverse=np.unique(fixed_keys,return_inverse=True)
+    fixed_group_weights=np.bincount(fixed_inverse,weights=fixed_weights)
+    fixed_group_rows=np.zeros(len(fixed_group_weights),dtype=np.int64);fixed_group_rows[fixed_inverse]=fixed_rows
+    fixed_prediction=np.bincount(fixed_group_rows,weights=fixed_group_weights,minlength=nrow)
+    fixed_mc_sumw2=np.bincount(fixed_group_rows,weights=fixed_group_weights**2,minlength=nrow)
+    supported_rows = np.any(design[:, ::3] > 0, axis=1) | (fixed_prediction > 0)
     bad_rows = np.flatnonzero((y > 0) & ~supported_rows)
     if len(bad_rows):
         raise ValueError(f"Positive data yield outside MC response support in reco rows {bad_rows.tolist()}")
@@ -251,8 +262,9 @@ def build_problem(cache_dir, config):
     all_blocks = _block_metadata(truth)
     all_blocks += [dict(global_id=truth["nblocks"] + i, kind="guard", name=name)
                    for i, name in enumerate(GUARD_NAMES)]
-    blocks = [dict(all_blocks[int(gid)], local_id=i, published=int(gid) in publication)
-              for i, gid in enumerate(active_global)]
+    blocks = [dict(all_blocks[int(gid)], local_id=i, published=int(gid) in publication,
+                   fit_treatment="physics" if int(gid)<truth["nblocks"] else "fitted_tprime_feedin")
+              for i, gid in enumerate(fitted_global)]
     parameters = [dict(index=3*i+h, local_block=i, global_block=block["global_id"],
                        harmonic=name, unit=COEFFICIENT_UNIT, published=block["published"])
                   for i, block in enumerate(blocks) for h, name in enumerate(HARMONICS)]
@@ -261,16 +273,20 @@ def build_problem(cache_dir, config):
                  for block in _block_metadata(reco) for pi in range(len(reco["p"])-1)]
     return dict(design=design, y=y, sumw2=sumw2, data_rows=rows, data_weights=weights,
                 data_ids=data_ids, mc_rows=mc_rows, mc_blocks=mc_blocks, mc_basis=basis,
-                mc_ids=mc["event_id"][mc_keep], epsilon_max=epsilon_max,
+                mc_ids=mc["event_id"][fitted_keep], epsilon_max=epsilon_max,
+                fixed_prediction=fixed_prediction,fixed_mc_sumw2=fixed_mc_sumw2,
+                fixed_mc_rows=fixed_rows,fixed_mc_weights=fixed_weights,fixed_mc_ids=fixed_ids,
                 bootstrap_data_ids=np.unique(all_data_ids), bootstrap_mc_ids=np.unique(mc["event_id"]),
                 published_blocks=np.asarray([i for i, b in enumerate(blocks) if b["published"]], dtype=int),
-                active_global_blocks=active_global, truth_blocks=blocks, reco_rows=reco_rows,
+                active_global_blocks=fitted_global, truth_blocks=blocks, reco_rows=reco_rows,
                 parameter_metadata=parameters, coefficient_unit=COEFFICIENT_UNIT,
                 config=config, cache_manifest=manifest, cache_dir=str(cache_dir.resolve()),
                 selection_counts=dict(data_cached=len(data_row_all), data_selected=int(data_keep.sum()),
-                    mc_cached=len(mc_row_all), mc_selected=int(mc_keep.sum()),
-                    mc_zero_weight_unsupported=int(np.sum((mc_row_all >= 0) & ~np.isin(mc_global_all, active_global))),
-                    unsupported_truth_blocks=sorted(set(range(len(all_blocks))) - set(active_global.tolist()))))
+                    mc_cached=len(mc_row_all), mc_selected=int(fitted_keep.sum()+fixed_keep.sum()),
+                    mc_fitted=int(fitted_keep.sum()),mc_fixed_feedin=int(fixed_keep.sum()),
+                    mc_zero_weight_unsupported=int(np.sum((mc_row_all >= 0) & ~fitted_keep & ~fixed_keep)),
+                    fixed_truth_blocks=sorted(set(mc_global_all[fixed_keep].tolist())),
+                    unsupported_truth_blocks=sorted(set(range(len(all_blocks))) - set(supported_global.tolist()))))
 
 
 def mc_prediction_variance(problem, parameters):
@@ -284,12 +300,15 @@ def mc_prediction_variance(problem, parameters):
     parameters = np.asarray(parameters, dtype=float)
     if parameters.shape != (problem["design"].shape[1],) or not np.all(np.isfinite(parameters)):
         raise ValueError("parameters must contain one finite value per design column")
-    prediction = np.einsum("ij,ij->i", problem["mc_basis"], parameters.reshape(-1, 3)[problem["mc_blocks"]])
-    keys = np.asarray([f"{row}:{event}" for row, event in zip(problem["mc_rows"], problem["mc_ids"])])
+    fitted = np.einsum("ij,ij->i", problem["mc_basis"], parameters.reshape(-1, 3)[problem["mc_blocks"]])
+    prediction=np.r_[fitted,np.asarray(problem["fixed_mc_weights"],dtype=float)]
+    event_rows=np.r_[problem["mc_rows"],problem["fixed_mc_rows"]]
+    event_ids=np.r_[problem["mc_ids"],problem["fixed_mc_ids"]]
+    keys = np.asarray([f"{row}:{event}" for row, event in zip(event_rows,event_ids)])
     _, inverse = np.unique(keys, return_inverse=True)
     grouped = np.bincount(inverse, weights=prediction)
     rows = np.zeros(len(grouped), dtype=int)
-    rows[inverse] = problem["mc_rows"]
+    rows[inverse] = event_rows
     result = np.bincount(rows, weights=grouped**2, minlength=len(problem["y"]))
     if not np.all(np.isfinite(result)):
         raise ValueError("MC prediction variance overflow")
@@ -355,7 +374,7 @@ def diagnostics(problem, parameters=None, row_variance=None):
     parameters = None if parameters is None else np.asarray(parameters, dtype=float)
     if parameters is not None and (parameters.shape != (npar,) or not np.all(np.isfinite(parameters))):
         raise ValueError("parameters must contain one finite value per design column")
-    fitted = None if parameters is None else design @ parameters
+    fitted = None if parameters is None else np.asarray(problem["fixed_prediction"]) + design @ parameters
     for i, block in enumerate(problem["truth_blocks"]):
         selected = problem["mc_blocks"] == i
         w = problem["mc_basis"][selected, 0]
@@ -377,5 +396,6 @@ def diagnostics(problem, parameters=None, row_variance=None):
                 publication_columns=publication_columns.tolist(), nuisance_rank=nuisance_rank,
                 publication_rank_known_nuisance=publication_rank, publication_rank_profiled=profiled_rank,
                 profiled_singular_values=profiled_s.tolist(), retained_publication_information_fractions=information_fractions,
-                blocks=block_diagnostics,
+                blocks=block_diagnostics,fixed_feedin_by_reco_row=np.asarray(
+                    problem.get("fixed_prediction", np.zeros(design.shape[0]))).tolist(),
                 interpretation="Kernel fractions are not efficiencies; local information is not confidence-interval coverage.")

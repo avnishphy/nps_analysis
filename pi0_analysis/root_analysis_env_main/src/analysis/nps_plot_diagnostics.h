@@ -154,7 +154,7 @@ inline void draw_mass_comparison(const std::vector<nps2d::Point>& points,
     double outside_weight = 0.0;
     for (std::size_t i = 0; i < points.size(); ++i) {
         const auto& p = points[i];
-        if (!std::isfinite(p.mpi0) || !std::isfinite(p.mmiss) || !std::isfinite(p.weight) || p.weight <= 0) continue;
+        if (!std::isfinite(p.mpi0) || !std::isfinite(p.mmiss) || !std::isfinite(p.weight)) continue;
         if (p.mpi0 < cfg.mpi0_min || p.mpi0 >= cfg.mpi0_max ||
             p.mmiss < cfg.mmiss_min || p.mmiss >= cfg.mmiss_max) {
             outside_weight += p.weight; continue;

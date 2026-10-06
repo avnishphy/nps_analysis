@@ -28,7 +28,7 @@ inline void ExclPi0XSecAnalysis::begin_forward_inputs() {
     forward_data_stream << std::setprecision(17)
         << "event_id,run_number,q2,xb,tprime,phi,weight\n";
     forward_mc_stream << std::setprecision(17)
-        << "event_id,reco_q2,reco_xb,reco_tprime,reco_phi,truth_q2,truth_xb,truth_tprime,truth_phi,epsilon,base_weight\n";
+        << "event_id,reco_q2,reco_xb,reco_tprime,reco_phi,truth_q2,truth_xb,truth_tprime,truth_phi,epsilon,base_weight,nominal_weight\n";
 }
 
 inline void ExclPi0XSecAnalysis::finish_forward_inputs() {
@@ -37,7 +37,7 @@ inline void ExclPi0XSecAnalysis::finish_forward_inputs() {
     forward_data_stream.close(); forward_mc_stream.close();
     if (!forward_data_count || !forward_mc_count) die("Empty selected data or MC event cache");
     std::ofstream out((fs::path(cfg.out_dir)/"forward_cache_manifest.json.partial").string());
-    out << std::setprecision(17) << "{\n  \"schema_version\": 1,\n  \"complete\": true,\n"
+    out << std::setprecision(17) << "{\n  \"schema_version\": 2,\n  \"complete\": true,\n"
         << "  \"data_file\": " << forward_json_string(cfg.data_file) << ",\n"
         << "  \"simc_file\": " << forward_json_string(cfg.simc_file) << ",\n"
         << "  \"vertex_simc_file\": " << forward_json_string(cfg.vertex_simc_file) << ",\n"
@@ -48,6 +48,7 @@ inline void ExclPi0XSecAnalysis::finish_forward_inputs() {
         << "  \"target_divisor\": " << cfg.tgt_contam << ",\n  \"target_divisor_error\": " << cfg.tgt_contam_err << ",\n"
         << "  \"data_weight_units\": \"yield_per_mC_after_target_division\",\n"
         << "  \"mc_base_definition\": \"full_weight/sigcm; original generated normalization retained\",\n"
+        << "  \"mc_nominal_definition\": \"full_weight; fixed Q2/xB feed-in row contribution\",\n"
         << "  \"rectangular_kinematic_cuts_applied\": false,\n"
         << "  \"mass_selection\": " << forward_json_string(cfg.mmiss_select) << ",\n"
         << "  \"mass_cut_file\": " << forward_json_string(cfg.mmiss_cut_file) << ",\n"

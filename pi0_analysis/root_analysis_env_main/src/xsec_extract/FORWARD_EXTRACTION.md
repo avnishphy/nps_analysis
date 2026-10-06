@@ -60,11 +60,13 @@ exact Python source snapshots are included with each result.
 
 Configuration separates `reco`, `truth` and `publication_truth_blocks`.
 Interior truth IDs iterate t', Q2, xB; xB counts may vary between Q2 bins.
-Publication selection does not remove the other supported truth coefficients.
-All supported exterior regions remain explicit nuisance triples, with corner
-priority t', Q2, xB. No automatic rank truncation, region deletion, edge
-clamping, exterior prior or regularization is introduced. A required unsupported
-publication bin or a rank-deficient fit fails explicitly.
+Publication selection does not remove supported interior truth coefficients.
+Only the `tprime_below` exterior block remains a fitted U/LT/TT nuisance triple.
+Q2/xB exterior events retain their nominal generator contribution as a fixed
+reconstructed-row offset and finite-MC variance; they are not fit coordinates.
+Corner priority remains t', Q2, xB. No automatic rank truncation, edge clamping,
+exterior prior or regularization is introduced. A required unsupported
+publication bin or a rank-deficient fitted design fails explicitly.
 
 The fit uses the full harmonic prediction and exact continuous-phi positivity;
 LT and TT remain signed. Its scaled-Poisson objective includes empty rows,
@@ -72,8 +74,9 @@ borrowing an explicitly recorded pooled weight scale. This is a conditional
 two-moment approximation for positive weighted events, not an integer-Poisson
 likelihood for efficiency-corrected counts. Signed weights are rejected.
 
-The event bootstrap regenerates the data sums and MC response, then refits
-every coefficient, including exterior nuisance terms. Copies of the same
+The event bootstrap regenerates the data sums, fitted MC response, and fixed
+Q2/xB feed-in, then refits every physics coefficient and the `tprime_below`
+nuisance triple. Copies of the same
 original event share their multiplier. Fixed full-cache event catalogs make
 the same seed a genuinely paired comparison across different reconstructed
 partitions. Accepted-event MC normalization is kept fixed (Poissonized MC).
@@ -88,7 +91,7 @@ publication error matrix by itself.
   positivity boundaries and empty-row scales.
 - `coefficients.csv`: nb/GeV^2 coefficients and explicit publication flags.
 - `response_diagnostics.json`: geometric SVD modes, support/effective MC counts,
-  exterior contributions and information after nuisance profiling.
+  exterior contributions and information after profiling the retained tprime nuisance.
 - `variance_diagnostics.json`: data/MC variance decomposition and, when all rows
   have positive variance, local Gaussian information. This is diagnostic only.
 - `conditional_bootstrap.json`: all successful samples, failed indices/reasons,
@@ -101,7 +104,7 @@ publication error matrix by itself.
 Optional `--profiles requests.json` takes a list of
 `{"name":"U_first","functional":[1,0,0,...],"values":[0,10,20,...]}`.
 Supply complete numeric arrays; ellipses above are notation only. Each point
-refits all other harmonics and nuisance coefficients. These are fixed-response
+refits all other harmonics and the retained tprime nuisance coefficients. These are fixed-response
 profile curves; standard deviance thresholds are not coverage-calibrated here.
 
 Use `compare_forward_xsec.py` to compare **common bin integrals**, retaining

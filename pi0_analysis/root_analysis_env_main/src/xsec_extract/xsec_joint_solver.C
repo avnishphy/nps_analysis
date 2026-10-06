@@ -1,3 +1,7 @@
+// RETIRED LEGACY DIAGNOSTIC: run_joint_xsec_fit.py no longer compiles this
+// aggregated independent-coefficient solver. Production joint fits use the v3
+// event cache and joint_m0_solver.py so they share the current SigParam M0
+// extraction model. Keep this source only for historical response studies.
 // Shared LT/TT with independent U across kinematic settings. The Python driver
 // validates source presets and writes this program's compact, versioned input.
 // Each setting contributes separate yield-per-mC rows and its own one-mC SIMC
@@ -56,7 +60,7 @@ static double mc_variance(const std::vector<JointCell>& cells,
 
 struct JointRow {
     int setting = -1, local_row = -1;
-    double data = 0, data_variance = 0;
+    double data = 0, data_variance = 0, fixed_prediction = 0, fixed_mc_variance = 0;
     std::vector<JointCell> cells;
 };
 
@@ -93,7 +97,7 @@ int main(int argc, char** argv) {
         int nsettings = 0, nt = 0, nq = 0, nx = 0, nphi = 0, nr = 0, nb = 0;
         input >> version >> nsettings >> nt >> nq >> nx >> nphi >> nr >> nb;
         const int published = nt * nq * nx;
-        require(version == "joint_xsec_v3" && nsettings >= 2 && nt > 0 &&
+        require(version == "joint_xsec_v4" && nsettings >= 2 && nt > 0 &&
                     nq > 0 && nx > 0 && nphi >= 3 &&
                     nr == nsettings * published * nphi && nb == published + 6,
                 "invalid problem dimensions");
@@ -105,11 +109,13 @@ int main(int argc, char** argv) {
         std::vector<JointRow> rows(static_cast<size_t>(nr));
         for (int r = 0; r < nr; ++r) {
             auto& row = rows[r];
-            input >> row.setting >> row.local_row >> row.data >> row.data_variance;
+            input >> row.setting >> row.local_row >> row.data >> row.data_variance
+                  >> row.fixed_prediction >> row.fixed_mc_variance;
             require(static_cast<bool>(input) && row.setting == r / (published * nphi) &&
                         row.local_row == r % (published * nphi) &&
                         std::isfinite(row.data) && std::isfinite(row.data_variance) &&
-                        row.data_variance >= 0,
+                        row.data_variance >= 0 && std::isfinite(row.fixed_prediction) &&
+                        std::isfinite(row.fixed_mc_variance) && row.fixed_mc_variance >= 0,
                     "invalid or misordered reconstructed row " + std::to_string(r));
             row.cells.resize(static_cast<size_t>(nb));
             for (auto& cell : row.cells) {
@@ -134,6 +140,7 @@ int main(int argc, char** argv) {
             bool support = false;
             for (const auto& cell : row.cells)
                 for (double value : cell.basis) support = support || value != 0.0;
+            support=support || row.fixed_prediction!=0.;
             if (!support && (row.data != 0.0 || row.data_variance > 0.0))
                 throw std::runtime_error("Joint xsec fit: data outside SIMC support at setting " +
                     std::to_string(row.setting) + " row " + std::to_string(row.local_row));
@@ -145,6 +152,7 @@ int main(int argc, char** argv) {
         // enters only when it feeds a fitted row in at least one setting.
         std::vector<int> active_blocks;
         for (int b = 0; b < nb; ++b) {
+            if (b >= published && !nps_xsec::is_fitted_tprime_feedin(b,published)) continue;
             bool supported = b < published;
             if (!supported)
                 for (int r : fit_rows)
@@ -206,7 +214,7 @@ int main(int argc, char** argv) {
         std::vector<double> data, data_variance;
         for (int r : fit_rows) {
             design.push_back(design_row(rows[r]));
-            data.push_back(rows[r].data);
+            data.push_back(rows[r].data-rows[r].fixed_prediction);
             data_variance.push_back(rows[r].data_variance);
         }
 
@@ -228,7 +236,8 @@ int main(int argc, char** argv) {
             for (size_t i = 0; i < fit_rows.size(); ++i)
                 next_variance[i] += mc_variance(
                     rows[fit_rows[i]].cells, active_blocks,
-                    columns[rows[fit_rows[i]].setting], fit.parameters);
+                    columns[rows[fit_rows[i]].setting], fit.parameters)+
+                    rows[fit_rows[i]].fixed_mc_variance;
             auto next = solve(next_variance);
             double parameter_change = 0.0, variance_change = 0.0;
             for (size_t j = 0; j < npar; ++j) {
@@ -283,15 +292,15 @@ int main(int argc, char** argv) {
                            << fit.covariance[i * npar + j] << '\n';
 
         auto used_rows = output(out_dir, "joint_rows.csv");
-        used_rows << "setting_index,reco_row,fit_index,data,data_variance,variance_used,mc_variance_final,prediction,residual,pull\n";
+        used_rows << "setting_index,reco_row,fit_index,data,data_variance,fixed_feedin_prediction,fixed_feedin_mc_variance,variance_used,mc_variance_final,prediction,residual,pull\n";
         std::vector<double> chi2_by_setting(static_cast<size_t>(nsettings), 0.0);
         int fit_index = 0;
         for (int r = 0; r < nr; ++r) {
             const auto& row = rows[r];
             const auto x = design_row(row);
-            const double prediction = std::inner_product(x.begin(), x.end(), fit.parameters.begin(), 0.0);
+            const double prediction = row.fixed_prediction+std::inner_product(x.begin(), x.end(), fit.parameters.begin(), 0.0);
             const double mc_final =
-                mc_variance(row.cells, active_blocks, columns[row.setting], fit.parameters);
+                mc_variance(row.cells, active_blocks, columns[row.setting], fit.parameters)+row.fixed_mc_variance;
             const bool included = fit_index < static_cast<int>(fit_rows.size()) && fit_rows[fit_index] == r;
             const double variance = included ? fit_variance[fit_index] : nan;
             const double residual = row.data - prediction;
@@ -299,7 +308,7 @@ int main(int argc, char** argv) {
             if (included) chi2_by_setting[row.setting] += pull * pull;
             used_rows << row.setting << ',' << row.local_row << ','
                       << (included ? fit_index : -1) << ',' << row.data << ','
-                      << row.data_variance << ',' << variance << ',' << mc_final << ','
+                      << row.data_variance << ','<<row.fixed_prediction<<','<<row.fixed_mc_variance<<',' << variance << ',' << mc_final << ','
                       << prediction << ',' << residual << ',' << pull << '\n';
             if (included) ++fit_index;
         }
@@ -328,6 +337,8 @@ int main(int argc, char** argv) {
                 << "rows_available=" << nr << '\n'
                 << "omitted_supported_zero_variance_rows=" << omitted_zero_variance << '\n'
                 << "active_truth_blocks=" << active_blocks.size() << '\n'
+                << "fitted_exterior_blocks=tprime_below_only\n"
+                << "fixed_feedin=Q2_xB_exterior_nominal_row_offset\n"
                 << "parameters=" << npar << '\n'
                 << "rank=" << fit.rank << '\n'
                 << "condition=" << fit.condition << '\n'

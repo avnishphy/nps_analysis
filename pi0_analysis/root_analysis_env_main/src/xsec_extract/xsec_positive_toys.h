@@ -9,6 +9,7 @@
 #include "xsec_experimental_points.h"
 
 inline void ExclPi0XSecAnalysis::compute_positive_toy_errors() {
+    if (model_fit_mode) return; // Independent-coefficient toys are not model refits.
     positive_toy_parameter_covariance.clear();
     positive_toy_point_covariance.clear();
     positive_toys_successful = 0;
@@ -28,7 +29,7 @@ inline void ExclPi0XSecAnalysis::compute_positive_toy_errors() {
     for (int r:fit_rows) {
         design.push_back(response_design[r]);
         data_variance.push_back(slices[r/cfg.n_phi].phi[r%cfg.n_phi].data_sumw2);
-        generating_mean.push_back(std::inner_product(response_design[r].begin(),
+        generating_mean.push_back(fixed_feedin_prediction[r]+std::inner_product(response_design[r].begin(),
             response_design[r].end(),migration_fit.parameters.begin(),0.));
     }
     std::mt19937_64 engine(seed);
@@ -39,7 +40,8 @@ inline void ExclPi0XSecAnalysis::compute_positive_toy_errors() {
             y[i]=generating_mean[i]+std::sqrt(fit_variance[i])*normal(engine);
         try {
             auto solve=[&](const std::vector<double>& variance) {
-                return nps_xsec::solve_positive_response(design,y,variance,epsilon_max,
+                auto fitted_y=y;for(size_t i=0;i<fitted_y.size();++i)fitted_y[i]-=fixed_feedin_prediction[fit_rows[i]];
+                return nps_xsec::solve_positive_response(design,fitted_y,variance,epsilon_max,
                                                            cfg.rank_tolerance).fit;
             };
             std::vector<double> variance=data_variance;
@@ -49,7 +51,8 @@ inline void ExclPi0XSecAnalysis::compute_positive_toy_errors() {
                 std::vector<double> next_variance=data_variance;
                 for (size_t i=0;i<fit_rows.size();++i)
                     next_variance[i]+=nps_xsec::mc_prediction_variance(
-                        migration_response[fit_rows[i]],active_truth_blocks,fitted.parameters);
+                        migration_response[fit_rows[i]],active_truth_blocks,fitted.parameters)+
+                        fixed_feedin_mc_variance[fit_rows[i]];
                 auto next=solve(next_variance);
                 double parameter_change=0.,variance_change=0.;
                 for (size_t j=0;j<np;++j) {
@@ -80,7 +83,7 @@ inline void ExclPi0XSecAnalysis::compute_positive_toy_errors() {
                     f+=basis[term]*fitted.parameters[3*a+term];
                 }
                 const auto& row=response_design[r];
-                const double mu=std::inner_product(row.begin(),row.end(),fitted.parameters.begin(),0.);
+                const double mu=fixed_feedin_prediction[r]+std::inner_product(row.begin(),row.end(),fitted.parameters.begin(),0.);
                 for (size_t j=0;j<np;++j) absolute+=std::abs(row[j]*fitted.parameters[j]);
                 if (!std::isfinite(m) || std::abs(m)<=1e-12*absolute || m==0.) continue;
                 points[r]=(y[i]-mu+m)*f/m;

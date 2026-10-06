@@ -14,12 +14,19 @@ inline void ExclPi0XSecAnalysis::compute_experimental_points() {
     experimental_point_covariance.assign(static_cast<size_t>(nr)*nr, nan);
     for(int r=0;r<nr;++r) { experimental_points[r].row=r; experimental_points[r].truth_cell=r; }
     if (np == 0) return;
+    if(event_model()) {
+        // The independent-bin residual-correction formula assumes constant
+        // coefficients within a truth cell. It is not an event-model observable.
+        // Actual folded predictions and generated-average SF remain available.
+        for(auto& p:experimental_points)p.status="unavailable_event_model_bin_correction";
+        return;
+    }
     std::vector<int> active_index(truth_moments.size(), -1), fit_index(nr, -1);
     for (size_t i=0; i<active_truth_blocks.size(); ++i) active_index[active_truth_blocks[i]]=static_cast<int>(i);
     for (size_t i=0; i<fit_rows.size(); ++i) fit_index[fit_rows[i]]=static_cast<int>(i);
     std::vector<double> prediction(nr, nan);
     for (int r=0; r<nr; ++r)
-        prediction[r]=std::inner_product(response_design[r].begin(),response_design[r].end(),
+        prediction[r]=fixed_feedin_prediction[r]+std::inner_product(response_design[r].begin(),response_design[r].end(),
                                          migration_fit.parameters.begin(),0.0);
 
     for (int r=0; r<nr; ++r) {
@@ -63,7 +70,8 @@ inline void ExclPi0XSecAnalysis::compute_experimental_points() {
         if (!std::isfinite(p.sigma_exp)) { p.status="nonfinite_point"; continue; }
         // Forward-predicted reconstructed means use the same accepted MC
         // events and fitted angular weights as the reconstructed yield.
-        if (std::isfinite(prediction[r]) && std::abs(prediction[r])>1e-12*abs_sum) {
+        const double fitted_prediction=prediction[r]-fixed_feedin_prediction[r];
+        if (std::isfinite(fitted_prediction) && std::abs(fitted_prediction)>1e-12*abs_sum) {
             double q=0.,x=0.,tp=0.;
             for (int j=0;j<static_cast<int>(active_truth_blocks.size());++j) {
                 const auto& cell=migration_response[r][active_truth_blocks[j]];
@@ -73,18 +81,21 @@ inline void ExclPi0XSecAnalysis::compute_experimental_points() {
                     tp+=v*cell.reco_tprime[n];
                 }
             }
-            p.reco_prediction_q2=q/prediction[r];
-            p.reco_prediction_xb=x/prediction[r];
-            p.reco_prediction_tprime=tp/prediction[r];
+            // These moments cover fitted-response components only; fixed
+            // feed-in remains in the detector prediction but is not assigned
+            // fictitious U/LT/TT coefficients for moment reconstruction.
+            p.reco_prediction_q2=q/fitted_prediction;
+            p.reco_prediction_xb=x/fitted_prediction;
+            p.reco_prediction_tprime=tp/fitted_prediction;
         }
-        p.status=!cfg.joint_plot_input.empty() ? "central_only_joint" :
+        p.status=model_fit_mode ? "central_only_proxy_diagnostic" : !cfg.joint_plot_input.empty() ? "central_only_joint" :
             cfg.fit_objective=="scaled-poisson" ? "central_only_scaled_poisson" :
             (positivity_boundary_active ? "central_only_boundary" : "ok");
     }
     // The single-setting influence sums below omit the other joint settings.
     // Keep these residual-corrected points explicitly central-only in joint
     // plots; coefficient/curve errors use the full imported joint covariance.
-    if (!cfg.joint_plot_input.empty() || positivity_boundary_active || cfg.fit_objective=="scaled-poisson") return;
+    if (model_fit_mode || !cfg.joint_plot_input.empty() || positivity_boundary_active || cfg.fit_objective=="scaled-poisson") return;
 
     // For fixed D,V: Xhat=K y, K=C D' V^-1. For E=f*(1+z/m), with
     // z=y_r-D_r Xhat, f=g_v Xhat, m=d_rv Xhat, the derivative with

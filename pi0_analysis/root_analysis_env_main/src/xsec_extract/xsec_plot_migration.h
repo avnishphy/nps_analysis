@@ -33,8 +33,9 @@ inline void ExclPi0XSecAnalysis::make_migration_plots() {
     const auto truth_label = [&](int b) {
         if (b < ns) return slice_label(b);
         static const char* guards[] = {"t'<min", "t'>max", "Q^{2}<min", "Q^{2}>max", "x_{B}<min", "x_{B}>max"};
+        const std::string treatment=nps_xsec::is_fitted_tprime_feedin(b,ns)?" [fit]":" [fixed]";
         return "b" + std::to_string(b) + ":" +
-               (b - ns < 6 ? std::string(guards[b - ns]) : std::string("guard"));
+               (b - ns < 6 ? std::string(guards[b - ns]) : std::string("guard"))+treatment;
     };
     const auto display_truth_label = [&](int b) {
         if (b < ns && cfg.n_q2==1 && cfg.n_xb==1 &&
@@ -44,7 +45,8 @@ inline void ExclPi0XSecAnalysis::make_migration_plots() {
         }
         if (b>=ns) {
             static const char* guard_short[]={"t'<min","t'>max","Q2<min","Q2>max","xB<min","xB>max"};
-            return "g"+std::to_string(b-ns)+":"+guard_short[b-ns];
+            return "g"+std::to_string(b-ns)+":"+guard_short[b-ns]+
+                   (nps_xsec::is_fitted_tprime_feedin(b,ns)?"[fit]":"[fixed]");
         }
         return "b"+std::to_string(b);
     };
@@ -116,6 +118,7 @@ inline void ExclPi0XSecAnalysis::make_migration_plots() {
             "Reference: Ali thesis, printed p.142 Fig.5.3, https://www.osti.gov/biblio/1784736\n"
             "signed_tprime=t-tmin; slice=(it*n_q2+iq)*n_xb+ix; reco_row=slice*n_phi+ip; phi varies fastest\n"
             "truth_block=published slice, then six guards: tprime_below, tprime_above, q2_below, q2_above, xb_below, xb_above\n"
+            "guard_treatment=tprime_below has fitted U/LT/TT; Q2/xB and other guards are fixed model feed-in\n"
             "response_U/LT/TT=raw integrated event basis, yield per coefficient in microbarn/MeV^2; no probability normalization\n"
             "selected_counts=sum_phi cell.events; unweighted selected exclusive MC; includes all fit-excluded rows and guards\n"
             "p_reco_given_truth_selected=counts/column_sum; p_truth_given_reco_selected=counts/row_sum\n"

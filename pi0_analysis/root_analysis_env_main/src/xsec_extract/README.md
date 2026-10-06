@@ -1,12 +1,17 @@
 # Neutral-pion cross-section extraction
 
 Two extraction methods are available. `excl_xsec_pi0_analysis_no_simc_model.C`
-steers the response-fit method described below. The iterative data/SIMC ratio method is implemented by
-`excl_xsec_pi0_analysis_simc_model.C` with the parameterized Fortran pi0
-model in `simc_pi0_reweight.h`. See
-[ITERATIVE_SIMC_MODEL.md](ITERATIVE_SIMC_MODEL.md) for the equations,
-physical-t and phi-center conventions, fit diagnostics, limitations, and
-reproducible validation. Physics defaults come from a JSON preset in
+fits independent generated-bin structure functions.
+`excl_xsec_pi0_analysis_simc_model.C` fits a global parameterized model through
+the same detector response. Select `--mode no_simc_model` (default) or
+`--mode simc_model` in `run_xsec_pipeline.sh`; no manual plotting is needed.
+See [PIPELINE.md](PIPELINE.md) for complete commands, inputs, output layout,
+diagnostics, failure handling and CSV schemas. The default model is the
+[provisional SigParam2021-inspired pi0 model](SIGPARAM2021_PI0.md), with
+exact generated-event folding, a smooth non-pole longitudinal ansatz and only
+three fitted global U/LT/TT normalizations and one pivoted U slope. There is one production physics model.
+`ITERATIVE_SIMC_MODEL.md` documents a superseded ratio method,
+not the current production entry point. Physics defaults come from a JSON preset in
 `xsec_config/`. The wrapper generates `xsec_config.h` in its temporary build
 directory and uses that header for either extractor.
 
@@ -35,7 +40,7 @@ Set `phi_bins` (uniform 0 to 2pi), or replace it with a numeric
 xB edge row per Q2 interval; each row must have the same count and outer
 limits. Bin counts and
 selection bounds follow the vectors automatically. The response fit uses
-tprime; the SIMC-model ratio fit uses physical t. Both use the same Q2, xB,
+tprime; the global proxy uses tau=-tprime. Both use the same Q2, xB,
 and phi edges. Invalid or unordered vectors stop extraction. CLI bin-count
 and range options have been removed so these vectors remain authoritative.
 Changing these defaults changes the extracted physics bins; rerun both methods
@@ -64,7 +69,8 @@ libraries.
 
 | Files | Responsibility |
 | --- | --- |
-| `excl_xsec_pi0_analysis_simc_model.C`, `simc_pi0_reweight.h` | Iterative data/SIMC ratio extraction and parameterized Fortran pi0 model |
+| `excl_xsec_pi0_analysis_simc_model.C`, `xsec_sigparam2021_pi0_model.h`, `xsec_proxy_fit.h` | Three normalizations and one pivoted U slope through the shared detector response |
+| `plot_model_diagnostics.py`, `xsec_pipeline_products.py` | Model production report, input preflight and fresh-artifact checks |
 | `xsec_root.h`, `xsec_config_template.h.in`, `generate_xsec_config.py`, `xsec_types.h`, `xsec_analysis.h` | Dependencies, JSON-to-header configuration, records, analysis state/interfaces |
 | `xsec_cli.h`, `xsec_input.h` | Options, mandatory branches, matched generated-event lookup |
 | `xsec_physics.h`, `xsec_binning.h` | Kinematic conventions and frozen bin boundaries |
@@ -471,7 +477,132 @@ errors remain fatal. Run the standalone recovery checks from the repository:
 csh -c 'source /usr/share/Modules/init/csh; source /group/nps/singhav/setup.csh; bash tests/run_xsec_bin_recovery_tests.sh /tmp/nps_xsec_recovery_check'
 ```
 
-### Joint fit across kinematic settings
+### Joint event-level M0 fit across kinematic settings
+
+The production joint workflow uses the same event-level SigParam2021 M0 model
+as the current single-setting extraction.  For two settings its fitted vector
+is
+
+```text
+N_U(setting 0), DeltaB_U(setting 0),
+N_U(setting 1), DeltaB_U(setting 1),
+N_LT(shared), N_TT(shared),
+feedin_tprime_below_U(setting 0), feedin_tprime_below_U(setting 1),
+feedin_tprime_below_LT(shared), feedin_tprime_below_TT(shared)
+```
+
+Thus the two-setting fit has ten actual coordinates.  Q2/xB exterior events
+remain fixed event-model contributions and create no fit or covariance
+coordinates.  Preparation exports `joint_model_events.csv` under the versioned
+`prepared_joint_m0_inputs_v3` contract; it does not run either individual fit.
+
+Run from the repository root:
+
+```bash
+/group/nps/singhav/software/python/bin/python \
+  src/xsec_extract/run_joint_xsec_fit.py \
+  --prepare-setting src/xsec_extract/xsec_config/xsec_config_x36_5_407.json \
+    output/simc/simc_x36_5_407/worksim/ \
+  --prepare-setting src/xsec_extract/xsec_config/xsec_config_x36_4.json \
+    output/simc/nps_simc_20260824_135058/worksim/simc_gfortran_updated/worksim/ \
+  --binning-config src/xsec_extract/xsec_config/xsec_config_x36_4.json \
+  --mmiss-select ellipse --mmiss-lower 0.6 --mmiss-upper 1.1 \
+  --fit-strategy staged_feasible --model-starts 6 \
+  --positive-xsec --fit-variance finite-mc \
+  --fit-objective gaussian --publish-calibrated-release --toy-jobs 0 \
+  --out-dir output/joint_x36_5_407_x36_4_LH2
+```
+
+The nonlinear constrained fit uses analytic row derivatives, an expanding
+active set of exact continuous-angular positivity constraints, and the same
+iterated event-level finite-MC variance definition as the standalone M0 fit.
+It writes `joint_model_parameters.csv` and `joint_model_covariance.csv` for the
+ten real fit coordinates; `joint_structure_functions.csv` is a derived
+per-setting reporting table and must not be treated as additional parameters.
+Other primary products are `joint_model_row_jacobian.csv`,
+`joint_model_starts.csv`, `joint_singular_values.csv`, `joint_rows.csv`,
+`joint_positivity.csv`, `joint_xsec_output.root`, and `joint_manifest.json`.
+
+At an active positivity boundary, ordinary Gaussian covariance and propagated
+structure-function errors remain NaN; the unconstrained curvature inverse is
+stored only as a diagnostic.  `--publish-calibrated-release` supplies the
+publication uncertainty path instead.  It freezes the additive-weight central
+estimator, draws one Poisson(1) multiplicity per physical data and exclusive
+SIMC event in every setting, refits all ten joint coordinates, and continues
+until exactly 500 toys are accepted.  Toy IDs and failures are retained.
+
+The release uses `delta68 = Q_0.68(|fit - generating truth|)` and deterministic
+five-fold held-out coverage (`toy_id modulo 5`).  It fails closed if any radius
+is nonfinite/nonpositive, minimum held-out coverage is below 0.55, or maximum
+absolute toy bias reaches one `delta68`.  The empirical toy correlation and a
+`diag(delta68) R_toy diag(delta68)` representation are saved separately from
+the conventional curvature covariance.  Central values are not bias corrected.
+The common target-divisor uncertainty is a separate fully correlated scale
+covariance and is never silently added to the non-Gaussian statistical radius.
+
+Primary release products are
+`joint_preliminary_cross_sections_calibrated.csv`,
+`toy_residual_statistics.csv`, `cross_validated_coverage.csv`,
+`published_covariance_toy.csv`, `published_covariance_calibrated68.csv`,
+`target_systematic_covariance.csv`, `joint_parameter_toy_statistics.csv`, the
+joint parameter curvature/toy covariance matrices, `calibration_summary.json`, `REPORT.md`,
+and `joint_preliminary_cross_section_report.pdf`.  The final PDF appends the
+complete joint central-fit diagnostic book.  `joint_pipeline_artifacts.json`
+hashes the fit, campaign, calibrated tables, and PDFs after successful
+completion.
+
+Fresh publication campaigns require ellipse selection, Gaussian objective,
+finite-MC variance, `staged_feasible`, positivity, and plots.  `--toy-jobs 0`
+uses the process affinity mask.  The runner embeds a ROOT runtime path in its
+mass-fit bridge, so it may be invoked with the analysis Python shown above; it
+loads the Hall C compile environment itself.
+
+To reuse a completed campaign with an otherwise new output directory, pass
+both `--reuse-toys` and `--calibration-source CAMPAIGN`.  Reuse requires exact
+agreement of binning, config and event-cache hashes, input paths/sizes/mtimes,
+target divisor, and raw-vertex identity.  A mismatch is fatal.  A partial or
+non-500-toy campaign cannot be published.
+
+Prepared v3 inputs can be refit without rereading ROOT files:
+
+```bash
+/group/nps/singhav/software/python/bin/python \
+  src/xsec_extract/run_joint_xsec_fit.py \
+  --setting output/joint_x36_5_407_x36_4_LH2_inputs/configs/KinC_x36_5_407.json \
+    output/joint_x36_5_407_x36_4_LH2_inputs/KinC_x36_5_407 \
+  --setting output/joint_x36_5_407_x36_4_LH2_inputs/configs/KinC_x36_4.json \
+    output/joint_x36_5_407_x36_4_LH2_inputs/KinC_x36_4 \
+  --fit-strategy staged_feasible --model-starts 6 \
+  --positive-xsec --fit-variance finite-mc \
+  --out-dir output/joint_x36_5_407_x36_4_LH2_refit
+```
+
+The reusable-input command can also publish from an existing exact-match toy
+campaign:
+
+```bash
+/group/nps/singhav/software/python/bin/python \
+  src/xsec_extract/run_joint_xsec_fit.py \
+  --setting output/joint_x36_5_407_x36_4_LH2_inputs/configs/KinC_x36_5_407.json \
+    output/joint_x36_5_407_x36_4_LH2_inputs/KinC_x36_5_407 \
+  --setting output/joint_x36_5_407_x36_4_LH2_inputs/configs/KinC_x36_4.json \
+    output/joint_x36_5_407_x36_4_LH2_inputs/KinC_x36_4 \
+  --fit-strategy staged_feasible --model-starts 6 \
+  --positive-xsec --fit-variance finite-mc --fit-objective gaussian \
+  --publish-calibrated-release --reuse-toys \
+  --calibration-source output/joint_x36_5_407_x36_4_LH2/toy_campaigns/<campaign> \
+  --out-dir output/joint_x36_5_407_x36_4_LH2_republished
+```
+
+`--plot-only OUT_DIR` builds the seven-page M0 parameter, derived U/LT/TT,
+fit-quality, correlation, and positivity report without refitting.
+
+### Legacy independent-coefficient joint design (historical)
+
+The remainder of this subsection documents the retired aggregated response
+solver.  It is retained for provenance only.  `run_joint_xsec_fit.py` no longer
+compiles `xsec_joint_solver.C`, accepts v2 prepared inputs, or produces the
+legacy 24-coordinate U-per-bin fit and post-fit nominal-epsilon separation.
 
 The joint workflow prepares data yields and SIMC response matrices directly
 from each setting's raw ROOT inputs, then fits shared sigmaLT/sigmaTT and

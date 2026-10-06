@@ -89,7 +89,7 @@ inline void ExclPi0XSecAnalysis::make_slice_plots() {
                     TLatex fit_note;
                     fit_note.SetNDC(true);fit_note.SetTextFont(42);fit_note.SetTextSize(0.028);
                     fit_note.DrawLatex(0.15,0.84,Form("Global %s = %.1f/%.0f",
-                                                      cfg.fit_objective=="scaled-poisson" ? "deviance/nominal ndf" : "#chi^{2}/ndf",
+                                                      "Objective / nominal DOF",
                                                       s.fit_xsec.chi2,s.fit_xsec.ndf));
                     fit_note.SetTextSize(0.024);
                     fit_note.DrawLatex(0.15,0.79,Form("Objective: %s; positivity: %s",

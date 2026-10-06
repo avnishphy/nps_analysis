@@ -38,7 +38,8 @@ inline void ExclPi0XSecAnalysis::fit_scaled_poisson_subset(const std::vector<boo
         const size_t b=r/cfg.n_phi;
         const auto& p=slices[b].phi[r%cfg.n_phi];
         record.support=std::any_of(response_design[r].begin(),response_design[r].end(),
-                                   [](double v){ return v!=0.; });
+                                   [](double v){ return v!=0.; }) ||
+                       (!event_model() && fixed_feedin_prediction[r]!=0.);
         record.s_observed=p.data>0. ? p.data_sumw2/p.data :
             std::numeric_limits<double>::quiet_NaN();
         if (!groups[b%ngroups]) { record.exclusion_reason="excluded_kinematic_group"; continue; }
@@ -73,6 +74,7 @@ inline void ExclPi0XSecAnalysis::fit_scaled_poisson_subset(const std::vector<boo
         record.included=true;
         fit_rows.push_back(static_cast<int>(r));
     }
+    if (model_fit_mode) { fit_proxy_subset(groups); return; }
     if (fit_rows.size()<=np) die("Scaled-Poisson fit has no positive degrees of freedom");
 
     // The constrained Gaussian solve supplies a feasible seed only; its
@@ -84,7 +86,7 @@ inline void ExclPi0XSecAnalysis::fit_scaled_poisson_subset(const std::vector<boo
         const auto& p=slices[r/cfg.n_phi].phi[r%cfg.n_phi];
         const double s=scaled_rows[r].s_used;
         xseed.push_back(response_design[r]);
-        yseed.push_back(p.data);
+        yseed.push_back(p.data-fixed_feedin_prediction[r]);
         vseed.push_back(s*std::max(p.data,s));
     }
     auto seed=nps_xsec::solve_positive_response(xseed,yseed,vseed,epsilon_max,cfg.rank_tolerance).fit;
@@ -118,7 +120,7 @@ inline void ExclPi0XSecAnalysis::fit_scaled_poisson_subset(const std::vector<boo
         double total=0.;
         for (int r:fit_rows) {
             const auto& row=response_design[r];
-            const double mu=std::inner_product(row.begin(),row.end(),p.begin(),0.);
+            const double mu=fixed_feedin_prediction[r]+std::inner_product(row.begin(),row.end(),p.begin(),0.);
             if (!(std::isfinite(mu) && mu>0.)) return 1e100;
             const double y=slices[r/cfg.n_phi].phi[r%cfg.n_phi].data;
             total+=nps_xsec::scaled_poisson_deviance(y,mu,scaled_rows[r].s_used);
@@ -233,7 +235,7 @@ inline void ExclPi0XSecAnalysis::fit_scaled_poisson_subset(const std::vector<boo
     for (int r:fit_rows) {
         auto& record=scaled_rows[r];
         const auto& row=response_design[r];
-        const double mu=std::inner_product(row.begin(),row.end(),
+        const double mu=fixed_feedin_prediction[r]+std::inner_product(row.begin(),row.end(),
                                            migration_fit.parameters.begin(),0.);
         if (!(mu>0.)) die("Scaled-Poisson final prediction is nonpositive");
         const double y=slices[r/cfg.n_phi].phi[r%cfg.n_phi].data;

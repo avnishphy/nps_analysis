@@ -4526,6 +4526,8 @@
                 charge_fraction = static_cast<double>(d_charge_uC) / total_charge_uC;
             }
             double weight = d_pi0_weight * d_scale * charge_fraction * data_exclusive_factor;
+            if (std::isfinite(weight) && weight < 0.0)
+                throw std::runtime_error("Smearing calibration cannot discard signed pi0_weight. Keep the nominal response/smearing fixed for data-statistical extraction; this calibration objective needs separate signed-data validation.");
             if (!(weight > 0.0) || !std::isfinite(weight)) {
                 ++data_skipped_nonpositive_selected_weight;
                 continue;

@@ -2,6 +2,7 @@
 
 // Read-only input validation and generated-event linkage. Invalid physics inputs must fail explicitly.
 #include "xsec_analysis.h"
+#include <TObjString.h>
 
 inline void ExclPi0XSecAnalysis::load_input() {
     // Read-only files: normalization comes from their production contracts.
@@ -10,11 +11,16 @@ inline void ExclPi0XSecAnalysis::load_input() {
 
     f_data = TFile::Open(cfg.data_file.c_str(), "READ");
     if (!f_data || f_data->IsZombie()) die("Cannot open data input file.");
+    // Explicit fixture metadata, never path/name inference. Real inputs default false.
+    if(const auto* provenance=dynamic_cast<TObjString*>(f_data->Get("fixture_provenance")))
+        synthetic_validation=provenance->GetString().BeginsWith("SYNTHETIC");
 
     t_sim = dynamic_cast<TTree*>(f_sim->Get(cfg.simc_tree.c_str()));
     t_data = dynamic_cast<TTree*>(f_data->Get(cfg.data_tree.c_str()));
     if (!t_sim) die("Cannot find SIMC tree.");
     if (!t_data) die("Cannot find data tree.");
+    if (!f_data->Get("analysis_runs"))
+        die("Combined input lacks validated run-success manifest; rerun analysis and combine before extraction.");
     for(const char* name:{"Q2","t","tmin","xB","phi","pi0_weight","scale","charge_uC","run_number","mmiss_all","W"})
         if(!t_data->GetBranch(name)) die("Data missing required branch: "+std::string(name));
     for(const char* name:{"Q2","t","tmin","xB","phi","full_weight","is_exclusive","mmiss","W","sigcm"})

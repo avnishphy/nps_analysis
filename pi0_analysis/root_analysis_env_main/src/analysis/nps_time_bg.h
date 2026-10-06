@@ -14,6 +14,7 @@
 #include <iostream>
 #include <utility> // pair
 #include <string>
+#include <stdexcept>
 
 // Forward-declare ROOT types here; header using this file that calls the functions
 // must include <TH2D.h>, <TH1D.h> etc.
@@ -78,6 +79,15 @@ inline std::pair<double,double> integral_and_area_TH2(TH2D *h2,
                                                       double y_lo, double y_hi)
 {
     if (!h2) return {0.0, 0.0};
+
+    // Truncating a rectangle while retaining its full area biases its density.
+    if (!std::isfinite(x_lo) || !std::isfinite(x_hi) ||
+        !std::isfinite(y_lo) || !std::isfinite(y_hi) ||
+        !(x_lo < x_hi) || !(y_lo < y_hi) ||
+        x_lo < h2->GetXaxis()->GetXmin() || x_hi > h2->GetXaxis()->GetXmax() ||
+        y_lo < h2->GetYaxis()->GetXmin() || y_hi > h2->GetYaxis()->GetXmax()) {
+        throw std::runtime_error("Timing-background rectangle outside histogram coverage or invalid bounds");
+    }
 
     // Adjust high edges to match < x_hi logical selection
     double eps = 1e-9;
@@ -207,7 +217,7 @@ inline CoincidenceBGResult estimate_coincidence_background_default(TH2D *h2,
 
     // 5) "complete accidental" boxes used for subtraction (two rectangles)
     auto full1_pr = integral_and_area_TH2(h2, full1_t2.first, full1_t2.second, full1_t1.first, full1_t1.second);
-    auto full2_pr = integral_and_area_TH2(h2, full2_t1.first, full2_t1.second, full2_t2.first, full2_t2.second);
+    auto full2_pr = integral_and_area_TH2(h2, full2_t2.first, full2_t2.second, full2_t1.first, full2_t1.second);
     R.n_full1_raw = full1_pr.first;
     R.area_full1 = full1_pr.second;
     R.n_full2_raw = full2_pr.first;
@@ -497,7 +507,8 @@ inline TH1D* make_and_subtract_accidentals_data_driven(
         double total_sub_err = std::sqrt(sub_err_stat*sub_err_stat + sub_err_norm*sub_err_norm);
 
         double newc = orig - sub;
-        if (newc < 0.0) newc = 0.0;
+        // Negative background-subtraction residuals are valid fluctuations.
+        if (!std::isfinite(newc)) throw std::runtime_error("Nonfinite timing residual");
 
         double newerr = std::sqrt(orig_err*orig_err + total_sub_err*total_sub_err);
         h_coin_bgsub->SetBinContent(b, newc);

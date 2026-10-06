@@ -1,7 +1,8 @@
 #pragma once
 
-// Preserve the complete linear problem, including nuisance parameters, so an
-// independent program can reconstruct the fit without rerunning event loops.
+// Preserve fitted/derived coordinates so an independent program can reconstruct
+// the fit without rerunning event loops. Fixed feed-in has row-level exports,
+// never design/covariance coordinates.
 // CSV uses max_digits10 precision; ROOT matrices retain native doubles. All
 // cross-section coefficients use ub/MeV2 and covariance uses their square.
 #include "xsec_analysis.h"
@@ -12,6 +13,12 @@ inline void ExclPi0XSecAnalysis::write_migration_results() {
     const int np=static_cast<int>(migration_fit.parameters.size());
     const int nb=static_cast<int>(truth_moments.size());
     const int published=static_cast<int>(slices.size());
+    std::vector<int> export_columns;
+    for(int column=0;column<np;++column) {
+        const int block=active_truth_blocks[column/3];
+        if(!model_fit_mode || !nps_xsec::is_fixed_model_feedin(block,published))export_columns.push_back(column);
+    }
+    const int export_np=static_cast<int>(export_columns.size());
     const double nan=std::numeric_limits<double>::quiet_NaN();
     const double target_fraction=cfg.tgt_contam_err/cfg.tgt_contam;
     auto csv=[&](const char* name) {
@@ -84,18 +91,19 @@ inline void ExclPi0XSecAnalysis::write_migration_results() {
     auto curvature_csv = csv("migration_curvature_inverse.csv");
     curvature_csv << "parameter_i,parameter_j,"
                   << (cfg.fit_objective=="scaled-poisson" ? "physical_Hessian_covariance_diagnostic" : "unconstrained_curvature_inverse") << "\n";
-    TMatrixD curvature(np, np);
-    for (int i = 0; i < np; ++i) for (int j = 0; j < np; ++j) {
-        curvature(i,j) = fit_curvature_inverse[static_cast<size_t>(i)*np+j];
+    TMatrixD curvature(export_np, export_np);
+    for (int i = 0; i < export_np; ++i) for (int j = 0; j < export_np; ++j) {
+        const int ii=export_columns[i],jj=export_columns[j];
+        curvature(i,j) = fit_curvature_inverse[static_cast<size_t>(ii)*np+jj];
         curvature_csv << i << ',' << j << ',' << curvature(i,j) << '\n';
     }
-    if (np > 0) curvature.Write(cfg.fit_objective=="scaled-poisson" ?
+    if (export_np > 0) curvature.Write(cfg.fit_objective=="scaled-poisson" ?
         "migration_Hessian_covariance_diagnostic" : "migration_unconstrained_curvature_inverse");
-    if (cfg.fit_objective=="scaled-poisson" && np>0) {
+    if (cfg.fit_objective=="scaled-poisson" && export_np>0) {
         auto hcorr_csv=csv("scaled_poisson_hessian_correlation_diagnostic.csv");
         hcorr_csv<<"parameter_i,parameter_j,Hessian_correlation_diagnostic_not_boundary_interval\n";
-        TMatrixD hcorr(np,np);
-        for (int i=0;i<np;++i) for (int j=0;j<np;++j) {
+        TMatrixD hcorr(export_np,export_np);
+        for (int i=0;i<export_np;++i) for (int j=0;j<export_np;++j) {
             const double vi=curvature(i,i),vj=curvature(j,j);
             hcorr(i,j)=vi>0. && vj>0. ? curvature(i,j)/std::sqrt(vi*vj) : nan;
             hcorr_csv<<i<<','<<j<<','<<hcorr(i,j)<<'\n';
@@ -103,11 +111,12 @@ inline void ExclPi0XSecAnalysis::write_migration_results() {
         hcorr.Write("migration_Hessian_correlation_diagnostic");
     }
     if (positive_toy_parameter_covariance.size()==static_cast<size_t>(np)*np) {
-        TMatrixD toy_covariance(np,np),toy_correlation(np,np);
-        for(int i=0;i<np;++i) for(int j=0;j<np;++j) {
-            const double v=positive_toy_parameter_covariance[static_cast<size_t>(i)*np+j];
-            const double vi=positive_toy_parameter_covariance[static_cast<size_t>(i)*np+i];
-            const double vj=positive_toy_parameter_covariance[static_cast<size_t>(j)*np+j];
+        TMatrixD toy_covariance(export_np,export_np),toy_correlation(export_np,export_np);
+        for(int i=0;i<export_np;++i) for(int j=0;j<export_np;++j) {
+            const int ii=export_columns[i],jj=export_columns[j];
+            const double v=positive_toy_parameter_covariance[static_cast<size_t>(ii)*np+jj];
+            const double vi=positive_toy_parameter_covariance[static_cast<size_t>(ii)*np+ii];
+            const double vj=positive_toy_parameter_covariance[static_cast<size_t>(jj)*np+jj];
             toy_covariance(i,j)=v;
             toy_correlation(i,j)=vi>0. && vj>0. ? v/std::sqrt(vi*vj) :
                 std::numeric_limits<double>::quiet_NaN();
@@ -133,6 +142,8 @@ inline void ExclPi0XSecAnalysis::write_migration_results() {
     positivity_tree.Branch("boundary_tolerance", &pos_boundary_tolerance);
     for (pos_active = 0; pos_active < np/3; ++pos_active) {
         pos_block = active_truth_blocks[pos_active];
+        if(model_fit_mode && nps_xsec::is_fixed_model_feedin(pos_block,published))continue;
+        pos_enabled = cfg.positive_xsec;
         pos_eps = truth_moments[pos_block].epsilon_max;
         const double u = migration_fit.parameters[3*pos_active];
         const double lt = migration_fit.parameters[3*pos_active+1];
@@ -143,7 +154,7 @@ inline void ExclPi0XSecAnalysis::write_migration_results() {
         pos_min = nps_xsec::minimum_response(u, lt, tt, pos_eps);
         pos_feasibility_tolerance = cfg.positive_xsec ? positivity_feasibility_tolerances[pos_active] : 0.0;
         pos_boundary_tolerance = cfg.positive_xsec ? positivity_boundary_tolerances[pos_active] : 0.0;
-        pos_boundary = cfg.positive_xsec && pos_min <= pos_boundary_tolerance;
+        pos_boundary = pos_enabled && pos_min <= pos_boundary_tolerance;
         positivity_tree.Fill();
         positivity_csv << pos_active << ',' << pos_block << ',' << pos_eps << ',' << pos_min << ','
                        << pos_cos << ',' << pos_enabled << ',' << pos_boundary << ','
@@ -154,12 +165,12 @@ inline void ExclPi0XSecAnalysis::write_migration_results() {
     // Column index j is 3*active_block_index + component, with component
     // 0=U, 1=LT (legacy CSV calls it TL), 2=TT. No omitted guard is assigned
     // a zero-valued fitted parameter; inactive blocks are listed separately.
-    TMatrixD design(nr,np),covariance(np,np),correlation(np,np),target_covariance(np,np);
-    TVectorD parameters(np),singular(migration_fit.singular_values.size());
+    TMatrixD design(nr,export_np),covariance(export_np,export_np),correlation(export_np,export_np),target_covariance(export_np,export_np);
+    TVectorD parameters(export_np),singular(migration_fit.singular_values.size());
     auto response_csv=csv("migration_design.csv");
     response_csv<<"reco_row,parameter_index,response\n";
-    for(int r=0;r<nr;++r) for(int j=0;j<np;++j) {
-        design(r,j)=response_design[r][j];
+    for(int r=0;r<nr;++r) for(int j=0;j<export_np;++j) {
+        design(r,j)=response_design[r][export_columns[j]];
         response_csv<<r<<','<<j<<','<<design(r,j)<<'\n';
     }
     auto covariance_csv=csv("migration_covariance.csv");
@@ -168,18 +179,19 @@ inline void ExclPi0XSecAnalysis::write_migration_results() {
                   <<",target_correlated_covariance\n";
     auto correlation_csv=csv("migration_correlation.csv");
     correlation_csv<<"parameter_i,parameter_j,correlation\n";
-    for(int i=0;i<np;++i) {
-        parameters[i]=migration_fit.parameters[i];
-        for(int j=0;j<np;++j) {
-            covariance(i,j)=migration_fit.covariance[static_cast<size_t>(i)*np+j];
-            const double vi=migration_fit.covariance[static_cast<size_t>(i)*np+i];
-            const double vj=migration_fit.covariance[static_cast<size_t>(j)*np+j];
+    for(int i=0;i<export_np;++i) {
+        const int ii=export_columns[i];parameters[i]=migration_fit.parameters[ii];
+        for(int j=0;j<export_np;++j) {
+            const int jj=export_columns[j];
+            covariance(i,j)=migration_fit.covariance[static_cast<size_t>(ii)*np+jj];
+            const double vi=migration_fit.covariance[static_cast<size_t>(ii)*np+ii];
+            const double vj=migration_fit.covariance[static_cast<size_t>(jj)*np+jj];
             correlation(i,j)=(!positivity_boundary_active && vi>0 && vj>0) ?
                 covariance(i,j)/std::sqrt(vi*vj) : nan;
             correlation_csv<<i<<','<<j<<','<<correlation(i,j)<<'\n';
             // One shared divisor moves every coefficient coherently. Keep
             // this rank-one systematic separate from statistical/MC errors.
-            target_covariance(i,j)=migration_fit.parameters[i]*migration_fit.parameters[j]*target_fraction*target_fraction;
+            target_covariance(i,j)=migration_fit.parameters[ii]*migration_fit.parameters[jj]*target_fraction*target_fraction;
             covariance_csv<<i<<','<<j<<','<<covariance(i,j)<<','<<target_covariance(i,j)<<'\n';
         }
     }
@@ -188,7 +200,7 @@ inline void ExclPi0XSecAnalysis::write_migration_results() {
     for(size_t i=0;i<migration_fit.singular_values.size();++i) {
         singular[i]=migration_fit.singular_values[i];singular_csv<<i<<','<<singular[i]<<'\n';
     }
-    if (np > 0) {
+    if (export_np > 0) {
         design.Write("migration_design_all_rows");
         parameters.Write("migration_parameters");
         covariance.Write(cfg.fit_objective=="scaled-poisson" ?
@@ -201,11 +213,12 @@ inline void ExclPi0XSecAnalysis::write_migration_results() {
     auto parameter_csv=csv("migration_parameters.csv");
     parameter_csv<<"parameter_index,active_block_index,truth_block,region,it,iq,ix,component,value,"
                  <<(cfg.fit_objective=="scaled-poisson" ? "error_conditional_Hessian" : "error_stat_plus_mc")
-                 <<",error_target,is_nuisance\n";
-    TTree parameter_tree("migration_parameter_index","Column mapping and global-fit parameters including free guard coefficients");
+                 <<",error_target,is_nuisance,is_fixed,fit_role\n";
+    TTree parameter_tree("migration_parameter_index","Derived block coefficients; fixed feed-in is not a fit coordinate");
     int column=0,active=0,block=0,it=0,iq=0,ix=0,component=0;
     std::string region,component_name;
-    int is_nuisance=0;
+    int is_nuisance=0,is_fixed=0;
+    std::string fit_role;
     double value=0,error=0,target_error=0;
     parameter_tree.Branch("parameter_index",&column);parameter_tree.Branch("active_block_index",&active);
     parameter_tree.Branch("truth_block",&block);parameter_tree.Branch("region",&region);
@@ -214,16 +227,20 @@ inline void ExclPi0XSecAnalysis::write_migration_results() {
     parameter_tree.Branch("value",&value);parameter_tree.Branch("error_stat_plus_mc",&error);
     parameter_tree.Branch("error_target",&target_error);
     parameter_tree.Branch("is_nuisance",&is_nuisance);
+    parameter_tree.Branch("is_fixed",&is_fixed);parameter_tree.Branch("fit_role",&fit_role);
     const char* components[]={"U","LT","TT"};
-    for(column=0;column<np;++column) {
-        active=column/3;component=column%3;block=active_truth_blocks[active];
+    for(column=0;column<export_np;++column) {
+        const int internal=export_columns[column];active=internal/3;component=internal%3;block=active_truth_blocks[active];
         region=label(block);component_name=components[component];
         const auto index=indices(block);it=index[0];iq=index[1];ix=index[2];
+        is_fixed=0;
         is_nuisance=block>=published || !retained_fit_groups[block%(cfg.n_q2*cfg.n_xb)];
+        fit_role=is_nuisance?"fitted_tprime_feedin":
+                 (model_fit_mode?"derived_physics_model":"independent_physics_parameter");
         value=parameters[column];error=std::sqrt(covariance(column,column));target_error=std::abs(value)*target_fraction;
         parameter_tree.Fill();
         parameter_csv<<column<<','<<active<<','<<block<<','<<region<<','<<it<<','<<iq<<','<<ix<<','
-                     <<component_name<<','<<value<<','<<error<<','<<target_error<<','<<is_nuisance<<'\n';
+                     <<component_name<<','<<value<<','<<error<<','<<target_error<<','<<is_nuisance<<','<<is_fixed<<','<<fit_role<<'\n';
     }
     parameter_tree.Write();
 
@@ -231,11 +248,12 @@ inline void ExclPi0XSecAnalysis::write_migration_results() {
     // regions. Means describe the response-weighted generated events reaching
     // accepted reconstructed bins, not a bin-centering correction.
     auto truth_csv=csv("migration_truth_blocks.csv");
-    truth_csv<<"truth_block,active_block_index,region,it,iq,ix,events,response_weight,sum_q2,sum_xb,sum_t,sum_tprime,sum_epsilon,mean_q2,mean_xb,mean_t,mean_tprime,mean_epsilon,epsilon_max\n";
+    truth_csv<<"truth_block,active_block_index,region,fit_treatment,it,iq,ix,events,response_weight,sum_q2,sum_xb,sum_t,sum_tprime,sum_epsilon,mean_q2,mean_xb,mean_t,mean_tprime,mean_epsilon,epsilon_max\n";
     TTree truth_tree("migration_truth_blocks","Generated-origin weighted moments; inactive guard means are NaN");
     Long64_t events=0;double weight=0,sumq=0,sumx=0,sumt=0,sumtp=0,sume=0,mq=0,mx=0,mt=0,mtp=0,me=0;
     truth_tree.Branch("truth_block",&block);truth_tree.Branch("active_block_index",&active);
-    truth_tree.Branch("region",&region);truth_tree.Branch("it",&it);truth_tree.Branch("iq",&iq);truth_tree.Branch("ix",&ix);
+    std::string fit_treatment;
+    truth_tree.Branch("region",&region);truth_tree.Branch("fit_treatment",&fit_treatment);truth_tree.Branch("it",&it);truth_tree.Branch("iq",&iq);truth_tree.Branch("ix",&ix);
     truth_tree.Branch("events",&events);truth_tree.Branch("response_weight",&weight);
     truth_tree.Branch("sum_q2",&sumq);truth_tree.Branch("sum_xb",&sumx);truth_tree.Branch("sum_t",&sumt);
     truth_tree.Branch("sum_tprime",&sumtp);truth_tree.Branch("sum_epsilon",&sume);
@@ -245,12 +263,14 @@ inline void ExclPi0XSecAnalysis::write_migration_results() {
     for(block=0;block<nb;++block) {
         const auto found=std::find(active_truth_blocks.begin(),active_truth_blocks.end(),block);
         active=found==active_truth_blocks.end()?-1:static_cast<int>(found-active_truth_blocks.begin());
-        region=label(block);const auto index=indices(block);it=index[0];iq=index[1];ix=index[2];
+        region=label(block);fit_treatment=block<published?"physics":
+            (nps_xsec::is_fitted_tprime_feedin(block,published)?"fitted_tprime_feedin":"fixed_model_feedin");
+        const auto index=indices(block);it=index[0];iq=index[1];ix=index[2];
         const auto& m=truth_moments[block];events=m.events;weight=m.weight;
         sumq=m.q2;sumx=m.xb;sumt=m.t;sumtp=m.tprime;sume=m.epsilon;
         mq=weight>0?sumq/weight:nan;mx=weight>0?sumx/weight:nan;mt=weight>0?sumt/weight:nan;
         mtp=weight>0?sumtp/weight:nan;me=weight>0?sume/weight:nan;max_eps=m.epsilon_max;truth_tree.Fill();
-        truth_csv<<block<<','<<active<<','<<region<<','<<it<<','<<iq<<','<<ix<<','<<events<<','<<weight<<','
+        truth_csv<<block<<','<<active<<','<<region<<','<<fit_treatment<<','<<it<<','<<iq<<','<<ix<<','<<events<<','<<weight<<','
                  <<sumq<<','<<sumx<<','<<sumt<<','<<sumtp<<','<<sume<<','<<mq<<','<<mx<<','<<mt<<','<<mtp<<','<<me<<','<<max_eps<<'\n';
     }
     truth_tree.Write();
@@ -307,10 +327,11 @@ inline void ExclPi0XSecAnalysis::write_migration_results() {
     // recomputed at the final coefficients (equal within convergence tolerance).
     // Excluded rows have fit_index=-1 and variance_used=NaN, never pseudocounts.
     auto reco_csv=csv("migration_reco_rows.csv");
-    reco_csv<<"reco_row,fit_index,it,iq,ix,ip,phi_lo,phi_hi,data,data_variance,variance_used,mc_variance_used,mc_variance_at_final,prediction,parameter_prediction_variance,residual,pull_conditional,has_response,exclusion\n";
+    reco_csv<<"reco_row,fit_index,it,iq,ix,ip,phi_lo,phi_hi,data,data_variance,variance_used,mc_variance_used,mc_variance_at_final,prediction,parameter_prediction_variance,residual,pull_conditional,has_response,exclusion,fixed_prediction,fixed_mc_variance\n";
     TTree reco_tree("migration_reco_rows","All reconstructed rows; exact final-solve inputs and exclusion mapping");
     int fit_index=0,ip=0,support=0;std::string exclusion;
     double plo=0,phi=0,data=0,data_variance=0,variance_used=0,mc_used=0,mc_final=0,prediction=0,parameter_variance=0,residual=0,pull=0;
+    double fixed_prediction=0,fixed_mc_variance=0;
     reco_tree.Branch("reco_row",&row);reco_tree.Branch("fit_index",&fit_index);
     reco_tree.Branch("it",&it);reco_tree.Branch("iq",&iq);reco_tree.Branch("ix",&ix);reco_tree.Branch("ip",&ip);
     reco_tree.Branch("phi_lo",&plo);reco_tree.Branch("phi_hi",&phi);
@@ -319,6 +340,7 @@ inline void ExclPi0XSecAnalysis::write_migration_results() {
     reco_tree.Branch("mc_variance_at_final",&mc_final);reco_tree.Branch("prediction",&prediction);
     reco_tree.Branch("parameter_prediction_variance",&parameter_variance);reco_tree.Branch("residual",&residual);
     reco_tree.Branch("pull_conditional",&pull);reco_tree.Branch("has_response",&support);reco_tree.Branch("exclusion",&exclusion);
+    reco_tree.Branch("fixed_prediction",&fixed_prediction);reco_tree.Branch("fixed_mc_variance",&fixed_mc_variance);
     std::vector<int> fit_index_by_row(nr,-1);
     TVectorD used_rows(fit_rows.size()),used_data(fit_rows.size()),used_variance(fit_rows.size());
     for(size_t i=0;i<fit_rows.size();++i) {fit_index_by_row[fit_rows[i]]=static_cast<int>(i);used_rows[i]=fit_rows[i];used_variance[i]=fit_variance[i];}
@@ -335,12 +357,28 @@ inline void ExclPi0XSecAnalysis::write_migration_results() {
             exclusion=scaled_rows[row].included ? "included" : scaled_rows[row].exclusion_reason;
         variance_used=(cfg.fit_objective=="scaled-poisson" || fit_index<0)?nan:fit_variance[fit_index];
         mc_used=(cfg.fit_objective=="scaled-poisson" || fit_index<0)?nan:variance_used-data_variance;
+        fixed_prediction=fixed_feedin_prediction[row];fixed_mc_variance=fixed_feedin_mc_variance[row];
+        if(event_model()) {
+            fixed_prediction=fixed_mc_variance=0.;
+            for(const auto* event:model_all_rows.events[row]) {
+                const auto found=std::find(model_all_rows.blocks.begin(),model_all_rows.blocks.end(),event->block);
+                if(found==model_all_rows.blocks.end() || !model_all_rows.is_fixed(found-model_all_rows.blocks.begin()))continue;
+                const auto baseline=event->baseline.unseparated();
+                const double value=std::inner_product(event->basis.begin(),event->basis.end(),baseline.begin(),0.);
+                fixed_prediction+=value;fixed_mc_variance+=value*value;
+            }
+        }
         mc_final=prediction=parameter_variance=nan;
         if (retained && np>0) {
-            mc_final=nps_xsec::mc_prediction_variance(migration_response[row],active_truth_blocks,migration_fit.parameters);
-            prediction=std::inner_product(response_design[row].begin(),response_design[row].end(),migration_fit.parameters.begin(),0.0);
+            mc_final=nps_xsec::mc_prediction_variance(migration_response[row],active_truth_blocks,migration_fit.parameters)+
+                     (event_model()?0.:fixed_feedin_mc_variance[row]);
+            prediction=(event_model()?0.:fixed_feedin_prediction[row])+std::inner_product(response_design[row].begin(),response_design[row].end(),migration_fit.parameters.begin(),0.0);
             parameter_variance=0;
-            for(int i=0;i<np;++i) for(int j=0;j<np;++j) parameter_variance+=design(row,i)*covariance(i,j)*design(row,j);
+            if(event_model()) {
+                prediction=model_rows[row].prediction;mc_final=model_rows[row].mc_variance;
+                parameter_variance=model_row_variance(row);
+            } else for(int i=0;i<np;++i) for(int j=0;j<np;++j)
+                parameter_variance+=design(row,i)*covariance(i,j)*design(row,j);
         }
         residual=data-prediction;
         pull=cfg.fit_objective=="scaled-poisson" ?
@@ -350,7 +388,7 @@ inline void ExclPi0XSecAnalysis::write_migration_results() {
         reco_tree.Fill();
         reco_csv<<row<<','<<fit_index<<','<<it<<','<<iq<<','<<ix<<','<<ip<<','<<plo<<','<<phi<<','<<data<<','
                 <<data_variance<<','<<variance_used<<','<<mc_used<<','<<mc_final<<','<<prediction<<','<<parameter_variance<<','
-                <<residual<<','<<pull<<','<<support<<','<<exclusion<<'\n';
+                <<residual<<','<<pull<<','<<support<<','<<exclusion<<','<<fixed_prediction<<','<<fixed_mc_variance<<'\n';
     }
     reco_tree.Write();used_rows.Write("migration_fit_row_indices");used_data.Write("migration_fit_data");used_variance.Write("migration_fit_variance");
     TParameter<int>("migration_mc_iterations",mc_iterations).Write();

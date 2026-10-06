@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-"""Fit shared pi0 LT/TT and independent U for each exclusive-SIMC setting.
+"""Joint event-level SigParam M0 fit for exclusive-SIMC epsilon settings.
 
-Each setting supplies its own measured yield-per-mC rows and one-mC response.
-The rows are stacked; each truth block has one U per setting and shared LT/TT.
-U is refitted with LT/TT, not fixed to the earlier single-setting estimate.
-The complete Poissonized, within-event MC covariance is carried into the fit.
-After fitting, separate U = T + epsilon_nominal*L in each truth block.
+Every setting has its own U normalization and U slope.  LT/TT model
+normalizations are shared.  The low-tprime feed-in has one U per setting and
+shared LT/TT; Q2/xB feed-in remains a fixed nominal event-model contribution.
 """
 
 # python3 src/xsec_extract/run_joint_xsec_fit.py --prepare-setting xsec_config_x36_5_407.json output/simc/simc_x36_5_407/worksim/ --prepare-setting xsec_config_x36_4.json output/simc/nps_simc_20260824_135058/worksim/simc_gfortran_updated/worksim/ --binning-config xsec_config_x36_4.json --mmiss-select ellipse --mmiss-lower 0.6 --mmiss-upper 1.1 --positive-xsec --fit-variance finite-mc --out-dir output/joint_x36_5_407_x36_4_LH2
@@ -15,6 +13,7 @@ import csv
 import hashlib
 import json
 import math
+import os
 import re
 import shlex
 from pathlib import Path
@@ -22,8 +21,13 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 
-import numpy as np
+# Replica workers are process-parallel.  Keep BLAS/OpenMP single-threaded to
+# avoid multiplying each worker by the host library's default thread count.
+os.environ["OPENBLAS_NUM_THREADS"]="1"
+os.environ["OMP_NUM_THREADS"]="1"
+
 import uproot
 
 from generate_xsec_config import diamond_vertices, render
@@ -105,6 +109,8 @@ def read_config(path):
     config = json.loads(path.read_text(), parse_constant=reject_constant)
     need(isinstance(config, dict), f"config is not an object: {path}")
     render(config)  # Use the same schema and bin validation as single-setting extraction.
+    need(config.get("model_identifier") == "sigparam2021_pi0",
+         f"{path}: joint M0 requires model_identifier=sigparam2021_pi0")
     return path, config, config_bins(config)
 
 
@@ -139,125 +145,6 @@ def nominal_epsilons(configs, overrides=None):
              f"{label}: nominal epsilon must be finite and in (0,1)")
         result.append(dict(info, setting_index=index, kinematic=label, epsilon=value))
     return result
-
-
-def write_csv(path, fields, records):
-    with path.open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
-        writer.writeheader()
-        writer.writerows(records)
-
-
-def separate_lt(out_dir, nominal, rank_tolerance):
-    """Per-block GLS separation, retaining all cross-block and LT/TT covariance.
-
-    Two settings define an exact linear transformation, even when constrained
-    fit covariance is unavailable. More settings require the U covariance for
-    GLS weights. No diagnostic curvature is substituted for a covariance.
-    """
-    parameters = rows(out_dir / "joint_parameters.csv")
-    npar = len(parameters)
-    need([int(r["parameter_index"]) for r in parameters] == list(range(npar)),
-         "joint parameter indices are not contiguous")
-    covariance = np.full((npar, npar), np.nan)
-    for record in rows(out_dir / "joint_covariance.csv"):
-        covariance[int(record["parameter_i"]), int(record["parameter_j"])] = float(
-            record["stat_plus_mc_covariance"])
-    values = np.array([float(r["value"]) for r in parameters])
-    blocks = sorted({int(r["truth_block"]) for r in parameters})
-    output, transform, available, diagnostics = [], [], [], []
-    for block in blocks:
-        indices = [i for i, r in enumerate(parameters) if int(r["truth_block"]) == block]
-        u_indices = [i for i in indices if parameters[i]["component"] == "U"]
-        settings = [int(parameters[i]["setting_index"]) for i in u_indices]
-        epsilon = np.array([nominal[s]["epsilon"] for s in settings])
-        design = np.column_stack((np.ones(len(settings)), epsilon))
-        status, weights, chi2 = "ok", None, None
-        if len(settings) < 2:
-            status = "insufficient_settings"
-        else:
-            singular = np.linalg.svd(design, compute_uv=False)
-            if singular[-1] <= rank_tolerance * singular[0]:
-                status = "degenerate_epsilon"
-            elif len(settings) == 2:
-                weights = np.linalg.solve(design, np.eye(2))
-                chi2 = 0.0
-            else:
-                cov_u = covariance[np.ix_(u_indices, u_indices)]
-                if not np.isfinite(cov_u).all():
-                    status = "unavailable_joint_covariance"
-                else:
-                    try:
-                        chol = np.linalg.cholesky(cov_u)
-                        whitening = np.linalg.solve(chol, np.eye(len(settings)))
-                        whitened = whitening @ design
-                        left, singular, right = np.linalg.svd(whitened, full_matrices=False)
-                        if singular[-1] <= rank_tolerance * singular[0]:
-                            status = "degenerate_weighted_design"
-                        else:
-                            weights = (right.T / singular) @ left.T @ whitening
-                            residual = whitening @ (values[u_indices] - design @ (weights @ values[u_indices]))
-                            chi2 = float(residual @ residual)
-                    except np.linalg.LinAlgError:
-                        status = "invalid_joint_covariance"
-        if weights is not None and not np.isfinite(covariance[np.ix_(u_indices, u_indices)]).all():
-            status = "central_only_covariance_unavailable"
-        diagnostics.append({"truth_block": block, "setting_indices": settings,
-                            "epsilon_span": float(np.ptp(epsilon)) if len(epsilon) else None,
-                            "status": status, "chi2": chi2, "ndf": max(0, len(settings)-2)})
-        for term, component in enumerate(("T", "L", "LT", "TT")):
-            jacobian = np.zeros(npar)
-            valid = True
-            row_status = status
-            if term < 2:
-                valid = weights is not None
-                if valid:
-                    jacobian[u_indices] = weights[term]
-            else:
-                source = [i for i in indices if parameters[i]["component"] == component]
-                need(len(source) == 1, f"missing shared {component} in truth block {block}")
-                jacobian[source[0]] = 1
-                row_status = "shared_joint_fit"
-            labels = {key: parameters[indices[0]][key] for key in ("truth_block", "region", "it", "iq", "ix")}
-            output.append(dict(labels, parameter_index=len(output), component=component,
-                               value=float(jacobian @ values) if valid else math.nan,
-                               error_stat_plus_mc=math.nan, status=row_status))
-            transform.append(jacobian)
-            available.append(valid)
-    transform = np.array(transform)
-    separated_cov = np.full((len(output), len(output)), np.nan)
-    # Restrict each product to nonzero support: unavailable covariances must
-    # not contaminate unrelated coefficients through 0*NaN.
-    for i in range(len(output)):
-        if not available[i]:
-            continue
-        ii = np.flatnonzero(transform[i])
-        for j in range(i + 1):
-            if not available[j]:
-                continue
-            jj = np.flatnonzero(transform[j])
-            subcov = covariance[np.ix_(ii, jj)]
-            if np.isfinite(subcov).all():
-                value = float(transform[i, ii] @ subcov @ transform[j, jj])
-                separated_cov[i, j] = separated_cov[j, i] = value
-        variance = separated_cov[i, i]
-        if math.isfinite(variance) and variance >= 0:
-            output[i]["error_stat_plus_mc"] = math.sqrt(variance)
-    write_csv(out_dir / "joint_separated_parameters.csv",
-              ("parameter_index", "truth_block", "region", "it", "iq", "ix", "component",
-               "value", "error_stat_plus_mc", "status"), output)
-    write_csv(out_dir / "joint_separated_covariance.csv",
-              ("parameter_i", "parameter_j", "stat_plus_mc_covariance"),
-              ({"parameter_i": i, "parameter_j": j, "stat_plus_mc_covariance": separated_cov[i, j]}
-               for i in range(len(output)) for j in range(len(output))))
-    summary = {"convention": "sigmaU = sigmaT + epsilon_nominal * sigmaL",
-               "method": "per_truth_block_GLS_from_joint_U",
-               "epsilon_uncertainty": "not_propagated_nominal_values_fixed",
-               "positivity": "no_additional_constraints_on_separated_T_or_L",
-               "covariance": "full_joint_stat_plus_mc_propagated_including_cross_blocks_and_LT_TT",
-               "settings": nominal, "blocks": diagnostics}
-    (out_dir / "joint_lt_separation.json").write_text(json.dumps(summary, indent=2, allow_nan=False) + "\n")
-    return summary
 
 
 def read_metadata(path):
@@ -416,11 +303,14 @@ def load_setting(config_path, config, bins, out_dir):
     need(out_dir.is_dir(), f"{label}: output directory does not exist: {out_dir}")
     preparation = out_dir / "joint_input_metadata.txt"
     prepared = preparation.is_file()
+    need(prepared, f"{label}: regenerate prepared joint M0 inputs")
     root_path = preparation if prepared else out_dir / Path(config["out_root"]).name
     metadata = read_metadata(root_path)
     if prepared:
-        need(metadata.get("input_stage") == "prepared_joint_inputs_v1" and
-             metadata.get("fit_objective") == "not_run", f"{label}: invalid preparation metadata")
+        need(metadata.get("input_stage") == "prepared_joint_m0_inputs_v3" and
+             metadata.get("fit_objective") == "not_run" and
+             metadata.get("joint_model") == "sigparam2021_pi0_event_level_M0",
+             f"{label}: invalid or obsolete joint M0 preparation metadata")
     saved_label = metadata.get("configured_kinematic")
     if saved_label is not None:
         need(saved_label == label,
@@ -489,6 +379,9 @@ def load_setting(config_path, config, bins, out_dir):
         need(finite(record, "data_variance", label) >= 0,
              f"{label}: negative observed variance in row {r}")
         finite(record, "data", label)
+        need(finite(record, "fixed_feedin_mc_variance", label) >= 0,
+             f"{label}: negative fixed-feed-in MC variance in row {r}")
+        finite(record, "fixed_feedin_prediction", label)
 
     truth_path = out_dir / "migration_truth_blocks.csv"
     truth = rows(truth_path)
@@ -514,33 +407,33 @@ def load_setting(config_path, config, bins, out_dir):
                 need(math.isclose(values[3 + 3*x + y], values[3 + 3*y + x],
                                   rel_tol=1e-12, abs_tol=1e-24),
                      f"{label}: asymmetric response covariance at ({r},{b})")
+    event_path = out_dir / "joint_model_events.csv"
+    event_rows = rows(event_path)
+    need(event_rows, f"{label}: empty joint M0 event cache")
+    required = {"event_index", "reco_row", "truth_block", "treatment", "response_weight",
+                "tau", "epsilon", "baseline_U", "baseline_LT", "baseline_TT",
+                "basis_U", "basis_LT", "basis_TT"}
+    need(required.issubset(event_rows[0]), f"{label}: incomplete joint M0 event schema")
+    for index, record in enumerate(event_rows):
+        need(integer(record, "event_index", label) == index,
+             f"{label}: noncontiguous joint event index at {index}")
+        need(0 <= integer(record, "reco_row", label) < nr,
+             f"{label}: event outside reconstructed rows")
+        need(0 <= integer(record, "truth_block", label) < nb,
+             f"{label}: event outside truth blocks")
+        need(record["treatment"] in ("physics_model", "fitted_tprime_feedin", "fixed_model_feedin"),
+             f"{label}: invalid joint event treatment")
+        for key in ("response_weight", "tau", "epsilon", "baseline_U", "baseline_LT",
+                    "baseline_TT", "basis_U", "basis_LT", "basis_TT"):
+            finite(record, key, label)
     return {"label": label, "config_path": config_path, "config": config,
             "out_dir": out_dir, "root_path": root_path, "metadata": metadata,
             "data_file": data_file, "simc_file": simc_file,
             "provenance_status": provenance_status, "response_source": response_source,
             "reco": reco, "cells": cells, "epsilon": epsilon,
+            "event_path": event_path,
             "sources": [root_path, slice_path, reco_path, truth_path,
-                        diagnostics_path] + cell_sources}
-
-
-def write_problem(path, settings, bins):
-    nt = len(bins["tprime_bin_edges"]) - 1
-    nq = len(bins["q2_bin_edges"]) - 1
-    nx = len(bins["xb_bin_edges_by_q2"][0]) - 1
-    nphi = len(bins["phi_bin_edges"]) - 1
-    nb = nt * nq * nx + 6
-    nr = sum(len(setting["reco"]) for setting in settings)
-    with path.open("w") as output:
-        output.write(f"joint_xsec_v3 {len(settings)} {nt} {nq} {nx} {nphi} {nr} {nb}\n")
-        for setting in settings:
-            output.write(" ".join(format(e, ".17g") for e in setting["epsilon"]) + "\n")
-        for si, setting in enumerate(settings):
-            for r, record in enumerate(setting["reco"]):
-                output.write(f"{si} {r} {record['data']} {record['data_variance']}")
-                for b in range(nb):
-                    cell = setting["cells"][r * nb + b]
-                    output.write(" " + " ".join(cell[key] for key in BASIS + COV))
-                output.write("\n")
+                        diagnostics_path, event_path] + cell_sources}
 
 
 def root_environment():
@@ -623,7 +516,7 @@ def prepare_and_fit(args):
             (build / "xsec_config.h").write_text(render(config))
             binary = build / "prepare_inputs"
             subprocess.run(["g++", "-std=c++17", "-O2", "-I" + str(build), "-I" + str(HERE),
-                            str(HERE / "excl_xsec_pi0_analysis_no_simc_model.C"),
+                            str(HERE / "excl_xsec_pi0_analysis_simc_model.C"),
                             *flags, "-lMinuit2", "-o", str(binary)], env=env, cwd=REPO, check=True)
             command = [str(binary), "--prepare-joint-inputs", "--kin", label,
                        "--data-file", config["data_file"], "--sim-file", config["simc_file"],
@@ -641,6 +534,7 @@ def prepare_and_fit(args):
         "common_binning": common}, indent=2) + "\n")
     print(f"[PREPARED] Reusable inputs written to {inputs_dir}", flush=True)
     command = pairs + ["--out-dir", str(out_dir), "--fit-variance", args.fit_variance,
+                       "--fit-strategy", args.fit_strategy, "--model-starts", str(args.model_starts),
                        "--rank-tolerance", str(args.rank_tolerance),
                        "--mc-max-iterations", str(args.mc_max_iterations),
                        "--mc-fit-tolerance", str(args.mc_fit_tolerance)]
@@ -653,6 +547,16 @@ def prepare_and_fit(args):
     if args.partons:
         command += ["--partons", "--partons-warmups", str(args.partons_warmups),
                     "--partons-calls", str(args.partons_calls)]
+    command += ["--fit-objective", args.fit_objective]
+    if args.publish_calibrated_release:
+        command += ["--publish-calibrated-release", "--toy-jobs", str(args.toy_jobs),
+                    "--toy-seed", str(args.toy_seed)]
+        if args.reuse_toys:
+            command.append("--reuse-toys")
+        for flag,value in (("--calibration-source",args.calibration_source),
+                           ("--calibrated-out-dir",args.calibrated_out_dir),
+                           ("--final-report-pdf",args.final_report_pdf)):
+            if value is not None:command += [flag,str(value)]
     return main(command)
 
 
@@ -676,7 +580,23 @@ def main(argv=None):
     parser.add_argument("--partons-warmups", type=int, default=10000)
     parser.add_argument("--partons-calls", type=int, default=100000)
     parser.add_argument("--fit-variance", choices=("data", "finite-mc"), default="finite-mc")
-    parser.add_argument("--positive-xsec", action="store_true")
+    parser.add_argument("--fit-objective", choices=("gaussian", "scaled-poisson"), default="gaussian")
+    parser.add_argument("--fit-strategy", choices=("staged_feasible",), default="staged_feasible",
+                        help="joint M0 active-set constrained solver")
+    parser.add_argument("--model-starts", type=int, default=6)
+    positivity=parser.add_mutually_exclusive_group()
+    positivity.add_argument("--positive-xsec", action="store_true")
+    positivity.add_argument("--no-positive-xsec", dest="positive_xsec", action="store_false")
+    parser.set_defaults(positive_xsec=False)
+    parser.add_argument("--publish-calibrated-release", action="store_true",
+                        help="generate/reuse 500 joint physical-event toys and publish calibrated intervals")
+    parser.add_argument("--reuse-toys", action="store_true",
+                        help="reuse an exactly matching --calibration-source instead of generating fresh toys")
+    parser.add_argument("--toy-jobs", type=int, default=0, help="toy worker processes; 0 uses the affinity mask")
+    parser.add_argument("--toy-seed", type=int, default=20261007)
+    parser.add_argument("--calibration-source", type=Path)
+    parser.add_argument("--calibrated-out-dir", type=Path)
+    parser.add_argument("--final-report-pdf", type=Path)
     parser.add_argument("--nominal-epsilon", type=float, action="append", metavar="EPSILON",
                         help="override nominal L/T separation epsilon; repeat once per setting in order")
     parser.add_argument("--rank-tolerance", type=float, default=1e-10)
@@ -686,20 +606,41 @@ def main(argv=None):
     try:
         need(args.partons_warmups > 0 and args.partons_calls > 0, "PARTONS call counts must be positive")
         need(not (args.no_plots and args.partons), "--partons requires plots")
+        need(args.toy_jobs >= 0, "--toy-jobs must be zero or positive")
+        need(args.toy_seed >= 0, "--toy-seed must be nonnegative")
         if args.plot_only:
             need(args.out_dir is None and not args.no_plots and args.nominal_epsilon is None and
+                 not args.publish_calibrated_release and not args.reuse_toys and
+                 all(value is None for value in (args.calibration_source,args.calibrated_out_dir,
+                                                  args.final_report_pdf)) and
                  all(v is None for v in (args.inputs_dir, args.binning_config, args.mmiss_select,
                                          args.mmiss_lower, args.mmiss_upper)),
-                 "--plot-only uses the saved fit and cannot change inputs, epsilon, or output directory")
+                 "--plot-only uses the saved fit and cannot change inputs, release, epsilon, or output directory")
             from joint_xsec_plots import render as render_plots
             render_plots(args.plot_only, args.partons, args.partons_warmups, args.partons_calls)
             return 0
+        need(not args.partons,
+             "--partons is not implemented for the joint event-level M0 report")
+        need(args.fit_objective == "gaussian",
+             "joint event-level M0 currently supports --fit-objective gaussian only")
+        need(not args.reuse_toys or args.publish_calibrated_release,
+             "--reuse-toys requires --publish-calibrated-release")
+        need(args.publish_calibrated_release or all(value is None for value in (
+             args.calibration_source,args.calibrated_out_dir,args.final_report_pdf)),
+             "calibrated-release paths require --publish-calibrated-release")
+        if args.publish_calibrated_release:
+            need(args.positive_xsec and args.fit_strategy == "staged_feasible" and
+                 args.fit_variance == "finite-mc" and not args.no_plots,
+                 "calibrated release requires staged_feasible, finite-mc, positive-xsec, and plots")
+            need(args.reuse_toys == (args.calibration_source is not None),
+                 "use --calibration-source together with --reuse-toys; fresh campaigns choose a new source")
         need(args.out_dir is not None, "--out-dir is required for fitting")
         need(len(args.setting or args.prepare_setting) >= 2, "supply at least two setting pairs")
         need(math.isfinite(args.rank_tolerance) and 0 < args.rank_tolerance < 1,
              "rank tolerance must be in (0,1)")
         need(args.mc_max_iterations > 0 and math.isfinite(args.mc_fit_tolerance) and
              0 < args.mc_fit_tolerance < 1, "invalid MC convergence controls")
+        need(args.model_starts > 0, "--model-starts must be positive")
         if args.prepare_setting:
             return prepare_and_fit(args)
         need(all(value is None for value in (args.inputs_dir, args.binning_config,
@@ -707,6 +648,20 @@ def main(argv=None):
              "preparation options require --prepare-setting; saved input bins/cuts cannot be changed")
         out_dir = args.out_dir.expanduser().resolve()
         need(not out_dir.exists(), f"joint output directory already exists: {out_dir}")
+        if args.publish_calibrated_release:
+            early_release=(args.calibrated_out_dir or out_dir.with_name(out_dir.name+"_calibrated")).expanduser().resolve()
+            early_pdf=(args.final_report_pdf.expanduser().resolve() if args.final_report_pdf else
+                       early_release/"joint_preliminary_cross_section_report.pdf")
+            need(not early_release.exists(),f"refusing existing calibrated release: {early_release}")
+            need(early_pdf.parent==early_release,
+                 "--final-report-pdf must be directly inside --calibrated-out-dir")
+            if args.reuse_toys:
+                early_campaign=args.calibration_source.expanduser().resolve()
+                need(early_campaign.is_dir(),f"calibration campaign does not exist: {early_campaign}")
+                for relative in ("campaign_manifest.json","central.npz","central.json",
+                                 "toys/summary.json","toys/replicas.npz"):
+                    need((early_campaign/relative).is_file(),
+                         f"calibration campaign is incomplete: {early_campaign/relative}")
         configs = [read_config(Path(pair[0])) for pair in args.setting]
         nominal = nominal_epsilons([config for _, config, _ in configs], args.nominal_epsilon)
         reference = configs[0][2]
@@ -724,38 +679,30 @@ def main(argv=None):
         need(len(set(data_files)) == len(data_files),
              "duplicate data file provenance in joint inputs")
         target = check_setting_flags(settings, args.fit_variance, args.positive_xsec)
+        if args.publish_calibrated_release:
+            need(settings[0]["metadata"]["exclusive_selection"] == "ellipse",
+                 "fresh/reused joint calibrated release requires the frozen ellipse selection")
+            if args.reuse_toys:
+                from joint_m0_release import check_campaign
+                check_campaign(args.calibration_source.expanduser().resolve(),settings,reference)
         with tempfile.TemporaryDirectory(prefix="pi0_joint_xsec_") as temporary:
-            temp = Path(temporary)
-            (temp / "xsec_config.h").write_text(render(configs[0][1]))
-            problem = temp / "problem.txt"
-            write_problem(problem, settings, reference)
-            compile_command = ("source /usr/share/Modules/init/csh; "
-                               "source /group/nps/singhav/setup.csh; "
-                               f"g++ -std=c++17 -O2 -I{temp} -I{HERE} "
-                               f"{HERE / 'xsec_joint_solver.C'} "
-                               "`root-config --cflags --libs` "
-                               f"-o {temp / 'joint_solver'}")
-            subprocess.run(["csh", "-c", compile_command], cwd=REPO, check=True)
-            result = temp / "result"
-            result.mkdir()
-            subprocess.run(["csh", "-c", "source /usr/share/Modules/init/csh; "
-                            "source /group/nps/singhav/setup.csh; "
-                            f"{temp / 'joint_solver'} {problem} {result} "
-                            f"{args.fit_variance} {int(args.positive_xsec)} "
-                            f"{args.rank_tolerance:.17g} {args.mc_max_iterations} "
-                            f"{args.mc_fit_tolerance:.17g}"], cwd=REPO, check=True)
-            separation = separate_lt(result, nominal, args.rank_tolerance)
+            result = Path(temporary) / "result"
+            from joint_m0_solver import fit_and_write
+            summary, _, _ = fit_and_write(settings, reference, result,
+                variance_mode=args.fit_variance, positive=args.positive_xsec,
+                rank_tolerance=args.rank_tolerance, max_iterations=args.mc_max_iterations,
+                tolerance=args.mc_fit_tolerance, starts=args.model_starts)
             manifest = {
-                "lt_separation": separation,
-                "method": "shared_LT_TT_independent_U_forward_response_fit",
+                "method": "joint_event_level_sigparam2021_M0",
                 "parameter_contract": {
-                    "shared_components": ["LT", "TT"],
-                    "per_setting_components": ["U"],
-                    "setting_index": "zero-based --setting order; -1 denotes shared",
-                    "U": "independently refitted per setting and truth block",
-                    "unsupported_guard_U": "omitted when that setting has no fitted-row response",
-                    "positivity": "per-setting event epsilon maximum in each supported truth block"},
-                "normalization": "each setting yield per mC and one-mC SIMC response as separate rows",
+                    "per_setting_model_parameters": ["N_U", "DeltaB_U"],
+                    "shared_model_parameters": ["N_LT", "N_TT"],
+                    "per_setting_tprime_feedin": ["U"],
+                    "shared_tprime_feedin": ["LT", "TT"],
+                    "fixed_feedin": ["q2_below", "q2_above", "xb_below", "xb_above", "tprime_above"],
+                    "positivity": "physical event epsilon plus per-setting low-tprime epsilon envelope"},
+                "normalization": "each setting yield per mC and event-level one-mC SIMC model response",
+                "nominal_epsilon_context": nominal,
                 "target_factor_uncertainty": "not propagated",
                 "target": target,
                 "selection": {key: settings[0]["metadata"][key] for key in (
@@ -777,6 +724,7 @@ def main(argv=None):
                               "source_sha256": {str(p): digest(p) for p in s["sources"]}}
                              for s in settings],
                 "options": {"fit_objective": "gaussian", "fit_variance": args.fit_variance,
+                            "fit_strategy": args.fit_strategy, "model_starts": args.model_starts,
                             "positive_xsec": args.positive_xsec,
                             "rank_tolerance": args.rank_tolerance,
                             "mc_max_iterations": args.mc_max_iterations,
@@ -785,15 +733,57 @@ def main(argv=None):
             out_dir.parent.mkdir(parents=True, exist_ok=True)
             shutil.copytree(result, out_dir)
         print(f"Joint fit written to {out_dir}")
-        statuses = {}
-        for block in separation["blocks"]:
-            statuses[block["status"]] = statuses.get(block["status"], 0) + 1
-        print("[L/T] Truth-block separation status: " +
-              ", ".join(f"{status}={count}" for status, count in statuses.items()))
+        print(f"[JOINT_M0] parameters={summary['parameters']} rank={summary['rank']} "
+              f"chi2/ndf={summary['chi2']}/{summary['ndf']} boundary={summary['positivity_boundary_active']}")
         if not args.no_plots:
             from joint_xsec_plots import render as render_plots
             render_plots(out_dir, args.partons, args.partons_warmups, args.partons_calls)
-    except (ValueError, OSError, subprocess.CalledProcessError, KeyError) as error:
+        release_pdf=None
+        if args.publish_calibrated_release:
+            from joint_m0_release import generate_campaign, publish_release
+            release_dir=(args.calibrated_out_dir or out_dir.with_name(out_dir.name+"_calibrated")).expanduser().resolve()
+            final_pdf=(args.final_report_pdf.expanduser().resolve() if args.final_report_pdf else
+                       release_dir/"joint_preliminary_cross_section_report.pdf")
+            if args.reuse_toys:
+                campaign=args.calibration_source.expanduser().resolve()
+            else:
+                tag=time.strftime("%Y%m%dT%H%M%S",time.gmtime())+f"_{os.getpid()}"
+                campaign=out_dir/"toy_campaigns"/tag
+                environment=root_environment();os.environ.update({key:value for key,value in environment.items()
+                                                                   if key in ("PATH","LD_LIBRARY_PATH","ROOTSYS")})
+                print(f"[TOYS] generating 500 accepted joint physical-event toys at {campaign}",flush=True)
+                generate_campaign(campaign,settings,reference,jobs=args.toy_jobs,seed=args.toy_seed,
+                    variance_mode=args.fit_variance,starts=args.model_starts,
+                    rank_tolerance=args.rank_tolerance,max_iterations=args.mc_max_iterations,
+                    tolerance=args.mc_fit_tolerance,environment=environment)
+            print(f"[RELEASE] validating and publishing calibrated joint intervals to {release_dir}",flush=True)
+            release_pdf=publish_release(campaign,release_dir,settings,reference,
+                                        fit_output=out_dir,final_pdf=final_pdf)
+            manifest=json.loads((out_dir/"joint_manifest.json").read_text())
+            manifest["calibrated_release"]={"status":"complete","campaign":str(campaign),
+                "output":str(release_dir),"final_report_pdf":str(release_pdf),"accepted_toys":500}
+            manifest["target_factor_uncertainty"]="separate_fully_correlated_scale_covariance_in_calibrated_release"
+            (out_dir/"joint_manifest.json").write_text(json.dumps(manifest,indent=2)+"\n")
+        artifacts=[out_dir/name for name in ("joint_xsec_output.root","joint_model_parameters.csv",
+            "joint_model_covariance.csv","joint_structure_functions.csv","joint_rows.csv",
+            "joint_positivity.csv","joint_manifest.json","joint_summary.txt")]
+        if not args.no_plots:artifacts.append(out_dir/"all_joint_xsec_plots.pdf")
+        if release_pdf is not None:
+            release_dir=release_pdf.parent
+            artifacts += [release_pdf,release_dir/"calibration_summary.json",
+                release_dir/"joint_preliminary_cross_sections_calibrated.csv",
+                release_dir/"published_covariance_calibrated68.csv",release_dir/"pipeline_linkage.json",
+                campaign/"campaign_manifest.json",campaign/"central.npz",campaign/"central.json",
+                campaign/"toys/summary.json",campaign/"toys/replicas.npz"]
+        records=[]
+        for path in artifacts:
+            need(path.is_file() and path.stat().st_size>0,f"missing/empty final artifact: {path}")
+            if path.suffix==".pdf":need(path.read_bytes()[:5]==b"%PDF-",f"invalid PDF artifact: {path}")
+            records.append({"path":str(path),"bytes":path.stat().st_size,"sha256":digest(path)})
+        (out_dir/"joint_pipeline_artifacts.json").write_text(json.dumps({
+            "schema_version":1,"verified_ns":time.time_ns(),"artifacts":records},indent=2)+"\n")
+        print(f"[VERIFY] {len(records)} joint artifacts verified",flush=True)
+    except (ValueError, RuntimeError, OSError, subprocess.CalledProcessError, KeyError) as error:
         print(f"[FATAL] joint xsec fit: {error}", file=sys.stderr)
         return 1
     return 0

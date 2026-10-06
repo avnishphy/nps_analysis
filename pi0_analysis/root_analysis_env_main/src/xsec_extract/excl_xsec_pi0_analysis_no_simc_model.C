@@ -22,6 +22,14 @@
 #include "xsec_cli.h"
 
 void ExclPi0XSecAnalysis::Run() {
+    // Keep mode-specific stages from mutating an output directory or reading
+    // full event trees before their incompatibility is diagnosed. The model
+    // entry point also checks these at its CLI boundary; retain the invariant
+    // here for the standalone no-model entry and programmatic callers.
+    if (!event_model() && cfg.prepare_joint_inputs)
+        die("Joint M0 preparation requires the SIMC-model entry point.");
+    if (event_model() && (cfg.prepare_forward_inputs || !cfg.joint_plot_input.empty()))
+        die("SIMC-model extraction does not support forward-cache or joint-plot stages.");
     validate_xsec_binning(cfg);
     // 1. Resolve the measured sample and its matched generated MC. Binning is
     // frozen before response construction and reused for both coordinate sets.
@@ -45,8 +53,9 @@ void ExclPi0XSecAnalysis::Run() {
     // separate. Area matching below is restricted to missing-mass shape QA.
     fill_from_trees();
     compute_mmiss_area_scales();
-    // 3. Apply the independent target correction to data, then fit every
-    // generated block jointly, including external feed-in nuisance blocks.
+    // 3. Apply the independent target correction to data, then fit all
+    // published blocks jointly. Low-tprime feed-in is fitted; other exterior
+    // faces retain the shared fixed nominal contribution.
     compute_ratios_and_xsec();
     if (cfg.prepare_joint_inputs) {
         write_joint_inputs();

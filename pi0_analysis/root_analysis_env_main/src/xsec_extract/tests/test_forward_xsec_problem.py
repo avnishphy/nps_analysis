@@ -14,7 +14,7 @@ from forward_xsec_problem import build_problem, diagnostics, mc_prediction_varia
 
 DATA_FIELDS = ["event_id", "run_number", "q2", "xb", "tprime", "phi", "weight"]
 MC_FIELDS = ["event_id", "reco_q2", "reco_xb", "reco_tprime", "reco_phi",
-             "truth_q2", "truth_xb", "truth_tprime", "truth_phi", "epsilon", "base_weight"]
+             "truth_q2", "truth_xb", "truth_tprime", "truth_phi", "epsilon", "base_weight", "nominal_weight"]
 
 
 def config():
@@ -30,9 +30,9 @@ def data(event, t=-.75, phi=45, weight=1, run=1):
 
 
 def mc(event, reco_t=-.75, truth_t=-.75, phi=45, truth_q=2, truth_x=.5, weight=1e9,
-       reco_phi=None, epsilon=.6):
+       reco_phi=None, epsilon=.6, nominal=1):
     return [event, 2, .5, reco_t, np.deg2rad(phi if reco_phi is None else reco_phi),
-            truth_q, truth_x, truth_t, np.deg2rad(phi), epsilon, weight]
+            truth_q, truth_x, truth_t, np.deg2rad(phi), epsilon, weight, nominal]
 
 
 class ForwardProblemTests(unittest.TestCase):
@@ -86,15 +86,18 @@ class ForwardProblemTests(unittest.TestCase):
         self.assertEqual([block["published"] for block in problem["truth_blocks"]], [False, True, False])
         self.assertEqual(problem["truth_blocks"][2]["name"], "tprime_below")
 
-    def test_six_exterior_faces_keep_legacy_corner_priority(self):
+    def test_only_tprime_below_exterior_is_fitted(self):
         extra = [mc(10, truth_t=-1.1, truth_q=.5, truth_x=.05),
                  mc(11, truth_t=.1, truth_q=4, truth_x=.95),
                  mc(12, truth_q=.5, truth_x=.05), mc(13, truth_q=4, truth_x=.95),
                  mc(14, truth_x=.05), mc(15, truth_x=.95)]
         self.write([data(1)], [mc(1), mc(2, truth_t=-.2)] + extra)
         problem = build_problem(self.cache, config())
-        self.assertEqual(problem["mc_blocks"].tolist(), list(range(8)))
-        self.assertEqual(problem["design"].shape, (8, 24))
+        self.assertEqual(problem["mc_blocks"].tolist(), [0,1,2])
+        self.assertEqual(problem["design"].shape, (8, 9))
+        self.assertEqual(problem["selection_counts"]["mc_fixed_feedin"],5)
+        self.assertEqual(problem["fixed_prediction"].sum(),5)
+        self.assertEqual([b.get("name") for b in problem["truth_blocks"] if b["kind"]=="guard"],["tprime_below"])
 
     def test_edges_final_upper_and_phi_wrap(self):
         self.write([data(1, t=0, phi=360)],

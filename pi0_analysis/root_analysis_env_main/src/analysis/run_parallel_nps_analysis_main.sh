@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # ./src/analysis/run_parallel_nps_analysis_main.sh --source updated --mode hcana --no-combine --types production --kin KinC_x25_1 --run 5903 5904 5905 5906 5907 5908 5909 5910 5911 5912 5913 5914 5915 5916 5917 5938 5939 5940 5963 5964 5965 5966 5967 5968 5969 5970 5971 5972 5973 5974 5975 5918 5919 5920 5921 5922
+
+# ./src/analysis/run_parallel_nps_analysis_main.sh --config config/nps_dvcs_all_kins_main.csv --waveform-dir /lustre24/expphy/volatile/hallc/nps/hhuang/farmFile/Production/DVCS/update_x36_5_3/ --target LH2 dummy --no-combine --kin KinC_x36_5 --gevnum-cut --run 3728 3729 3731 3732 3733 3737 3738 3739 3755 3756 3757 3758 3759 3760 3762 3767 3769 3770
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
@@ -31,6 +33,7 @@ COMBINE_AFTER_RUN="yes"
 COMBINE_TARGET=""
 RUN_ONLY="no"
 FINALIZE_ONLY="no"
+RUN_QUALITY_MANIFEST=""
 
 RUN_SMEARING_STAGE="no"
 SMEAR_SCRIPT="${REPO_ROOT}/src/simulation_smearing/run_smearing_pipeline.sh"
@@ -59,10 +62,12 @@ SMEAR_SIM_DELTA_INPUT=""
 
 RUN_XSEC_STAGE="no"
 XSEC_SCRIPT="${REPO_ROOT}/src/xsec_extract/run_xsec_pipeline.sh"
+XSEC_METHOD="no-simc-model"
 XSEC_TARGET=""
 XSEC_ROOT_DIR=""
 XSEC_DATA_FILE=""
 XSEC_SIM_FILE=""
+XSEC_VERTEX_SIMC_FILE=""
 XSEC_OUT_DIR=""
 XSEC_OUT_ROOT=""
 XSEC_OUT_CSV=""
@@ -130,10 +135,13 @@ Options:
   --run-xsec                Run xsec extraction stage after combine/smearing
   --xsec-kin <Kin_old>      Restrict xsec stage to one Kin_old (repeatable)
   --xsec-script <path>      Xsec pipeline script path
+  --xsec-method <method>    no-simc-model (default) or simc-model
   --xsec-target <name>      Xsec target (required if multiple targets selected)
   --xsec-root-dir <path>    Override xsec root directory
   --xsec-data-file <path>   Override xsec data ROOT input path
   --xsec-sim-file <path>    Override xsec simulation ROOT input path
+  --xsec-vertex-simc-file <path>
+                            Original exclusive SIMC h10 file/worksim directory
   --xsec-out-dir <path>     Override xsec output directory
   --xsec-out-root <path>    Override xsec output ROOT path
   --xsec-out-csv <path>     Override xsec output summary CSV path
@@ -144,6 +152,8 @@ Options:
   --kin <Kin_old...>        One/more settings; comma/space lists accepted
   --all-kins                Process all kinematic settings
   --run <run_number...>     Restrict to one or more runs (space- or comma-separated)
+  --run-quality-manifest <path>
+                            CSV with run,accepted,exclusion_reason for every requested run
   --gevnum-cut <ask|yes|no> Use optional g.evnum event cut (default: ask)
   --jobs <N>                Parallel workers (default: nproc)
   --timeout <seconds>       Per-run timeout (0 disables timeout)
@@ -173,6 +183,7 @@ canonical_target() {
 
 combine_cut_debug_pdfs() {
   local kin="$1"
+  shift
   local safe_kin plots_dir out_pdf
   safe_kin="$(sanitize_name "${kin}")"
   plots_dir="${OUTPUT_BASE}/${safe_kin}/plots"
@@ -181,17 +192,35 @@ combine_cut_debug_pdfs() {
   [[ -d "${plots_dir}" ]] || return 0
 
   local -a pdfs=()
-  mapfile -t pdfs < <(find "${plots_dir}" -maxdepth 1 -type f -name 'cut_debug_run*.pdf' | sort -V)
+  local selected_run pdf
+  for selected_run in "$@"; do
+    pdf="${plots_dir}/cut_debug_run${selected_run}.pdf"
+    [[ -f "${pdf}" ]] && pdfs+=("${pdf}")
+  done
   if [[ ${#pdfs[@]} -eq 0 ]]; then
-    echo "[cut-debug] No per-run cut-debug PDFs found for kin=${kin}"
+    if [[ -f "${out_pdf}" ]]; then
+      rm -f "${out_pdf}"
+      echo "[cut-debug] Removed stale ${out_pdf}; no selected per-run PDFs exist"
+    else
+      echo "[cut-debug] No selected per-run cut-debug PDFs found for kin=${kin}"
+    fi
     return 0
   fi
 
+  local tmp_pdf="${plots_dir}/.cut_debug_${safe_kin}.$$.pdf"
   if command -v pdfunite >/dev/null 2>&1; then
-    pdfunite "${pdfs[@]}" "${out_pdf}"
+    if ! pdfunite "${pdfs[@]}" "${tmp_pdf}"; then
+      rm -f "${tmp_pdf}"
+      return 1
+    fi
+    mv "${tmp_pdf}" "${out_pdf}"
     echo "[cut-debug] Wrote ${out_pdf} from ${#pdfs[@]} run PDF(s)"
   elif command -v gs >/dev/null 2>&1; then
-    gs -q -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sOutputFile="${out_pdf}" "${pdfs[@]}"
+    if ! gs -q -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sOutputFile="${tmp_pdf}" "${pdfs[@]}"; then
+      rm -f "${tmp_pdf}"
+      return 1
+    fi
+    mv "${tmp_pdf}" "${out_pdf}"
     echo "[cut-debug] Wrote ${out_pdf} from ${#pdfs[@]} run PDF(s)"
   else
     echo "[cut-debug] Could not merge cut-debug PDFs for kin=${kin}: install pdfunite or ghostscript. Per-run PDFs remain in ${plots_dir}." >&2
@@ -626,6 +655,15 @@ while [[ $# -gt 0 ]]; do
       RUN_XSEC_STAGE="yes"
       shift 2
       ;;
+    --xsec-method|--xsec-mode)
+      case "$2" in
+        no-simc-model|no_simc_model) XSEC_METHOD="no-simc-model" ;;
+        simc-model|simc_model) XSEC_METHOD="simc-model" ;;
+        *) echo "Invalid --xsec-method: $2" >&2; exit 1 ;;
+      esac
+      RUN_XSEC_STAGE="yes"
+      shift 2
+      ;;
     --xsec-target)
       XSEC_TARGET="$2"
       RUN_XSEC_STAGE="yes"
@@ -643,6 +681,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     --xsec-sim-file)
       XSEC_SIM_FILE="$2"
+      RUN_XSEC_STAGE="yes"
+      shift 2
+      ;;
+    --xsec-vertex-simc-file|--xsec-vertex_simc_file)
+      XSEC_VERTEX_SIMC_FILE="$2"
       RUN_XSEC_STAGE="yes"
       shift 2
       ;;
@@ -686,6 +729,10 @@ while [[ $# -gt 0 ]]; do
     --all-kins)
       ALL_KINS=1
       shift
+      ;;
+    --run-quality-manifest)
+      RUN_QUALITY_MANIFEST="$2"
+      shift 2
       ;;
     --run)
       shift
@@ -1110,6 +1157,24 @@ awk -F',' -v kin_pattern="${KIN_PATTERN}" -v type_pattern="${TYPE_PATTERN}" -v r
   }
 ' "${CONFIG_CSV}" | sort > "${JOB_LIST}"
 
+if [[ -n "${RUN_QUALITY_MANIFEST}" ]]; then
+  # Validate the complete requested set before filtering. Unlisted failures
+  # remain fatal; only an explicit exclusion can remove a run/exposure.
+  "${PYTHON_CMD}" - "${JOB_LIST}" "${RUN_QUALITY_MANIFEST}" "${SCRIPT_DIR}" <<'PY'
+import os
+from pathlib import Path
+import sys
+sys.path.insert(0,sys.argv[3])
+from combine_analysis_branches import accepted_manifest_runs
+jobs=Path(sys.argv[1])
+lines=jobs.read_text().splitlines()
+accepted=accepted_manifest_runs(Path(sys.argv[2]),{int(line.split(',')[1]) for line in lines})
+stage=jobs.with_suffix('.accepted.tmp')
+stage.write_text(''.join(line+'\n' for line in lines if int(line.split(',')[1]) in accepted))
+os.replace(stage,jobs)
+PY
+fi
+
 TOTAL_JOBS="$(wc -l < "${JOB_LIST}")"
 if [[ "${TOTAL_JOBS}" -eq 0 ]]; then
   echo "No runs matched selected kinematics/types." >&2
@@ -1147,12 +1212,14 @@ else
 fi
 if [[ "${RUN_XSEC_STAGE}" == "yes" ]]; then
   echo "Xsec stage:      yes (target=${XSEC_TARGET})"
+  echo "Xsec method:     ${XSEC_METHOD}"
   echo "Xsec script:     ${XSEC_SCRIPT}"
   echo "Xsec kins:       ${XSEC_SELECTED_KINS[*]}"
 else
   echo "Xsec stage:      no"
 fi
 echo "Run filter:      ${RUN_FILTER:-<none>}"
+echo "Quality manifest: ${RUN_QUALITY_MANIFEST:-<none>}"
 echo "Parallel jobs:   ${EFFECTIVE_JOBS}/${TOTAL_JOBS}"
 echo "Output base:     ${OUTPUT_BASE}"
 echo "Log base:        ${LOG_BASE}"
@@ -1180,6 +1247,10 @@ xargs -P "${EFFECTIVE_JOBS}" -I {} bash -c '
   run_log="${run_log_dir}/analysis_main_run${run}.log"
   status_file="${job_dir}/status_${run}.txt"
   row_csv_copy="${summary_dir}/summary_run${run}.csv"
+  fit_status_file="${OUTPUT_BASE}/${safe_kin}/root/analysis_status_run${run}.csv"
+  mkdir -p "${OUTPUT_BASE}/${safe_kin}/root"
+  printf "run,success,stage,fit_valid,minimizer_status,covariance_status,reason,attempts,at_boundary,classification\n%s,0,starting,0,-1,-1,not_completed,0,0,not_valid\n" "${run}" > "${fit_status_file}.tmp"
+  mv "${fit_status_file}.tmp" "${fit_status_file}"
   rm -f "${row_csv_copy}"
   resolved_input_dir="${INPUT_DIR}"
   resolved_mode="${MODE}"
@@ -1257,6 +1328,13 @@ xargs -P "${EFFECTIVE_JOBS}" -I {} bash -c '
     fi
   } > "${run_log}" 2>&1 || status=$?
 
+  IFS="," read -r status_run success stage fit_valid fit_status cov_status reason attempts boundary classification < <(tail -n 1 "${fit_status_file}")
+  if [[ "${status_run}" != "${run}" || "${success}" != 1 || "${stage}" != complete || "${fit_valid}" != 1 ]] || \
+     [[ "${classification}" != zero_background && ( "${fit_status}" != 0 || "${cov_status}" != 3 ) ]]; then
+    echo "[ERROR] run=${run} stage=${stage} fit_valid=${fit_valid} minimizer_status=${fit_status} covariance_status=${cov_status} classification=${classification} reason=${reason}" >> "${run_log}"
+    status=93
+  fi
+
   csv_src=""
   if grep -q "\[CSV_WRITTEN\]" "${run_log}" 2>/dev/null; then
     csv_src="$(grep "\[CSV_WRITTEN\]" "${run_log}" | tail -1 | awk "{print \$NF}")"
@@ -1296,14 +1374,31 @@ if [[ "${RUN_XSEC_STAGE}" == "yes" ]]; then
   done
 fi
 
-while IFS= read -r status_file; do
-  [[ -f "${status_file}" ]] || continue
+while IFS=',' read -r expected_kin expected_run expected_target; do
+  [[ "${FINALIZE_ONLY}" == "yes" ]] && break
+  status_file="${TMP_DIR}/jobs/$(sanitize_name "${expected_kin}")/status_${expected_run}.txt"
+  if [[ ! -f "${status_file}" ]]; then
+    echo "[fail] kin=${expected_kin} run=${expected_run} status=missing_job_result"
+    FAILED=$((FAILED + 1))
+    continue
+  fi
   IFS=',' read -r kin run status row_csv < "${status_file}"
   if [[ "${status}" -ne 0 ]]; then
     echo "[fail] kin=${kin} run=${run} status=${status}"
     FAILED=$((FAILED + 1))
   fi
-done < <(find "${TMP_DIR}/jobs" -type f -name 'status_*.txt' | sort)
+done < "${JOB_LIST}"
+
+if [[ "${FAILED}" -ne 0 ]]; then
+  echo "Successful jobs: $((TOTAL_JOBS - FAILED)); failed jobs: ${FAILED}"
+  while IFS=',' read -r kin run target; do
+    safe_kin="$(sanitize_name "${kin}")"
+    fit_status_file="${OUTPUT_BASE}/${safe_kin}/root/analysis_status_run${run}.csv"
+    if [[ -f "${fit_status_file}" ]]; then tail -n 1 "${fit_status_file}"; fi
+  done < "${JOB_LIST}"
+  echo "[ERROR] Batch failed; combine/smearing/extraction blocked. No failed runs are silently excluded." >&2
+  exit 1
+fi
 
 if [[ "${RUN_ONLY}" == "yes" ]]; then
   echo "==========================================================================="
@@ -1317,24 +1412,46 @@ fi
 for kin in "${SELECTED_KINS[@]}"; do
   safe_kin="$(sanitize_name "${kin}")"
   summary_dir="${OUTPUT_BASE}/${safe_kin}/summary"
-  mkdir -p "${summary_dir}"
+  mkdir -p "${summary_dir}" "${LOG_BASE}/${safe_kin}/logs"
   summary_csv="${summary_dir}/summary_all_runs.csv"
+  summary_tmp="${summary_csv}.tmp.$$"
 
-  echo "${CSV_HEADER}" > "${summary_csv}"
-  mapfile -t rows < <(find "${summary_dir}" -maxdepth 1 -type f -name 'summary_run*.csv' | sort -V)
+  echo "${CSV_HEADER}" > "${summary_tmp}"
+  mapfile -t selected_runs < <(awk -F',' -v kin="${kin}" '$1 == kin {print $2}' "${JOB_LIST}" | sort -nu)
+  rows=()
+  for selected_run in "${selected_runs[@]}"; do
+    row_file="${summary_dir}/summary_run${selected_run}.csv"
+    if [[ ! -s "${row_file}" ]]; then
+      echo "[fail] Missing selected per-run CSV: ${row_file}" >&2
+      FAILED=$((FAILED + 1))
+      continue
+    fi
+    rows+=("${row_file}")
+  done
   for row_file in "${rows[@]}"; do
-    tail -n 1 "${row_file}" >> "${summary_csv}"
+    tail -n 1 "${row_file}" >> "${summary_tmp}"
   done
 
-  if [[ ${#rows[@]} -eq 0 ]]; then
-    echo "[fail] No per-run CSV rows found for kin=${kin}" >&2
+  if [[ ${#selected_runs[@]} -eq 0 ]]; then
+    rm -f "${summary_tmp}"
+    echo "[fail] No selected runs found for kin=${kin}" >&2
     FAILED=$((FAILED + 1))
     continue
+  elif [[ ${#rows[@]} -ne ${#selected_runs[@]} ]]; then
+    rm -f "${summary_tmp}"
+    echo "[fail] Summary incomplete for kin=${kin}: selected=${#selected_runs[@]} available=${#rows[@]}" >&2
+    continue
   else
-    echo "[merge] Rebuilt ${summary_csv} from ${#rows[@]} run row files"
+    mv "${summary_tmp}" "${summary_csv}"
+    echo "[merge] Rebuilt ${summary_csv} from ${#rows[@]} selected run row files"
   fi
 
-  combine_cut_debug_pdfs "${kin}"
+  KIN_STAGE_FAILED=0
+  if ! combine_cut_debug_pdfs "${kin}" "${selected_runs[@]}"; then
+    echo "[fail] Could not publish selected cut-debug PDF for kin=${kin}" >&2
+    FAILED=$((FAILED + 1))
+    KIN_STAGE_FAILED=1
+  fi
 
   if [[ "${COMBINE_AFTER_RUN}" == "yes" ]]; then
     kin_root_dir="${OUTPUT_BASE}/${safe_kin}/root"
@@ -1350,6 +1467,9 @@ for kin in "${SELECTED_KINS[@]}"; do
       combine_log="${LOG_BASE}/${safe_kin}/logs/combine_${safe_kin}_${safe_target}.log"
       echo "[combine] Running combine stage for kin=${kin} (target=${combine_target}, root_dir=${kin_root_dir})"
       status=0
+      mapfile -t combine_runs < <(awk -F',' -v kin="${kin}" -v target="${combine_target}" '
+        $1 == kin && tolower($3) == tolower(target) {print $2}
+      ' "${JOB_LIST}" | sort -nu)
       "${PYTHON_CMD}" "${COMBINE_SCRIPT}" \
         --kin "${kin}" \
         --config "${CONFIG_CSV}" \
@@ -1357,18 +1477,23 @@ for kin in "${SELECTED_KINS[@]}"; do
         --root-dir "${kin_root_dir}" \
         --target "${combine_target}" \
         --types "${TYPES_CSV}" \
+        --run "${combine_runs[@]}" \
         > "${combine_log}" 2>&1 || status=$?
 
       if [[ "${status}" -ne 0 ]]; then
         echo "[fail] combine step failed for kin=${kin} target=${combine_target} status=${status}; see ${combine_log}" >&2
         FAILED=$((FAILED + 1))
+        KIN_STAGE_FAILED=1
       else
         echo "[combine] Completed kin=${kin} target=${combine_target}; log=${combine_log}"
       fi
     done
   fi
 
-  if [[ "${RUN_SMEARING_STAGE}" == "yes" && -n "${SMEAR_KIN_SET[${kin}]+x}" ]]; then
+  if [[ "${RUN_SMEARING_STAGE}" == "yes" && -n "${SMEAR_KIN_SET[${kin}]+x}" && "${KIN_STAGE_FAILED}" -ne 0 ]]; then
+    echo "[smear] Skipping kin=${kin}: an upstream finalization stage failed" >&2
+  fi
+  if [[ "${RUN_SMEARING_STAGE}" == "yes" && -n "${SMEAR_KIN_SET[${kin}]+x}" && "${KIN_STAGE_FAILED}" -eq 0 ]]; then
     smear_log="${LOG_BASE}/${safe_kin}/logs/smearing_${safe_kin}.log"
     echo "[smear] Running simulation smearing for kin=${kin} (target=${SMEAR_TARGET})"
 
@@ -1405,23 +1530,29 @@ for kin in "${SELECTED_KINS[@]}"; do
     if [[ "${status}" -ne 0 ]]; then
       echo "[fail] smearing stage failed for kin=${kin} status=${status}; see ${smear_log}" >&2
       FAILED=$((FAILED + 1))
+      KIN_STAGE_FAILED=1
     else
       echo "[smear] Completed kin=${kin}; log=${smear_log}"
     fi
   fi
 
-  if [[ "${RUN_XSEC_STAGE}" == "yes" && -n "${XSEC_KIN_SET[${kin}]+x}" ]]; then
+  if [[ "${RUN_XSEC_STAGE}" == "yes" && -n "${XSEC_KIN_SET[${kin}]+x}" && "${KIN_STAGE_FAILED}" -ne 0 ]]; then
+    echo "[xsec] Skipping kin=${kin}: an upstream finalization stage failed" >&2
+  fi
+  if [[ "${RUN_XSEC_STAGE}" == "yes" && -n "${XSEC_KIN_SET[${kin}]+x}" && "${KIN_STAGE_FAILED}" -eq 0 ]]; then
     xsec_log="${LOG_BASE}/${safe_kin}/logs/xsec_${safe_kin}.log"
     echo "[xsec] Running xsec extraction for kin=${kin} (target=${XSEC_TARGET})"
 
     xsec_cmd=("${XSEC_SCRIPT}"
       --kin "${kin}"
+      --xsec-method "${XSEC_METHOD}"
       --target "${XSEC_TARGET}"
       --output-base "${OUTPUT_BASE}")
 
     [[ -n "${XSEC_ROOT_DIR}" ]] && xsec_cmd+=(--root-dir "${XSEC_ROOT_DIR}")
     [[ -n "${XSEC_DATA_FILE}" ]] && xsec_cmd+=(--data-file "${XSEC_DATA_FILE}")
     [[ -n "${XSEC_SIM_FILE}" ]] && xsec_cmd+=(--sim-file "${XSEC_SIM_FILE}")
+    [[ -n "${XSEC_VERTEX_SIMC_FILE}" ]] && xsec_cmd+=(--vertex_simc_file "${XSEC_VERTEX_SIMC_FILE}")
     [[ -n "${XSEC_OUT_DIR}" ]] && xsec_cmd+=(--out-dir "${XSEC_OUT_DIR}")
     [[ -n "${XSEC_OUT_ROOT}" ]] && xsec_cmd+=(--out-root "${XSEC_OUT_ROOT}")
     [[ -n "${XSEC_OUT_CSV}" ]] && xsec_cmd+=(--out-csv "${XSEC_OUT_CSV}")
@@ -1433,6 +1564,7 @@ for kin in "${SELECTED_KINS[@]}"; do
     if [[ "${status}" -ne 0 ]]; then
       echo "[fail] xsec stage failed for kin=${kin} status=${status}; see ${xsec_log}" >&2
       FAILED=$((FAILED + 1))
+      KIN_STAGE_FAILED=1
     else
       echo "[xsec] Completed kin=${kin}; log=${xsec_log}"
     fi

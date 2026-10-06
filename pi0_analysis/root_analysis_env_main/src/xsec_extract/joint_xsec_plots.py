@@ -83,6 +83,84 @@ def matrix(path, size):
     return result
 
 
+def joint_m0_figures(output, manifest):
+    """Compact report for the actual joint M0 coordinates and derived curves."""
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+
+    plt.rcParams.update({'font.size': 11, 'axes.grid': True, 'grid.alpha': .2,
+                         'savefig.dpi': 160, 'figure.constrained_layout.use': True})
+    folder=output/'plots'/'joint_m0';folder.mkdir(parents=True,exist_ok=True);pages=[]
+    scale=1e9;unit=r'nb/GeV$^2$'
+    def save(fig,name):
+        path=folder/(name+'.pdf');fig.savefig(path);fig.savefig(folder/(name+'.png'))
+        pages.append(path);plt.close(fig)
+    parameters=fit.rows(output/'joint_model_parameters.csv')
+    covariance=matrix(output/'joint_model_covariance.csv',len(parameters))
+    names=[setting['kinematic'] for setting in manifest['settings']]
+    values=np.array([float(row['value']) for row in parameters])
+    errors=np.sqrt(np.maximum(0,np.diag(covariance)))
+    fig,ax=plt.subplots(figsize=(max(9,.65*len(parameters)),6))
+    x=np.arange(len(parameters));valid=np.isfinite(errors)
+    ax.plot(x[~valid],values[~valid],'x',color='C0',label='central only')
+    if valid.any():ax.errorbar(x[valid],values[valid],yerr=errors[valid],fmt='o',capsize=3,label='stat + MC')
+    ax.set_xticks(x,[row['name'] for row in parameters],rotation=55,ha='right')
+    ax.set(ylabel='Fit parameter value',title='Joint event-level M0 parameters')
+    ax.legend();save(fig,'model_parameters')
+
+    with np.errstate(divide='ignore',invalid='ignore'):
+        correlation=covariance/np.outer(errors,errors)
+    fig,ax=plt.subplots(figsize=(9,8));palette=plt.get_cmap('RdBu_r').copy();palette.set_bad('#dedede')
+    image=ax.imshow(np.ma.masked_invalid(correlation),vmin=-1,vmax=1,cmap=palette)
+    labels=[row['name'] for row in parameters]
+    ax.set_xticks(x,labels,rotation=90,fontsize=8);ax.set_yticks(x,labels,fontsize=8)
+    ax.set_title('Joint M0 parameter correlation\nGray = boundary covariance unavailable')
+    fig.colorbar(image,ax=ax,label='Correlation');save(fig,'model_correlation')
+
+    structures=fit.rows(output/'joint_structure_functions.csv')
+    bins=manifest['bins']['tprime_bin_edges'];published=[r for r in structures if r['region']=='published']
+    for component in fit.COMPONENTS:
+        fig,ax=plt.subplots(figsize=(8,6))
+        for setting,name in enumerate(names):
+            selected=sorted((r for r in published if r['component']==component and int(r['setting_index'])==setting),
+                            key=lambda r:int(r['it']))
+            xx=np.array([-.5*(bins[int(r['it'])]+bins[int(r['it'])+1]) for r in selected])
+            yy=np.array([float(r['value'])*scale for r in selected])
+            ee=np.array([float(r['error_stat_plus_mc'])*scale for r in selected])
+            good=np.isfinite(ee)
+            if good.any():ax.errorbar(xx[good],yy[good],yerr=ee[good],fmt='o-',capsize=3,label=name)
+            if (~good).any():ax.plot(xx[~good],yy[~good],'x-',label=name+' central only')
+        ax.axhline(0,color='.45',lw=.8)
+        ax.set(xlabel=r"$-t'$ [GeV$^2$]",ylabel=rf'$\sigma_{{{component}}}$ [{unit}]',
+               title=f'Joint M0 derived {component} response')
+        ax.legend(fontsize=9);save(fig,'structure_'+component.lower())
+
+    rows=fit.rows(output/'joint_rows.csv');fig,axes=plt.subplots(2,2,figsize=(12,8))
+    for setting,name in enumerate(names):
+        selected=[r for r in rows if int(r['setting_index'])==setting and int(r['fit_index'])>=0]
+        rr=np.array([int(r['reco_row']) for r in selected]);pull=np.array([float(r['pull']) for r in selected])
+        axes[0,0].plot(rr,pull,'.',label=name);axes[0,1].hist(pull,bins=np.linspace(-5,5,31),histtype='step',label=name)
+        fraction=np.array([float(r['mc_variance_final'])/float(r['variance_used']) for r in selected])
+        axes[1,0].plot(rr,fraction,'.',label=name);axes[1,1].bar(setting,np.sum(pull*pull),label=name)
+    axes[0,0].axhline(0,color='.45');axes[0,0].set(xlabel='Reconstructed row',ylabel='Pull')
+    axes[0,1].set(xlabel='Pull',ylabel='Rows');axes[1,0].set(xlabel='Reconstructed row',ylabel='MC variance / fit variance')
+    axes[1,1].set(xticks=range(len(names)),xticklabels=names,ylabel=r'$\chi^2$ contribution')
+    axes[1,1].tick_params(axis='x',labelrotation=20)
+    axes[0,0].legend(fontsize=8);fig.suptitle('Joint M0 fit quality');save(fig,'fit_quality')
+
+    positivity=fit.rows(output/'joint_positivity.csv');fig,axes=plt.subplots(2,1,figsize=(10,7))
+    for setting,name in enumerate(names):
+        selected=[r for r in positivity if int(r['setting_index'])==setting]
+        block=[int(r['truth_block']) for r in selected]
+        axes[0].plot(block,[float(r['minimum_response_bracket'])*scale for r in selected],'o-',label=name)
+        axes[1].plot(block,[float(r['epsilon_max']) for r in selected],'o-',label=name)
+    axes[0].axhline(0,color='black',lw=.7);axes[0].set(ylabel=f'Minimum angular bracket [{unit}]')
+    axes[1].set(xlabel='Truth block',ylabel=r'$\epsilon_{max}$');axes[0].legend(fontsize=9)
+    fig.suptitle('Continuous angular positivity');save(fig,'positivity')
+    return pages
+
+
 def setting_snapshot(output, index, setting, destination):
     """Local marginal covariance is sufficient for that setting's fit curves."""
     parameters = fit.rows(output/'joint_parameters.csv')
@@ -361,8 +439,12 @@ def render(output, partons=False, warmups=10000, calls=100000):
              'partons_warmups': warmups, 'partons_calls': calls}
     report.write_text(json.dumps(state, indent=2)+'\n')
     try:
-        pages = native_plots(output, manifest, partons, warmups, calls)
-        pages += joint_figures(output, manifest)
+        if manifest.get('method') == 'joint_event_level_sigparam2021_M0':
+            fit.need(not partons, 'joint M0 PARTONS/native per-setting report is not implemented')
+            pages = joint_m0_figures(output, manifest)
+        else:
+            pages = native_plots(output, manifest, partons, warmups, calls)
+            pages += joint_figures(output, manifest)
         combined = output/'all_joint_xsec_plots.pdf'
         # pdfunite does not overwrite its input pages; combine individual pages
         # only, avoiding duplicate pages from per-setting report PDFs.

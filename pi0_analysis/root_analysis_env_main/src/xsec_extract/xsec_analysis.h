@@ -4,8 +4,11 @@
 #include "xsec_physics.h"
 #include "xsec_response.h"
 #include "xsec_mass_cut.h"
+#include "xsec_proxy_solver.h"
 
 class ExclPi0XSecAnalysis {
+    // Test-only access to archived responses; no production input bypass.
+    friend struct ProxyValidationAccess;
 
 public:
     ~ExclPi0XSecAnalysis() {
@@ -29,8 +32,29 @@ public:
     }
     explicit ExclPi0XSecAnalysis(const AnalysisConfig& c) : cfg(c) {}
     void Run();
+    void enable_proxy(const nps_xsec::ProxyOptions& options) {
+        model_fit_mode=true; proxy_options=options;
+    }
 
 private:
+    bool model_fit_mode=false;
+    bool synthetic_validation=false;
+    nps_xsec::ProxyOptions proxy_options;
+    nps_xsec::ProxyResult proxy_result;
+    std::vector<nps_xsec::ModelEvent> model_events;
+    nps_xsec::ProxyProblem model_all_rows;
+    std::vector<nps_xsec::ProxyProblem::RowEvaluation> model_rows;
+    bool event_model() const {return model_fit_mode;}
+    double model_row_variance(size_t r) const {
+        if(positivity_boundary_active)return std::numeric_limits<double>::quiet_NaN();
+        const auto& j=model_rows.at(r).jacobian;double v=0.;
+        for(size_t a=0;a<j.size();++a)for(size_t b=0;b<j.size();++b)v+=j[a]*proxy_result.covariance[a*j.size()+b]*j[b];
+        return v;
+    }
+    nps_xsec::ModelEvaluation model_curve(double tp) const;
+    void write_sigparam_diagnostics();
+    void fit_proxy_subset(const std::vector<bool>& groups);
+    void write_proxy_diagnostics(const nps_xsec::ProxyProblem& problem);
     AnalysisConfig cfg;
     CutFlow cutflow;
     XsecMassGeometry mass_geometry;
@@ -63,7 +87,8 @@ private:
     std::vector<std::vector<double>> xb_edges_by_q2;
     std::vector<SliceResult> slices;
     // Response row = reconstructed slice*n_phi+phi. Truth blocks consist of
-    // published bins followed by six explicitly fitted overflow regions.
+    // published bins followed by six exterior regions; only tprime_below is
+    // a fitted exterior block. Q2/xB feed-in remains in fixed row offsets.
     std::vector<std::vector<nps_xsec::ResponseCell>> migration_response;
     // Sparse cell key = truth_block*n_phi + vertex_phi_bin. All cells share
     // their parent block's three coefficients; no new fit parameters enter.
@@ -72,7 +97,8 @@ private:
     std::vector<ExperimentalPoint> experimental_points;
     std::vector<double> experimental_point_covariance;
     std::vector<nps_xsec::TruthMoments> truth_moments;
-    std::vector<int> active_truth_blocks, fit_rows;
+    std::vector<int> active_truth_blocks, fixed_truth_blocks, fit_rows;
+    std::vector<double> fixed_feedin_prediction, fixed_feedin_mc_variance;
     std::vector<std::vector<double>> response_design;
     nps_xsec::LinearSolution migration_fit;
     // Boundary-constrained estimates do not have the unconstrained Gaussian

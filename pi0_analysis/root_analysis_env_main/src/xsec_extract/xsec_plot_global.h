@@ -13,6 +13,15 @@ extern char** environ;
 // multipage PDF. Plot generation never changes the fitted response matrix.
 inline void ExclPi0XSecAnalysis::write_canvas_pdf_png(TCanvas* c, const std::string& base) {
     if (!c || (!cfg.write_pdf && !cfg.write_png)) return;
+    if (model_fit_mode || synthetic_validation) {
+        c->cd();
+        TLatex header;
+        header.SetNDC(true); header.SetTextFont(42); header.SetTextSize(0.018);
+        header.DrawLatex(0.02,0.987,((synthetic_validation?std::string("SYNTHETIC VALIDATION | "):std::string())+
+            cfg.configured_kinematic+" | "+(model_fit_mode?nps_xsec::xsec_model().label:"No-model extraction")+
+            (event_model()?" | PROVISIONAL; T/L model assumed":"")+
+            (positivity_boundary_active?" | Confidence errors unavailable; raw Hessian diagnostic only":"")).c_str());
+    }
     if (cfg.write_pdf) {
         const std::string page = base + ".pdf";
         c->SaveAs(page.c_str());

@@ -477,6 +477,71 @@ errors remain fatal. Run the standalone recovery checks from the repository:
 csh -c 'source /usr/share/Modules/init/csh; source /group/nps/singhav/setup.csh; bash tests/run_xsec_bin_recovery_tests.sh /tmp/nps_xsec_recovery_check'
 ```
 
+### Calibrated release for the direct-bin no-SIMC estimator
+
+The no-SIMC publication path is intentionally distinct from the SigParam/M0
+path. It fits one independent U/LT/TT triplet for every active published or
+low-tprime feed-in truth block with the existing global response matrix and
+exact continuous-angle positivity solver. It has no SigParam normalization,
+slope, bounds, seed scan, prior, or additive-M0 assumption. Consequently it
+uses neither `staged_feasible` nor the model calibration artifacts.
+
+```bash
+./src/xsec_extract/run_xsec_pipeline.sh \
+  --kin KinC_x36_4 --target LH2 \
+  --root-dir output/KinC_x36_4/root \
+  --sim-file /path/to/simc_pi0_analysis_output_smeared.root \
+  --vertex_simc_file /path/to/nps_excl_pi0_x36_4.root \
+  --mmiss_select ellipse --xsec_config xsec_config_x36_4.json \
+  --no-simc-model --fit-objective gaussian --positive-xsec \
+  --publish-calibrated-release
+```
+
+Production requires 500 accepted toys and a full fit with PDFs. The selected
+window/MCD/ellipse definition is inherited exactly from the central fit; the
+fixed-response row-level construction does not impose the event-level M0
+campaign's extra ellipse requirement. `--fit-strategy staged_feasible` remains
+an error in no-SIMC mode. The default release directory is
+`output/<kin>/xsec_no_simc_model_calibrated`. Reuse requires
+`--publish-calibrated-release --reuse-toys --calibration-source <campaign>`;
+the selected config, binning, central response products, target factor,
+estimator sources, and numerical controls must match by content and checksum.
+
+Despite its name, no-SIMC-model extraction still uses SIMC for the absolute
+response and migration matrix (`full_weight/sigcm`), luminosity/generation
+normalization, matching reconstructed events to generated coordinates, the
+event-level vertex-epsilon envelope, and response finite-MC outer products.
+The low-tprime exterior U/LT/TT triplet is fitted. Other populated exterior
+faces use their fixed nominal event-model contribution centrally and in every
+toy; their exported Poissonized MC variance remains in the finite-MC row
+variance. The target divisor acts only on measured yields and its uncertainty
+is a separate rank-one scale covariance.
+
+The local calibration draws Gaussian reconstructed-row pseudo-data around the
+central full forward prediction with the converged row variance. It freezes
+the response matrix, then repeats the exact constrained direct-bin solve and
+all finite-MC variance iterations for every toy. This is the statistical model
+of the Gaussian weighted-yield estimator, not an event-level bootstrap. It
+approximates response statistics by Gaussian row noise from the exported SIMC
+outer products and does not cover fixed-Ngen correlations, upstream signal-
+weight refits, detector/radiative effects, or other systematics.
+
+The older 256 positivity toys remain display diagnostics: they run only for an
+active central boundary, request rather than require 256 successes, tolerate
+up to 10% failed fits, and save sampling-spread covariance without truth
+residuals or coverage calibration. They are not reused or relabeled by the
+release workflow.
+
+The calibrated release records every attempted toy and rejection reason,
+central-adapter parity, truth and fitted vectors, residuals, finite-MC
+iterations, and boundary hits. It publishes `delta68 = Q_0.68(|fit-truth|)`
+with deterministic five-fold held-out coverage. Empirical covariance and
+correlation are distinct from
+`diag(delta68) R_toy diag(delta68)`, which is labeled a calibrated-radius
+representation rather than a literal variance. Intervals apply only to the
+retained published direct-bin U/LT/TT coefficients, not per-phi experimental
+points, SIMC-model products, or the 256-toy diagnostic.
+
 ### Joint event-level M0 fit across kinematic settings
 
 The production joint workflow uses the same event-level SigParam2021 M0 model

@@ -94,8 +94,11 @@ PREPARE_FORWARD_INPUTS=0
 PUBLISH_CALIBRATED_RELEASE="${NPS_XSEC_PUBLISH_CALIBRATED_RELEASE:-0}"
 GENERATE_TOYS="${NPS_XSEC_GENERATE_TOYS:-1}"
 TOY_JOBS="${NPS_XSEC_TOY_JOBS:-0}"
-CALIBRATION_SOURCE="${NPS_XSEC_CALIBRATION_SOURCE:-${REPO_ROOT}/validation/preliminary_model_xsec_20261005}"
-CURVATURE_SOURCE="${NPS_XSEC_CURVATURE_SOURCE:-${REPO_ROOT}/validation/preliminary_model_xsec_curvature_20261005}"
+CALIBRATION_SOURCE="${NPS_XSEC_CALIBRATION_SOURCE:-}"
+CURVATURE_SOURCE="${NPS_XSEC_CURVATURE_SOURCE:-}"
+CALIBRATION_TOYS="${NPS_XSEC_TEST_ACCEPTED_TOYS:-500}"
+ALLOW_TEST_RELEASE="${NPS_XSEC_ALLOW_TEST_RELEASE:-0}"
+CALIBRATION_SEED="${NPS_XSEC_CALIBRATION_SEED:-20261008}"
 CALIBRATED_OUT_DIR="${NPS_XSEC_CALIBRATED_OUT_DIR:-}"
 FINAL_REPORT_PDF="${NPS_XSEC_FINAL_REPORT_PDF:-}"
 
@@ -161,15 +164,16 @@ Options:
   --model-tolerance <x>      Model minimizer controls
   --fit-strategy <name>      joint_minuit (default) or staged_feasible (Gaussian central diagnostic)
   --publish-calibrated-release
-                             After a successful staged fit, generate a fresh additive-M0
-                             500-toy campaign from this run and its selected JSON, then
-                             publish one comprehensive final PDF.
-  --reuse-toys               Explicitly reuse --calibration-source/--curvature-source
-                             instead of generating this execution's campaign
+                             Publish a matching 500-accepted-toy calibrated release.
+                             SIMC-model retains its staged additive-M0 workflow;
+                             no-SIMC-model uses the direct-bin constrained estimator.
+  --reuse-toys               Explicitly reuse a strictly matching campaign instead of
+                             generating this execution's toys (model mode also needs curvature)
   --toy-jobs <n>             Toy worker processes (default: 0 = all affinity CPUs)
   --calibration-source <dir> Existing central/toy campaign used only with --reuse-toys
   --curvature-source <dir>   Existing curvature campaign used only with --reuse-toys
-  --calibrated-out-dir <dir> Release directory (default: output/<kin>/xsec_calibrated)
+  --calibrated-out-dir <dir> Release directory (no-model default:
+                             output/<kin>/xsec_no_simc_model_calibrated)
   --final-report-pdf <path>  Combined release PDF inside calibrated-out-dir
   Bin edges and optional diamond: edit the selected xsec_config/xsec_config*.json file
   --svd-rank-tolerance <float> Relative singular-value rank cutoff (default: 1e-10)
@@ -448,6 +452,17 @@ case "${XSEC_METHOD}" in
     ;;
 esac
 
+if [[ -z "${CALIBRATION_SOURCE}" ]]; then
+  if [[ "${XSEC_METHOD}" == simc-model ]]; then
+    CALIBRATION_SOURCE="${REPO_ROOT}/validation/preliminary_model_xsec_20261005"
+  else
+    CALIBRATION_SOURCE="${REPO_ROOT}/validation/no_simc_model_calibration"
+  fi
+fi
+if [[ -z "${CURVATURE_SOURCE}" && "${XSEC_METHOD}" == simc-model ]]; then
+  CURVATURE_SOURCE="${REPO_ROOT}/validation/preliminary_model_xsec_curvature_20261005"
+fi
+
 CONFIG_DIR="$(cd "${SCRIPT_DIR}/xsec_config" && pwd -P)"
 if [[ -z "${XSEC_CONFIG}" && -n "${KIN}" ]]; then
   candidate="xsec_config_${KIN#KinC_}.json"
@@ -518,17 +533,28 @@ if [[ ! "${TOY_JOBS}" =~ ^[0-9]+$ ]]; then
   echo "[ERROR] --toy-jobs/NPS_XSEC_TOY_JOBS must be zero or a positive integer." >&2
   exit 1
 fi
+if [[ "${PUBLISH_CALIBRATED_RELEASE}" -eq 1 && "${XSEC_METHOD}" == no-simc-model && ( ! "${CALIBRATION_TOYS}" =~ ^[1-9][0-9]*$ || ! "${CALIBRATION_SEED}" =~ ^[0-9]+$ ) ]]; then
+  echo "[ERROR] Calibration toy count and seed must be positive/nonnegative integers." >&2
+  exit 1
+fi
+if [[ "${PUBLISH_CALIBRATED_RELEASE}" -eq 1 && "${XSEC_METHOD}" == no-simc-model && "${CALIBRATION_TOYS}" -ne 500 && "${ALLOW_TEST_RELEASE}" != 1 ]]; then
+  echo "[ERROR] Production calibrated releases require 500 accepted toys." >&2
+  echo "        Reduced counts require both NPS_XSEC_TEST_ACCEPTED_TOYS and NPS_XSEC_ALLOW_TEST_RELEASE=1." >&2
+  exit 1
+fi
 if [[ "${PUBLISH_CALIBRATED_RELEASE}" -eq 1 ]]; then
-  if [[ "${XSEC_METHOD}" != simc-model ]]; then
-    echo "[ERROR] --publish-calibrated-release requires --simc-model." >&2
+  if [[ "${XSEC_METHOD}" == simc-model ]]; then
+    if [[ "${FIT_STRATEGY}" != staged_feasible || "${FIT_OBJECTIVE}" != gaussian || "${POSITIVE_XSEC}" -ne 1 ]]; then
+      echo "[ERROR] --publish-calibrated-release requires --fit-strategy staged_feasible," >&2
+      echo "        --fit-objective gaussian, and --positive-xsec." >&2
+      exit 1
+    fi
+  elif [[ "${FIT_OBJECTIVE}" != gaussian || "${POSITIVE_XSEC}" -ne 1 ]]; then
+    echo "[ERROR] no-SIMC-model publication requires --fit-objective gaussian and --positive-xsec." >&2
+    echo "        Do not pass --fit-strategy staged_feasible; the direct-bin solver is used." >&2
     exit 1
   fi
-  if [[ "${FIT_STRATEGY}" != staged_feasible || "${FIT_OBJECTIVE}" != gaussian || "${POSITIVE_XSEC}" -ne 1 ]]; then
-    echo "[ERROR] --publish-calibrated-release requires --fit-strategy staged_feasible," >&2
-    echo "        --fit-objective gaussian, and --positive-xsec." >&2
-    exit 1
-  fi
-  if [[ "${GENERATE_TOYS}" -eq 1 && "${MMISS_SELECT}" != ellipse ]]; then
+  if [[ "${XSEC_METHOD}" == simc-model && "${GENERATE_TOYS}" -eq 1 && "${MMISS_SELECT}" != ellipse ]]; then
     echo "[ERROR] Fresh calibrated toys require --mmiss_select ellipse." >&2
     exit 1
   fi
@@ -624,14 +650,26 @@ CALIBRATION_SOURCE="$(to_abs_path "${CALIBRATION_SOURCE}")"
 CURVATURE_SOURCE="$(to_abs_path "${CURVATURE_SOURCE}")"
 if [[ -z "${CALIBRATED_OUT_DIR}" ]]; then
   if [[ -n "${KIN}" ]]; then
-    CALIBRATED_OUT_DIR="${OUTPUT_BASE}/$(sanitize_name "${KIN}")/xsec_calibrated"
+    if [[ "${XSEC_METHOD}" == no-simc-model ]]; then
+      CALIBRATED_OUT_DIR="${OUTPUT_BASE}/$(sanitize_name "${KIN}")/xsec_no_simc_model_calibrated"
+    else
+      CALIBRATED_OUT_DIR="${OUTPUT_BASE}/$(sanitize_name "${KIN}")/xsec_calibrated"
+    fi
   else
-    CALIBRATED_OUT_DIR="$(dirname "${OUT_DIR}")/xsec_calibrated"
+    if [[ "${XSEC_METHOD}" == no-simc-model ]]; then
+      CALIBRATED_OUT_DIR="$(dirname "${OUT_DIR}")/xsec_no_simc_model_calibrated"
+    else
+      CALIBRATED_OUT_DIR="$(dirname "${OUT_DIR}")/xsec_calibrated"
+    fi
   fi
 fi
 CALIBRATED_OUT_DIR="$(to_abs_path "${CALIBRATED_OUT_DIR}")"
 if [[ -z "${FINAL_REPORT_PDF}" ]]; then
-  FINAL_REPORT_PDF="${CALIBRATED_OUT_DIR}/preliminary_cross_section_extraction_report.pdf"
+  if [[ "${XSEC_METHOD}" == no-simc-model ]]; then
+    FINAL_REPORT_PDF="${CALIBRATED_OUT_DIR}/no_simc_model_cross_section_report.pdf"
+  else
+    FINAL_REPORT_PDF="${CALIBRATED_OUT_DIR}/preliminary_cross_section_extraction_report.pdf"
+  fi
 fi
 FINAL_REPORT_PDF="$(to_abs_path "${FINAL_REPORT_PDF}")"
 if [[ -z "${REFERENCE_SLICE_CSV}" ]]; then
@@ -646,35 +684,50 @@ fi
 
 TOY_RUN_TAG="$(date -u +%Y%m%dT%H%M%S)_$$"
 if [[ "${PUBLISH_CALIBRATED_RELEASE}" -eq 1 && "${GENERATE_TOYS}" -eq 1 ]]; then
-  CALIBRATION_SOURCE="${OUT_DIR}/toy_campaigns/${TOY_RUN_TAG}"
-  CURVATURE_SOURCE="${OUT_DIR}/toy_curvature/${TOY_RUN_TAG}"
+  if [[ "${XSEC_METHOD}" == no-simc-model ]]; then
+    CALIBRATION_SOURCE="${OUT_DIR}/no_simc_model_toy_campaigns/${TOY_RUN_TAG}"
+  else
+    CALIBRATION_SOURCE="${OUT_DIR}/toy_campaigns/${TOY_RUN_TAG}"
+    CURVATURE_SOURCE="${OUT_DIR}/toy_curvature/${TOY_RUN_TAG}"
+  fi
 fi
 
 if [[ "${PUBLISH_CALIBRATED_RELEASE}" -eq 1 ]]; then
-  if [[ "${KIN}" != KinC_x36_4 ]]; then
+  if [[ "${XSEC_METHOD}" == simc-model && "${KIN}" != KinC_x36_4 ]]; then
     echo "[WARN] Calibrated-release validation for ${KIN:-<unset>} is still in progress; continuing with the selected kinematic inputs." >&2
   fi
-  if [[ "${GENERATE_TOYS}" -eq 0 && ( ! -d "${CALIBRATION_SOURCE}" || ! -d "${CURVATURE_SOURCE}" ) ]]; then
-    echo "[ERROR] Missing calibrated-release source campaign(s):" >&2
-    echo "        toys/central: ${CALIBRATION_SOURCE}" >&2
-    echo "        curvature:    ${CURVATURE_SOURCE}" >&2
-    exit 1
-  fi
-  for helper in report_preliminary_pi0_calibrated.py; do
-    [[ -f "${REPO_ROOT}/scripts/${helper}" ]] || { echo "[ERROR] Missing calibrated-release helper: ${helper}" >&2; exit 1; }
-  done
-  if [[ "${GENERATE_TOYS}" -eq 1 ]]; then
-    for helper in run_preliminary_pi0_xsec.sh preliminary_pi0_xsec.py \
-        pi0_preliminary_bridge.cpp report_preliminary_pi0_curvature_dynamic.py; do
-      [[ -f "${REPO_ROOT}/scripts/${helper}" ]] || { echo "[ERROR] Missing toy-generation helper: ${helper}" >&2; exit 1; }
+  if [[ "${XSEC_METHOD}" == simc-model ]]; then
+    if [[ "${GENERATE_TOYS}" -eq 0 && ( ! -d "${CALIBRATION_SOURCE}" || ! -d "${CURVATURE_SOURCE}" ) ]]; then
+      echo "[ERROR] Missing calibrated-release source campaign(s):" >&2
+      echo "        toys/central: ${CALIBRATION_SOURCE}" >&2
+      echo "        curvature:    ${CURVATURE_SOURCE}" >&2
+      exit 1
+    fi
+    for helper in report_preliminary_pi0_calibrated.py; do
+      [[ -f "${REPO_ROOT}/scripts/${helper}" ]] || { echo "[ERROR] Missing calibrated-release helper: ${helper}" >&2; exit 1; }
     done
+    if [[ "${GENERATE_TOYS}" -eq 1 ]]; then
+      for helper in run_preliminary_pi0_xsec.sh preliminary_pi0_xsec.py \
+          pi0_preliminary_bridge.cpp report_preliminary_pi0_curvature_dynamic.py; do
+        [[ -f "${REPO_ROOT}/scripts/${helper}" ]] || { echo "[ERROR] Missing toy-generation helper: ${helper}" >&2; exit 1; }
+      done
+    else
+      OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
+        "${PYTHON_CMD}" "${REPO_ROOT}/scripts/report_preliminary_pi0_calibrated.py" \
+          --source "${CALIBRATION_SOURCE}" \
+          --curvature "${CURVATURE_SOURCE}" \
+          --config "${XSEC_CONFIG_FILE}" \
+          --check-only
+    fi
   else
-    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
-      "${PYTHON_CMD}" "${REPO_ROOT}/scripts/report_preliminary_pi0_calibrated.py" \
-        --source "${CALIBRATION_SOURCE}" \
-        --curvature "${CURVATURE_SOURCE}" \
-        --config "${XSEC_CONFIG_FILE}" \
-        --check-only
+    [[ -f "${SCRIPT_DIR}/no_simc_model_calibration.py" ]] || {
+      echo "[ERROR] Missing no-model calibration helper." >&2; exit 1; }
+    [[ -f "${SCRIPT_DIR}/no_simc_calibration_bridge.cpp" ]] || {
+      echo "[ERROR] Missing no-model exact-estimator bridge." >&2; exit 1; }
+    if [[ "${GENERATE_TOYS}" -eq 0 && ! -d "${CALIBRATION_SOURCE}" ]]; then
+      echo "[ERROR] Missing no-model calibration campaign: ${CALIBRATION_SOURCE}" >&2
+      exit 1
+    fi
   fi
   if [[ -e "${CALIBRATED_OUT_DIR}" ]]; then
     echo "[ERROR] Refusing to overwrite calibrated release: ${CALIBRATED_OUT_DIR}" >&2
@@ -727,8 +780,13 @@ echo "[inputs] data=${DATA_FILE} smeared=${SIM_FILE} raw=${VERTEX_SIMC_FILE}"
 echo "[output] directory=${OUT_DIR} log=${RUN_LOG}"
 echo "[fit] objective=${FIT_OBJECTIVE} variance=${FIT_VARIANCE}"
 if [[ "${PUBLISH_CALIBRATED_RELEASE}" -eq 1 ]]; then
-  echo "[release] toy mode=$([[ "${GENERATE_TOYS}" -eq 1 ]] && echo fresh || echo reuse) jobs=${TOY_JOBS} (0=all) additive-M0 source=${CALIBRATION_SOURCE}"
-  echo "[release] curvature source=${CURVATURE_SOURCE} output=${CALIBRATED_OUT_DIR}"
+  if [[ "${XSEC_METHOD}" == no-simc-model ]]; then
+    echo "[release] toy mode=$([[ "${GENERATE_TOYS}" -eq 1 ]] && echo fresh || echo reuse) direct-bin source=${CALIBRATION_SOURCE}"
+    echo "[release] accepted toys=${CALIBRATION_TOYS} seed=${CALIBRATION_SEED} output=${CALIBRATED_OUT_DIR}"
+  else
+    echo "[release] toy mode=$([[ "${GENERATE_TOYS}" -eq 1 ]] && echo fresh || echo reuse) jobs=${TOY_JOBS} (0=all) additive-M0 source=${CALIBRATION_SOURCE}"
+    echo "[release] curvature source=${CURVATURE_SOURCE} output=${CALIBRATED_OUT_DIR}"
+  fi
 fi
 printf '[invocation] '; printf '%q ' "${SCRIPT_DIR}/run_xsec_pipeline.sh" "${ORIGINAL_ARGS[@]}"; printf '\n'
 "${PYTHON_CMD}" "${SCRIPT_DIR}/xsec_pipeline_products.py" preflight --kin "${KIN:-unset}" \
@@ -903,6 +961,15 @@ else
     "${CXX_CMD}" "${XSEC_SRC}" -I"${BUILD_DIR}" -I"${SCRIPT_DIR}" $(root-config --cflags --libs) -lMinuit2 -O2 -std=c++17 -o "${XSEC_BIN}"
   fi
 fi
+NO_MODEL_CALIBRATION_BRIDGE=""
+if [[ "${PUBLISH_CALIBRATED_RELEASE}" -eq 1 && "${XSEC_METHOD}" == no-simc-model ]]; then
+  NO_MODEL_CALIBRATION_BRIDGE="${BUILD_DIR}/libno_simc_calibration.so"
+  echo "[build] Compiling exact no-model calibration bridge"
+  "${CXX_CMD}" -O3 -std=c++17 -shared -fPIC -I"${BUILD_DIR}" -I"${SCRIPT_DIR}" \
+    "${SCRIPT_DIR}/no_simc_calibration_bridge.cpp" $(root-config --cflags --libs) \
+    -o "${NO_MODEL_CALIBRATION_BRIDGE}.partial"
+  mv "${NO_MODEL_CALIBRATION_BRIDGE}.partial" "${NO_MODEL_CALIBRATION_BRIDGE}"
+fi
 declare -a xsec_cmd=(
   "${XSEC_BIN}"
   --data-file "${DATA_FILE}"
@@ -1028,6 +1095,7 @@ fi
 
 declare -a calibrated_artifacts=()
 if [[ "${PUBLISH_CALIBRATED_RELEASE}" -eq 1 ]]; then
+  if [[ "${XSEC_METHOD}" == simc-model ]]; then
   if [[ "${GENERATE_TOYS}" -eq 1 ]]; then
     STAGE=toy-generation
     TOY_VERTEX_FILE="${VERTEX_SIMC_FILE}"
@@ -1143,6 +1211,103 @@ PY
     )
   fi
   echo "[release] Final comprehensive report (calibration + all diagnostics): ${FINAL_REPORT_PDF}"
+  else
+    declare -a no_model_args=(
+      --fit-output "${OUT_DIR}"
+      --config "${XSEC_CONFIG_FILE}"
+      --central-root "${OUT_ROOT}"
+      --central-summary "${OUT_CSV}"
+      --central-slices "${OUT_SLICE_CSV}"
+      --data-file "${DATA_FILE}"
+      --sim-file "${SIM_FILE}"
+      --vertex-file "${VERTEX_SIMC_FILE}"
+      --bridge "${NO_MODEL_CALIBRATION_BRIDGE}"
+      --fit-objective "${FIT_OBJECTIVE}"
+      --fit-variance "${FIT_VARIANCE}"
+      --rank-tolerance "${SVD_RANK_TOLERANCE}"
+      --mc-max-iterations "${MC_MAX_ITERATIONS}"
+      --mc-fit-tolerance "${MC_FIT_TOLERANCE}"
+      --source "${SCRIPT_DIR}/xsec_linear_solver.h"
+      --source "${SCRIPT_DIR}/xsec_positive_solver.h"
+      --source "${SCRIPT_DIR}/xsec_response.h"
+      --source "${SCRIPT_DIR}/xsec_no_simc_calibration.h"
+      --source "${SCRIPT_DIR}/no_simc_calibration_bridge.cpp"
+      --source "${SCRIPT_DIR}/no_simc_model_calibration.py"
+      --source "${SCRIPT_DIR}/run_xsec_pipeline.sh"
+    )
+    [[ -n "${TARGET_CONTAM}" ]] && no_model_args+=(--target-factor "${TARGET_CONTAM}")
+    [[ -n "${TARGET_CONTAM_ERR}" ]] && no_model_args+=(--target-error "${TARGET_CONTAM_ERR}")
+    declare -a no_model_count_args=(--accepted "${CALIBRATION_TOYS}")
+    [[ "${CALIBRATION_TOYS}" -ne 500 ]] && no_model_count_args+=(--allow-test-count)
+    if [[ "${GENERATE_TOYS}" -eq 1 ]]; then
+      STAGE=no-simc-model-toy-generation
+      mkdir -p "$(dirname "${CALIBRATION_SOURCE}")"
+      echo "[toys] Generating ${CALIBRATION_TOYS} accepted direct-bin no-model toys"
+      OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
+        "${PYTHON_CMD}" "${SCRIPT_DIR}/no_simc_model_calibration.py" campaign \
+          "${no_model_args[@]}" "${no_model_count_args[@]}" \
+          --seed "${CALIBRATION_SEED}" --output "${CALIBRATION_SOURCE}"
+    else
+      STAGE=no-simc-model-toy-validation
+      OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
+        "${PYTHON_CMD}" "${SCRIPT_DIR}/no_simc_model_calibration.py" check \
+          "${no_model_args[@]}" "${no_model_count_args[@]}" \
+          --campaign "${CALIBRATION_SOURCE}"
+    fi
+    STAGE=no-simc-model-calibrated-report
+    echo "[release] Publishing direct-bin no-SIMC calibrated intervals"
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
+      "${PYTHON_CMD}" "${SCRIPT_DIR}/no_simc_model_calibration.py" report \
+        "${no_model_args[@]}" "${no_model_count_args[@]}" \
+        --campaign "${CALIBRATION_SOURCE}" --output "${CALIBRATED_OUT_DIR}"
+
+    STAGE=no-simc-model-calibrated-pdf
+    final_report_partial="${FINAL_REPORT_PDF}.partial"
+    if [[ -e "${final_report_partial}" || -e "${FINAL_REPORT_PDF}" ]]; then
+      echo "[ERROR] Refusing to overwrite final calibrated PDF: ${FINAL_REPORT_PDF}" >&2
+      exit 1
+    fi
+    pdfunite \
+      "${CALIBRATED_OUT_DIR}/fit_coverage_diagnostics.pdf" \
+      "${CALIBRATED_OUT_DIR}/sigma_U_no_simc_model_calibrated.pdf" \
+      "${CALIBRATED_OUT_DIR}/sigma_LT_no_simc_model_calibrated.pdf" \
+      "${CALIBRATED_OUT_DIR}/sigma_TT_no_simc_model_calibrated.pdf" \
+      "${ALL_PLOTS_PDF}" \
+      "${final_report_partial}"
+    mv "${final_report_partial}" "${FINAL_REPORT_PDF}"
+    calibrated_artifacts=(
+      "${CALIBRATED_OUT_DIR}/REPORT.md"
+      "${CALIBRATED_OUT_DIR}/calibration_summary.json"
+      "${CALIBRATED_OUT_DIR}/pipeline_linkage.json"
+      "${CALIBRATED_OUT_DIR}/input_manifest.json"
+      "${CALIBRATED_OUT_DIR}/preliminary_cross_sections_calibrated.csv"
+      "${CALIBRATED_OUT_DIR}/toy_residual_statistics.csv"
+      "${CALIBRATED_OUT_DIR}/cross_validated_coverage.csv"
+      "${CALIBRATED_OUT_DIR}/bin_statistics.csv"
+      "${CALIBRATED_OUT_DIR}/published_covariance_toy.csv"
+      "${CALIBRATED_OUT_DIR}/published_correlation_toy.csv"
+      "${CALIBRATED_OUT_DIR}/published_covariance_calibrated68.csv"
+      "${CALIBRATED_OUT_DIR}/target_systematic_covariance.csv"
+      "${CALIBRATED_OUT_DIR}/sigma_U_no_simc_model_calibrated.pdf"
+      "${CALIBRATED_OUT_DIR}/sigma_LT_no_simc_model_calibrated.pdf"
+      "${CALIBRATED_OUT_DIR}/sigma_TT_no_simc_model_calibrated.pdf"
+      "${CALIBRATED_OUT_DIR}/fit_coverage_diagnostics.pdf"
+      "${FINAL_REPORT_PDF}"
+    )
+    if [[ "${GENERATE_TOYS}" -eq 1 ]]; then
+      calibrated_artifacts+=(
+        "${CALIBRATION_SOURCE}/campaign_manifest.json"
+        "${CALIBRATION_SOURCE}/generation_summary.json"
+        "${CALIBRATION_SOURCE}/central_parity.json"
+        "${CALIBRATION_SOURCE}/toys/summary.json"
+        "${CALIBRATION_SOURCE}/toys/replicas.npz"
+        "${CALIBRATION_SOURCE}/toys/attempts.csv"
+        "${CALIBRATION_SOURCE}/toys/fitted_vectors_and_residuals.csv"
+        "${CALIBRATION_SOURCE}/toys/boundary_hits.csv"
+      )
+    fi
+    echo "[release] Final direct-bin no-SIMC report: ${FINAL_REPORT_PDF}"
+  fi
 fi
 
 STAGE=artifact-verification

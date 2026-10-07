@@ -1525,3 +1525,36 @@ Update it whenever:
   iterations with 30 finite published values. A labeled synthetic 500-toy
   fixture exercised all release gates, matrices, plots and the 13-page final
   PDF. It is a software test, not a physics campaign.
+
+## 2026-10-06: direct-bin no-SIMC calibrated-release contract
+
+- `--no-simc-model --fit-objective gaussian --positive-xsec
+  --publish-calibrated-release` now dispatches a separate direct-bin campaign;
+  it does not require or forward `staged_feasible`. The SIMC-model additive-M0
+  publication path and its filenames remain separate.
+- The calibrated vector is the production independent U/LT/TT vector,
+  including the fitted low-tprime exterior triplet during every refit. Fixed
+  exterior predictions remain fixed in the mean and their Poissonized MC
+  variance remains in the finite-MC row variance. The exact production SVD,
+  continuous-angle positivity, and MC-variance contraction are reused through
+  a C++ adapter, with mandatory central numerical parity before toy generation.
+- The local pseudoexperiment is conditional on the measured weighted-yield
+  sumw2 and fixed response: Gaussian rows are generated at the fitted full
+  forward mean with the converged data-plus-MC variance. This is a documented
+  fixed-response approximation, not an event-level upstream-weight or detector
+  bootstrap and not a claim about fixed-Ngen multinomial uncertainty.
+- Fresh no-model toys inherit the central window/MCD/ellipse selection exactly.
+  Unlike the event-level additive-M0 construction, this exported-row campaign
+  does not require ellipse-specific event reconstruction.
+- A production campaign continues until exactly 500 toys are accepted, records
+  every attempt and failure, and retains fitted vectors, residuals, boundary
+  hits, covariance/correlation, calibrated radii, and deterministic five-fold
+  held-out coverage. Failed toys are never replaced and fitted values are never
+  clipped. Target normalization stays a separate correlated scale covariance.
+- Release creation is non-overwriting and staged. Reuse requires exact
+  configuration, binning, central response-product, numerical-control, target,
+  source, and checksum agreement. The default namespace is
+  `output/<kin>/xsec_no_simc_model_calibrated`.
+- The legacy 256 boundary toys remain conditional plot-spread diagnostics: they
+  are attempted rather than accepted-to-count, permit failures, and do not
+  contain the truth-residual/coverage contract required for publication.
